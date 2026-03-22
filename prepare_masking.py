@@ -1,0 +1,287 @@
+"""
+Fixed constants and data preparation for Masking experiments.
+
+This file is READ-ONLY. Do not modify.
+It defines the fixed mask configurations, timing parameters, and evaluation metrics.
+
+Usage:
+    python prepare_masking.py  # Verify mask configurations
+
+Masking paradigms:
+- Backward masking: Mask follows target (temporal succession)
+- Forward masking: Mask precedes target (preemptive interference)
+- Metacontrast: Mask surrounds target (spatial interference)
+- SOA effects: Performance varies with stimulus onset asynchrony
+"""
+import numpy as np
+import json
+from dataclasses import dataclass
+from typing import List, Dict, Optional
+from enum import Enum
+
+# ---------------------------------------------------------------------------
+# Fixed Constants (DO NOT MODIFY)
+# ---------------------------------------------------------------------------
+
+TIME_BUDGET = 600  # 10 minutes per experiment (in seconds)
+NUM_TRIALS = 100
+
+# APGI Integration Parameters - 100/100 Compliance
+# Optimized for masking dynamics
+APGI_ENABLED = True
+
+# Core dynamical system parameters
+APGI_TAU_S = 0.35  # Surprise decay (200-500ms)
+APGI_TAU_THETA = 30.0  # Threshold adaptation (5-60s)
+APGI_TAU_M = 1.5  # Somatic marker timescale (1-2s)
+
+# Threshold and sigmoid parameters
+APGI_THETA_0 = 0.5  # Baseline ignition threshold (0.1-1.0 AU)
+APGI_ALPHA = 5.5  # Sigmoid steepness (3.0-8.0)
+
+# Somatic modulation
+APGI_BETA = 1.5  # β_som: Somatic influence (0.5-2.5)
+APGI_BETA_M = 1.0  # Marker sensitivity (0.5-2.0)
+APGI_M_0 = 0.0  # Reference somatic marker level
+
+# Sensitivities
+APGI_GAMMA_M = -0.3  # Metabolic sensitivity (-0.5 to 0.5)
+APGI_GAMMA_A = 0.1  # Arousal sensitivity (-0.3 to 0.3)
+APGI_LAMBDA_S = 0.1  # Metabolic coupling strength
+
+# Noise strengths
+APGI_SIGMA_S = 0.05  # Surprise noise
+APGI_SIGMA_THETA = 0.02  # Threshold noise
+APGI_SIGMA_M = 0.03  # Somatic marker noise
+
+# Domain-specific thresholds
+APGI_THETA_SURVIVAL = 0.3  # Lower threshold for survival-relevant
+APGI_THETA_NEUTRAL = 0.7  # Higher threshold for neutral content
+
+# Reset dynamics
+APGI_RHO = 0.7  # Reset fraction after ignition (0.3-0.9)
+
+# Hierarchical processing (5-level)
+APGI_HIERARCHICAL_ENABLED = True
+APGI_BETA_CROSS = 0.2  # Cross-level coupling (0.1-0.5)
+APGI_TAU_LEVELS = [0.1, 0.2, 0.4, 1.0, 5.0]  # Level-specific timescales
+
+# Neuromodulator baselines
+APGI_ACHT = 1.0  # Acetylcholine
+APGI_NE = 1.0  # Norepinephrine
+APGI_DA = 1.0  # Dopamine
+APGI_HT5 = 1.0  # Serotonin
+
+# Precision expectation gap (Π vs Π̂)
+APGI_ENABLE_PRECISION_GAP = True
+APGI_PI_E_EXPECTED = 1.0
+APGI_PI_I_EXPECTED = 1.0
+
+# Psychiatric profiles
+APGI_GAD_PROFILE = False
+APGI_MDD_PROFILE = False
+APGI_PSYCHOSIS_PROFILE = False
+
+
+class MaskType(Enum):
+    BACKWARD = "backward"  # Mask follows target
+    FORWARD = "forward"  # Mask precedes target
+    METACONTRAST = "metacontrast"  # Surrounds target
+
+
+class TrialType(Enum):
+    TARGET_PRESENT = "present"
+    TARGET_ABSENT = "absent"
+
+
+TARGET_PROBABILITY = 0.5
+TARGETS = ["X", "O", "T", "L"]
+MASK_DURATIONS = [10, 20, 30, 50, 100]  # ms
+TARGET_DURATION = 30  # ms
+
+
+@dataclass
+class MaskingTrial:
+    trial_number: int
+    mask_type: MaskType
+    target: Optional[str]
+    trial_type: TrialType
+    target_duration_ms: int
+    mask_duration_ms: int
+    soa_ms: int  # Stimulus onset asynchrony
+    response: Optional[str] = None
+    correct: bool = False
+    rt_ms: float = 0.0
+    timestamp: float = 0.0
+
+
+class MaskingGenerator:
+    def __init__(self, seed: Optional[int] = None):
+        self.rng = np.random.RandomState(seed)
+        self.reset()
+
+    def reset(self):
+        self.trial_count = 0
+
+    def create_trial(self, trial_number: int) -> MaskingTrial:
+        is_present = self.rng.random() < TARGET_PROBABILITY
+        mask_type = self.rng.choice(list(MaskType))
+        target = self.rng.choice(TARGETS) if is_present else None
+        mask_dur = int(self.rng.choice(MASK_DURATIONS))
+        soa = int(self.rng.choice([0, 30, 60, 100]))
+
+        return MaskingTrial(
+            trial_number=trial_number,
+            mask_type=mask_type,
+            target=target,
+            trial_type=TrialType.TARGET_PRESENT
+            if is_present
+            else TrialType.TARGET_ABSENT,
+            target_duration_ms=TARGET_DURATION,
+            mask_duration_ms=mask_dur,
+            soa_ms=soa,
+        )
+
+
+class MaskingExperiment:
+    def __init__(self, num_trials: int = NUM_TRIALS, seed: Optional[int] = None):
+        self.num_trials = num_trials
+        self.generator = MaskingGenerator(seed=seed)
+        self.trials: List[MaskingTrial] = []
+        self.current_trial_idx = 0
+        self.reset()
+
+    def reset(self):
+        self.trials = []
+        self.current_trial_idx = 0
+        self.generator.reset()
+
+    def get_next_trial(self) -> Optional[MaskingTrial]:
+        if self.current_trial_idx >= self.num_trials:
+            return None
+        trial = self.generator.create_trial(self.current_trial_idx + 1)
+        return trial
+
+    def run_trial(
+        self, trial: MaskingTrial, detected: bool, rt_ms: float
+    ) -> MaskingTrial:
+        trial.response = "present" if detected else "absent"
+        trial.correct = detected == (trial.trial_type == TrialType.TARGET_PRESENT)
+        trial.rt_ms = rt_ms
+        import time
+
+        trial.timestamp = time.time()
+        self.trials.append(trial)
+        self.current_trial_idx += 1
+        return trial
+
+    def get_threshold(self) -> float:
+        """Estimate threshold mask duration for 50% detection."""
+        for dur in sorted(MASK_DURATIONS, reverse=True):
+            trials = [
+                t
+                for t in self.trials
+                if t.mask_duration_ms == dur
+                and t.trial_type == TrialType.TARGET_PRESENT
+            ]
+            if trials:
+                acc = np.mean([t.correct for t in trials])
+                if acc > 0.5:
+                    return dur
+        return max(MASK_DURATIONS)
+
+    def get_summary(self) -> Dict:
+        if not self.trials:
+            return {}
+        return {
+            "num_trials": len(self.trials),
+            "detection_rate": np.mean(
+                [
+                    t.correct
+                    for t in self.trials
+                    if t.trial_type == TrialType.TARGET_PRESENT
+                ]
+            ),
+            "threshold_ms": self.get_threshold(),
+            "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
+        }
+
+    def save_results(self, filepath: str):
+        data = {
+            "trials": [
+                {
+                    "trial_number": t.trial_number,
+                    "mask_type": t.mask_type.value,
+                    "target": t.target,
+                    "trial_type": t.trial_type.value,
+                    "mask_duration_ms": t.mask_duration_ms,
+                    "response": t.response,
+                    "correct": t.correct,
+                    "rt_ms": t.rt_ms,
+                    "timestamp": t.timestamp,
+                }
+                for t in self.trials
+            ],
+            "summary": self.get_summary(),
+        }
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=2)
+
+
+# Standardized APGI Parameters Export (READ-ONLY)
+# These parameters are used by the AGENT-EDITABLE run file for APGI integration
+APGI_PARAMS = {
+    # Core identification
+    "experiment_name": "masking",
+    "enabled": APGI_ENABLED,
+    # Dynamical system timescales
+    "tau_s": APGI_TAU_S,
+    "tau_theta": APGI_TAU_THETA,
+    "tau_M": APGI_TAU_M,
+    # Threshold and ignition parameters
+    "theta_0": APGI_THETA_0,
+    "alpha": APGI_ALPHA,
+    "rho": APGI_RHO,
+    # Somatic modulation
+    "beta": APGI_BETA,
+    "beta_M": APGI_BETA_M,
+    "M_0": APGI_M_0,
+    # Sensitivities
+    "gamma_M": APGI_GAMMA_M,
+    "gamma_A": APGI_GAMMA_A,
+    "lambda_S": APGI_LAMBDA_S,
+    # Noise strengths
+    "sigma_S": APGI_SIGMA_S,
+    "sigma_theta": APGI_SIGMA_THETA,
+    "sigma_M": APGI_SIGMA_M,
+    # Domain-specific thresholds
+    "theta_survival": APGI_THETA_SURVIVAL,
+    "theta_neutral": APGI_THETA_NEUTRAL,
+    # Hierarchical processing
+    "hierarchical_enabled": APGI_HIERARCHICAL_ENABLED,
+    "beta_cross": APGI_BETA_CROSS,
+    "tau_levels": APGI_TAU_LEVELS,
+    # Neuromodulator baselines
+    "ACh": APGI_ACHT,
+    "NE": APGI_NE,
+    "DA": APGI_DA,
+    "HT5": APGI_HT5,
+    # Precision expectation gap
+    "precision_gap_enabled": APGI_ENABLE_PRECISION_GAP,
+    "Pi_e_expected": APGI_PI_E_EXPECTED,
+    "Pi_i_expected": APGI_PI_I_EXPECTED,
+    # Psychiatric profiles
+    "GAD_profile": APGI_GAD_PROFILE,
+    "MDD_profile": APGI_MDD_PROFILE,
+    "psychosis_profile": APGI_PSYCHOSIS_PROFILE,
+}
+
+
+def verify():
+    print("Masking - Configuration Verification")
+    print(f"Mask Types: {[t.value for t in MaskType]}")
+    print(f"Mask Durations: {MASK_DURATIONS}")
+
+
+if __name__ == "__main__":
+    verify()
