@@ -32,7 +32,7 @@ from prepare_working_memory_span import (
     WorkingMemorySpanGenerator,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,
@@ -45,7 +45,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 # Task structure parameters
 NUM_TRIALS_CONFIG = 60  # Can adjust: 30-120 trials typical

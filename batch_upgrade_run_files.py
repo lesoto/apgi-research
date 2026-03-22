@@ -350,7 +350,7 @@ def upgrade_file(file_path: Path) -> bool:
                     content[:end_pos]
                     + """
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,

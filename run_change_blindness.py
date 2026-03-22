@@ -28,7 +28,7 @@ from prepare_change_blindness import (
     APGI_PARAMS,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,
@@ -41,7 +41,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 60
 CHANGE_PROBABILITY = 0.50

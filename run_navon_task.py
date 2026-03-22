@@ -24,7 +24,7 @@ import numpy as np
 import time
 from typing import Dict
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,
@@ -41,7 +41,7 @@ TIME_BUDGET = APGI_PARAMS.get("time_budget", 600)  # 10 minutes per experiment
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 100
 

@@ -12,7 +12,7 @@ from enum import Enum
 TIME_BUDGET = 600
 NUM_TRIALS = 100
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for somatic marker priming dynamics
 APGI_ENABLED = True
 
@@ -113,8 +113,8 @@ class SomaticMarkerGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> SomaticTrial:
-        emotion = self.rng.choice(list(EmotionType))
-        task = self.rng.choice(list(TaskType))
+        emotion = self.rng.choice([e.value for e in EmotionType])  # type: ignore
+        task = self.rng.choice([t.value for t in TaskType])  # type: ignore
         feedback = self.rng.choice(FEEDBACK_TYPES)
 
         # Create choice options with expected values
@@ -176,7 +176,7 @@ class SomaticMarkerExperiment:
         if not trials:
             return 0.0
         # Advantageous = higher expected value option
-        return np.mean([t.selected_option == "A" for t in trials])
+        return float(np.mean([t.selected_option == "A" for t in trials]))
 
     def get_somatic_correlation(self) -> float:
         """Correlation between somatic response and advantageous choice."""

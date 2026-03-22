@@ -30,7 +30,7 @@ from prepare_artificial_grammar_learning import (
     APGI_PARAMS,  # APGI parameters from prepare file
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,
@@ -43,7 +43,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 100
 

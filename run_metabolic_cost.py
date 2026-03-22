@@ -28,7 +28,7 @@ from prepare_metabolic_cost import (
     APGI_PARAMS,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,
@@ -51,7 +51,7 @@ class CostType(Enum):
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 80
 

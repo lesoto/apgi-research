@@ -12,7 +12,7 @@ from enum import Enum
 TIME_BUDGET = 600
 NUM_TRIALS = 200
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for probabilistic category learning dynamics
 APGI_ENABLED = True
 

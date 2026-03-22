@@ -39,7 +39,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 100
 
@@ -99,9 +99,7 @@ class SimulatedParticipant:
 
 class EnhancedProbabilisticRunner:
     def __init__(self, enable_apgi: bool = True):
-        self.experiment = PCLExperiment(
-            num_trials=NUM_TRIALS_CONFIG
-        )
+        self.experiment = PCLExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
         self.start_time = None
 

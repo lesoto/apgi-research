@@ -19,7 +19,7 @@ import numpy as np
 import time
 from typing import Dict
 
-# APGI Integration - 100/100 compliance with hierarchical processing and precision gap
+# APGI Integration with hierarchical processing and precision gap
 from apgi_integration import (
     APGIIntegration,
 )
@@ -43,7 +43,7 @@ from experiment_apgi_integration import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 100
 

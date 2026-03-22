@@ -28,7 +28,7 @@ from prepare_serial_reaction_time import (
     APGI_PARAMS,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
 from ultimate_apgi_template import (
     UltimateAPGIParameters,
@@ -41,7 +41,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 120
 SEQUENCE_LENGTH_CONFIG = 10
@@ -259,6 +259,10 @@ class EnhancedSRTRunner:
                 "num_trials": len(self.experiment.trials),
                 "completion_time_s": completion_time,
                 "d_prime": summary.get("d_prime", 0.0),
+                "learning_effect_ms": summary.get("learning_effect_ms", 0.0),
+                "sequential_rt_ms": summary.get("sequential_rt_ms", 0.0),
+                "random_rt_ms": summary.get("random_rt_ms", 0.0),
+                "accuracy": summary.get("accuracy", 0.0),
             },
             **apgi_metrics,
         }

@@ -12,7 +12,7 @@ from typing import List, Dict, Optional
 TIME_BUDGET = 600
 NUM_TRIALS = 12  # Lists per experiment
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for drm false memory dynamics
 APGI_ENABLED = True
 

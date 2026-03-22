@@ -27,7 +27,7 @@ from enum import Enum
 TIME_BUDGET = 600  # 10 minutes per experiment (in seconds)
 NUM_TRIALS = 200
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for artificial grammar learning dynamics
 APGI_ENABLED = True
 

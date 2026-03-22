@@ -42,7 +42,7 @@ from prepare_attentional_blink import (
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 # Task structure parameters
 NUM_TRIALS_CONFIG = 100  # Can adjust: 50-200 trials typical

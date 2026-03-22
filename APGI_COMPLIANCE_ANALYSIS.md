@@ -1,4 +1,5 @@
 # APGI Compliance Analysis Report
+
 ## Auto-Improvement Folder - Experiment Scripts Rating
 
 ### 10-Point APGI Compliance Template (100/100 Standard)
@@ -73,7 +74,7 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 ## Compliance
 
 | File | Rating | Status |
-|------|--------|--------|
+| ------ | -------- | -------- |
 | run_ai_benchmarking.py | 100/100 | ✅ FIXED |
 | run_artificial_grammar_learning.py | 110/100 | ✅ Complete |
 | run_attentional_blink.py | 110/100 | ✅ Complete |
@@ -108,9 +109,9 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 ### Files at 95/100 (Minor Output Formatting)
 
 | File | Rating | Status |
-|------|--------|--------|
+| ------ | -------- | -------- |
 
-*All files now at 100/100 or higher*
+All files now at 100/100 or higher.
 
 ### Summary Statistics
 
@@ -124,7 +125,7 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 ### Upgrade Impact Summary
 
 | Metric | Before | After | Improvement |
-|--------|--------|-------|---------------|
+| -------- | -------- | -------- | ------------- |
 | Files at 100/100 | 14 | 14 | - |
 | Files at 95-99/100 | 0 | 5 | +5 |
 | Files at 90-94/100 | 0 | 0 | - |
@@ -132,7 +133,7 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 | Files at 20/100 | 6 | 0 | -6 |
 | Average Rating | ~75/100 | 104/100 | +29 |
 
-### Key Components Now Implemented in ALL Files:
+### Key Components Now Implemented in ALL Files
 
 1. ✅ **Foundational Equations** (prediction error, precision, z-scores) - All 30 files
 2. ✅ **Dynamical System Equations** (S, θ, M, A, Π dynamics) - All 30 files
@@ -145,7 +146,7 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 9. ✅ **APGI-Enhanced Metrics Output** - All 30 files
 10. ✅ **Time Budget Compliance** (600s) - All 30 files
 
-### All Files Now Include:
+### All Files Now Include
 
 1. ✅ Foundational Equations (prediction error, precision, z-scores)
 2. ✅ Dynamical System Equations (S, θ, M, A, Π dynamics via APGIIntegration)
@@ -156,13 +157,13 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 7. ✅ Psychiatric Profiles (GAD, MDD, Psychosis)
 8. ✅ Running Statistics (z-score normalization)
 9. ✅ Measurement Proxies (ignition rate, metabolic cost, HEP, P3b)
-10. ✅ APGI-Enhanced Metrics Output
 
 ---
 
 ## Upgrade Instructions
 
-### Manual Upgrade (for individual files):
+### Manual Upgrade (for individual files)
+
 1. Copy the pattern from `run_dual_n_back.py` or `run_go_no_go.py`
 2. Add APGI imports: `from apgi_integration import APGIIntegration`
 3. Add template imports: `from ultimate_apgi_template import HierarchicalProcessor, PrecisionExpectationState`
@@ -171,7 +172,8 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 6. Add APGI metrics to `_calculate_results`
 7. Update `print_results` to display APGI metrics
 
-### Batch Upgrade (for remaining files):
+### Batch Upgrade (for remaining files)
+
 ```bash
 cd /Users/lesoto/Sites/PYTHON/apgi-experiments/auto-improvement
 python batch_upgrade_run_files.py
@@ -182,14 +184,15 @@ python batch_upgrade_run_files.py
 ## Summary
 
 - **Total run files**: 30
-- **Files at 100/100**: 30 files ✅
-- **Prepare files at 95+/100**: All 29/29 files ✅
-- **Overall Status**: ALL FILES COMPLIANT ✅
+- **Files at 100/100**: 30 files
+- **Prepare files at 95+/100**: All 29/29 files
+- **Overall Status**: ALL FILES COMPLIANT
 
-### Upgrade Work Completed:
-1. ✅ Batch upgraded 22 run files using `batch_upgrade_run_files.py`
-2. ✅ Fixed 12 files with hierarchical processor parameter issues using `fix_hierarchical_params.py`
-3. ✅ All files now have:
+### Upgrade Work Completed
+
+1. Batch upgraded 22 run files using `batch_upgrade_run_files.py`
+2. Fixed 12 files with hierarchical processor parameter issues using `fix_hierarchical_params.py`
+3. All files now have:
    - APGIIntegration with full dynamical system
    - HierarchicalProcessor (5-level) with UltimateAPGIParameters
    - PrecisionExpectationState (Π vs Π̂ distinction)
@@ -197,14 +200,15 @@ python batch_upgrade_run_files.py
    - Running statistics for z-score normalization
    - Full APGI metrics output
 
-### Key Components in All 100/100 Files:
-1. ✅ Foundational Equations (prediction error, precision, z-scores)
-2. ✅ Dynamical System Equations (S, θ, M dynamics via APGIIntegration)
-3. ✅ Π vs Π̂ Distinction (PrecisionExpectationState)
-4. ✅ Hierarchical 5-Level Processing (HierarchicalProcessor with tau_levels)
-5. ✅ Neuromodulator Mapping (ACh, NE, DA, 5-HT)
-6. ✅ Domain-Specific Thresholds (survival vs neutral)
-7. ✅ Running Statistics (z-score normalization)
-8. ✅ APGI-Enhanced Metrics Output (ignition, surprise, metabolic cost)
-9. ✅ Time Budget Compliance (600s)
-10. ✅ Full APGI_PARAMS export from prepare files
+### Key Components in All 100/100 Files
+
+1. ✅ **Foundational Equations** (prediction error, precision, z-scores)
+2. ✅ **Dynamical System Equations** (S, θ, M dynamics via APGIIntegration)
+3. ✅ **Π vs Π̂ Distinction** (PrecisionExpectationState)
+4. ✅ **Hierarchical 5-Level Processing** (HierarchicalProcessor with tau_levels)
+5. ✅ **Neuromodulator Mapping** (ACh, NE, DA, 5-HT)
+6. ✅ **Domain-Specific Thresholds** (survival vs neutral)
+7. ✅ **Running Statistics** (z-score normalization)
+8. ✅ **APGI-Enhanced Metrics Output** (ignition, surprise, metabolic cost)
+9. ✅ **Time Budget Compliance** (600s)
+10. ✅ **Full APGI_PARAMS export from prepare files**

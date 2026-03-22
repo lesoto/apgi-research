@@ -27,7 +27,7 @@ TIME_BUDGET = 600  # 10 minutes per experiment (in seconds)
 
 NUM_TRIALS = 60
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for binocular rivalry dynamics
 APGI_ENABLED = True
 

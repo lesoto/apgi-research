@@ -29,7 +29,7 @@ from prepare_sternberg_memory import (
     TrialType,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
 from ultimate_apgi_template import (
     UltimateAPGIParameters,
@@ -42,7 +42,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 100
 SET_SIZES_CONFIG = [1, 2, 4, 6, 8]
@@ -250,6 +250,12 @@ class EnhancedSternbergRunner:
                 "num_trials": len(self.experiment.trials),
                 "completion_time_s": completion_time,
                 "d_prime": summary.get("d_prime", 0.0),
+                "search_slope_ms_per_item": summary.get(
+                    "search_slope_ms_per_item", 0.0
+                ),
+                "accuracy": summary.get("accuracy", 0.0),
+                "positive_rt_ms": summary.get("positive_rt_ms", 0.0),
+                "negative_rt_ms": summary.get("negative_rt_ms", 0.0),
             },
             **apgi_metrics,
         }

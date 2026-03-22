@@ -38,7 +38,7 @@ from ultimate_apgi_template import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 20
 
@@ -266,6 +266,8 @@ class EnhancedVirtualNavRunner:
                 "num_trials": len(self.experiment.trials),
                 "completion_time_s": completion_time,
                 "d_prime": summary.get("d_prime", 0.0),
+                "path_efficiency": summary.get("path_efficiency", 0.0),
+                "mean_excess_length": summary.get("mean_excess_length", 0.0),
             },
             **apgi_metrics,
         }

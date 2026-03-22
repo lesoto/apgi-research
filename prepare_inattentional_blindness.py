@@ -12,7 +12,7 @@ from enum import Enum
 TIME_BUDGET = 600
 NUM_TRIALS = 20  # Fewer trials due to complex stimuli
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for inattentional blindness dynamics
 APGI_ENABLED = True
 

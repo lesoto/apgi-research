@@ -34,7 +34,7 @@ from prepare_drm_false_memory import (
     DRM_LISTS,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
 from ultimate_apgi_template import (
     HierarchicalProcessor,
@@ -77,7 +77,7 @@ class CustomDRMGenerator(DRMExperiment):
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 # Task structure parameters
 NUM_TRIALS_CONFIG = 48  # Can adjust: 24-96 trials typical

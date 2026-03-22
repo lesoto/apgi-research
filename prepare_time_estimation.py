@@ -12,7 +12,7 @@ from enum import Enum
 TIME_BUDGET = 600
 NUM_TRIALS = 50
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for time estimation dynamics
 APGI_ENABLED = True
 

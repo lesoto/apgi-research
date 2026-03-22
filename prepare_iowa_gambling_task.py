@@ -34,7 +34,7 @@ TIME_BUDGET = 600  # 10 minutes per experiment (in seconds)
 NUM_TRIALS = 100  # Standard IGT trial count
 NUM_DECKS = 4  # Standard IGT: 4 decks (A, B, C, D)
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for decision-making under uncertainty with somatic markers
 APGI_ENABLED = True
 

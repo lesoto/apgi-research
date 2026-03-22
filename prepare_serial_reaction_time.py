@@ -11,7 +11,7 @@ from typing import List, Dict, Optional
 TIME_BUDGET = 600
 NUM_TRIALS = 120
 
-# APGI Integration Parameters - 100/100 Compliance
+# APGI Integration Parameters
 # Optimized for serial reaction time dynamics
 APGI_ENABLED = True
 

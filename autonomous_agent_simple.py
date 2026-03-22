@@ -168,8 +168,8 @@ class ParameterOptimizer:
                 else:
                     # Float parameter
                     mutation = np.random.normal(0, 0.1 * (max_val - min_val))
-                    new_val = np.clip(current_val + mutation, min_val, max_val)
-                    modifications[param_name] = float(new_val)
+                    new_val = float(np.clip(current_val + mutation, min_val, max_val))
+                    modifications[param_name] = new_val
 
         return modifications
 
@@ -343,14 +343,14 @@ class AutonomousAgent:
             f"Starting optimization for {experiment_name} ({iterations} iterations)"
         )
 
-        results = []
-        performance_history = []
+        results: List[ExperimentResult] = []
+        performance_history: List[float] = []
 
         for iteration in range(iterations):
             logger.info(f"Iteration {iteration + 1}/{iterations}")
 
             # Get current parameters (simplified)
-            current_params = {}
+            current_params: Dict[str, Any] = {}
 
             # Suggest modifications
             if iteration == 0:

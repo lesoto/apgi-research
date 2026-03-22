@@ -31,7 +31,7 @@ from prepare_change_blindness import (
     CBTrial,
 )
 
-# APGI Integration - 100/100 compliance
+# APGI Integration
 
 # Import full APGI integration
 from standard_apgi_runner import StandardAPGIRunner
@@ -42,7 +42,7 @@ from experiment_apgi_integration import get_experiment_apgi_config
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600
+TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 60
 CHANGE_PROBABILITY = 0.50
@@ -238,7 +238,6 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
                 trial=trial,
                 change_detected=detected,
                 rt_ms=rt,
-                timestamp=time.time() - self.start_time,
             )
 
             if time.time() - self.start_time > TIME_BUDGET:
