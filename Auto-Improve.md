@@ -54,7 +54,7 @@ auto-improvement/
 ### 1.2 Design Patterns Identified
 
 | Pattern | Implementation | Status |
-| --------- | --------------- | -------- |
+| ----------- | ---------------- | -------- |
 | **Template Method** | prepare.py base + train.py override | ✅ Excellent |
 | **Strategy Pattern** | OptimizationStrategy in autonomous_agent.py | ✅ Excellent |
 | **Observer Pattern** | GitPerformanceTracker for experiment tracking | ✅ Good |
@@ -118,7 +118,7 @@ import git  # NOT in pyproject.toml - RuntimeError if not installed
 ### 2.3 Code Quality Metrics
 
 | Metric | Value | Industry Standard | Status |
-| -------- | ------- | ------------------- | -------- |
+| ----------- | ------- | ------------------- | -------- |
 | Average File Size | 12.4 KB | < 50 KB | ✅ Good |
 | Average Function Length | 24 lines | < 50 lines | ✅ Good |
 | Maximum Function Length | 89 lines (APGI_System.py) | < 100 lines | ⚠️ Borderline |

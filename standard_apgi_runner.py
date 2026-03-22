@@ -133,10 +133,9 @@ class StandardAPGIRunner:
             apgi_params = get_experiment_apgi_config(experiment_name)
 
         # Initialize APGI integration
+        self.apgi: Optional[APGIIntegration] = None
         if apgi_params.enabled:
             self.apgi = APGIIntegration(apgi_params.to_apgi_parameters())
-        else:
-            self.apgi = None
 
         # Initialize hierarchical state
         if self.enable_hierarchical:
@@ -240,9 +239,12 @@ class StandardAPGIRunner:
         current_level["M"] = basic_metrics.get("M", 0.0) + 0.1 * higher_level_broadcast
 
         # Compute ignition probability for this level
-        current_level["ignition_prob"] = self.apgi.dynamics.params.alpha * (
-            current_level["S"] - current_level["theta"]
-        )
+        if self.apgi is not None:
+            current_level["ignition_prob"] = self.apgi.dynamics.params.alpha * (
+                current_level["S"] - current_level["theta"]
+            )
+        else:
+            current_level["ignition_prob"] = 0.0
         current_level["ignition_prob"] = 1.0 / (
             1.0 + np.exp(-current_level["ignition_prob"])
         )
@@ -325,8 +327,6 @@ class StandardAPGIRunner:
                     apgi_summary=apgi_summary,
                     weight_ignition=0.25,
                     weight_metabolic=0.2,
-                    weight_hierarchical=0.15,
-                    weight_precision_gap=0.1,
                 )
             else:
                 apgi_enhanced = None
@@ -414,10 +414,10 @@ class StandardAPGIRunner:
             level_name = f"level_{level}"
             getattr(self.hierarchical_state, level_name)
 
-            summary[f"{level_name}_mean_S"] = (
+            summary[f"{level_name}_mean_S"] = float(
                 np.mean(
                     [
-                        m.get("S", 0)
+                        float(m.get("S", 0))
                         for m in self.apgi_metrics_history
                         if f"{level_name}_S" in m
                     ]
@@ -426,10 +426,10 @@ class StandardAPGIRunner:
                 else 0.0
             )
 
-            summary[f"{level_name}_mean_ignition_prob"] = (
+            summary[f"{level_name}_mean_ignition_prob"] = float(
                 np.mean(
                     [
-                        m.get("ignition_prob", 0)
+                        float(m.get("ignition_prob", 0))
                         for m in self.apgi_metrics_history
                         if f"{level_name}_ignition_prob" in m
                     ]
@@ -443,14 +443,16 @@ class StandardAPGIRunner:
     def _get_precision_gap_summary(self) -> Dict[str, float]:
         """Get summary of precision expectation gap."""
         return {
-            "final_anxiety_level": self.precision_gap.anxiety_level,
-            "final_precision_mismatch": self.precision_gap.precision_mismatch,
-            "mean_precision_mismatch": np.mean(
-                [
-                    m.get("precision_mismatch", 0)
-                    for m in self.apgi_metrics_history
-                    if "precision_mismatch" in m
-                ]
+            "final_anxiety_level": float(self.precision_gap.anxiety_level),
+            "final_precision_mismatch": float(self.precision_gap.precision_mismatch),
+            "mean_precision_mismatch": float(
+                np.mean(
+                    [
+                        float(m.get("precision_mismatch", 0))
+                        for m in self.apgi_metrics_history
+                        if "precision_mismatch" in m
+                    ]
+                )
             )
             if self.apgi_metrics_history
             else 0.0,
