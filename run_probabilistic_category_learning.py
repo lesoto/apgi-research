@@ -22,7 +22,7 @@ import time
 from typing import Dict
 
 from prepare_probabilistic_category_learning import (
-    ProbabilisticCategoryLearningExperiment,
+    PCLExperiment,
     TIME_BUDGET,
     APGI_PARAMS,
 )
@@ -99,7 +99,7 @@ class SimulatedParticipant:
 
 class EnhancedProbabilisticRunner:
     def __init__(self, enable_apgi: bool = True):
-        self.experiment = ProbabilisticCategoryLearningExperiment(
+        self.experiment = PCLExperiment(
             num_trials=NUM_TRIALS_CONFIG
         )
         self.participant = SimulatedParticipant()

@@ -29,3 +29,35 @@
 2026-03-22 13:43:33,153 - __main__ - WARNING - Could not load experiment probabilistic_category_learning: cannot import name 'ProbabilisticCategoryLearningExperiment' from 'prepare_probabilistic_category_learning' (/Users/lesoto/Sites/PYTHON/apgi-research/prepare_probabilistic_category_learning.py)
 2026-03-22 13:43:33,153 - __main__ - INFO - Starting optimization for iowa_gambling_task (1 iterations)
 2026-03-22 13:43:33,154 - __main__ - INFO - Iteration 1/1
+2026-03-22 13:43:33,292 - __main__ - INFO - Improvement! New best: 18.0000
+2026-03-22 13:43:52,149 - __main__ - INFO - Loaded experiment: serial_reaction_time
+2026-03-22 13:43:52,151 - __main__ - INFO - Loaded experiment: change_blindness
+2026-03-22 13:43:52,153 - __main__ - INFO - Loaded experiment: igt
+2026-03-22 13:43:52,154 - __main__ - INFO - Loaded experiment: artificial_grammar_learning
+2026-03-22 13:43:52,155 - __main__ - INFO - Loaded experiment: binocular_rivalry
+2026-03-22 13:43:52,156 - __main__ - INFO - Loaded experiment: stop_signal
+2026-03-22 13:43:52,158 - __main__ - INFO - Loaded experiment: somatic_marker_priming
+2026-03-22 13:43:52,159 - __main__ - INFO - Loaded experiment: drm_false_memory
+2026-03-22 13:43:52,160 - __main__ - INFO - Loaded experiment: sternberg_memory
+2026-03-22 13:43:52,162 - __main__ - INFO - Loaded experiment: navon_task
+2026-03-22 13:43:52,163 - __main__ - INFO - Loaded experiment: dual_n_back
+2026-03-22 13:43:52,164 - __main__ - INFO - Loaded experiment: stroop_effect
+2026-03-22 13:43:52,165 - __main__ - INFO - Loaded experiment: go_no_go
+2026-03-22 13:43:52,166 - __main__ - INFO - Loaded experiment: inattentional_blindness
+2026-03-22 13:43:52,167 - __main__ - INFO - Loaded experiment: virtual_navigation
+2026-03-22 13:43:52,168 - __main__ - INFO - Loaded experiment: posner_cueing
+2026-03-22 13:43:52,169 - __main__ - INFO - Loaded experiment: eriksen_flanker
+2026-03-22 13:43:52,170 - __main__ - INFO - Loaded experiment: simon_effect
+2026-03-22 13:43:52,171 - __main__ - INFO - Loaded experiment: metabolic_cost
+2026-03-22 13:43:52,172 - __main__ - INFO - Loaded experiment: ai_benchmarking
+2026-03-22 13:43:52,173 - __main__ - INFO - Loaded experiment: iowa_gambling_task
+2026-03-22 13:43:52,175 - __main__ - INFO - Loaded experiment: visual_search
+2026-03-22 13:43:52,176 - __main__ - INFO - Loaded experiment: interoceptive_gating
+2026-03-22 13:43:52,177 - __main__ - INFO - Loaded experiment: masking
+2026-03-22 13:43:52,178 - __main__ - INFO - Loaded experiment: working_memory_span
+2026-03-22 13:43:52,179 - __main__ - INFO - Loaded experiment: time_estimation
+2026-03-22 13:43:52,181 - __main__ - INFO - Loaded experiment: attentional_blink
+2026-03-22 13:43:52,182 - __main__ - INFO - Loaded experiment: multisensory_integration
+2026-03-22 13:43:52,185 - __main__ - INFO - Loaded experiment: probabilistic_category_learning
+2026-03-22 13:43:52,185 - __main__ - INFO - Starting optimization for iowa_gambling_task (1 iterations)
+2026-03-22 13:43:52,185 - __main__ - INFO - Iteration 1/1
