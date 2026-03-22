@@ -242,14 +242,11 @@ class AutonomousAgent:
             # Look for main runner class
             runner_class = None
             for attr_name in dir(run_module):
-                attr = getattr(run_module, attr_name)
-                if (
-                    hasattr(attr, "run_experiment")
-                    and hasattr(attr, "__class__")
-                    and "Runner" in attr.__class__.__name__
-                ):
-                    runner_class = attr
-                    break
+                if "Runner" in attr_name:
+                    attr = getattr(run_module, attr_name)
+                    if hasattr(attr, "run_experiment"):
+                        runner_class = attr
+                        break
 
             if runner_class is None:
                 raise ValueError(f"No runner class found in {run_module}")
@@ -284,6 +281,29 @@ class AutonomousAgent:
                 parameter_modifications=modifications or {},
                 status="crash",
             )
+
+    def _apply_modifications(self, run_file: str, modifications: Dict[str, Any]):
+        """Apply parameter modifications to run file."""
+        with open(run_file, "r") as f:
+            content = f.read()
+
+        # Apply each modification
+        for param_name, new_value in modifications.items():
+            # Find the parameter definition and replace it
+            import re
+
+            if isinstance(new_value, str):
+                pattern = rf"({param_name}\s*=\s*).*"
+                replacement = f"\\1{repr(new_value)}"
+            else:
+                pattern = rf"({param_name}\s*=\s*).*"
+                replacement = f"\\1{new_value}"
+
+            content = re.sub(pattern, replacement, content)
+
+        # Write back
+        with open(run_file, "w") as f:
+            f.write(content)
 
     def _extract_primary_metric(
         self, results: Dict[str, Any], experiment_name: str

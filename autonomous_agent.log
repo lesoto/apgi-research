@@ -1,31 +1,31 @@
-2026-03-22 13:42:53,895 - __main__ - INFO - Loaded experiment: serial_reaction_time
-2026-03-22 13:42:53,900 - __main__ - INFO - Loaded experiment: change_blindness
-2026-03-22 13:42:53,907 - __main__ - INFO - Loaded experiment: igt
-2026-03-22 13:42:53,913 - __main__ - INFO - Loaded experiment: artificial_grammar_learning
-2026-03-22 13:42:53,918 - __main__ - INFO - Loaded experiment: binocular_rivalry
-2026-03-22 13:42:53,923 - __main__ - INFO - Loaded experiment: stop_signal
-2026-03-22 13:42:53,929 - __main__ - INFO - Loaded experiment: somatic_marker_priming
-2026-03-22 13:42:53,935 - __main__ - INFO - Loaded experiment: drm_false_memory
-2026-03-22 13:42:53,940 - __main__ - INFO - Loaded experiment: sternberg_memory
-2026-03-22 13:42:53,946 - __main__ - INFO - Loaded experiment: navon_task
-2026-03-22 13:42:53,951 - __main__ - INFO - Loaded experiment: dual_n_back
-2026-03-22 13:42:53,956 - __main__ - INFO - Loaded experiment: stroop_effect
-2026-03-22 13:42:53,961 - __main__ - INFO - Loaded experiment: go_no_go
-2026-03-22 13:42:53,966 - __main__ - INFO - Loaded experiment: inattentional_blindness
-2026-03-22 13:42:53,971 - __main__ - INFO - Loaded experiment: virtual_navigation
-2026-03-22 13:42:53,977 - __main__ - INFO - Loaded experiment: posner_cueing
-2026-03-22 13:42:53,982 - __main__ - INFO - Loaded experiment: eriksen_flanker
-2026-03-22 13:42:53,986 - __main__ - INFO - Loaded experiment: simon_effect
-2026-03-22 13:42:53,991 - __main__ - INFO - Loaded experiment: metabolic_cost
-2026-03-22 13:42:53,997 - __main__ - INFO - Loaded experiment: ai_benchmarking
-2026-03-22 13:42:54,002 - __main__ - INFO - Loaded experiment: iowa_gambling_task
-2026-03-22 13:42:54,009 - __main__ - INFO - Loaded experiment: visual_search
-2026-03-22 13:42:54,014 - __main__ - INFO - Loaded experiment: interoceptive_gating
-2026-03-22 13:42:54,020 - __main__ - INFO - Loaded experiment: masking
-2026-03-22 13:42:54,026 - __main__ - INFO - Loaded experiment: working_memory_span
-2026-03-22 13:42:54,030 - __main__ - INFO - Loaded experiment: time_estimation
-2026-03-22 13:42:54,037 - __main__ - INFO - Loaded experiment: attentional_blink
-2026-03-22 13:42:54,042 - __main__ - INFO - Loaded experiment: multisensory_integration
-2026-03-22 13:42:54,047 - __main__ - WARNING - Could not load experiment probabilistic_category_learning: cannot import name 'ProbabilisticCategoryLearningExperiment' from 'prepare_probabilistic_category_learning' (/Users/lesoto/Sites/PYTHON/apgi-research/prepare_probabilistic_category_learning.py)
-2026-03-22 13:42:54,047 - __main__ - INFO - Starting optimization for iowa_gambling_task (1 iterations)
-2026-03-22 13:42:54,048 - __main__ - INFO - Iteration 1/1
+2026-03-22 13:43:32,980 - __main__ - INFO - Loaded experiment: serial_reaction_time
+2026-03-22 13:43:32,986 - __main__ - INFO - Loaded experiment: change_blindness
+2026-03-22 13:43:32,993 - __main__ - INFO - Loaded experiment: igt
+2026-03-22 13:43:32,999 - __main__ - INFO - Loaded experiment: artificial_grammar_learning
+2026-03-22 13:43:33,006 - __main__ - INFO - Loaded experiment: binocular_rivalry
+2026-03-22 13:43:33,011 - __main__ - INFO - Loaded experiment: stop_signal
+2026-03-22 13:43:33,018 - __main__ - INFO - Loaded experiment: somatic_marker_priming
+2026-03-22 13:43:33,025 - __main__ - INFO - Loaded experiment: drm_false_memory
+2026-03-22 13:43:33,031 - __main__ - INFO - Loaded experiment: sternberg_memory
+2026-03-22 13:43:33,037 - __main__ - INFO - Loaded experiment: navon_task
+2026-03-22 13:43:33,043 - __main__ - INFO - Loaded experiment: dual_n_back
+2026-03-22 13:43:33,049 - __main__ - INFO - Loaded experiment: stroop_effect
+2026-03-22 13:43:33,055 - __main__ - INFO - Loaded experiment: go_no_go
+2026-03-22 13:43:33,061 - __main__ - INFO - Loaded experiment: inattentional_blindness
+2026-03-22 13:43:33,067 - __main__ - INFO - Loaded experiment: virtual_navigation
+2026-03-22 13:43:33,076 - __main__ - INFO - Loaded experiment: posner_cueing
+2026-03-22 13:43:33,081 - __main__ - INFO - Loaded experiment: eriksen_flanker
+2026-03-22 13:43:33,085 - __main__ - INFO - Loaded experiment: simon_effect
+2026-03-22 13:43:33,091 - __main__ - INFO - Loaded experiment: metabolic_cost
+2026-03-22 13:43:33,098 - __main__ - INFO - Loaded experiment: ai_benchmarking
+2026-03-22 13:43:33,104 - __main__ - INFO - Loaded experiment: iowa_gambling_task
+2026-03-22 13:43:33,111 - __main__ - INFO - Loaded experiment: visual_search
+2026-03-22 13:43:33,117 - __main__ - INFO - Loaded experiment: interoceptive_gating
+2026-03-22 13:43:33,124 - __main__ - INFO - Loaded experiment: masking
+2026-03-22 13:43:33,130 - __main__ - INFO - Loaded experiment: working_memory_span
+2026-03-22 13:43:33,135 - __main__ - INFO - Loaded experiment: time_estimation
+2026-03-22 13:43:33,142 - __main__ - INFO - Loaded experiment: attentional_blink
+2026-03-22 13:43:33,148 - __main__ - INFO - Loaded experiment: multisensory_integration
+2026-03-22 13:43:33,153 - __main__ - WARNING - Could not load experiment probabilistic_category_learning: cannot import name 'ProbabilisticCategoryLearningExperiment' from 'prepare_probabilistic_category_learning' (/Users/lesoto/Sites/PYTHON/apgi-research/prepare_probabilistic_category_learning.py)
+2026-03-22 13:43:33,153 - __main__ - INFO - Starting optimization for iowa_gambling_task (1 iterations)
+2026-03-22 13:43:33,154 - __main__ - INFO - Iteration 1/1

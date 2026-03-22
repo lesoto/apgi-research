@@ -357,14 +357,11 @@ class AutonomousAgent:
             # Look for main runner class
             runner_class = None
             for attr_name in dir(run_module):
-                attr = getattr(run_module, attr_name)
-                if (
-                    hasattr(attr, "run_experiment")
-                    and hasattr(attr, "__class__")
-                    and "Runner" in attr.__class__.__name__
-                ):
-                    runner_class = attr
-                    break
+                if "Runner" in attr_name:
+                    attr = getattr(run_module, attr_name)
+                    if hasattr(attr, "run_experiment"):
+                        runner_class = attr
+                        break
 
             if runner_class is None:
                 raise ValueError(f"No runner class found in {run_module}")
