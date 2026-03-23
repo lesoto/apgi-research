@@ -12,10 +12,13 @@ Data and tokenizer are stored in ~/.cache/autoresearch/.
 import os
 import sys
 import time
+from pathlib import Path
+import tempfile
 import math
 import argparse
 import pickle
 from multiprocessing import Pool
+from typing import Iterator, List
 
 import requests
 import pyarrow.parquet as pq
@@ -35,9 +38,9 @@ EVAL_TOKENS = 40 * 524288  # number of tokens for val eval
 # Configuration
 # ---------------------------------------------------------------------------
 
-CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "autoresearch")
-DATA_DIR = os.path.join(CACHE_DIR, "data")
-TOKENIZER_DIR = os.path.join(CACHE_DIR, "tokenizer")
+CACHE_DIR = Path.home() / ".cache" / "autoresearch"
+DATA_DIR = CACHE_DIR / "data"
+TOKENIZER_DIR = CACHE_DIR / "tokenizer"
 BASE_URL = (
     "https://huggingface.co/datasets/karpathy/" "climbix-400b-shuffle/resolve/main"
 )
@@ -60,41 +63,50 @@ BOS_TOKEN = "<|reserved_0|>"
 # ---------------------------------------------------------------------------
 
 
-def download_single_shard(index):
+def download_single_shard(index: int) -> bool:
     """Download one parquet shard with retries. Returns True on success."""
     filename = f"shard_{index:05d}.parquet"
-    filepath = os.path.join(DATA_DIR, filename)
-    if os.path.exists(filepath):
+    filepath = DATA_DIR / filename
+    if filepath.exists():
         return True
 
     url = f"{BASE_URL}/{filename}"
     max_attempts = 5
+    backoff_base = 2
+    temp_path = None
     for attempt in range(1, max_attempts + 1):
         try:
+            # Use exponential backoff with jitter for retries
             response = requests.get(url, stream=True, timeout=30)
             response.raise_for_status()
-            temp_path = filepath + ".tmp"
-            with open(temp_path, "wb") as f:
+            # Use atomic temp file with NamedTemporaryFile
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=DATA_DIR, delete=False, suffix=".tmp"
+            ) as f:
+                temp_path = f.name
                 for chunk in response.iter_content(chunk_size=1024 * 1024):
                     if chunk:
                         f.write(chunk)
-            os.rename(temp_path, filepath)
+            # Atomic rename on both Unix and Windows
+            os.replace(temp_path, filepath)
             print(f"  Downloaded {filename}")
             return True
-        except (requests.RequestException, IOError) as e:
-            print(f"  Attempt {attempt}/{max_attempts} failed " f"for {filename}: {e}")
-            for path in [filepath + ".tmp", filepath]:
-                if os.path.exists(path):
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        pass
+        except (requests.RequestException, IOError, requests.Timeout) as e:
+            print(
+                f"  Attempt {attempt}/{max_attempts} failed for {filename}: {type(e).__name__}: {e}"
+            )
+            # Clean up temp file if it exists
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
             if attempt < max_attempts:
-                time.sleep(2**attempt)
+                time.sleep(backoff_base**attempt)
     return False
 
 
-def download_data(num_shards, download_workers=8):
+def download_data(num_shards: int, download_workers: int = 8) -> None:
     """Download training shards + pinned validation shard."""
     os.makedirs(DATA_DIR, exist_ok=True)
     num_train = min(num_shards, MAX_SHARD)
@@ -103,11 +115,7 @@ def download_data(num_shards, download_workers=8):
         ids.append(VAL_SHARD)
 
     # Count what's already downloaded
-    existing = sum(
-        1
-        for i in ids
-        if os.path.exists(os.path.join(DATA_DIR, f"shard_{i:05d}.parquet"))
-    )
+    existing = sum(1 for i in ids if (DATA_DIR / f"shard_{i:05d}.parquet").exists())
     if existing == len(ids):
         print(f"Data: all {len(ids)} shards already downloaded at {DATA_DIR}")
         return
@@ -128,19 +136,21 @@ def download_data(num_shards, download_workers=8):
 # ---------------------------------------------------------------------------
 
 
-def list_parquet_files():
+def list_parquet_files() -> List[Path]:
     """Return sorted list of parquet file paths in the data directory."""
     files = sorted(
         f
-        for f in os.listdir(DATA_DIR)
-        if f.endswith(".parquet") and not f.endswith(".tmp")
+        for f in DATA_DIR.iterdir()
+        if f.suffix == ".parquet" and not f.name.endswith(".tmp")
     )
-    return [os.path.join(DATA_DIR, f) for f in files]
+    return files
 
 
-def text_iterator(max_chars=1_000_000_000, doc_cap=10_000):
+def text_iterator(
+    max_chars: int = 1_000_000_000, doc_cap: int = 10_000
+) -> Iterator[str]:
     """Yield documents from training split."""
-    parquet_paths = [p for p in list_parquet_files() if not p.endswith(VAL_FILENAME)]
+    parquet_paths = [p for p in list_parquet_files() if p.name != VAL_FILENAME]
     nchars = 0
     for filepath in parquet_paths:
         pf = pq.ParquetFile(filepath)
@@ -154,12 +164,12 @@ def text_iterator(max_chars=1_000_000_000, doc_cap=10_000):
                     return
 
 
-def train_tokenizer():
+def train_tokenizer() -> None:
     """Train BPE tokenizer using rustbpe, save as tiktoken pickle."""
-    tokenizer_pkl = os.path.join(TOKENIZER_DIR, "tokenizer.pkl")
-    token_bytes_path = os.path.join(TOKENIZER_DIR, "token_bytes.pt")
+    tokenizer_pkl = TOKENIZER_DIR / "tokenizer.pkl"
+    token_bytes_path = TOKENIZER_DIR / "token_bytes.pt"
 
-    if os.path.exists(tokenizer_pkl) and os.path.exists(token_bytes_path):
+    if tokenizer_pkl.exists() and token_bytes_path.exists():
         print(f"Tokenizer: already trained at {TOKENIZER_DIR}")
         return
 
@@ -241,7 +251,7 @@ class Tokenizer:
         # Security note: pickle.load is used here for tokenizer deserialization
         # This is loading a trusted local file created by train_tokenizer()
         # For untrusted sources, consider using a safer serialization format
-        with open(os.path.join(tokenizer_dir, "tokenizer.pkl"), "rb") as f:
+        with open(TOKENIZER_DIR / "tokenizer.pkl", "rb") as f:
             enc = pickle.load(f)
         return cls(enc)
 
@@ -275,8 +285,8 @@ class Tokenizer:
         return self.enc.decode(ids)
 
 
-def get_token_bytes(device="cpu"):
-    path = os.path.join(TOKENIZER_DIR, "token_bytes.pt")
+def get_token_bytes(device: str = "cpu") -> torch.Tensor:
+    path = TOKENIZER_DIR / "token_bytes.pt"
     with open(path, "rb") as f:
         # Use weights_only=True for security when loading tensors
         return torch.load(f, map_location=device, weights_only=True)
@@ -286,7 +296,7 @@ def _document_batches(split, tokenizer_batch_size=128):
     """Infinite iterator over document batches from parquet files."""
     parquet_paths = list_parquet_files()
     assert len(parquet_paths) > 0, "No parquet files found. Run prepare.py first."
-    val_path = os.path.join(DATA_DIR, VAL_FILENAME)
+    val_path = DATA_DIR / VAL_FILENAME
     if split == "train":
         parquet_paths = [p for p in parquet_paths if p != val_path]
         assert len(parquet_paths) > 0, "No training shards found."

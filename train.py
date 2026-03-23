@@ -48,8 +48,8 @@ elif torch.backends.mps.is_available():
     cap = None
     repo = "kernels-community/flash-attn3"  # Use community version for MPS
     autocast_ctx = torch.amp.autocast(
-        device_type="mps", dtype=torch.float32
-    )  # MPS autocast
+        device_type="mps", dtype=torch.bfloat16
+    )  # MPS autocast with bfloat16 for better performance
     H100_BF16_PEAK_FLOPS = 1e12  # Placeholder for MPS
     use_flash_attn = False
 else:
@@ -143,9 +143,22 @@ class CausalSelfAttention(nn.Module):
         if use_flash_attn:
             y = fa3.flash_attn_func(q, k, v, causal=True, window_size=window_size)
         else:
-            # Fallback to standard PyTorch attention
-            # Note: window_size is ignored for standard attention
-            y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+            # Transpose to match PyTorch SDPA's expected layout: (B, H, T, D)
+            q_t = q.transpose(1, 2)  # (B, T, H, D) -> (B, H, T, D)
+            k_t = k.transpose(1, 2)  # (B, T, H', D) -> (B, H', T, D)
+            v_t = v.transpose(1, 2)  # (B, T, H', D) -> (B, H', T, D)
+            # Handle GQA (grouped query attention) - expand k/v heads to match q heads
+            if self.n_head != self.n_kv_head:
+                # Expand k and v to match number of query heads
+                n_rep = self.n_head // self.n_kv_head
+                k_t = k_t.repeat_interleave(
+                    n_rep, dim=1
+                )  # (B, H', T, D) -> (B, H, T, D)
+                v_t = v_t.repeat_interleave(
+                    n_rep, dim=1
+                )  # (B, H', T, D) -> (B, H, T, D)
+            y = F.scaled_dot_product_attention(q_t, k_t, v_t, is_causal=True)
+            y = y.transpose(1, 2)  # Back to (B, T, H, D)
         y = y.contiguous().view(B, T, -1)
         y = self.c_proj(y)
         return y
@@ -245,7 +258,8 @@ class GPT(nn.Module):
         t = torch.arange(seq_len, dtype=torch.float32)
         freqs = torch.outer(t, inv_freq)
         cos, sin = freqs.cos(), freqs.sin()
-        if str(device) == "cuda":
+        # Use bfloat16 only for CUDA devices
+        if device.type == "cuda":
             cos, sin = cos.bfloat16(), sin.bfloat16()
         cos, sin = (cos[None, :, None, :], sin[None, :, None, :])
         return cos.to(device), sin.to(device)
@@ -476,13 +490,18 @@ def muon_step_fused(
     beta2_t,
     ns_steps,
     red_dim,
+    device_type="cpu",  # Default to CPU instead of hardcoded CUDA
 ):
     # Nesterov momentum
     momentum = momentum_t.to(stacked_grads.dtype)
     momentum_buffer.lerp_(stacked_grads, 1 - momentum)
     g = stacked_grads.lerp_(momentum_buffer, momentum)
     # Polar express orthogonalization
-    X = g.bfloat16()
+    # Use appropriate dtype based on device - bfloat16 only for CUDA
+    if device_type == "cuda":
+        X = g.bfloat16()
+    else:
+        X = g.float()
     X = X / (X.norm(dim=(-2, -1), keepdim=True) * 1.02 + 1e-6)
     if g.size(-2) > g.size(-1):
         for a, b, c in polar_express_coeffs[:ns_steps]:
@@ -494,7 +513,7 @@ def muon_step_fused(
             A = X @ X.mT
             B = b * A + c * (A @ A)
             X = a * X + B @ X
-    g = X
+    g = X.to(stacked_grads.dtype)
     # NorMuon variance reduction
     beta2 = beta2_t.to(g.dtype)
     v_mean = g.float().square().mean(dim=red_dim, keepdim=True)
@@ -521,18 +540,19 @@ class MuonAdamW(torch.optim.Optimizer):
 
     def __init__(self, param_groups):
         super().__init__(param_groups, defaults={})
-        # 0-D CPU tensors to avoid torch.compile
-        # recompilation when values change
-        self._adamw_step_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._adamw_lr_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._adamw_beta1_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._adamw_beta2_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._adamw_eps_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._adamw_wd_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._muon_momentum_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._muon_lr_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._muon_wd_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
-        self._muon_beta2_t = torch.tensor(0.0, dtype=torch.float32, device="cpu")
+        # Get device from first parameter to ensure device consistency
+        device = next(iter(param_groups[0]["params"])).device if param_groups else "cpu"
+        # Use device-appropriate tensors to avoid torch.compile recompilation
+        self._adamw_step_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._adamw_lr_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._adamw_beta1_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._adamw_beta2_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._adamw_eps_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._adamw_wd_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._muon_momentum_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._muon_lr_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._muon_wd_t = torch.tensor(0.0, dtype=torch.float32, device=device)
+        self._muon_beta2_t = torch.tensor(0.0, dtype=torch.float32, device=device)
 
     def _step_adamw(self, group):
         for p in group["params"]:
@@ -606,6 +626,7 @@ class MuonAdamW(torch.optim.Optimizer):
             self._muon_beta2_t,
             group["ns_steps"],
             red_dim,
+            device_type=device.type,
         )
         torch._foreach_copy_(params, list(stacked_params.unbind(0)))
 

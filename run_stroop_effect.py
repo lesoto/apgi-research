@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Any
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -71,7 +71,7 @@ class SimulatedParticipant:
     def __init__(self):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.congruent_rt = CONGRUENT_RT_BASE
         self.incongruent_rt = INCONGRUENT_RT_BASE
 
@@ -266,7 +266,7 @@ class EnhancedStroopRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict[str, Any]) -> None:
     print("\n" + "=" * 60)
     print("STROOP EFFECT EXPERIMENT RESULTS")
     print("=" * 60)

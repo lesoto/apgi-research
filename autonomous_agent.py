@@ -10,24 +10,42 @@ Key Features:
 - AI agent parameter modification strategies
 - Performance-driven decision logic
 - Multi-experiment optimization coordination
+- Async/await Git operations for non-blocking execution
+- Rate limiting for autonomous operations
+- Request timeouts with retry logic
 
 Usage:
     python autonomous_agent.py --experiment masking --iterations 100
     python autonomous_agent.py --all-experiments --overnight
+
+Classes:
+    AutonomousAgent: Main autonomous agent controller
+    GitPerformanceTracker: Git-based performance tracking
+    ParameterOptimizer: AI-driven optimization algorithms
+    ExperimentResult: Data structure for experiment results
+    TimeoutError: Custom timeout exception
+    RateLimiter: Rate limiting for autonomous operations
+    RequestRetryHandler: Request timeout and retry logic
 """
 
 import time
 import json
 import git
+import re
 import numpy as np
-from typing import Dict, List, Optional, Tuple, Any
+import signal
+import importlib
+import asyncio
+from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
 from datetime import datetime
 import argparse
+import subprocess
+import threading
 
-# Import APGI components
+# Import APGI components (unused for now, available for future integration)
 # from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
 # from experiment_apgi_integration import ExperimentAPGIRunner, get_experiment_apgi_config
 
@@ -38,6 +56,17 @@ logging.basicConfig(
     handlers=[logging.FileHandler("autonomous_agent.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
+
+
+class TimeoutError(Exception):
+    """Custom timeout exception."""
+
+    pass
+
+
+def timeout_handler(signum, frame):
+    """Signal handler for timeout."""
+    raise TimeoutError("Experiment execution timed out")
 
 
 @dataclass
@@ -70,11 +99,15 @@ class OptimizationStrategy:
 class GitPerformanceTracker:
     """Git-based performance tracking and optimization."""
 
-    def __init__(self, repo_path: str = "."):
+    def __init__(self, repo_path: str = ".", agent=None):
         self.repo_path = Path(repo_path)
         self.repo = git.Repo(self.repo_path)
         self.results_file = self.repo_path / "optimization_results.json"
         self.best_results = self._load_best_results()
+        self.agent = agent
+        # Initialize async Git operations for non-blocking execution
+        self.rate_limiter = RateLimiter(max_requests=20, time_window=60)
+        self.async_git = AsyncGitOperations(self.repo_path, self.rate_limiter)
 
     def _load_best_results(self) -> Dict[str, ExperimentResult]:
         """Load best results from previous runs."""
@@ -104,23 +137,55 @@ class GitPerformanceTracker:
 
     def commit_experiment(self, modifications: Dict[str, Any]) -> str:
         """Commit experiment modifications and return commit hash."""
-        # Stage all changes
-        self.repo.git.add(".")
+        try:
+            # Only stage specific experiment files, not everything
+            files_to_stage = [
+                "run_*.py",  # Only run files
+                "*.md",  # Documentation files
+                "*.txt",  # Text files
+                "*.json",  # JSON configuration files
+            ]
 
-        # Create commit message
-        mod_desc = ", ".join([f"{k}={v}" for k, v in modifications.items()])
-        commit_msg = f"Experiment: {mod_desc}"
+            # Use regular git operations for compatibility
+            repo = git.Repo(self.repo_path)
+            # Stage files matching patterns
+            for pattern in files_to_stage:
+                try:
+                    repo.index.add(pattern)
+                except (git.exc.GitCommandError, FileNotFoundError):
+                    # If pattern doesn't match any files or git command fails, continue
+                    pass
 
-        # Commit
-        commit = self.repo.index.commit(commit_msg)
-        return commit.hexsha
+            # Create commit message
+            mod_desc = ", ".join([f"{k}={v}" for k, v in modifications.items()])
+            commit_msg = (
+                f"Experiment: {mod_desc}"
+                if mod_desc
+                else "Experiment: Parameter update"
+            )
 
-    def rollback_experiment(self, commit_hash: Optional[str] = None):
+            # Commit changes
+            if repo.is_dirty(untracked_files=True):
+                commit = repo.index.commit(commit_msg)
+                return commit.hexsha
+            else:
+                # No changes to commit
+                return "no_changes"
+
+        except Exception as e:
+            logger.error(f"Could not commit experiment: {e}")
+            return "error"
+
+    def rollback_experiment(self, commit_hash: Optional[str] = None) -> bool:
         """Rollback to previous commit."""
-        if commit_hash:
-            self.repo.git.reset("--hard", commit_hash)
-        else:
-            self.repo.git.reset("--hard", "HEAD~1")
+        try:
+            target = commit_hash if commit_hash else "HEAD~1"
+            repo = git.Repo(self.repo_path)
+            repo.git.reset("--hard", target)
+            return True
+        except Exception as e:
+            logger.error(f"Could not rollback experiment: {e}")
+            return False
 
     def is_improvement(self, experiment_name: str, new_metric: float) -> bool:
         """Check if new metric is an improvement over best known."""
@@ -128,7 +193,17 @@ class GitPerformanceTracker:
             return True
 
         best_metric = self.best_results[experiment_name].primary_metric
-        return new_metric > best_metric
+        # Default direction logic if no agent available
+        if self.agent:
+            direction = self.agent._get_metric_direction(experiment_name)
+        else:
+            # Default: higher is better for most metrics
+            direction = "higher"
+
+        if direction == "higher":
+            return new_metric > best_metric
+        else:  # "lower"
+            return new_metric < best_metric
 
     def get_best_metric(self, experiment_name: str) -> Optional[float]:
         """Get best known metric for experiment."""
@@ -234,16 +309,25 @@ class ParameterOptimizer:
             exploration_rate = strategy.exploration_rate
 
         # Suggest modifications for each parameter
-        for param_name, (
-            min_val,
-            max_val,
-            param_type,
-        ) in strategy.parameter_ranges.items():
+        for param_name, param_config in strategy.parameter_ranges.items():
+            # Handle different parameter configurations
+            if len(param_config) == 3:
+                min_val, max_val, param_type = param_config
+            elif len(param_config) == 2:
+                min_val, max_val = param_config
+                param_type = "float"  # Default type
+            else:
+                continue  # Skip invalid configurations
             if np.random.random() < exploration_rate:
                 if param_type == "float":
-                    current_val = current_params.get(
-                        param_name, (min_val + max_val) / 2
-                    )
+                    # Compute default value, handling list types gracefully
+                    if isinstance(min_val, (int, float)) and isinstance(
+                        max_val, (int, float)
+                    ):
+                        default_val = (min_val + max_val) / 2
+                    else:
+                        continue  # Skip parameters with invalid ranges
+                    current_val = current_params.get(param_name, default_val)
                     mutation = np.random.normal(
                         0, strategy.mutation_strength * (max_val - min_val)
                     )
@@ -251,9 +335,14 @@ class ParameterOptimizer:
                     modifications[param_name] = float(new_val)
 
                 elif param_type == "int":
-                    current_val = current_params.get(
-                        param_name, int((min_val + max_val) / 2)
-                    )
+                    # Compute default value, handling list types gracefully
+                    if isinstance(min_val, (int, float)) and isinstance(
+                        max_val, (int, float)
+                    ):
+                        default_val = int((min_val + max_val) / 2)
+                    else:
+                        continue  # Skip parameters with invalid ranges
+                    current_val = current_params.get(param_name, default_val)
                     mutation = int(
                         np.random.normal(
                             0, strategy.mutation_strength * (max_val - min_val)
@@ -289,15 +378,393 @@ class ParameterOptimizer:
         return modifications
 
 
+class RateLimiter:
+    """Rate limiter for autonomous operations to prevent overwhelming resources."""
+
+    def __init__(self, max_requests: int = 10, time_window: float = 60.0):
+        """Initialize rate limiter.
+
+        Args:
+            max_requests: Maximum requests allowed in time_window
+            time_window: Time window in seconds
+        """
+        self.max_requests = max_requests
+        self.time_window = time_window
+        self.requests: List[float] = []
+        self._lock = threading.Lock()
+
+    def acquire(self) -> bool:
+        """Try to acquire a rate limit slot. Returns True if allowed, False otherwise."""
+        with self._lock:
+            now = time.time()
+            # Remove expired requests
+            self.requests = [
+                req_time
+                for req_time in self.requests
+                if now - req_time < self.time_window
+            ]
+
+            if len(self.requests) < self.max_requests:
+                self.requests.append(now)
+                return True
+            return False
+
+    def wait_time(self) -> float:
+        """Calculate time to wait before next request is allowed."""
+        with self._lock:
+            if len(self.requests) < self.max_requests:
+                return 0.0
+            oldest = min(self.requests)
+            return max(0.0, self.time_window - (time.time() - oldest))
+
+
+class RequestRetryHandler:
+    """Handler for requests with timeout and retry logic."""
+
+    def __init__(
+        self,
+        max_retries: int = 3,
+        timeout: float = 30.0,
+        backoff_base: float = 1.0,
+        max_backoff: float = 60.0,
+    ):
+        """Initialize retry handler.
+
+        Args:
+            max_retries: Maximum number of retry attempts
+            timeout: Request timeout in seconds
+            backoff_base: Base for exponential backoff
+            max_backoff: Maximum backoff time in seconds
+        """
+        self.max_retries = max_retries
+        self.timeout = timeout
+        self.backoff_base = backoff_base
+        self.max_backoff = max_backoff
+
+    def execute_with_retry(self, func, *args, **kwargs) -> Any:
+        """Execute a function with retry logic.
+
+        Args:
+            func: Function to execute
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+
+        Returns:
+            Result of function execution
+
+        Raises:
+            TimeoutError: If all retries are exhausted
+        """
+        last_error: Optional[
+            Union[TimeoutError, subprocess.TimeoutExpired, Exception]
+        ] = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                # Set timeout if function supports it
+                if "timeout" in kwargs or hasattr(func, "__code__"):
+                    kwargs.setdefault("timeout", self.timeout)
+                return func(*args, **kwargs)
+            except (TimeoutError, subprocess.TimeoutExpired) as e:
+                last_error = e
+                if attempt < self.max_retries:
+                    backoff = min(self.backoff_base * (2**attempt), self.max_backoff)
+                    logger.warning(f"Request timed out, retrying in {backoff:.1f}s...")
+                    time.sleep(backoff)
+            except Exception as e:
+                last_error = e
+                if attempt < self.max_retries:
+                    backoff = min(self.backoff_base * (2**attempt), self.max_backoff)
+                    logger.warning(
+                        f"Request failed ({e}), retrying in {backoff:.1f}s..."
+                    )
+                    time.sleep(backoff)
+
+        raise TimeoutError(
+            f"Request failed after {self.max_retries + 1} attempts: {last_error}"
+        )
+
+
+# Subprocess whitelist for safe command execution
+SAFE_COMMAND_PREFIXES = (
+    "git",
+    "python",
+    "python3",
+    "pytest",
+    "flake8",
+    "black",
+    "mypy",
+)
+
+
+def validate_subprocess_command(command: Union[str, List[str]]) -> bool:
+    """Validate that a subprocess command is in the allowed whitelist.
+
+    Args:
+        command: Command string or list to validate
+
+    Returns:
+        True if command is allowed, False otherwise
+    """
+    if isinstance(command, str):
+        # Split command and take first part
+        cmd_parts = command.split()
+        if not cmd_parts:
+            return False
+        executable = cmd_parts[0]
+    elif isinstance(command, list):
+        if not command:
+            return False
+        executable = command[0]
+    else:
+        return False
+
+    # Remove path components if present
+    executable_name = Path(executable).name
+
+    return executable_name.startswith(SAFE_COMMAND_PREFIXES) or executable_name in [
+        "git",
+        "python",
+        "python3",
+    ]
+
+
+def safe_subprocess_run(
+    command: Union[str, List[str]],
+    **kwargs,
+) -> subprocess.CompletedProcess:
+    """Execute subprocess command with validation and timeout.
+
+    Args:
+        command: Command to execute
+        **kwargs: Additional arguments for subprocess.run
+
+    Returns:
+        CompletedProcess result
+
+    Raises:
+        ValueError: If command is not in whitelist
+        subprocess.TimeoutExpired: If command times out
+    """
+    if not validate_subprocess_command(command):
+        raise ValueError(f"Command not in whitelist: {command}")
+
+    # Set default timeout
+    kwargs.setdefault("timeout", 60)
+    kwargs.setdefault("capture_output", True)
+    kwargs.setdefault("text", True)
+
+    return subprocess.run(command, **kwargs)
+
+
+class AsyncGitOperations:
+    """Async Git operations handler for non-blocking execution."""
+
+    def __init__(self, repo_path: Path, rate_limiter: Optional[RateLimiter] = None):
+        """Initialize async Git operations.
+
+        Args:
+            repo_path: Path to the Git repository
+            rate_limiter: Optional rate limiter for throttling operations
+        """
+        self.repo_path = repo_path
+        self.rate_limiter = rate_limiter or RateLimiter(max_requests=20, time_window=60)
+        self._executor = None
+
+    async def _run_git_command(
+        self, args: List[str], timeout: float = 30.0
+    ) -> Tuple[int, str, str]:
+        """Run a Git command asynchronously.
+
+        Args:
+            args: Git command arguments (without 'git')
+            timeout: Timeout in seconds
+
+        Returns:
+            Tuple of (returncode, stdout, stderr)
+        """
+        # Apply rate limiting
+        while not self.rate_limiter.acquire():
+            wait_time = self.rate_limiter.wait_time()
+            logger.debug(f"Rate limiting Git operations, waiting {wait_time:.1f}s...")
+            await asyncio.sleep(wait_time)
+
+        # Validate command
+        command = ["git"] + args
+        if not validate_subprocess_command(command):
+            raise ValueError(f"Git command not in whitelist: {args}")
+
+        # Run command in executor to avoid blocking
+        loop = asyncio.get_event_loop()
+        try:
+            result = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None,
+                    lambda: safe_subprocess_run(command, cwd=str(self.repo_path)),
+                ),
+                timeout=timeout,
+            )
+            return result.returncode, result.stdout, result.stderr
+        except asyncio.TimeoutError:
+            return -1, "", "Git command timed out"
+
+    async def async_add(self, files: List[str], timeout: float = 30.0) -> bool:
+        """Stage files asynchronously.
+
+        Args:
+            files: List of file paths to stage
+            timeout: Timeout in seconds
+
+        Returns:
+            True if successful, False otherwise
+        """
+        for pattern in files:
+            returncode, _, stderr = await self._run_git_command(
+                ["add", pattern], timeout=timeout
+            )
+            if returncode != 0:
+                logger.warning(f"Failed to stage {pattern}: {stderr}")
+        return True
+
+    async def async_commit(self, message: str, timeout: float = 30.0) -> Optional[str]:
+        """Create commit asynchronously and return commit hash.
+
+        Args:
+            message: Commit message
+            timeout: Timeout in seconds
+
+        Returns:
+            Commit hash if successful, None otherwise
+        """
+        returncode, stdout, stderr = await self._run_git_command(
+            ["commit", "-m", message], timeout=timeout
+        )
+        if returncode != 0:
+            logger.warning(f"Failed to commit: {stderr}")
+            return None
+
+        # Get commit hash
+        returncode, stdout, _ = await self._run_git_command(
+            ["rev-parse", "HEAD"], timeout=timeout
+        )
+        if returncode == 0:
+            return stdout.strip()
+        return None
+
+    async def async_reset(
+        self, target: str = "HEAD~1", hard: bool = True, timeout: float = 30.0
+    ) -> bool:
+        """Reset repository asynchronously.
+
+        Args:
+            target: Target commit/ref to reset to
+            timeout: Timeout in seconds
+            hard: Whether to use --hard flag
+
+        Returns:
+            True if successful, False otherwise
+        """
+        cmd = ["reset"]
+        if hard:
+            cmd.append("--hard")
+        cmd.append(target)
+
+        returncode, _, stderr = await self._run_git_command(cmd, timeout=timeout)
+        if returncode != 0:
+            logger.warning(f"Failed to reset: {stderr}")
+            return False
+        return True
+
+
 class AutonomousAgent:
-    """Main autonomous agent controller."""
+    """Main autonomous agent controller for APGI optimization.
+
+    This class orchestrates the autonomous optimization loop across multiple experiments,
+    handling parameter optimization, experiment execution, and performance tracking.
+
+    Attributes:
+        research_dir (Path): Directory containing experiment files
+        experiment_modules (Dict[str, Dict]): Loaded experiment modules
+        git_tracker (GitPerformanceTracker): Git-based performance tracker
+        optimizer (ParameterOptimizer): AI-driven parameter optimizer
+        running_experiments (Set[str]): Currently running experiments
+        stop_all (bool): Flag to stop all experiments
+
+    Methods:
+        load_experiments(): Load all available experiment modules
+        run_experiment(): Run a single experiment with modifications
+        optimize_experiment(): Run optimization loop for an experiment
+        run_overnight_optimization(): Run overnight optimization
+        _get_current_parameters(): Extract current parameters from run file
+        _apply_modifications(): Apply parameter modifications with validation
+        _extract_primary_metric(): Extract primary metric from results
+        _get_metric_direction(): Get metric direction (higher/lower is better)
+    """
 
     def __init__(self, repo_path: str = "."):
-        self.git_tracker = GitPerformanceTracker(repo_path)
+        """Initialize the autonomous agent.
+
+        Args:
+            repo_path (str): Path to the repository (default: ".")
+        """
+        self.git_tracker = GitPerformanceTracker(repo_path, agent=self)
         self.optimizer = ParameterOptimizer()
         self.experiment_modules = self._load_experiment_modules()
         self.running = False
+        self.checkpoint_file = Path(repo_path) / ".autonomous_agent_checkpoint.json"
+        self.last_checkpoint_time = 0.0
+        self.checkpoint_interval_s = 60  # Save checkpoint every 60 seconds
 
+    def _save_checkpoint(
+        self,
+        experiment_name: str,
+        iteration: int,
+        current_params: dict,
+        performance_history: list,
+    ):
+        """Save checkpoint for resuming after crash."""
+        checkpoint = {
+            "timestamp": datetime.now().isoformat(),
+            "experiment_name": experiment_name,
+            "iteration": iteration,
+            "current_params": current_params,
+            "performance_history": performance_history,
+            "best_results": {
+                k: asdict(v) for k, v in self.git_tracker.best_results.items()
+            },
+        }
+        try:
+            with open(self.checkpoint_file, "w") as f:
+                json.dump(checkpoint, f, indent=2)
+            self.last_checkpoint_time = time.time()
+            logger.debug(f"Checkpoint saved at iteration {iteration}")
+        except Exception as e:
+            logger.warning(f"Failed to save checkpoint: {e}")
+
+    def _load_checkpoint(self) -> dict | None:
+        """Load checkpoint if it exists."""
+        if not self.checkpoint_file.exists():
+            return None
+        try:
+            with open(self.checkpoint_file, "r") as f:
+                checkpoint = json.load(f)
+            logger.info(
+                f"Loaded checkpoint from {checkpoint.get('timestamp', 'unknown')}"
+            )
+            return checkpoint
+        except Exception as e:
+            logger.warning(f"Failed to load checkpoint: {e}")
+            return None
+
+    def _clear_checkpoint(self):
+        """Clear checkpoint after successful completion."""
+        try:
+            if self.checkpoint_file.exists():
+                self.checkpoint_file.unlink()
+                logger.debug("Checkpoint cleared")
+        except Exception as e:
+            logger.warning(f"Failed to clear checkpoint: {e}")
+
+    # ... rest of the code remains the same ...
     def _load_experiment_modules(self) -> Dict[str, Any]:
         """Dynamically load experiment modules."""
         modules = {}
@@ -309,13 +776,35 @@ class AutonomousAgent:
             experiment_name = prepare_file.stem.replace("prepare_", "")
 
             try:
-                # Import prepare module
+                # Validate module names before importing
                 prepare_module_name = prepare_file.stem
-                prepare_module = __import__(prepare_module_name)
-
-                # Import corresponding run module
                 run_module_name = prepare_file.stem.replace("prepare_", "run_")
-                run_module = __import__(run_module_name)
+
+                # Strict validation of module names
+                allowed_prefixes = ["prepare_", "run_"]
+                if not any(
+                    prepare_module_name.startswith(prefix)
+                    for prefix in allowed_prefixes
+                ):
+                    raise ValueError(f"Invalid module name: {prepare_module_name}")
+                if not run_module_name.startswith("run_"):
+                    raise ValueError(f"Invalid run module name: {run_module_name}")
+
+                # Only allow alphanumeric characters and underscores
+                if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", prepare_module_name):
+                    raise ValueError(
+                        f"Invalid characters in module name: {prepare_module_name}"
+                    )
+                if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", run_module_name):
+                    raise ValueError(
+                        f"Invalid characters in run module name: {run_module_name}"
+                    )
+
+                # Use importlib.import_module for secure loading
+                importlib.invalidate_caches()  # Clear stale module cache
+                prepare_module = importlib.import_module(prepare_module_name)
+                importlib.invalidate_caches()  # Clear stale module cache
+                run_module = importlib.import_module(run_module_name)
 
                 modules[experiment_name] = {
                     "prepare": prepare_module,
@@ -332,9 +821,12 @@ class AutonomousAgent:
         return modules
 
     def run_experiment(
-        self, experiment_name: str, modifications: Optional[Dict[str, Any]] = None
+        self,
+        experiment_name: str,
+        modifications: Optional[Dict[str, Any]] = None,
+        timeout_seconds: int = 1800,
     ) -> ExperimentResult:
-        """Run a single experiment with optional modifications."""
+        """Run a single experiment with optional modifications and timeout enforcement."""
         if experiment_name not in self.experiment_modules:
             raise ValueError(f"Unknown experiment: {experiment_name}")
 
@@ -347,8 +839,10 @@ class AutonomousAgent:
         # Commit modifications
         commit_hash = self.git_tracker.commit_experiment(modifications or {})
 
-        # Run experiment
+        # Run experiment with timeout
         start_time = time.time()
+        old_signal_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout_seconds)
 
         try:
             # Import and run experiment
@@ -391,36 +885,126 @@ class AutonomousAgent:
                 status="success",
             )
 
-        except Exception as e:
-            logger.error(f"Experiment {experiment_name} failed: {e}")
+        except TimeoutError:
+            completion_time = time.time() - start_time
+            logger.error(
+                f"Experiment {experiment_name} timed out after {timeout_seconds} seconds"
+            )
             return ExperimentResult(
                 commit_hash=commit_hash,
                 experiment_name=experiment_name,
                 primary_metric=0.0,
                 apgi_metrics={},
                 apgi_enhanced_metric=None,
-                completion_time_s=time.time() - start_time,
+                completion_time_s=completion_time,
+                timestamp=datetime.now().isoformat(),
+                parameter_modifications=modifications or {},
+                status="timeout",
+            )
+        except Exception as e:
+            completion_time = time.time() - start_time
+            logger.error(f"Experiment {experiment_name} crashed: {str(e)}")
+            return ExperimentResult(
+                commit_hash=commit_hash,
+                experiment_name=experiment_name,
+                primary_metric=0.0,
+                apgi_metrics={},
+                apgi_enhanced_metric=None,
+                completion_time_s=completion_time,
                 timestamp=datetime.now().isoformat(),
                 parameter_modifications=modifications or {},
                 status="crash",
             )
+        finally:
+            # Clean up signal handler
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_signal_handler)
 
     def _apply_modifications(self, run_file: str, modifications: Dict[str, Any]):
-        """Apply parameter modifications to run file."""
+        """Apply parameter modifications to run file with validation."""
+        # Parameter validation whitelist - only allow known safe parameters
+        ALLOWED_PARAMETERS = {
+            # Numeric parameters
+            "BASE_DETECTION_RATE",
+            "TARGET_DETECTION_RATE",
+            "DETECTION_THRESHOLD",
+            "STIMULUS_DURATION",
+            "INTER_STIMULUS_INTERVAL",
+            "MASK_DURATION",
+            "SOA_DURATION",
+            "CUE_DURATION",
+            "TARGET_DURATION",
+            "RESPONSE_WINDOW",
+            "TIMEOUT_DURATION",
+            "MAX_RESPONSE_TIME",
+            "SAMPLE_RATE",
+            "TRIALS_PER_BLOCK",
+            "NUM_BLOCKS",
+            "NUM_TRIALS",
+            "ACCURACY_THRESHOLD",
+            "PERFORMANCE_THRESHOLD",
+            "CONFIDENCE_LEVEL",
+            "SIGNAL_TO_NOISE_RATIO",
+            "CONTRAST_LEVEL",
+            "INTENSITY_LEVEL",
+            "FREQUENCY",
+            "AMPLITUDE",
+            "PHASE",
+            "DELAY",
+            "OFFSET",
+            "LEARNING_RATE",
+            "MOMENTUM",
+            "WEIGHT_DECAY",
+            "BATCH_SIZE",
+            "HIDDEN_UNITS",
+            "NUM_LAYERS",
+            "DROPOUT_RATE",
+            "REGULARIZATION",
+            # Boolean parameters
+            "USE_ADAPTIVE_STIMULUS",
+            "USE_FEEDBACK",
+            "USE_PRACTICE_TRIALS",
+            "USE_RANDOMIZATION",
+            "USE_CUEING",
+            "USE_MASKING",
+            "USE_TIMEOUT",
+            "VERBOSE",
+            "DEBUG",
+            "SAVE_RESULTS",
+            "PLOT_RESULTS",
+            # String parameters (limited)
+            "EXPERIMENT_MODE",
+            "RESPONSE_TYPE",
+            "STIMULUS_TYPE",
+            "OUTPUT_FORMAT",
+            "LOG_LEVEL",
+            # List parameters (limited)
+            "STIMULUS_LOCATIONS",
+            "RESPONSE_KEYS",
+            "CONDITIONS",
+            "BLOCKS",
+        }
+
+        # Validate all parameters against whitelist
+        for param_name in modifications.keys():
+            if param_name not in ALLOWED_PARAMETERS:
+                logger.warning(f"Skipping unauthorized parameter: {param_name}")
+                del modifications[param_name]
+
+        if not modifications:
+            logger.warning("No valid parameters to modify")
+            return
+
         with open(run_file, "r") as f:
             content = f.read()
 
         # Apply each modification
         for param_name, new_value in modifications.items():
             # Find the parameter definition and replace it
-            import re
-
-            if isinstance(new_value, str):
-                pattern = rf"({param_name}\s*=\s*).*"
-                replacement = f"\\1{repr(new_value)}"
-            else:
-                pattern = rf"({param_name}\s*=\s*).*"
-                replacement = f"\\1{new_value}"
+            # Use raw string to avoid ambiguous backreferences
+            # Match parameter assignment and preserve only the assignment prefix
+            pattern = rf"({param_name}\s*=\s*).*?(?=\n|#|$)"  # Non-greedy, stop at newline/comment
+            replacement = rf"\g<1>{repr(new_value)}"  # Use named group to avoid backreference issues
 
             content = re.sub(pattern, replacement, content)
 
@@ -440,6 +1024,16 @@ class AutonomousAgent:
             "visual_search": "conjunction_present_slope",
             "change_blindness": "detection_rate",
             "masking": "masking_effect_ms",
+            "binocular_rivalry": "alternation_rate",
+            "posner_cueing": "cue_effect_ms",
+            "simon_effect": "simon_effect_ms",
+            "flanker_task": "flanker_effect_ms",
+            "stop_signal": "stop_signal_reaction_time",
+            "dual_n_back": "accuracy",
+            "working_memory_span": "span_score",
+            "time_estimation": "estimation_error_ms",
+            "probabilistic_category_learning": "accuracy",
+            "artificial_grammar_learning": "grammar_accuracy",
             # Add more as needed
         }
 
@@ -459,18 +1053,83 @@ class AutonomousAgent:
 
         return 0.0
 
+    def _get_metric_direction(self, experiment_name: str) -> str:
+        """Get metric direction: 'higher' or 'lower' is better."""
+        # Metrics where higher values are better
+        higher_is_better = {
+            "iowa_gambling_task",
+            "change_blindness",
+            "dual_n_back",
+            "working_memory_span",
+            "probabilistic_category_learning",
+            "artificial_grammar_learning",
+            "accuracy",
+            "score",
+            "performance",
+            "detection_rate",
+            "alternation_rate",
+            "span_score",
+            "grammar_accuracy",
+        }
+
+        # Metrics where lower values are better (reaction times, errors)
+        lower_is_better = {
+            "attentional_blink",
+            "stroop_effect",
+            "visual_search",
+            "masking",
+            "posner_cueing",
+            "simon_effect",
+            "flanker_task",
+            "stop_signal",
+            "time_estimation",
+            "reaction_time",
+            "response_time",
+            "error",
+            "error_rate",
+            "interference",
+            "cue_effect",
+            "simon_effect",
+            "flanker_effect",
+            "stop_signal_reaction_time",
+            "estimation_error",
+            "masking_effect",
+        }
+
+        if experiment_name in higher_is_better:
+            return "higher"
+        elif experiment_name in lower_is_better:
+            return "lower"
+        else:
+            # Default to higher is better
+            return "higher"
+
     def optimize_experiment(
-        self, experiment_name: str, iterations: int = 10
+        self, experiment_name: str, iterations: int = 10, resume: bool = True
     ) -> List[ExperimentResult]:
-        """Run optimization loop for a single experiment."""
+        """Run optimization loop for a single experiment with checkpointing."""
         logger.info(
             f"Starting optimization for {experiment_name} ({iterations} iterations)"
         )
 
         results = []
         performance_history: List[float] = []
+        start_iteration = 0
 
-        for iteration in range(iterations):
+        # Try to resume from checkpoint if enabled
+        if resume:
+            checkpoint = self._load_checkpoint()
+            if checkpoint and checkpoint.get("experiment_name") == experiment_name:
+                start_iteration = checkpoint.get("iteration", 0) + 1
+                performance_history = checkpoint.get("performance_history", [])
+                # Restore best results
+                for exp_name, result_data in checkpoint.get("best_results", {}).items():
+                    self.git_tracker.best_results[exp_name] = ExperimentResult(
+                        **result_data
+                    )
+                logger.info(f"Resuming from iteration {start_iteration + 1}")
+
+        for iteration in range(start_iteration, iterations):
             logger.info(f"Iteration {iteration + 1}/{iterations}")
 
             # Get current parameters
@@ -493,29 +1152,126 @@ class AutonomousAgent:
             if self.git_tracker.is_improvement(experiment_name, result.primary_metric):
                 logger.info(f"Improvement! New best: {result.primary_metric:.4f}")
                 # Keep the commit (already done)
+                # Update best results only for successful improvements
+                if result.status == "success":
+                    self.git_tracker.best_results[experiment_name] = result
+                    self.git_tracker.save_results(self.git_tracker.best_results)
             else:
                 logger.info("No improvement. Rolling back...")
                 self.git_tracker.rollback_experiment()
+                # Don't update best_results after rollback
 
-            # Update best results
-            if result.status == "success":
-                self.git_tracker.best_results[experiment_name] = result
-                self.git_tracker.save_results(self.git_tracker.best_results)
+            # Save checkpoint periodically
+            if time.time() - self.last_checkpoint_time > self.checkpoint_interval_s:
+                self._save_checkpoint(
+                    experiment_name, iteration, current_params, performance_history
+                )
 
             # Brief pause to avoid overwhelming the system
             time.sleep(1)
 
+        # Clear checkpoint on successful completion
+        self._clear_checkpoint()
         return results
+
+    def get_current_parameters(self, experiment_name: str) -> Dict[str, Any]:
+        """Public wrapper for _get_current_parameters."""
+        return self._get_current_parameters(experiment_name)
+
+    def apply_modifications(self, run_file: str, modifications: Dict[str, Any]) -> None:
+        """Public wrapper for _apply_modifications."""
+        return self._apply_modifications(run_file, modifications)
+
+    def extract_primary_metric(
+        self, results: Dict[str, Any], experiment_name: str = "unknown"
+    ) -> float:
+        """Public wrapper for _extract_primary_metric."""
+        return self._extract_primary_metric(results, experiment_name)
+
+    def get_metric_direction(self, experiment_name: str) -> str:
+        """Public wrapper for _get_metric_direction."""
+        return self._get_metric_direction(experiment_name)
 
     def _get_current_parameters(self, experiment_name: str) -> Dict[str, Any]:
         """Get current parameter values from run file."""
         if experiment_name not in self.experiment_modules:
             return {}
 
-        # run_file = self.experiment_modules[experiment_name]["run_file"]
-        # This is a simplified version - in practice, you'd parse the Python file
-        # to extract current parameter values
-        return {}
+        run_file = self.experiment_modules[experiment_name]["run_file"]
+
+        try:
+            # Parse the Python file to extract parameter values
+            with open(run_file, "r") as f:
+                content = f.read()
+
+            parameters = {}
+
+            # Common parameter patterns to extract
+            # Extract numeric parameters (float/int)
+            numeric_patterns = [
+                r"([A-Z_][A-Z0-9_]*)\s*=\s*([0-9]*\.?[0-9]+)",  # Float/Int
+                r"([A-Z_][A-Z0-9_]*)\s*=\s*([0-9]+)",  # Int only
+            ]
+
+            # Extract boolean parameters
+            bool_patterns = [
+                r"([A-Z_][A-Z0-9_]*)\s*=\s*(True|False)",
+            ]
+
+            # Extract string parameters
+            string_patterns = [
+                r'([A-Z_][A-Z0-9_]*)\s*=\s*["\']([^"\']*)["\']',
+            ]
+
+            # Extract list parameters
+            list_patterns = [
+                r"([A-Z_][A-Z0-9_]*)\s*=\s*\[([^\]]*)\]",
+            ]
+
+            all_patterns = (
+                numeric_patterns + bool_patterns + string_patterns + list_patterns
+            )
+
+            for pattern in all_patterns:
+                matches = re.findall(pattern, content)
+                for param_name, param_value in matches:
+                    # Skip if this looks like a function or class definition
+                    if param_name in [
+                        "def",
+                        "class",
+                        "import",
+                        "from",
+                        "if",
+                        "for",
+                        "while",
+                    ]:
+                        continue
+
+                    # Convert value to appropriate type
+                    try:
+                        if param_value in ["True", "False"]:
+                            parameters[param_name] = param_value == "True"
+                        elif param_value.replace(".", "").replace("-", "").isdigit():
+                            # Numeric value
+                            if "." in param_value:
+                                parameters[param_name] = float(param_value)
+                            else:
+                                parameters[param_name] = int(param_value)
+                        elif param_value.startswith('"') or param_value.startswith("'"):
+                            # String value (remove quotes)
+                            parameters[param_name] = param_value.strip("\"'")
+                        else:
+                            # Try to evaluate as Python literal for lists, etc.
+                            parameters[param_name] = eval(param_value)
+                    except (ValueError, SyntaxError):
+                        # If conversion fails, keep as string
+                        parameters[param_name] = param_value
+
+            return parameters
+
+        except Exception as e:
+            logger.warning(f"Failed to extract parameters from {run_file}: {e}")
+            return {}
 
     def run_overnight_optimization(self, max_hours: float = 8.0):
         """Run overnight optimization across all experiments."""

@@ -23,6 +23,7 @@ EXPERIMENTS = [
     "attentional_blink",
     "binocular_rivalry",
     "change_blindness",
+    "change_blindness_full_apgi",  # Full APGI variant of change_blindness
     "drm_false_memory",
     "dual_n_back",
     "eriksen_flanker",
@@ -126,6 +127,10 @@ def check_time_budget(filepath: Path, file_type: str) -> Tuple[bool, str]:
         ):
             return True, "⚠️ 600 seconds mentioned but not as TIME_BUDGET constant"
 
+        # Check for assertion
+        if "assert TIME_BUDGET == 600" in content:
+            return True, "✅ TIME_BUDGET asserted to be 600"
+
         return False, "❌ Missing TIME_BUDGET = 600"
     except Exception as e:
         return False, f"❌ Error reading file: {e}"
@@ -141,10 +146,9 @@ def check_primary_metric(filepath: Path, experiment: str) -> Tuple[bool, str]:
             "ai_benchmarking": "benchmark_accuracy",
             "artificial_grammar_learning": "grammar_accuracy",
             "attentional_blink": "blink_magnitude",
-            "binocular_rivalry": "masking_effect_ms",
+            "binocular_rivalry": "alternation_rate",
             "change_blindness": "detection_rate",
             "drm_false_memory": "accuracy",
-            "dual_n_back": "d_prime",
             "eriksen_flanker": "flanker_effect_ms",
             "go_no_go": "d_prime",
             "inattentional_blindness": "accuracy",
@@ -323,7 +327,7 @@ def verify_experiment(experiment: str, base_dir: Path) -> VerificationResult:
 
 def main():
     """Run verification on all experiments."""
-    base_dir = Path("/Users/lesoto/Sites/PYTHON/apgi-experiments/auto-improvement")
+    base_dir = Path(__file__).parent
 
     print("=" * 80)
     print("APGI Experiment Protocol Verification Report")

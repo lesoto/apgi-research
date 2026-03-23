@@ -43,7 +43,8 @@ from experiment_apgi_integration import (
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET = 600  # noqa: F811
+# TIME_BUDGET is imported from prepare_iowa_gambling_task
+assert TIME_BUDGET == 600, "TIME_BUDGET must be 600"
 
 NUM_TRIALS_CONFIG = 100
 

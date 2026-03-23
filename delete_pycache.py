@@ -28,11 +28,13 @@ import shutil
 import sys
 import time
 import errno
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union
+from pathlib import Path
 
 DEFAULT_DIR_NAMES = {
     "__pycache__",
     ".pytest_cache",
+    ".mypy_cache",
     ".hypothesis",
     "htmlcov",
     ".tox",
@@ -204,7 +206,7 @@ def _remove_directory(
     initial_delay: float = 0.1,
 ) -> None:
     """Remove a directory and update stats with retry logic for concurrent access."""
-    full_d = os.path.join(dirpath, dirname)
+    full_d = Path(dirpath) / dirname
     if dry_run:
         if verbose:
             print(f"Would remove directory: {full_d}")
@@ -340,7 +342,7 @@ def _process_files(
         if matches_any(f, default_file_patterns) or matches_any(
             f, include_file_patterns
         ):
-            full_f = os.path.join(dirpath, f)
+            full_f = Path(dirpath) / f
             _remove_file(full_f, dry_run, verbose, stats)
 
 
@@ -350,8 +352,8 @@ def _should_skip_directory(
     """Check if directory should be skipped based on depth."""
     if max_depth is None:
         return False
-    rel = os.path.relpath(dirpath, root_dir)
-    depth = 0 if rel == "." else rel.count(os.sep) + 1
+    rel = Path(dirpath).relative_to(Path(root_dir))
+    depth = 0 if rel == Path(".") else len(rel.parts)
     if depth > max_depth:
         return True
     return False
@@ -411,14 +413,14 @@ def preview_deletions(
                 remove_venvs,
                 venv_names,
             ):
-                full_d = os.path.join(dirpath, d)
+                full_d = Path(dirpath) / d
                 try:
                     # Count files and calculate size in directory
                     dir_size = 0
                     file_count = 0
                     for root, dirs, files in os.walk(full_d):
                         for file in files:
-                            file_path = os.path.join(root, file)
+                            file_path = Path(root) / file
                             try:
                                 file_size = os.path.getsize(file_path)
                                 dir_size += file_size
@@ -447,7 +449,7 @@ def preview_deletions(
             if matches_any(f, default_file_patterns) or matches_any(
                 f, include_file_patterns
             ):
-                full_f = os.path.join(dirpath, f)
+                full_f = Path(dirpath) / f
                 try:
                     file_size = os.path.getsize(full_f)
                     stats["files_to_remove"].append(
@@ -602,7 +604,9 @@ def prune_empty_dirs(
             print(f"Error pruning directory {dirpath}: {e}")
 
 
-def _remove_logs_directory(log_dir: str, dry_run: bool, verbose: bool) -> None:
+def _remove_logs_directory(
+    log_dir: Union[str, Path], dry_run: bool, verbose: bool
+) -> None:
     """Remove the entire logs directory."""
     if dry_run:
         if verbose:
@@ -642,7 +646,7 @@ def clear_log_files(
     - If delete_logs_dir is True, the whole logs directory is removed.
     - If False, each file is truncated to 0 bytes.
     """
-    log_dir = os.path.join(root_dir, "logs")
+    log_dir = Path(root_dir) / "logs"
 
     if not os.path.exists(log_dir):
         if verbose:

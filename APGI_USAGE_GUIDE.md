@@ -504,7 +504,7 @@ APGI_PARAMS = {
 
 Each experiment outputs a primary metric to maximize:
 
-```
+```text
 net_score: 8.0000
 completion_time_s: 45.23
 ```
@@ -513,7 +513,7 @@ completion_time_s: 45.23
 
 The APGI system generates comprehensive outputs:
 
-```
+```text
 ✅ Simulation complete: 127 ignitions detected
 
 Measurements:
@@ -526,6 +526,7 @@ Measurements:
 ### Visualization Dashboard
 
 The dashboard includes:
+
 1. Core dynamics (S, θ, ignitions)
 2. Measurement proxies (HEP, P3b)
 3. Neuromodulator dynamics (ACh, NE, DA, 5-HT)
@@ -575,7 +576,7 @@ if violations:
 
 ---
 
-## Summary
+## System Capabilities
 
 The APGI Auto-Improvement System provides:
 

@@ -109,7 +109,7 @@ class MultisensoryGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> MultisensoryTrial:
@@ -157,7 +157,7 @@ class MultisensoryExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -278,7 +278,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Multisensory Integration - Configuration Verification")
     print(f"Modalities: {[m.value for m in Modality]}")
     print(f"SOA Values: {SOA_VALUES}")

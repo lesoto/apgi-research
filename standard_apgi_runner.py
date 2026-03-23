@@ -17,6 +17,7 @@ Usage:
 """
 
 import time
+import signal
 import numpy as np
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass
@@ -25,11 +26,8 @@ from dataclasses import dataclass
 from apgi_integration import (
     APGIIntegration,
 )
-from experiment_apgi_integration import (
-    ExportedAPGIParams,
-    get_experiment_apgi_config,
-    compute_apgi_enhanced_metric,
-)
+from apgi_integration import compute_apgi_enhanced_metric
+from experiment_apgi_integration import ExportedAPGIParams, get_experiment_apgi_config
 
 
 @dataclass
@@ -110,6 +108,7 @@ class StandardAPGIRunner:
         enable_hierarchical: bool = True,
         enable_precision_gap: bool = True,
         trial_callback: Optional[Callable] = None,
+        timeout_seconds: int = 600,  # Default 10 minutes
     ):
         """
         Initialize standardized APGI runner.
@@ -126,7 +125,14 @@ class StandardAPGIRunner:
         self.experiment_name = experiment_name
         self.enable_hierarchical = enable_hierarchical
         self.enable_precision_gap = enable_precision_gap
+        self.timeout_seconds = timeout_seconds
+        self.timeout_start_time = None
+        self.timeout_handler = None
         self.trial_callback = trial_callback
+
+        # Type annotations for optional attributes
+        self.hierarchical_state: Optional[HierarchicalState] = None
+        self.precision_gap: Optional[PrecisionExpectationGap] = None
 
         # Get APGI parameters
         if apgi_params is None:
@@ -142,15 +148,22 @@ class StandardAPGIRunner:
             self.hierarchical_state = HierarchicalState(
                 level_1={}, level_2={}, level_3={}, level_4={}, level_5={}
             )
+        else:
+            self.hierarchical_state = None
 
         # Initialize precision expectation gap
         if self.enable_precision_gap:
             self.precision_gap = PrecisionExpectationGap()
+        else:
+            self.precision_gap = None
 
         # Tracking
         self.trial_count = 0
         self.apgi_metrics_history: List[Dict[str, float]] = []
         self.start_time: Optional[float] = None
+
+        # Setup timeout handling
+        self._setup_timeout_handler()
 
     def process_trial_with_full_apgi(
         self,
@@ -210,7 +223,7 @@ class StandardAPGIRunner:
         self, basic_metrics: Dict[str, float], level: int
     ) -> Dict[str, float]:
         """Process hierarchical level dynamics."""
-        if not (1 <= level <= 5):
+        if not (1 <= level <= 5) or self.hierarchical_state is None:
             return {}
 
         level_states = [
@@ -261,6 +274,9 @@ class StandardAPGIRunner:
         self, basic_metrics: Dict[str, float]
     ) -> Dict[str, float]:
         """Process Π vs Π̂ precision expectation gap."""
+        if self.precision_gap is None:
+            return {}
+
         # Extract precision values from basic metrics
         Pi_e_actual = basic_metrics.get("Pi_e_eff", 1.0)
         Pi_i_actual = basic_metrics.get("Pi_i_eff", 1.0)
@@ -279,31 +295,43 @@ class StandardAPGIRunner:
 
     def run_experiment(self) -> Dict[str, Any]:
         """
-        Run experiment with full APGI tracking.
-
-        Returns:
-            Results dictionary including comprehensive APGI metrics
+        Run experiment with full APGI tracking and timeout handling.
         """
         self.start_time = time.time()
         self.trial_count = 0
         self.apgi_metrics_history = []
 
+        # Setup timeout handling
+        self._setup_timeout_handler()
+        self._start_timeout_timer()
+
         # Reset APGI state
         if self.apgi:
             self.apgi.reset()
-
         # Reset hierarchical state
         if self.enable_hierarchical:
             self.hierarchical_state = HierarchicalState(
                 level_1={}, level_2={}, level_3={}, level_4={}, level_5={}
             )
-
         # Reset precision gap
         if self.enable_precision_gap:
             self.precision_gap = PrecisionExpectationGap()
 
-        # Run base experiment with APGI integration
-        base_results = self._run_base_experiment_with_apgi()
+        # Run base experiment with timeout check
+        try:
+            base_results = self._run_base_experiment_with_apgi()
+            # Check for timeout after each trial
+            if self._check_timeout():
+                raise TimeoutError(
+                    f"Experiment timed out after {self.timeout_seconds} seconds"
+                )
+        except TimeoutError as e:
+            # Cancel timeout timer and re-raise
+            self._cancel_timeout_timer()
+            raise e
+        finally:
+            # Always cancel timeout timer
+            self._cancel_timeout_timer()
 
         # Add comprehensive APGI metrics if enabled
         if self.apgi:
@@ -374,6 +402,36 @@ class StandardAPGIRunner:
 
         return base_results
 
+    def _setup_timeout_handler(self):
+        """Setup signal handler for timeout."""
+
+        def timeout_handler(signum, frame):
+            if self.timeout_handler:
+                self.timeout_handler(signum, frame)
+
+        self.timeout_handler = timeout_handler
+        signal.signal(signal.SIGALRM, self.timeout_handler)
+
+    def _start_timeout_timer(self):
+        """Start the timeout timer."""
+        if self.timeout_seconds > 0:
+            self.timeout_start_time = time.time()
+            signal.alarm(self.timeout_seconds)
+
+    def _cancel_timeout_timer(self):
+        if hasattr(self, "timeout_start_time"):
+            signal.alarm(0)  # Cancel the alarm
+
+    def _check_timeout(self):
+        """Check if experiment has timed out."""
+        if (
+            self.timeout_seconds > 0
+            and hasattr(self, "timeout_start_time")
+            and time.time() - self.timeout_start_time > self.timeout_seconds
+        ):
+            return True
+        return False
+
     def _extract_primary_metric(self, results: Dict[str, Any]) -> Optional[float]:
         """Extract primary metric from results."""
         primary_keys = [
@@ -442,6 +500,13 @@ class StandardAPGIRunner:
 
     def _get_precision_gap_summary(self) -> Dict[str, float]:
         """Get summary of precision expectation gap."""
+        if self.precision_gap is None:
+            return {
+                "final_anxiety_level": 0.0,
+                "final_precision_mismatch": 0.0,
+                "mean_precision_mismatch": 0.0,
+            }
+
         return {
             "final_anxiety_level": float(self.precision_gap.anxiety_level),
             "final_precision_mismatch": float(self.precision_gap.precision_mismatch),

@@ -101,11 +101,6 @@ except ImportError:
     PLOTLY_AVAILABLE = False
     warnings.warn("Plotly not available. Install with: pip install plotly")
 
-try:
-    MATPLOTLIB_3D = True
-except ImportError:
-    MATPLOTLIB_3D = False
-
 
 # =============================================================================
 # 1. ENHANCED PARAMETER SYSTEM WITH CORRECTED RANGES

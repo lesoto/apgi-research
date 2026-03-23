@@ -12,7 +12,6 @@ Upgrades all run_*.py files to full APGI compliance by:
 7. Adding APGI metrics to results output
 
 Usage:
-    cd /Users/lesoto/Sites/PYTHON/apgi-experiments/auto-improvement
     python batch_upgrade_run_files.py
 """
 
@@ -223,9 +222,7 @@ APGI_PRINT_RESULTS_TEMPLATE = """
 
 def get_experiment_files() -> List[Path]:
     """Get all run_*.py files that need upgrading."""
-    auto_improvement_dir = Path(
-        "/Users/lesoto/Sites/PYTHON/apgi-experiments/auto-improvement"
-    )
+    auto_improvement_dir = Path(__file__).parent
     run_files = sorted(auto_improvement_dir.glob("run_*.py"))
 
     # Exclude files that are already 100/100 compliant
