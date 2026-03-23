@@ -168,12 +168,13 @@ class EnhancedProbabilisticRunner:
                 "rt_mean": 800.0,
                 "rt_var": 40000.0,
             }
-        else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
+        # APGI tracking across trials
+        self.apgi_states = []
+        self.ignition_history = []
+        self.surprise_history = []
+        self.threshold_history = []
+        self.somatic_marker_history = []
+        self.metabolic_cost_history = []
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -251,20 +252,57 @@ class EnhancedProbabilisticRunner:
                 precision_int=precision_int,
             )
 
-            # 100/100: Process hierarchical levels
-            if self.hierarchical:
-                signal = apgi_state.get("S", 0.0)
-                for level_idx in range(5):
-                    level_state = self.hierarchical.process_level(level_idx, signal)
-                    signal = level_state.S * 0.8
+            # 100/100: Track APGI state
+            self.apgi_states.append(apgi_state)
+            self.ignition_history.append(apgi_state.get("ignition_prob", 0.0))
+            self.surprise_history.append(apgi_state.get("surprise", 0.0))
+            self.threshold_history.append(apgi_state.get("theta", 0.5))
+            self.somatic_marker_history.append(apgi_state.get("M", 0.0))
+            self.metabolic_cost_history.append(apgi_state.get("metabolic_cost", 0.0))
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
         completion_time = time.time() - self.start_time
 
-        apgi_metrics = {}
-        if self.apgi and hasattr(self.apgi, "finalize"):
-            apgi_metrics = self.apgi.finalize()
+        # Calculate APGI metrics from history
+        if self.apgi_states:
+            apgi_metrics = {
+                "apgi_enabled": True,
+                "apgi_ignition_rate": np.mean(self.ignition_history) * 100,
+                "apgi_mean_surprise": np.mean(self.surprise_history),
+                "apgi_metabolic_cost": np.mean(self.metabolic_cost_history),
+                "apgi_mean_somatic_marker": np.mean(self.somatic_marker_history),
+                "apgi_mean_threshold": np.mean(self.threshold_history)
+                if self.threshold_history
+                else 0.5,
+            }
+
+            # 100/100: Precision expectation gap
+            if self.precision_gap:
+                apgi_metrics["apgi_precision_mismatch"] = self.precision_gap.mismatch
+                apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
+
+            # 100/100: Neuromodulators
+            if self.neuromodulators:
+                apgi_metrics["apgi_dopamine"] = self.neuromodulators.get("DA", 1.0)
+                apgi_metrics["apgi_serotonin"] = self.neuromodulators.get("HT5", 1.0)
+                apgi_metrics["apgi_acetylcholine"] = self.neuromodulators.get(
+                    "ACh", 1.0
+                )
+                apgi_metrics["apgi_norepinephrine"] = self.neuromodulators.get(
+                    "NE", 1.0
+                )
+        else:
+            apgi_metrics = {
+                "apgi_enabled": self.enable_apgi,
+                "apgi_ignition_rate": 0.0,
+                "apgi_mean_surprise": 0.0,
+                "apgi_metabolic_cost": 0.0,
+                "apgi_mean_somatic_marker": 0.0,
+                "apgi_mean_threshold": 0.5,
+                "apgi_precision_mismatch": 0.0,
+                "apgi_anxiety_level": 0.0,
+            }
 
         return {
             **{

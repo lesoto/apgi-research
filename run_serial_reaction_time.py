@@ -141,19 +141,18 @@ class EnhancedSRTRunner:
                 "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
             }
 
-            # 100/100: Running statistics for z-score normalization
             self.running_stats = {
                 "outcome_mean": 0.5,
                 "outcome_var": 0.25,
                 "rt_mean": 800.0,
                 "rt_var": 40000.0,
             }
-        else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
+        self.apgi_states = []
+        self.ignition_history = []
+        self.surprise_history = []
+        self.threshold_history = []
+        self.somatic_marker_history = []
+        self.metabolic_cost_history = []
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -181,16 +180,12 @@ class EnhancedSRTRunner:
             rt_ms=rt,
         )
 
-        # 100/100: Process with APGI if enabled
         if self.apgi:
-            # Compute prediction error from trial outcome
             observed_accuracy = 1.0 if correct else 0.0
             expected_accuracy = 0.5  # Baseline
 
-            # Determine trial type
             trial_type = "neutral"
 
-            # 100/100: Determine precision based on neuromodulators
             ach_boost = self.neuromodulators.get("ACh", 1.0)
             ne_effect = self.neuromodulators.get("NE", 1.0)
             da_effect = self.neuromodulators.get("DA", 1.0)
@@ -198,7 +193,6 @@ class EnhancedSRTRunner:
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
-            # 100/100: Update running statistics for z-score normalization
             alpha_mu = 0.01
             alpha_sigma = 0.005
             self.running_stats["outcome_mean"] += alpha_mu * (
@@ -212,7 +206,6 @@ class EnhancedSRTRunner:
                 0.01, self.running_stats["outcome_var"]
             )
 
-            # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
                 self.precision_gap.update(
                     precision_ext, precision_int, self.neuromodulators, trial_type
@@ -220,7 +213,6 @@ class EnhancedSRTRunner:
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
 
-            # 100/100: Process with APGI - computes ignition, surprise, somatic markers
             apgi_state = self.apgi.process_trial(
                 observed=observed_accuracy,
                 predicted=expected_accuracy,
@@ -229,30 +221,52 @@ class EnhancedSRTRunner:
                 precision_int=precision_int,
             )
 
-            # 100/100: Process hierarchical levels
-            if self.hierarchical:
-                signal = apgi_state.get("S", 0.0)
-                for level_idx in range(5):
-                    level_state = self.hierarchical.process_level(level_idx, signal)
-                    signal = level_state.S * 0.8
+            self.apgi_states.append(apgi_state)
+            self.ignition_history.append(apgi_state.get("ignition_prob", 0.0))
+            self.surprise_history.append(apgi_state.get("surprise", 0.0))
+            self.threshold_history.append(apgi_state.get("theta", 0.5))
+            self.somatic_marker_history.append(apgi_state.get("M", 0.0))
+            self.metabolic_cost_history.append(apgi_state.get("metabolic_cost", 0.0))
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
         completion_time = time.time() - self.start_time
-        apgi_metrics = {
-            "apgi_enabled": self.enable_apgi,
-            "apgi_ignition_rate": 0.0,
-            "apgi_mean_surprise": 0.0,
-            "apgi_metabolic_cost": 0.0,
-            "apgi_mean_somatic_marker": 0.0,
-            "apgi_mean_threshold": 0.0,
-            "apgi_precision_mismatch": 0.0,
-            "apgi_anxiety_level": 0.0,
-            "apgi_dopamine": 0.0,
-            "apgi_serotonin": 0.0,
-            "apgi_acetylcholine": 0.0,
-            "apgi_norepinephrine": 0.0,
-        }
+        if self.apgi_states:
+            apgi_metrics = {
+                "apgi_enabled": True,
+                "apgi_ignition_rate": np.mean(self.ignition_history) * 100,
+                "apgi_mean_surprise": np.mean(self.surprise_history),
+                "apgi_metabolic_cost": np.mean(self.metabolic_cost_history),
+                "apgi_mean_somatic_marker": np.mean(self.somatic_marker_history),
+                "apgi_mean_threshold": np.mean(self.threshold_history)
+                if self.threshold_history
+                else 0.5,
+            }
+
+            if self.precision_gap:
+                apgi_metrics["apgi_precision_mismatch"] = self.precision_gap.mismatch
+                apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
+
+            if self.neuromodulators:
+                apgi_metrics["apgi_dopamine"] = self.neuromodulators.get("DA", 1.0)
+                apgi_metrics["apgi_serotonin"] = self.neuromodulators.get("HT5", 1.0)
+                apgi_metrics["apgi_acetylcholine"] = self.neuromodulators.get(
+                    "ACh", 1.0
+                )
+                apgi_metrics["apgi_norepinephrine"] = self.neuromodulators.get(
+                    "NE", 1.0
+                )
+        else:
+            apgi_metrics = {
+                "apgi_enabled": self.enable_apgi,
+                "apgi_ignition_rate": 0.0,
+                "apgi_mean_surprise": 0.0,
+                "apgi_metabolic_cost": 0.0,
+                "apgi_mean_somatic_marker": 0.0,
+                "apgi_mean_threshold": 0.5,
+                "apgi_precision_mismatch": 0.0,
+                "apgi_anxiety_level": 0.0,
+            }
 
         return {
             **{
@@ -274,7 +288,6 @@ def print_results(results: Dict):
     print("=" * 60)
     print(f"Trials: {results['num_trials']}")
 
-    # Print APGI metrics if enabled
     if results.get("apgi_enabled"):
         print("\n" + "-" * 40)
         print("APGI DYNAMICS METRICS")

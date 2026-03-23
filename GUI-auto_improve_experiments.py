@@ -51,9 +51,6 @@ class ExperimentRunnerGUI(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
 
-        # Check dependencies before initializing UI
-        self._check_dependencies()
-
         self.title("APGI Auto-Improvement Research Hub")
         self.geometry("1400x900")
 
@@ -78,6 +75,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.experiments = self._find_experiments()
 
         self._setup_ui()
+
+        # Check dependencies after UI is initialized so we can log to console
+        self._check_dependencies()
 
     def _check_dependencies(self) -> None:
         """Check for required dependencies on startup and show error if missing."""
@@ -1005,16 +1005,10 @@ class ExperimentRunnerGUI(ctk.CTk):
                 self._log(f"❌ {description} - Error: {e}")
 
         if missing:
-            self.deps_status_label.configure(
-                text=f"Status: {len(missing)} missing", text_color="#e74c3c"
-            )
             self._log(f"\n⚠️ Missing {len(missing)} dependencies:")
             for module, desc in missing:
                 self._log(f"   - {desc}")
         else:
-            self.deps_status_label.configure(
-                text="Status: All installed", text_color="#2ecc71"
-            )
             self._log("\n✅ All dependencies are installed!")
 
         self._log("=" * 50)
@@ -1100,13 +1094,6 @@ class ExperimentRunnerGUI(ctk.CTk):
                         0,
                         lambda: self._log(
                             "✅ Installation complete! Please restart the GUI."
-                        ),
-                    )
-                    self.after(
-                        0,
-                        lambda: self.deps_status_label.configure(
-                            text="Status: Installed (restart needed)",
-                            text_color="#f39c12",
                         ),
                     )
                 else:

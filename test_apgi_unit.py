@@ -754,27 +754,26 @@ class TestPerformanceMonitoring:
         """Test performance regression detection."""
         monitor = PerformanceMonitor()
 
-        # Add baseline operations (faster)
+        # Add baseline operations (consistent duration)
         for i in range(10):
             metrics = monitor.start_operation(f"baseline_{i}")
-            time.sleep(0.001)  # Fast
+            time.sleep(0.01)  # 10ms baseline
             monitor.end_operation(metrics, success=True)
 
-        # Add recent operations (much slower)
+        # Add recent operations (much slower - 50x slower)
         for i in range(5):
             metrics = monitor.start_operation(f"recent_{i}")
-            time.sleep(0.02)  # Much slower - 20x slower
+            time.sleep(0.05)  # 50ms - significantly slower
             monitor.end_operation(metrics, success=True)
 
         regression = monitor.detect_performance_regression()
 
         assert regression["status"] == "detected"
+        # Recent operations are slower than baseline -> positive regression
         assert regression["regression_percent"] > 0  # Should detect regression
-        # Allow for "no_change" if timing is inconsistent, but regression should be detected
         assert regression["significance"] in [
             "moderate_regression",
             "significant_regression",
-            "no_change",  # Allow no_change due to timing variability
         ]
 
 
