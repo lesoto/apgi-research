@@ -6,6 +6,7 @@ Tests GUI functionality for APGI experiment management.
 
 import os
 import pytest
+import importlib
 from pathlib import Path
 from unittest.mock import patch, MagicMock, mock_open
 
@@ -108,25 +109,29 @@ class TestExperimentRunnerGUI:
                 "PIL": MagicMock(),
             },
         ):
-            with patch("gui.messagebox"):
+            with patch("tkinter.messagebox"):
                 # Should not raise any errors
-                gui.ExperimentRunnerGUI._check_dependencies(mock_gui)
+                gui.ExperimentRunnerGUI._check_dependencies(None)
 
     def test_check_dependencies_missing_core(self):
         """Test dependency check with missing core dependencies."""
-        mock_gui = MagicMock()
-        mock_gui.research_dir = Path("/tmp")
 
-        # Remove numpy from modules
-        modules = dict(sys.modules)
-        if "numpy" in modules:
-            del modules["numpy"]
+        # Store the original import_module function
+        original_import_module = importlib.import_module
 
-        with patch.dict("sys.modules", modules, clear=False):
-            with patch.object(gui, "messagebox") as mock_msgbox:
-                with patch.object(gui, "sys.exit") as mock_exit:
-                    gui.ExperimentRunnerGUI._check_dependencies(mock_gui)
-                    mock_msgbox.showerror.assert_called_once()
+        # Mock importlib.import_module to raise ImportError for numpy
+        def mock_import_module(module_name):
+            if module_name == "numpy":
+                raise ImportError("No module named 'numpy'")
+            # For other modules, use the original function
+            print(f"DEBUG: Importing {module_name} with original function")
+            return original_import_module(module_name)
+
+        with patch("importlib.import_module", side_effect=mock_import_module):
+            with patch("tkinter.messagebox.showerror") as mock_msgbox:
+                with patch("sys.exit") as mock_exit:
+                    gui.ExperimentRunnerGUI._check_dependencies(None)
+                    mock_msgbox.assert_called_once()
                     mock_exit.assert_called_once_with(1)
 
     def test_find_experiments(self):

@@ -44,6 +44,9 @@ from datetime import datetime
 import argparse
 import subprocess
 import threading
+from memory_store import MemoryStore, update_memory_from_report
+from m2_agent_engine import M2AgentEngine
+
 
 # Import APGI components (unused for now, available for future integration)
 # from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
@@ -82,6 +85,30 @@ class ExperimentResult:
     timestamp: str
     parameter_modifications: Dict[str, Any]
     status: str  # "success", "crash", "timeout"
+
+
+@dataclass
+class ExperimentPlan:
+    """M2* generated Hypothesis and Execution representation."""
+
+    hypothesis: str
+    success_metrics: Dict[
+        str, str
+    ]  # Metric name mapped to target condition (e.g. "> 5%")
+    constraints: List[str]  # e.g. "Do not modify file X structure"
+    steps: List[str]  # Sequence of instructions for agent execution
+
+
+@dataclass
+class ExecutionReport:
+    """M2* outcome abstract reporting and analysis."""
+
+    experiment_name: str
+    summary: str
+    metric_deltas: Dict[str, float]
+    root_causes: List[str]
+    suggested_fixes: List[str]
+    confidence_score: float  # Scale of 0-1, used by guardrails
 
 
 @dataclass
@@ -706,13 +733,19 @@ class AutonomousAgent:
         Args:
             repo_path (str): Path to the repository (default: ".")
         """
+        self.repo_path = Path(repo_path)
         self.git_tracker = GitPerformanceTracker(repo_path, agent=self)
-        self.optimizer = ParameterOptimizer()
         self.experiment_modules = self._load_experiment_modules()
         self.running = False
+        self.memory_store = MemoryStore()
+        self.agent_engine = M2AgentEngine()
         self.checkpoint_file = Path(repo_path) / ".autonomous_agent_checkpoint.json"
         self.last_checkpoint_time = 0.0
         self.checkpoint_interval_s = 60  # Save checkpoint every 60 seconds
+
+        # Phase 5: Async Git Operations for non-blocking auto-loop
+        self.async_git = AsyncGitOperations(self.repo_path)
+        self._session_branch: Optional[str] = None
 
     def _save_checkpoint(
         self,
@@ -825,8 +858,9 @@ class AutonomousAgent:
         experiment_name: str,
         modifications: Optional[Dict[str, Any]] = None,
         timeout_seconds: int = 1800,
+        max_retries: int = 1,
     ) -> ExperimentResult:
-        """Run a single experiment with optional modifications and timeout enforcement."""
+        """Run a single experiment with optional modifications, timeout, and self-healing retry."""
         if experiment_name not in self.experiment_modules:
             raise ValueError(f"Unknown experiment: {experiment_name}")
 
@@ -839,86 +873,153 @@ class AutonomousAgent:
         # Commit modifications
         commit_hash = self.git_tracker.commit_experiment(modifications or {})
 
-        # Run experiment with timeout
-        start_time = time.time()
-        old_signal_handler = signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout_seconds)
+        for attempt in range(1 + max_retries):
+            # Run experiment with timeout
+            start_time = time.time()
+            old_signal_handler = None
+            signals_set = False
+            try:
+                old_signal_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout_seconds)
+                signals_set = True
+            except ValueError:
+                pass
 
-        try:
-            # Import and run experiment
-            run_module = modules["run"]
+            try:
+                # Import and run experiment
+                run_module = modules["run"]
 
-            # Look for main runner class
-            runner_class = None
-            for attr_name in dir(run_module):
-                if "Runner" in attr_name:
-                    attr = getattr(run_module, attr_name)
-                    if hasattr(attr, "run_experiment"):
-                        runner_class = attr
-                        break
+                # Look for main runner class
+                runner_class = None
+                for attr_name in dir(run_module):
+                    if "Runner" in attr_name:
+                        attr = getattr(run_module, attr_name)
+                        if hasattr(attr, "run_experiment"):
+                            runner_class = attr
+                            break
 
-            if runner_class is None:
-                raise ValueError(f"No runner class found in {run_module}")
+                if runner_class is None:
+                    raise ValueError(f"No runner class found in {run_module}")
 
-            # Initialize and run experiment
-            runner = runner_class()
-            results = runner.run_experiment()
+                # Initialize and run experiment
+                runner = runner_class()
+                results = runner.run_experiment()
 
-            completion_time = time.time() - start_time
+                completion_time = time.time() - start_time
 
-            # Extract primary metric
-            primary_metric = self._extract_primary_metric(results, experiment_name)
+                # Extract primary metric
+                primary_metric = self._extract_primary_metric(results, experiment_name)
 
-            # Extract APGI metrics if available
-            apgi_metrics = results.get("apgi_metrics", {})
-            apgi_enhanced_metric = results.get("apgi_enhanced_metric")
+                # Extract APGI metrics if available
+                apgi_metrics = results.get("apgi_metrics", {})
+                apgi_enhanced_metric = results.get("apgi_enhanced_metric")
 
-            return ExperimentResult(
-                commit_hash=commit_hash,
-                experiment_name=experiment_name,
-                primary_metric=primary_metric,
-                apgi_metrics=apgi_metrics,
-                apgi_enhanced_metric=apgi_enhanced_metric,
-                completion_time_s=completion_time,
-                timestamp=datetime.now().isoformat(),
-                parameter_modifications=modifications or {},
-                status="success",
-            )
+                return ExperimentResult(
+                    commit_hash=commit_hash,
+                    experiment_name=experiment_name,
+                    primary_metric=primary_metric,
+                    apgi_metrics=apgi_metrics,
+                    apgi_enhanced_metric=apgi_enhanced_metric,
+                    completion_time_s=completion_time,
+                    timestamp=datetime.now().isoformat(),
+                    parameter_modifications=modifications or {},
+                    status="success",
+                )
 
-        except TimeoutError:
-            completion_time = time.time() - start_time
-            logger.error(
-                f"Experiment {experiment_name} timed out after {timeout_seconds} seconds"
-            )
-            return ExperimentResult(
-                commit_hash=commit_hash,
-                experiment_name=experiment_name,
-                primary_metric=0.0,
-                apgi_metrics={},
-                apgi_enhanced_metric=None,
-                completion_time_s=completion_time,
-                timestamp=datetime.now().isoformat(),
-                parameter_modifications=modifications or {},
-                status="timeout",
-            )
-        except Exception as e:
-            completion_time = time.time() - start_time
-            logger.error(f"Experiment {experiment_name} crashed: {str(e)}")
-            return ExperimentResult(
-                commit_hash=commit_hash,
-                experiment_name=experiment_name,
-                primary_metric=0.0,
-                apgi_metrics={},
-                apgi_enhanced_metric=None,
-                completion_time_s=completion_time,
-                timestamp=datetime.now().isoformat(),
-                parameter_modifications=modifications or {},
-                status="crash",
-            )
-        finally:
-            # Clean up signal handler
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, old_signal_handler)
+            except TimeoutError:
+                completion_time = time.time() - start_time
+                logger.error(
+                    f"Experiment {experiment_name} timed out after {timeout_seconds} seconds"
+                )
+                return ExperimentResult(
+                    commit_hash=commit_hash,
+                    experiment_name=experiment_name,
+                    primary_metric=0.0,
+                    apgi_metrics={},
+                    apgi_enhanced_metric=None,
+                    completion_time_s=completion_time,
+                    timestamp=datetime.now().isoformat(),
+                    parameter_modifications=modifications or {},
+                    status="timeout",
+                )
+            except Exception as e:
+                completion_time = time.time() - start_time
+                logger.error(
+                    f"Experiment {experiment_name} crashed (attempt {attempt + 1}): {str(e)}"
+                )
+
+                # Phase 2 Component: Agent Harness & Skill Chaining (Self-Healing)
+                logger.info("Executing M2* Agent Engine self-healing skill chain...")
+                healed = False
+                try:
+                    healing_chain = self.agent_engine.run_skill_chain(
+                        initial_input={
+                            "error": str(e),
+                            "experiment": experiment_name,
+                            "file": modules["run_file"],
+                        },
+                        skills_list=["job_debug", "issue_fix", "issue_report"],
+                    )
+                    if healing_chain and len(healing_chain) > 0:
+                        logger.info(f"Self-Healing Report: {healing_chain[-1].output}")
+                        # Check if the fix was actually applied (patch_source_code succeeded)
+                        for sr in healing_chain:
+                            if sr.skill_name == "issue_fix" and sr.success:
+                                healed = True
+                                break
+                except Exception as e_engine:
+                    logger.error(f"Agent Engine failed during recovery: {e_engine}")
+
+                # If healed and we have retries left, reload module and retry
+                if healed and attempt < max_retries:
+                    logger.info(
+                        f"Self-healing applied fix. Retrying experiment (attempt {attempt + 2})..."
+                    )
+                    try:
+                        importlib.invalidate_caches()
+                        run_module_name = f"run_{experiment_name}"
+                        modules["run"] = importlib.reload(
+                            importlib.import_module(run_module_name)
+                        )
+                    except Exception as reload_err:
+                        logger.warning(
+                            f"Failed to reload module after fix: {reload_err}"
+                        )
+                    continue  # Retry the experiment
+
+                return ExperimentResult(
+                    commit_hash=commit_hash,
+                    experiment_name=experiment_name,
+                    primary_metric=0.0,
+                    apgi_metrics={},
+                    apgi_enhanced_metric=None,
+                    completion_time_s=completion_time,
+                    timestamp=datetime.now().isoformat(),
+                    parameter_modifications=modifications or {},
+                    status="crash",
+                )
+            finally:
+                # Clean up signal handler
+                if signals_set:
+                    try:
+                        signal.alarm(0)
+                        if old_signal_handler is not None:
+                            signal.signal(signal.SIGALRM, old_signal_handler)
+                    except ValueError:
+                        pass
+
+        # Should not reach here, but safety fallback
+        return ExperimentResult(
+            commit_hash=commit_hash,
+            experiment_name=experiment_name,
+            primary_metric=0.0,
+            apgi_metrics={},
+            apgi_enhanced_metric=None,
+            completion_time_s=0.0,
+            timestamp=datetime.now().isoformat(),
+            parameter_modifications=modifications or {},
+            status="crash",
+        )
 
     def _apply_modifications(self, run_file: str, modifications: Dict[str, Any]):
         """Apply parameter modifications to run file with validation."""
@@ -1104,6 +1205,18 @@ class AutonomousAgent:
             # Default to higher is better
             return "higher"
 
+    def _create_session_branch(self, experiment_name: str):
+        """Create a Git branch for this optimization session (USAGE.md requirement)."""
+        tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+        branch_name = f"{experiment_name}/{tag}"
+        try:
+            self.git_tracker.repo.git.checkout("-b", branch_name)
+            self._session_branch = branch_name
+            logger.info(f"Created session branch: {branch_name}")
+        except Exception as e:
+            logger.warning(f"Could not create session branch: {e}")
+            self._session_branch = None
+
     def optimize_experiment(
         self, experiment_name: str, iterations: int = 10, resume: bool = True
     ) -> List[ExperimentResult]:
@@ -1111,6 +1224,9 @@ class AutonomousAgent:
         logger.info(
             f"Starting optimization for {experiment_name} ({iterations} iterations)"
         )
+
+        # Phase 5 / USAGE.md: Create a session branch (git checkout -b <exp>/<tag>)
+        self._create_session_branch(experiment_name)
 
         results = []
         performance_history: List[float] = []
@@ -1135,31 +1251,117 @@ class AutonomousAgent:
             # Get current parameters
             current_params = self._get_current_parameters(experiment_name)
 
-            # Suggest modifications
+            # Phase 3 Step 1: Agent Plan Generation (/exp-plan)
             if iteration == 0:
                 modifications = {}  # First run with baseline
             else:
-                modifications = self.optimizer.suggest_modifications(
-                    experiment_name, current_params, performance_history
+                logger.info(f"Agent generating plan for iteration {iteration}...")
+
+                # Step 4: Activate Reading from Cognitive Memory
+                past_memories = self.memory_store.retrieve_memories(
+                    experiment_name=experiment_name
+                )
+                memory_context = [
+                    f"[{m.pattern_type}] {m.content}" for m in past_memories[-10:]
+                ]
+
+                plan_result = self.agent_engine.plan_experiment(
+                    task=f"Optimize {experiment_name}. Past insights: {memory_context}",
+                    current_params=current_params,
                 )
 
-            # Run experiment
+                # Extract JSON from LLM output
+                try:
+                    plan_data = json.loads(plan_result.output)
+                    modifications = plan_data.get("modifications", {})
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to parse Agent Engine JSON output: {e}. Fallback to empty."
+                    )
+                    modifications = {}
+
+            # Phase 3 Step 2: Execution Engine
             result = self.run_experiment(experiment_name, modifications)
             results.append(result)
+
+            delta = 0.0
+            if performance_history:
+                delta = result.primary_metric - performance_history[-1]
+
             performance_history.append(result.primary_metric)
 
+            # Phase 1: Compile ExecutionReport and update Persistent Memory
+            report = ExecutionReport(
+                experiment_name=experiment_name,
+                summary=f"Iteration {iteration}: Metric {result.primary_metric:.4f} (Delta: {delta:+.4f})",
+                metric_deltas={experiment_name: delta},
+                root_causes=["Execution failure occurred"]
+                if result.status != "success"
+                else [],
+                suggested_fixes=["Adjust bound limits"]
+                if result.status != "success"
+                else ["Valid parameters found"],
+                confidence_score=0.9 if result.status == "success" else 0.1,
+            )
+            update_memory_from_report(
+                asdict(report),
+                self.memory_store,
+                llm_call_fn=self.agent_engine._call_llm,
+            )
+
+            # Phase 3 Step 3: Analyze & Report (enriched context)
+            analysis_res = self.agent_engine.analyze_results(
+                {
+                    "delta": delta,
+                    "primary_metric": result.primary_metric,
+                    "status": result.status,
+                    "experiment": experiment_name,
+                    "iteration": iteration,
+                    "modifications": modifications if iteration > 0 else {},
+                    "performance_history": performance_history[-5:],
+                }
+            )
+            confidence = analysis_res.metadata.get("confidence", 0.0)
+
             # Check if improvement
-            if self.git_tracker.is_improvement(experiment_name, result.primary_metric):
-                logger.info(f"Improvement! New best: {result.primary_metric:.4f}")
-                # Keep the commit (already done)
-                # Update best results only for successful improvements
+            if confidence > 0.5:
+                logger.info(
+                    f"Improvement verified by Agent! New best: {result.primary_metric:.4f}"
+                )
                 if result.status == "success":
                     self.git_tracker.best_results[experiment_name] = result
                     self.git_tracker.save_results(self.git_tracker.best_results)
+
+                    # Phase 5: Use async Git for high-confidence commits
+                    try:
+                        loop = asyncio.new_event_loop()
+                        loop.run_until_complete(
+                            self.async_git.async_add(["run_*.py", "*.json"])
+                        )
+                        loop.run_until_complete(
+                            self.async_git.async_commit(
+                                f"[M2* AUTO] {experiment_name} iter {iteration}: "
+                                f"metric {result.primary_metric:.4f} (Δ{delta:+.4f})"
+                            )
+                        )
+                        loop.close()
+                        logger.info("AsyncGitOperations: committed improvement.")
+                    except Exception as git_err:
+                        logger.warning(
+                            f"Async git commit failed (non-fatal): {git_err}"
+                        )
             else:
-                logger.info("No improvement. Rolling back...")
+                logger.info(
+                    f"No improvement (confidence {confidence:.2f}). Rolling back..."
+                )
                 self.git_tracker.rollback_experiment()
-                # Don't update best_results after rollback
+
+            # Phase 3 Step 4: Guardrails Evaluation
+            if confidence < 0.2:
+                logger.warning(
+                    f"Guardrail triggered: Agent confidence {confidence} is too low. Escalating to human..."
+                )
+                break
 
             # Save checkpoint periodically
             if time.time() - self.last_checkpoint_time > self.checkpoint_interval_s:

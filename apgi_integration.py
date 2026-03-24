@@ -31,7 +31,7 @@ Usage in Experiments:
 
 import numpy as np
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 
 
 # =============================================================================
@@ -113,8 +113,219 @@ class APGIParameters:
     def compute_precision_expectation_gap(
         self, Pi_expected: float, Pi_actual: float
     ) -> float:
-        """Compute precision expectation gap."""
+        """Compute precision expectation gap (Π̂ - Π)."""
         return Pi_expected - Pi_actual
+
+
+# =============================================================================
+# NEUROMODULATOR SYSTEM
+# =============================================================================
+
+
+@dataclass
+class NeuromodulatorState:
+    """
+    State of neuromodulator systems (ACh, NE, DA, 5-HT, CRF).
+
+    Maps neurotransmitter levels to APGI parameter modulations.
+    """
+
+    # Acetylcholine (ACh): Increases exteroceptive precision
+    ACh: float = 0.5  # 0-1 scale
+
+    # Norepinephrine (NE): Increases threshold, enhances gain
+    NE: float = 0.5  # 0-1 scale
+
+    # Dopamine (DA): Action precision, reward prediction
+    DA: float = 0.5  # 0-1 scale
+
+    # Serotonin (5-HT): Increases interoceptive precision, reduces somatic gain
+    serotonin: float = 0.5  # 0-1 scale
+
+    # Corticotropin-releasing factor (CRF): Stress response
+    CRF: float = 0.2  # 0-1 scale, typically lower baseline
+
+    def compute_modulations(self) -> Dict[str, float]:
+        """
+        Compute APGI parameter modulations from neuromodulator levels.
+
+        Returns:
+            Dictionary of modulation factors for APGI parameters
+        """
+        # ACh: ↑ Π^e (exteroceptive precision)
+        Pi_e_mod = 1.0 + 0.5 * self.ACh
+
+        # NE: ↑ θ (threshold), ↑ gain/alpha
+        theta_mod = 1.0 + 0.3 * self.NE
+        alpha_mod = 1.0 + 0.2 * self.NE
+
+        # DA: Action precision modulation
+        action_precision_mod = 1.0 + 0.4 * self.DA
+
+        # 5-HT: ↑ Π^i (interoceptive precision), ↓ β_som (somatic gain)
+        Pi_i_mod = 1.0 + 0.4 * self.serotonin
+        beta_mod = 1.0 - 0.3 * self.serotonin  # Inverse relationship
+
+        # CRF: Stress effects (increases gain, decreases threshold)
+        stress_theta_mod = 1.0 - 0.2 * self.CRF  # Lowers threshold under stress
+        stress_gain_mod = 1.0 + 0.3 * self.CRF  # Increases gain under stress
+
+        return {
+            "Pi_e_mod": Pi_e_mod,
+            "Pi_i_mod": Pi_i_mod,
+            "theta_mod": theta_mod * stress_theta_mod,
+            "alpha_mod": alpha_mod * stress_gain_mod,
+            "beta_mod": max(0.3, beta_mod),  # Prevent negative
+            "action_precision_mod": action_precision_mod,
+            "surprise_sensitivity": 1.0 + 0.2 * self.CRF,
+        }
+
+    def apply_to_parameters(self, params: APGIParameters) -> APGIParameters:
+        """
+        Create modified APGI parameters based on neuromodulator state.
+
+        Args:
+            params: Base APGI parameters
+
+        Returns:
+            Modified parameters with neuromodulator effects applied
+        """
+        mods = self.compute_modulations()
+
+        # Create new parameters with modulations applied
+        return APGIParameters(
+            tau_S=params.tau_S,
+            tau_theta=params.tau_theta,
+            tau_M=params.tau_M,
+            theta_0=params.theta_0 * mods["theta_mod"],
+            alpha=params.alpha * mods["alpha_mod"],
+            beta=params.beta * mods["beta_mod"],
+            M_0=params.M_0,
+            gamma_M=params.gamma_M * mods["surprise_sensitivity"],
+            lambda_S=params.lambda_S,
+            sigma_S=params.sigma_S,
+            sigma_theta=params.sigma_theta,
+            sigma_M=params.sigma_M,
+            theta_survival=params.theta_survival * mods["theta_mod"],
+            theta_neutral=params.theta_neutral * mods["theta_mod"],
+            rho=params.rho,
+        )
+
+    def update_from_stress(self, stress_level: float, dt: float = 1.0):
+        """
+        Update neuromodulator levels based on stress input.
+
+        Args:
+            stress_level: 0-1 stress input
+            dt: Time step
+        """
+        # CRF increases with stress
+        self.CRF = min(1.0, self.CRF + 0.1 * stress_level * dt)
+
+        # NE increases with stress
+        self.NE = min(1.0, self.NE + 0.08 * stress_level * dt)
+
+        # 5-HT decreases under stress (depleted)
+        self.serotonin = max(0.1, self.serotonin - 0.05 * stress_level * dt)
+
+        # ACh decreases under high stress
+        if stress_level > 0.7:
+            self.ACh = max(0.2, self.ACh - 0.03 * dt)
+
+    def update_from_reward(self, reward: float, dt: float = 1.0):
+        """
+        Update neuromodulator levels based on reward feedback.
+
+        Args:
+            reward: Reward magnitude (positive or negative)
+            dt: Time step
+        """
+        # DA increases with reward
+        if reward > 0:
+            self.DA = min(1.0, self.DA + 0.1 * reward * dt)
+        else:
+            self.DA = max(0.1, self.DA + 0.05 * reward * dt)
+
+        # 5-HT stabilizes with positive outcomes
+        if reward > 0:
+            self.serotonin = min(1.0, self.serotonin + 0.03 * reward * dt)
+
+        # CRF decreases with positive outcomes
+        if reward > 0:
+            self.CRF = max(0.1, self.CRF - 0.05 * reward * dt)
+
+    def to_dict(self) -> Dict[str, float]:
+        """Convert to dictionary for output."""
+        return {
+            "ACh": self.ACh,
+            "NE": self.NE,
+            "DA": self.DA,
+            "5-HT": self.serotonin,
+            "CRF": self.CRF,
+        }
+
+
+class NeuromodulatorSystem:
+    """
+    Manages neuromodulator dynamics and their effects on APGI parameters.
+    """
+
+    def __init__(self, initial_state: Optional[NeuromodulatorState] = None):
+        self.state = initial_state or NeuromodulatorState()
+        self.state_history: List[Dict[str, float]] = []
+
+    def process_trial_feedback(
+        self, reward: float = 0.0, stress: float = 0.0, dt: float = 1.0
+    ) -> Dict[str, float]:
+        """
+        Update neuromodulator state based on trial feedback.
+
+        Args:
+            reward: Reward magnitude
+            stress: Stress level (0-1)
+            dt: Time step
+
+        Returns:
+            Current modulation factors
+        """
+        if stress > 0:
+            self.state.update_from_stress(stress, dt)
+        if reward != 0:
+            self.state.update_from_reward(reward, dt)
+
+        # Record state
+        self.state_history.append(self.state.to_dict())
+
+        return self.state.compute_modulations()
+
+    def get_modulated_parameters(self, base_params: APGIParameters) -> APGIParameters:
+        """Get APGI parameters with neuromodulator effects applied."""
+        return self.state.apply_to_parameters(base_params)
+
+    def get_summary(self) -> Dict[str, float]:
+        """Get summary statistics of neuromodulator history."""
+        if not self.state_history:
+            return self.state.to_dict()
+
+        import numpy as np
+
+        return {
+            "mean_ACh": float(np.mean([h["ACh"] for h in self.state_history])),
+            "mean_NE": float(np.mean([h["NE"] for h in self.state_history])),
+            "mean_DA": float(np.mean([h["DA"] for h in self.state_history])),
+            "mean_5HT": float(np.mean([h["5-HT"] for h in self.state_history])),
+            "mean_CRF": float(np.mean([h["CRF"] for h in self.state_history])),
+            "final_ACh": self.state.ACh,
+            "final_NE": self.state.NE,
+            "final_DA": self.state.DA,
+            "final_5HT": self.state.serotonin,
+            "final_CRF": self.state.CRF,
+        }
+
+    def reset(self):
+        """Reset to initial state."""
+        self.state = NeuromodulatorState()
+        self.state_history.clear()
 
 
 # =============================================================================
@@ -476,12 +687,26 @@ class APGIIntegration:
     metrics into any experimental paradigm.
     """
 
-    def __init__(self, params: Optional[APGIParameters] = None):
+    def __init__(
+        self,
+        params: Optional[APGIParameters] = None,
+        enable_neuromodulators: bool = True,
+    ):
         self.params = params or APGIParameters()
         self.dynamics = DynamicalSystem(self.params)
 
+        # Neuromodulator system for biological realism
+        self.enable_neuromodulators = enable_neuromodulators
+        self.neuromodulators = (
+            NeuromodulatorSystem() if enable_neuromodulators else None
+        )
+
         # Trial-level tracking
-        self.trial_metrics: List[Dict[str, float]] = []
+        self.trial_metrics: List[Dict[str, Any]] = []
+
+        # Precision expectation tracking (Π vs Π̂ distinction)
+        self.precision_expectations: Dict[str, float] = {}
+        self.precision_gaps: List[float] = []
 
         # Experiment-level summary
         self.experiment_summary: Optional[Dict[str, float]] = None
@@ -587,9 +812,11 @@ class APGIIntegration:
         trial_type: str = "neutral",
         precision_ext: Optional[float] = None,
         precision_int: Optional[float] = None,
+        reward: float = 0.0,
+        stress: float = 0.0,
     ) -> Dict[str, float]:
         """
-        Process a single trial with APGI dynamics.
+        Process a single trial with APGI dynamics and neuromodulator effects.
 
         Args:
             observed: Observed value (response, RT, etc.)
@@ -597,10 +824,21 @@ class APGIIntegration:
             trial_type: "neutral", "survival", or "congruent"/"incongruent"
             precision_ext: Optional exteroceptive precision override
             precision_int: Optional interoceptive precision override
+            reward: Reward magnitude (affects neuromodulators)
+            stress: Stress level 0-1 (affects neuromodulators)
 
         Returns:
             Dictionary of APGI metrics for this trial
         """
+        # Apply neuromodulator effects if enabled
+        if self.enable_neuromodulators and self.neuromodulators:
+            self.neuromodulators.process_trial_feedback(reward, stress)
+            effective_params = self.neuromodulators.get_modulated_parameters(
+                self.params
+            )
+            # Update dynamics with modulated parameters
+            self.dynamics.params = effective_params
+
         # Compute prediction errors
         error_ext = CoreEquations.prediction_error(observed, predicted)
         error_int = error_ext * 0.3  # Interoceptive coupling
@@ -611,6 +849,17 @@ class APGIIntegration:
         if precision_int is None:
             precision_int = 1.5 if trial_type in ["survival", "incongruent"] else 1.0
 
+        # Track precision expectation gap (Π vs Π̂)
+        Pi_expected = precision_ext
+        # Actual precision is modulated by surprise and threshold
+        Pi_actual = precision_ext * (
+            1.0 + 0.1 * self.dynamics.S / max(0.1, self.dynamics.theta)
+        )
+        precision_gap = self.params.compute_precision_expectation_gap(
+            Pi_expected, Pi_actual
+        )
+        self.precision_gaps.append(precision_gap)
+
         # Advance dynamics
         state = self.dynamics.step(
             prediction_error_ext=error_ext,
@@ -618,6 +867,12 @@ class APGIIntegration:
             precision_ext=precision_ext,
             precision_int_baseline=precision_int,
         )
+
+        # Add precision gap to state
+        state["precision_expected"] = Pi_expected
+        state["precision_actual"] = Pi_actual
+        state["precision_gap"] = precision_gap
+        state["anxiety_index"] = max(0.0, -precision_gap)  # Negative gap = anxiety
 
         # Adjust threshold for domain
         if trial_type == "survival":
@@ -627,6 +882,10 @@ class APGIIntegration:
 
         # Store trial type in state for testing/tracking
         state["trial_type"] = trial_type
+
+        # Add neuromodulator state if enabled
+        if self.enable_neuromodulators and self.neuromodulators:
+            state["neuromodulators"] = self.neuromodulators.state.to_dict()
 
         # Store trial metrics
         self.trial_metrics.append(state)
@@ -730,10 +989,10 @@ class APGIIntegration:
 
     def finalize(self) -> Dict[str, float]:
         """
-        Finalize experiment and compute summary metrics.
+        Finalize experiment and compute comprehensive APGI metrics.
 
         Returns:
-            Dictionary of experiment-level APGI metrics
+            Dictionary of experiment-level APGI metrics including neuromodulator states
         """
         self.experiment_summary = self.dynamics.get_summary()
 
@@ -747,6 +1006,29 @@ class APGIIntegration:
             )
             self.experiment_summary["std_ignition_prob"] = float(np.std(ignition_probs))
 
+            # Precision gap statistics (Π vs Π̂ distinction)
+            if self.precision_gaps:
+                self.experiment_summary["mean_precision_gap"] = float(
+                    np.mean(self.precision_gaps)
+                )
+                self.experiment_summary["std_precision_gap"] = float(
+                    np.std(self.precision_gaps)
+                )
+                self.experiment_summary["max_anxiety_index"] = float(
+                    max(max(0.0, -gap) for gap in self.precision_gaps)
+                )
+
+            # Surprise accumulation index
+            surprise_values = [m.get("S", 0.0) for m in self.trial_metrics]
+            self.experiment_summary["surprise_accumulation_index"] = float(
+                np.sum(surprise_values)
+            )
+
+        # Add neuromodulator summary if enabled
+        if self.enable_neuromodulators and self.neuromodulators:
+            nm_summary = self.neuromodulators.get_summary()
+            self.experiment_summary["neuromodulators"] = nm_summary
+
         return self.experiment_summary
 
     def reset(self):
@@ -754,6 +1036,10 @@ class APGIIntegration:
         self.dynamics.reset()
         self.trial_metrics.clear()
         self.experiment_summary = None
+        self.precision_expectations.clear()
+        self.precision_gaps.clear()
+        if self.neuromodulators:
+            self.neuromodulators.reset()
 
     def get_report(self) -> str:
         """Generate human-readable APGI report."""
@@ -931,6 +1217,8 @@ def format_apgi_output(apgi_summary: Dict[str, float]) -> str:
 
 __all__ = [
     "APGIParameters",
+    "NeuromodulatorState",
+    "NeuromodulatorSystem",
     "RunningStatistics",
     "CoreEquations",
     "DynamicalSystem",
