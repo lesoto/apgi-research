@@ -244,8 +244,13 @@ class EnhancedSRTRunner:
             }
 
             if self.precision_gap:
-                apgi_metrics["apgi_precision_mismatch"] = self.precision_gap.mismatch
+                apgi_metrics[
+                    "apgi_precision_mismatch"
+                ] = self.precision_gap.precision_mismatch
                 apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
+                apgi_metrics[
+                    "apgi_precision_overestimated"
+                ] = self.precision_gap.precision_overestimated
 
             if self.neuromodulators:
                 apgi_metrics["apgi_dopamine"] = self.neuromodulators.get("DA", 1.0)

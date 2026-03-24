@@ -279,7 +279,9 @@ class EnhancedProbabilisticRunner:
 
             # 100/100: Precision expectation gap
             if self.precision_gap:
-                apgi_metrics["apgi_precision_mismatch"] = self.precision_gap.mismatch
+                apgi_metrics[
+                    "apgi_precision_mismatch"
+                ] = self.precision_gap.precision_mismatch
                 apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
 
             # 100/100: Neuromodulators
