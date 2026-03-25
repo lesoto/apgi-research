@@ -55,12 +55,30 @@ class Hypothesis:
             "success_criteria": self.success_criteria,
             "risk_assessment": self.risk_assessment,
             "reviewer_comments": self.reviewer_comments,
-            "status": self.status.value,
+            "status": self.status.value
+            if isinstance(self.status, HypothesisStatus)
+            else self.status,
             "created_at": self.created_at,
             "reviewed_at": self.reviewed_at,
             "reviewed_by": self.reviewed_by,
             "tags": self.tags or [],
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Hypothesis":
+        """Reconstruct Hypothesis from dictionary."""
+        # Convert status string back to enum
+        if "status" in data and isinstance(data["status"], str):
+            try:
+                data["status"] = HypothesisStatus(data["status"])
+            except ValueError:
+                data["status"] = HypothesisStatus.PENDING
+
+        # Ensure confidence_score is float
+        if "confidence_score" in data:
+            data["confidence_score"] = float(data["confidence_score"])
+
+        return cls(**data)
 
 
 @dataclass
@@ -77,7 +95,7 @@ class ApprovalBoard:
             try:
                 with open(self.storage_path, "r") as f:
                     data = json.load(f)
-                    return [Hypothesis(**h) for h in data]
+                    return [Hypothesis.from_dict(h) for h in data]
             except Exception as e:
                 logger.error(f"Failed to load hypotheses: {e}")
         return []
@@ -86,7 +104,19 @@ class ApprovalBoard:
         """Save hypotheses to storage file."""
         try:
             with open(self.storage_path, "w") as f:
-                json.dump([asdict(h) for h in self.hypotheses], f, indent=2)
+                # Custom encoder to handle Enums specifically
+                def enum_encoder(obj):
+                    if isinstance(obj, HypothesisStatus):
+                        return obj.value
+                    return asdict(obj)
+
+                # Convert to dict first to handle nested dataclasses/enums
+                serializable_data = []
+                for h in self.hypotheses:
+                    h_dict = h.to_dict()
+                    serializable_data.append(h_dict)
+
+                json.dump(serializable_data, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save hypotheses: {e}")
 

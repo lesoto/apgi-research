@@ -236,7 +236,7 @@ class EnhancedIGTRunner:
             self.hierarchical = None
             self.precision_gap = None
             self.neuromodulators = None
-            self.running_stats = None
+            self.running_stats = {}
         self.peak_memory_mb = 0.0
 
     def run_experiment(self) -> Dict:

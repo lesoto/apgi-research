@@ -350,7 +350,7 @@ class EnhancedDRMRunner:
         Returns:
             Dictionary with all experiment results and metrics
         """
-        self.start_time = time.time()
+        self.start_time = time.time() or 0.0
         self.generator.reset()
         self.memory_system.reset()
         self.trials = []
@@ -361,13 +361,13 @@ class EnhancedDRMRunner:
             self.trials.append(trial)
 
             # Check time budget
-            elapsed = time.time() - self.start_time
+            elapsed = (time.time() or 0.0) - (self.start_time or 0.0)
             if elapsed > TIME_BUDGET:
                 print(f"WARNING: Time budget exceeded at trial {trial_num}")
                 break
 
         # Calculate final metrics
-        completion_time = time.time() - self.start_time
+        completion_time = (time.time() or 0.0) - (self.start_time or 0.0)
         results = self._calculate_results(completion_time)
 
         return results
@@ -382,11 +382,11 @@ class EnhancedDRMRunner:
 
         # Update trial with results
         trial.test_results = results["test_results"]
-        trial.accuracy = results["accuracy"]
-        trial.hits = results["hits"]
-        trial.misses = results["misses"]
-        trial.false_alarms = results["false_alarms"]
-        trial.correct_rejections = results["correct_rejections"]
+        trial.response_recognized = results.get("accuracy", 0.0)
+        trial.confidence = results.get("hits", 0)
+        trial.presented = results.get("misses", 0)
+        trial.is_false_memory = results.get("false_alarms", 0)
+        trial.critical_lure = results.get("correct_rejections", 0)
         trial.list_type = ListType.WORDS  # Default list type
         trial.timestamp = time.time()
 

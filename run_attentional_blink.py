@@ -166,10 +166,20 @@ class EnhancedAttentionalBlinkRunner:
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=APGI_PARAMS.get("tau_s", 0.25),
-                beta=APGI_PARAMS.get("beta", 1.8),
-                theta_0=APGI_PARAMS.get("theta_0", 0.4),
-                alpha=APGI_PARAMS.get("alpha", 6.0),
+                tau_S=float(APGI_PARAMS.get("tau_s", 0.25) or 0.25),
+                beta=float(APGI_PARAMS.get("beta", 1.8) or 1.8),
+                theta_0=float(APGI_PARAMS.get("theta_0", 0.4) or 0.4),
+                alpha=float(APGI_PARAMS.get("alpha", 6.0) or 6.0),
+                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
+                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
+                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
+                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
+                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
+                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
+                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.4) or 0.4),
+                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.4) or 0.4),
+                beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
+                tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
             )
             self.apgi = APGIIntegration(params)
 

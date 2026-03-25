@@ -242,17 +242,28 @@ class TestExperimentRunnerGUI:
         mock_status = MagicMock()
         mock_gui.experiment_buttons["test"] = mock_button
         mock_gui.status_indicators["test"] = mock_status
+        mock_gui.active_processes = {}
+
+        # Configure mock to return itself when accessed as active process
+        mock_process = MagicMock()
+        mock_gui.active_processes = {"test": mock_process}
 
         with patch("gui.subprocess.Popen") as mock_popen:
             with patch("gui.threading.Thread") as mock_thread:
-                mock_process = MagicMock()
                 mock_popen.return_value = mock_process
                 mock_thread.return_value = MagicMock()
 
-                gui.ExperimentRunnerGUI._run_experiment(mock_gui, "test")
+                gui.ExperimentRunnerGUI._run_experiment(
+                    mock_gui, name="test", script="run_test_run_experiment.py"
+                )
+
+                # Small delay to ensure process is added
+                import time
+
+                time.sleep(0.01)
 
                 # Should update state and start process
-                assert "test" in mock_gui.running_experiments
+                assert "test" in mock_gui.active_processes
                 assert mock_gui.active_processes["test"] == mock_process
                 mock_button.configure.assert_called()
                 mock_thread.assert_called_once()

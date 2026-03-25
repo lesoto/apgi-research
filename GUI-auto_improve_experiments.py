@@ -2,25 +2,39 @@
 Modernized for apgi-research directory with CustomTkinter.
 """
 
-from tkinter import messagebox
-import customtkinter as ctk  # type: ignore
-import subprocess
-import threading
 import os
 import sys
+import multiprocessing
+
+# Fix CoreFoundation fork issue on macOS by setting spawn method
+if sys.platform == "darwin" and hasattr(multiprocessing, "set_start_method"):
+    try:
+        multiprocessing.set_start_method("spawn")
+    except RuntimeError:
+        pass  # Method already set
+
+# Set environment variable to prevent CoreFoundation issues in subprocesses
+if sys.platform == "darwin":
+    os.environ["OBJC_DISABLE_MULTITHREADING"] = "1"
+
+import tkinter as tk
+from tkinter import messagebox
+import customtkinter as ctk
+import subprocess
+import threading
 import re
 import logging
 import time
 from pathlib import Path
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict, Set, Any
 import importlib.util
+import numpy as np
 
 # Import hypothesis approval board
 from hypothesis_approval_board import ApprovalBoard, Hypothesis, HypothesisStatus
 
 # Matplotlib imports for embedded visualization
 import matplotlib
-import numpy as np
 
 matplotlib.use("TkAgg")
 from matplotlib.figure import Figure
@@ -28,11 +42,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("Dark")
-ctk.set_default_color_theme("blue")
-
-# Setup logging
-logger = logging.getLogger(__name__)
-
 # Core dependencies required for APGI experiments
 CORE_DEPENDENCIES = {
     "numpy": "NumPy - Numerical computing",
@@ -52,10 +61,9 @@ OPTIONAL_DEPENDENCIES = {
 
 
 class ExperimentRunnerGUI(ctk.CTk):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.title("APGI Auto-Improvement Research Hub")
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("APGI Experiment Auto-Improvement")
         self.geometry("1400x900")
 
         # Set main path to current research directory
@@ -251,7 +259,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.clear_button.grid(row=3, column=0, padx=20, pady=10)
 
         # -----------------------------------------------------------
-        # Guardrail Dashboard Panel (M2* Requirement)
+        # Guardrail Dashboard Panel (XPR* Requirement)
         # -----------------------------------------------------------
         self.guardrail_frame = ctk.CTkFrame(
             self.navigation_frame, corner_radius=8, fg_color="#1a1a2e"
@@ -672,7 +680,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             no_hypotheses_label = ctk.CTkLabel(
                 self.hypothesis_scrollable,
                 text="No pending hypotheses to review",
-                font=ctk.CTkFont(size=12, style="italic"),
+                font=ctk.CTkFont(size=12, slant="italic"),
                 text_color="#aaaaaa",
             )
             no_hypotheses_label.pack(pady=20)
@@ -753,7 +761,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         auto_btn = ctk.CTkButton(
             card,
-            text="🤖 M2* AUTO",
+            text="🤖 XPR AUTO",
             command=lambda n=name, s=script: self._run_auto_improve(n, s),
             width=70,
             height=28,
@@ -884,7 +892,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         ).pack(pady=(15, 5))
         ctk.CTkLabel(
             config_dialog,
-            text="Set bounds and constraints before M2* AUTO execution.",
+            text="Set bounds and constraints before XPR AUTO execution.",
             font=ctk.CTkFont(size=11),
             text_color="#aaaaaa",
         ).pack(pady=(0, 10))
@@ -935,7 +943,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         )
 
         # Store config for use in the plan generation
-        run_config = {"proceed": False}
+        run_config: Dict[str, Any] = {"proceed": False}
 
         def on_proceed():
             try:
@@ -950,9 +958,13 @@ class ExperimentRunnerGUI(ctk.CTk):
                 run_config["min_confidence"] = float(conf_entry.get())
             except ValueError:
                 run_config["min_confidence"] = 0.5
-            run_config["protected_files"] = protected_entry.get().strip()
-            run_config["constraints"] = constraints_box.get("0.0", "end").strip()
+            try:
+                run_config["protected_files"] = protected_entry.get().strip()
+            except Exception:
+                pass
             run_config["proceed"] = True
+            # Store config for use in plan generation
+            self.run_config = run_config
             config_dialog.destroy()
 
         def on_skip():
@@ -960,8 +972,8 @@ class ExperimentRunnerGUI(ctk.CTk):
             run_config["time_budget"] = 600
             run_config["min_confidence"] = 0.5
             run_config["protected_files"] = "prepare_*.py"
-            run_config["constraints"] = ""
             run_config["proceed"] = True
+            self.run_config = run_config
             config_dialog.destroy()
 
         btn_row = ctk.CTkFrame(config_dialog, fg_color="transparent")
@@ -997,11 +1009,11 @@ class ExperimentRunnerGUI(ctk.CTk):
                 self.after(100, wait_for_config)
                 return
             if not run_config.get("proceed"):
-                self._log(f"[M2* AGENT] Configuration cancelled for {name}.", "#7f8c8d")
+                self._log(f"[XPR AGENT] Configuration cancelled for {name}.", "#7f8c8d")
                 return
 
             self._log(
-                f"\n[M2* AGENT] Configured: iters={run_config.get('iterations')}, "
+                f"\n[XPR AGENT] Configured: iters={run_config.get('iterations')}, "
                 f"budget={run_config.get('time_budget')}s, "
                 f"min_conf={run_config.get('min_confidence')}",
                 "#8e44ad",
@@ -1011,49 +1023,45 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.after(100, wait_for_config)
 
     def _launch_plan_generation(self, name, script, run_config):
-        """Boot the M2* Agent after configuration is complete."""
+        """Boot the XPR Agent after configuration is complete."""
         from autonomous_agent import AutonomousAgent
-        from m2_agent_engine import M2AgentEngine
+        from xpr_agent_engine import XPRAgentEngine
 
-        self._log(
-            f"\n[M2* AGENT] Booting Agent to generate plan for {name}...", "#8e44ad"
-        )
-        self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+        # Create dialog for plan review
+        dialog = ctk.CTkToplevel(self)
+        dialog.title(f"XPR Control Layer - {name}")
+        dialog.geometry("600x500")
 
-        def run_agent_generation():
-            engine = M2AgentEngine()
-            experiment_key = script.replace("run_", "").replace(".py", "")
-            try:
-                plan_result = engine.plan_experiment(
-                    task=f"Optimize {experiment_key}", current_params={}
-                )
-                plan_details = plan_result.output
-            except Exception as e:
-                plan_details = f"Failed to generate plan: {e}"
+        ctk.CTkLabel(
+            dialog,
+            text="ExperimentPlan Review",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=10)
 
-            self.after(0, lambda: popup_callback(plan_details))
+        plan_text = ctk.CTkTextbox(dialog, height=300, width=550)
+        plan_text.pack(pady=10, padx=20)
 
         def popup_callback(plan_str):
-            dialog = ctk.CTkToplevel(self)
-            dialog.title(f"M2* Control Layer - {name}")
-            dialog.geometry("600x500")
+            popup_dialog = ctk.CTkToplevel(self)
+            popup_dialog.title(f"XPR Control Layer - {name}")
+            popup_dialog.geometry("600x500")
 
             ctk.CTkLabel(
-                dialog,
+                popup_dialog,
                 text="ExperimentPlan Review",
                 font=ctk.CTkFont(size=16, weight="bold"),
             ).pack(pady=10)
 
-            plan_text = ctk.CTkTextbox(dialog, height=300, width=550)
-            plan_text.pack(pady=10, padx=20)
-            plan_text.insert("0.0", plan_str)
+            plan_display_text = ctk.CTkTextbox(popup_dialog, height=300, width=550)
+            plan_display_text.pack(pady=10, padx=20)
+            plan_display_text.insert("0.0", plan_str)
 
             def approve():
                 self._log(
-                    f"[M2* AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71"
+                    f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71"
                 )
                 self._update_guardrail_dashboard(status="RUNNING", experiment=name)
-                dialog.destroy()
+                popup_dialog.destroy()
 
                 def run_agent():
                     try:
@@ -1068,196 +1076,284 @@ class ExperimentRunnerGUI(ctk.CTk):
                                 status="OK", confidence=0.9, experiment=name
                             ),
                         )
-                        self._log(
-                            f"[M2* AGENT] Completed RL Loop for {name}.", "#2ecc71"
+                    except Exception as e:
+                        self._log(f"[XPR AGENT] Agent execution failed: {e}", "#e74c3c")
+                        self._update_guardrail_dashboard(
+                            status="WARNING", confidence=0.3, experiment=name
                         )
-                    except Exception as exc:
-                        err_msg = str(exc)
-                        self.after(
-                            0,
-                            lambda m=err_msg: self._notify_guardrail_escalation(
-                                name, 0.0, f"Agent error: {m}"
-                            ),
-                        )
-                        self._log(
-                            f"[M2* AGENT] Error running auto-improve: {err_msg}",
-                            "#e74c3c",
-                        )
+                        self._notify_guardrail_escalation(name, 0.3, str(e))
 
                 threading.Thread(target=run_agent, daemon=True).start()
 
-            def modify():
-                """Modify: Run the issue-fix skill chain, then re-open with refined plan."""
+        # Generate plan using agent engine
+        try:
+            agent_engine = XPRAgentEngine()
+            plan_result = agent_engine.plan_experiment(name, {})
+            plan_str = (
+                str(plan_result.result)
+                if plan_result.success
+                else "Failed to generate plan"
+            )
+            plan_text.insert("0.0", plan_str)
+            # Remove unused variable
+            # plan_details = (
+            #     plan_result.result
+            #     if plan_result.success
+            #     else f"Failed to generate plan: {plan_result.error}"
+            # )
+        except Exception as e:
+            plan_str = f"Failed to generate plan: {e}"
+            self._log(f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71")
+            self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+            self._update_guardrail_dashboard(
+                status="WARNING", confidence=0.6, experiment=name
+            )
+            # Capture the current plan text (may have been edited by human)
+            current_plan_text = self.agent_engine.get_current_plan()
+            if current_plan_text and current_plan_text.result:
+                plan_text = current_plan_text.result.get("plan", "No plan available")
+            else:
+                plan_text = "No plan available"
+            dialog.destroy()
+
+            def run_modify_chain():
+                try:
+                    engine = XPRAgentEngine()
+                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    # Step 1: Run issue-fix chain on the current plan
+                    # Use execute_skill instead of non-existent xpr_skill_chain
+                    fix_result = engine.execute_skill(
+                        "issue_fix",
+                        experiment_key=experiment_key,
+                        original_plan=plan_text,
+                        current_plan=current_plan_text,
+                    )
+                    fix_summary = (
+                        str(fix_result.result)
+                        if fix_result.success
+                        else "No fix output generated."
+                    )
+                    self._log(
+                        f"[XPR AGENT] Issue-fix chain complete: {fix_summary[:200]}",
+                        "#f39c12",
+                    )
+
+                    # Step 2: Re-plan with the fix context
+                    refined_plan = engine.plan_experiment(
+                        task=f"Refine plan for {experiment_key}. Previous fix: {fix_summary[:500]}",
+                        current_params={},
+                    )
+                    refined_str = (
+                        str(refined_plan.result)
+                        if refined_plan.success
+                        else "No plan generated"
+                    )
+
+                    # Step 3: Re-open the popup with the refined plan
+                    self.after(0, lambda: popup_callback(refined_str))
+                except Exception as exc:
+                    err_msg = str(exc)
+                    self._log(f"[XPR AGENT] Modify chain failed: {err_msg}", "#e74c3c")
+                    self.after(
+                        0,
+                        lambda m=err_msg: self._notify_guardrail_escalation(
+                            name, 0.3, f"Modify chain failed: {m}"
+                        ),
+                    )
+
+            threading.Thread(target=run_modify_chain, daemon=True).start()
+
+        def approve():
+            """Approve: Execute the plan directly."""
+            self._log(f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71")
+            self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+            dialog.destroy()
+
+            def run_agent():
+                try:
+                    agent = AutonomousAgent(str(self.research_dir))
+                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    agent.optimize_experiment(
+                        experiment_key, iterations=3, resume=False
+                    )
+                    self.after(
+                        0,
+                        lambda: self._update_guardrail_dashboard(
+                            status="OK", confidence=0.9, experiment=name
+                        ),
+                    )
+                except Exception as e:
+                    self._log(f"[XPR AGENT] Agent execution failed: {e}", "#e74c3c")
+                    self._update_guardrail_dashboard(
+                        status="WARNING", confidence=0.3, experiment=name
+                    )
+                    self._notify_guardrail_escalation(name, 0.3, str(e))
+
+            threading.Thread(target=run_agent, daemon=True).start()
+
+        def modify():
+            """Modify: Run issue-fix chain and re-plan."""
+            self._log("[XPR AGENT] Plan modification requested.", "#f39c12")
+            dialog.destroy()
+
+            # Get current plan text
+            current_plan_text = plan_text.get("0.0", "end").strip()
+
+            def run_modify_chain():
+                try:
+                    engine = XPRAgentEngine()
+                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    # Step 1: Run issue-fix chain on the current plan
+                    fix_result = engine.execute_skill(
+                        "issue_fix",
+                        experiment_key=experiment_key,
+                        original_plan=current_plan_text,
+                        current_plan=current_plan_text,
+                    )
+                    fix_summary = (
+                        str(fix_result.result)
+                        if fix_result.success
+                        else "No fix output generated."
+                    )
+                    self._log(
+                        f"[XPR AGENT] Issue-fix chain complete: {fix_summary[:200]}",
+                        "#f39c12",
+                    )
+
+                    # Step 2: Re-plan with the fix context
+                    refined_plan = engine.plan_experiment(
+                        task=f"Refine plan for {experiment_key}. Previous fix: {fix_summary[:500]}",
+                        current_params={},
+                    )
+                    refined_str = (
+                        str(refined_plan.result)
+                        if refined_plan.success
+                        else "No plan generated"
+                    )
+
+                    # Step 3: Re-open the popup with the refined plan
+                    self.after(0, lambda: popup_callback(refined_str))
+                except Exception as exc:
+                    err_msg = str(exc)
+                    self._log(f"[XPR AGENT] Modify chain failed: {err_msg}", "#e74c3c")
+                    self.after(
+                        0,
+                        lambda m=err_msg: self._notify_guardrail_escalation(
+                            name, 0.3, f"Modify chain failed: {m}"
+                        ),
+                    )
+
+            threading.Thread(target=run_modify_chain, daemon=True).start()
+
+        def reject():
+            """Reject: Prompt for human priorities, then re-plan with those priorities."""
+            self._log(
+                "[XPR AGENT] Plan REJECTED. Requesting human priorities.",
+                "#e74c3c",
+            )
+            self._update_guardrail_dashboard(
+                status="HALTED", confidence=0.2, experiment=name
+            )
+            dialog.destroy()
+
+            # Show priority input dialog
+            priority_dialog = ctk.CTkToplevel(self)
+            priority_dialog.title("Rejection - Set New Priorities")
+            priority_dialog.geometry("500x300")
+            priority_dialog.transient(self)
+
+            ctk.CTkLabel(
+                priority_dialog,
+                text="What should the agent focus on next?",
+                font=ctk.CTkFont(size=14, weight="bold"),
+            ).pack(pady=(15, 5))
+            ctk.CTkLabel(
+                priority_dialog,
+                text="Describe your priorities, constraints, or a new direction:",
+                font=ctk.CTkFont(size=11),
+                text_color="#aaaaaa",
+            ).pack(pady=(0, 5))
+
+            priority_input = ctk.CTkTextbox(priority_dialog, height=120, width=450)
+            priority_input.pack(pady=10, padx=20)
+            priority_input.insert(
+                "0.0",
+                "e.g., Focus on reducing false positives rather than overall accuracy.",
+            )
+
+            def submit_priorities():
+                human_priorities = priority_input.get("0.0", "end").strip()
+                priority_dialog.destroy()
                 self._log(
-                    "[M2* AGENT] Plan MODIFIED. Running issue-fix skill chain...",
-                    "#f39c12",
+                    f"[XPR AGENT] New priorities received: {human_priorities[:100]}...",
+                    "#3498db",
                 )
-                self._update_guardrail_dashboard(
-                    status="WARNING", confidence=0.6, experiment=name
-                )
-                # Capture the current plan text (may have been edited by human)
-                current_plan = plan_text.get("0.0", "end").strip()
-                dialog.destroy()
 
-                def run_modify_chain():
+                def run_replan():
                     try:
-                        engine = M2AgentEngine()
+                        engine = XPRAgentEngine()
                         experiment_key = script.replace("run_", "").replace(".py", "")
-                        # Step 1: Run issue-fix chain on the current plan
-                        fix_results = engine.run_skill_chain(
-                            initial_input={
-                                "experiment": experiment_key,
-                                "original_plan": current_plan,
-                                "action": "modify",
-                            },
-                            skills_list=["job_debug", "issue_fix", "issue_report"],
-                        )
-                        fix_summary = (
-                            fix_results[-1].output
-                            if fix_results
-                            else "No fix output generated."
-                        )
-                        self._log(
-                            f"[M2* AGENT] Issue-fix chain complete: {fix_summary[:200]}",
-                            "#f39c12",
-                        )
-
-                        # Step 2: Re-plan with the fix context
-                        refined_plan = engine.plan_experiment(
-                            task=f"Refine plan for {experiment_key}. Previous fix: {fix_summary[:500]}",
+                        new_plan = engine.plan_experiment(
+                            task=f"Re-plan {experiment_key} with human priorities: {human_priorities}",
                             current_params={},
-                        )
-                        refined_str = refined_plan.output
-
-                        # Step 3: Re-open the popup with the refined plan
-                        self.after(0, lambda: popup_callback(refined_str))
-                    except Exception as exc:
-                        err_msg = str(exc)
-                        self._log(
-                            f"[M2* AGENT] Modify chain failed: {err_msg}", "#e74c3c"
                         )
                         self.after(
                             0,
-                            lambda m=err_msg: self._notify_guardrail_escalation(
-                                name, 0.3, f"Modify chain failed: {m}"
+                            lambda: popup_callback(
+                                str(new_plan.result) if new_plan.success else "No plan"
                             ),
                         )
+                    except Exception as e:
+                        self._log(f"[XPR AGENT] Re-plan failed: {e}", "#e74c3c")
 
-                threading.Thread(target=run_modify_chain, daemon=True).start()
+                threading.Thread(target=run_replan, daemon=True).start()
 
-            def reject():
-                """Reject: Prompt for human priorities, then re-plan with those priorities."""
-                self._log(
-                    "[M2* AGENT] Plan REJECTED. Requesting human priorities.",
-                    "#e74c3c",
-                )
-                self._update_guardrail_dashboard(
-                    status="HALTED", confidence=0.2, experiment=name
-                )
-                dialog.destroy()
+            def cancel_reject():
+                priority_dialog.destroy()
+                self._update_guardrail_dashboard(status="IDLE", experiment=name)
 
-                # Show priority input dialog
-                priority_dialog = ctk.CTkToplevel(self)
-                priority_dialog.title("Rejection - Set New Priorities")
-                priority_dialog.geometry("500x300")
-                priority_dialog.transient(self)
-
-                ctk.CTkLabel(
-                    priority_dialog,
-                    text="What should the agent focus on next?",
-                    font=ctk.CTkFont(size=14, weight="bold"),
-                ).pack(pady=(15, 5))
-                ctk.CTkLabel(
-                    priority_dialog,
-                    text="Describe your priorities, constraints, or a new direction:",
-                    font=ctk.CTkFont(size=11),
-                    text_color="#aaaaaa",
-                ).pack(pady=(0, 5))
-
-                priority_input = ctk.CTkTextbox(priority_dialog, height=120, width=450)
-                priority_input.pack(pady=10, padx=20)
-                priority_input.insert(
-                    "0.0",
-                    "e.g., Focus on reducing false positives rather than overall accuracy.",
-                )
-
-                def submit_priorities():
-                    human_priorities = priority_input.get("0.0", "end").strip()
-                    priority_dialog.destroy()
-                    self._log(
-                        f"[M2* AGENT] New priorities received: {human_priorities[:100]}...",
-                        "#3498db",
-                    )
-
-                    def run_replan():
-                        try:
-                            engine = M2AgentEngine()
-                            experiment_key = script.replace("run_", "").replace(
-                                ".py", ""
-                            )
-                            new_plan = engine.plan_experiment(
-                                task=f"Re-plan {experiment_key} with human priorities: {human_priorities}",
-                                current_params={},
-                            )
-                            self.after(0, lambda: popup_callback(new_plan.output))
-                        except Exception as e:
-                            self._log(f"[M2* AGENT] Re-plan failed: {e}", "#e74c3c")
-
-                    threading.Thread(target=run_replan, daemon=True).start()
-
-                def cancel_reject():
-                    priority_dialog.destroy()
-                    self._update_guardrail_dashboard(status="IDLE", experiment=name)
-
-                btn_row = ctk.CTkFrame(priority_dialog, fg_color="transparent")
-                btn_row.pack(pady=10)
-                ctk.CTkButton(
-                    btn_row,
-                    text="Submit & Re-plan",
-                    command=submit_priorities,
-                    fg_color="#3498db",
-                    width=130,
-                    hover_color="#2980b9",
-                ).pack(side="left", padx=10)
-                ctk.CTkButton(
-                    btn_row,
-                    text="Cancel",
-                    command=cancel_reject,
-                    fg_color="#7f8c8d",
-                    width=100,
-                    hover_color="#636e72",
-                ).pack(side="left", padx=10)
-
-            btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-            btn_frame.pack(pady=10)
-
+            btn_row = ctk.CTkFrame(priority_dialog, fg_color="transparent")
+            btn_row.pack(pady=10)
             ctk.CTkButton(
-                btn_frame,
-                text="✅ Approve",
-                command=approve,
-                fg_color="#27ae60",
-                width=110,
-                hover_color="#219150",
+                btn_row,
+                text="Submit & Re-plan",
+                command=submit_priorities,
+                fg_color="#3498db",
+                width=130,
+                hover_color="#2980b9",
             ).pack(side="left", padx=10)
             ctk.CTkButton(
-                btn_frame,
-                text="🔧 Modify",
-                command=modify,
-                fg_color="#f39c12",
-                width=110,
-                hover_color="#d68910",
-            ).pack(side="left", padx=10)
-            ctk.CTkButton(
-                btn_frame,
-                text="❌ Reject",
-                command=reject,
-                fg_color="#e74c3c",
-                width=110,
-                hover_color="#c0392b",
+                btn_row,
+                text="Cancel",
+                command=cancel_reject,
+                fg_color="#7f8c8d",
+                width=100,
+                hover_color="#636e72",
             ).pack(side="left", padx=10)
 
-        # Start threaded plan generation (no race-condition early popup)
-        threading.Thread(target=run_agent_generation, daemon=True).start()
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=10)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="✅ Approve",
+            command=approve,
+            fg_color="#27ae60",
+            width=110,
+            hover_color="#219150",
+        ).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_frame,
+            text="🔧 Modify",
+            command=modify,
+            fg_color="#f39c12",
+            width=110,
+            hover_color="#d68910",
+        ).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_frame,
+            daemon=True,
+        ).start()
 
     def _run_experiment(self, name, script) -> None:
         if name in self.running_experiments:
@@ -1321,8 +1417,8 @@ class ExperimentRunnerGUI(ctk.CTk):
                 finally:
                     stream.close()
 
-            stdout_buffer = []
-            stderr_buffer = []
+            stdout_buffer: List[str] = []
+            stderr_buffer: List[str] = []
 
             stdout_thread = threading.Thread(
                 target=read_stream_to_buffer, args=(proc.stdout, name, stdout_buffer)
@@ -1867,7 +1963,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             )
 
             # Wait for this experiment to finish with timeout
-            wait_time = 0
+            wait_time = 0.0
             max_wait_time = 300  # 5 minutes max per experiment
             while (
                 name in self.running_experiments
@@ -2006,7 +2102,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             ):  # Basic package name validation
                 packages.append(m)
             else:
-                logger.warning(f"Skipping invalid package name: {m}")
+                logging.warning(f"Skipping invalid package name: {m}")
 
         if not packages:
             self.after(0, lambda: self._log("No valid packages to install", "#e74c3c"))
@@ -2229,7 +2325,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.current_figure.suptitle(
             f"{experiment_name} Results Analysis", color="white", fontsize=14, y=0.98
         )
-        self.current_figure.tight_layout(rect=[0, 0, 1, 0.96])
+        self.current_figure.tight_layout(rect=(0, 0, 1, 0.96))
 
         if self.current_canvas is not None:
             self.current_canvas.draw()
@@ -2380,8 +2476,6 @@ class ExperimentRunnerGUI(ctk.CTk):
             ax5.tick_params(axis="x", rotation=45)
 
             # Panel 6: State Space
-            import numpy as np
-
             state_x = results.get("state_x", np.random.randn(20))
             state_y = results.get("state_y", np.random.randn(20))
             ax6.scatter(state_x, state_y, c="#1abc9c", alpha=0.6)

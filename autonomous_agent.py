@@ -45,10 +45,11 @@ import argparse
 import subprocess
 import threading
 from memory_store import MemoryStore, update_memory_from_report
-from m2_agent_engine import M2AgentEngine
-
+from xpr_agent_engine import XPRAgentEngineEnhanced, register_xpr_skills
 
 # Import APGI components (unused for now, available for future integration)
+from human_layer import HumanControlLayer
+
 # from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
 # from experiment_apgi_integration import ExperimentAPGIRunner, get_experiment_apgi_config
 
@@ -89,7 +90,7 @@ class ExperimentResult:
 
 @dataclass
 class ExperimentPlan:
-    """M2* generated Hypothesis and Execution representation."""
+    """XPR* generated Hypothesis and Execution representation."""
 
     hypothesis: str
     success_metrics: Dict[
@@ -101,7 +102,7 @@ class ExperimentPlan:
 
 @dataclass
 class ExecutionReport:
-    """M2* outcome abstract reporting and analysis."""
+    """XPR* outcome abstract reporting and analysis."""
 
     experiment_name: str
     summary: str
@@ -321,10 +322,17 @@ class ParameterOptimizer:
 
         # Analyze performance trend
         if len(performance_history) >= 3:
+            hist_len = len(performance_history)
+            recent_vals = [
+                performance_history[i] for i in range(max(0, hist_len - 3), hist_len)
+            ]
+            prev_vals = [
+                performance_history[i]
+                for i in range(max(0, hist_len - 6), max(0, hist_len - 3))
+            ]
+
             recent_trend = (
-                np.mean(performance_history[-3:]) - np.mean(performance_history[-6:-3])
-                if len(performance_history) >= 6
-                else 0
+                np.mean(recent_vals) - np.mean(prev_vals) if len(prev_vals) > 0 else 0
             )
 
             # Adjust exploration rate based on performance
@@ -495,19 +503,21 @@ class RequestRetryHandler:
                 last_error = e
                 if attempt < self.max_retries:
                     backoff = min(self.backoff_base * (2**attempt), self.max_backoff)
-                    logger.warning(f"Request timed out, retrying in {backoff:.1f}s...")
+                    logger.warning(
+                        f"[XPR* AGENT] Request timed out, retrying in {backoff:.1f}s..."
+                    )
                     time.sleep(backoff)
             except Exception as e:
                 last_error = e
                 if attempt < self.max_retries:
                     backoff = min(self.backoff_base * (2**attempt), self.max_backoff)
                     logger.warning(
-                        f"Request failed ({e}), retrying in {backoff:.1f}s..."
+                        f"[XPR* AGENT] Request failed ({e}), retrying in {backoff:.1f}s..."
                     )
                     time.sleep(backoff)
 
         raise TimeoutError(
-            f"Request failed after {self.max_retries + 1} attempts: {last_error}"
+            f"[XPR* AGENT] Request failed after {self.max_retries + 1} attempts: {last_error}"
         )
 
 
@@ -573,7 +583,7 @@ def safe_subprocess_run(
         subprocess.TimeoutExpired: If command times out
     """
     if not validate_subprocess_command(command):
-        raise ValueError(f"Command not in whitelist: {command}")
+        raise ValueError(f"[XPR* AGENT] Command not in whitelist: {command}")
 
     # Set default timeout
     kwargs.setdefault("timeout", 60)
@@ -612,13 +622,15 @@ class AsyncGitOperations:
         # Apply rate limiting
         while not self.rate_limiter.acquire():
             wait_time = self.rate_limiter.wait_time()
-            logger.debug(f"Rate limiting Git operations, waiting {wait_time:.1f}s...")
+            logger.debug(
+                f"[XPR* AGENT] Rate limiting Git operations, waiting {wait_time:.1f}s..."
+            )
             await asyncio.sleep(wait_time)
 
         # Validate command
         command = ["git"] + args
         if not validate_subprocess_command(command):
-            raise ValueError(f"Git command not in whitelist: {args}")
+            raise ValueError(f"[XPR* AGENT] Git command not in whitelist: {args}")
 
         # Run command in executor to avoid blocking
         loop = asyncio.get_event_loop()
@@ -632,7 +644,7 @@ class AsyncGitOperations:
             )
             return result.returncode, result.stdout, result.stderr
         except asyncio.TimeoutError:
-            return -1, "", "Git command timed out"
+            return -1, "", "[XPR* AGENT] Git command timed out"
 
     async def async_add(self, files: List[str], timeout: float = 30.0) -> bool:
         """Stage files asynchronously.
@@ -649,7 +661,7 @@ class AsyncGitOperations:
                 ["add", pattern], timeout=timeout
             )
             if returncode != 0:
-                logger.warning(f"Failed to stage {pattern}: {stderr}")
+                logger.warning(f"[XPR* AGENT] Failed to stage {pattern}: {stderr}")
         return True
 
     async def async_commit(self, message: str, timeout: float = 30.0) -> Optional[str]:
@@ -666,7 +678,7 @@ class AsyncGitOperations:
             ["commit", "-m", message], timeout=timeout
         )
         if returncode != 0:
-            logger.warning(f"Failed to commit: {stderr}")
+            logger.warning(f"[XPR* AGENT] Failed to commit: {stderr}")
             return None
 
         # Get commit hash
@@ -697,7 +709,7 @@ class AsyncGitOperations:
 
         returncode, _, stderr = await self._run_git_command(cmd, timeout=timeout)
         if returncode != 0:
-            logger.warning(f"Failed to reset: {stderr}")
+            logger.warning(f"[XPR* AGENT] Failed to reset: {stderr}")
             return False
         return True
 
@@ -738,7 +750,9 @@ class AutonomousAgent:
         self.experiment_modules = self._load_experiment_modules()
         self.running = False
         self.memory_store = MemoryStore()
-        self.agent_engine = M2AgentEngine()
+        self.agent_engine = XPRAgentEngineEnhanced()
+        self.optimizer = ParameterOptimizer()
+        self.human_control = HumanControlLayer()
         self.checkpoint_file = Path(repo_path) / ".autonomous_agent_checkpoint.json"
         self.last_checkpoint_time = 0.0
         self.checkpoint_interval_s = 60  # Save checkpoint every 60 seconds
@@ -769,9 +783,9 @@ class AutonomousAgent:
             with open(self.checkpoint_file, "w") as f:
                 json.dump(checkpoint, f, indent=2)
             self.last_checkpoint_time = time.time()
-            logger.debug(f"Checkpoint saved at iteration {iteration}")
+            logger.debug(f"[XPR* AGENT] Checkpoint saved at iteration {iteration}")
         except Exception as e:
-            logger.warning(f"Failed to save checkpoint: {e}")
+            logger.warning(f"[XPR* AGENT] Failed to save checkpoint: {e}")
 
     def _load_checkpoint(self) -> dict | None:
         """Load checkpoint if it exists."""
@@ -781,11 +795,11 @@ class AutonomousAgent:
             with open(self.checkpoint_file, "r") as f:
                 checkpoint = json.load(f)
             logger.info(
-                f"Loaded checkpoint from {checkpoint.get('timestamp', 'unknown')}"
+                f"[XPR* AGENT] Loaded checkpoint from {checkpoint.get('timestamp', 'unknown')}"
             )
             return checkpoint
         except Exception as e:
-            logger.warning(f"Failed to load checkpoint: {e}")
+            logger.warning(f"[XPR* AGENT] Failed to load checkpoint: {e}")
             return None
 
     def _clear_checkpoint(self):
@@ -793,9 +807,9 @@ class AutonomousAgent:
         try:
             if self.checkpoint_file.exists():
                 self.checkpoint_file.unlink()
-                logger.debug("Checkpoint cleared")
+                logger.debug("[XPR* AGENT] Checkpoint cleared")
         except Exception as e:
-            logger.warning(f"Failed to clear checkpoint: {e}")
+            logger.warning(f"[XPR* AGENT] Failed to clear checkpoint: {e}")
 
     # ... rest of the code remains the same ...
     def _load_experiment_modules(self) -> Dict[str, Any]:
@@ -846,10 +860,12 @@ class AutonomousAgent:
                     "run_file": str(prepare_file.parent / f"{run_module_name}.py"),
                 }
 
-                logger.info(f"Loaded experiment: {experiment_name}")
+                logger.info(f"[XPR* AGENT] Loaded experiment: {experiment_name}")
 
             except Exception as e:
-                logger.warning(f"Could not load experiment {experiment_name}: {e}")
+                logger.warning(
+                    f"[XPR* AGENT] Could not load experiment {experiment_name}: {e}"
+                )
 
         return modules
 
@@ -862,7 +878,7 @@ class AutonomousAgent:
     ) -> ExperimentResult:
         """Run a single experiment with optional modifications, timeout, and self-healing retry."""
         if experiment_name not in self.experiment_modules:
-            raise ValueError(f"Unknown experiment: {experiment_name}")
+            raise ValueError(f"[XPR* AGENT] Unknown experiment: {experiment_name}")
 
         modules = self.experiment_modules[experiment_name]
 
@@ -899,7 +915,9 @@ class AutonomousAgent:
                             break
 
                 if runner_class is None:
-                    raise ValueError(f"No runner class found in {run_module}")
+                    raise ValueError(
+                        f"[XPR* AGENT] No runner class found in {run_module}"
+                    )
 
                 # Initialize and run experiment
                 runner = runner_class()
@@ -929,7 +947,7 @@ class AutonomousAgent:
             except TimeoutError:
                 completion_time = time.time() - start_time
                 logger.error(
-                    f"Experiment {experiment_name} timed out after {timeout_seconds} seconds"
+                    f"[XPR* AGENT] Experiment {experiment_name} timed out after {timeout_seconds} seconds"
                 )
                 return ExperimentResult(
                     commit_hash=commit_hash,
@@ -945,35 +963,45 @@ class AutonomousAgent:
             except Exception as e:
                 completion_time = time.time() - start_time
                 logger.error(
-                    f"Experiment {experiment_name} crashed (attempt {attempt + 1}): {str(e)}"
+                    f"[XPR* AGENT] Experiment {experiment_name} crashed (attempt {attempt + 1}): {str(e)}"
                 )
 
                 # Phase 2 Component: Agent Harness & Skill Chaining (Self-Healing)
-                logger.info("Executing M2* Agent Engine self-healing skill chain...")
+                logger.info(
+                    "[XPR* AGENT] Executing XPR* Agent Engine self-healing skill chain..."
+                )
                 healed = False
                 try:
-                    healing_chain = self.agent_engine.run_skill_chain(
+                    healing_chain = self.agent_engine.xpr_skill_chain(
                         initial_input={
                             "error": str(e),
                             "experiment": experiment_name,
                             "file": modules["run_file"],
                         },
-                        skills_list=["job_debug", "issue_fix", "issue_report"],
+                        skills_list=[
+                            "xpr_job_debug",
+                            "xpr_issue_fix",
+                            "xpr_issue_report",
+                        ],
                     )
                     if healing_chain and len(healing_chain) > 0:
-                        logger.info(f"Self-Healing Report: {healing_chain[-1].output}")
+                        logger.info(
+                            f"[XPR* AGENT] Self-Healing Report: {healing_chain[-1].result}"
+                        )
                         # Check if the fix was actually applied (patch_source_code succeeded)
                         for sr in healing_chain:
-                            if sr.skill_name == "issue_fix" and sr.success:
+                            if sr.skill_type == "issue_fix" and sr.success:
                                 healed = True
                                 break
                 except Exception as e_engine:
-                    logger.error(f"Agent Engine failed during recovery: {e_engine}")
+                    logger.error(
+                        f"[XPR* AGENT] Agent Engine failed during recovery: {e_engine}"
+                    )
 
                 # If healed and we have retries left, reload module and retry
                 if healed and attempt < max_retries:
                     logger.info(
-                        f"Self-healing applied fix. Retrying experiment (attempt {attempt + 2})..."
+                        f"[XPR* AGENT] Self-healing applied fix. Retrying experiment (attempt {attempt + 2})..."
                     )
                     try:
                         importlib.invalidate_caches()
@@ -983,7 +1011,7 @@ class AutonomousAgent:
                         )
                     except Exception as reload_err:
                         logger.warning(
-                            f"Failed to reload module after fix: {reload_err}"
+                            f"[XPR* AGENT] Failed to reload module after fix: {reload_err}"
                         )
                     continue  # Retry the experiment
 
@@ -1087,19 +1115,50 @@ class AutonomousAgent:
         }
 
         # Validate all parameters against whitelist
-        for param_name in modifications.keys():
-            if param_name not in ALLOWED_PARAMETERS:
-                logger.warning(f"Skipping unauthorized parameter: {param_name}")
-                del modifications[param_name]
+        valid_modifications = {}
+        for param_name, param_value in modifications.items():
+            if param_name in ALLOWED_PARAMETERS:
+                valid_modifications[param_name] = param_value
+            else:
+                logger.warning(
+                    f"[XPR* AGENT] Skipping unauthorized parameter: {param_name}"
+                )
+        modifications = valid_modifications
 
         if not modifications:
-            logger.warning("No valid parameters to modify")
+            logger.warning("[XPR* AGENT] No valid parameters to modify")
             return
 
         with open(run_file, "r") as f:
             content = f.read()
 
-        # Apply each modification
+        # -----------------------------------------------------------
+        # Strategy 1: Try LLM-generated code patch (preferred)
+        # -----------------------------------------------------------
+        if hasattr(self.agent_engine, "llm_integration"):
+            llm = self.agent_engine.llm_integration
+            patch_result = llm.generate_code_patch(
+                file_path=run_file,
+                file_content=content,
+                modifications=modifications,
+            )
+            if patch_result.success and patch_result.result:
+                logger.info(
+                    "[XPR* AGENT] Applied LLM-generated code patch "
+                    f"(confidence {patch_result.confidence:.2f})"
+                )
+                with open(run_file, "w") as f:
+                    f.write(patch_result.result)
+                return
+            else:
+                logger.info(
+                    f"[XPR* AGENT] LLM patch unavailable ({patch_result.error}), "
+                    "falling back to regex"
+                )
+
+        # -----------------------------------------------------------
+        # Strategy 2: Regex-based fallback
+        # -----------------------------------------------------------
         for param_name, new_value in modifications.items():
             # Find the parameter definition and replace it
             # Use raw string to avoid ambiguous backreferences
@@ -1212,9 +1271,9 @@ class AutonomousAgent:
         try:
             self.git_tracker.repo.git.checkout("-b", branch_name)
             self._session_branch = branch_name
-            logger.info(f"Created session branch: {branch_name}")
+            logger.info(f"[XPR* AGENT] Created session branch: {branch_name}")
         except Exception as e:
-            logger.warning(f"Could not create session branch: {e}")
+            logger.warning(f"[XPR* AGENT] Could not create session branch: {e}")
             self._session_branch = None
 
     def optimize_experiment(
@@ -1222,7 +1281,7 @@ class AutonomousAgent:
     ) -> List[ExperimentResult]:
         """Run optimization loop for a single experiment with checkpointing."""
         logger.info(
-            f"Starting optimization for {experiment_name} ({iterations} iterations)"
+            f"[XPR* AGENT] Starting optimization for {experiment_name} ({iterations} iterations)"
         )
 
         # Phase 5 / USAGE.md: Create a session branch (git checkout -b <exp>/<tag>)
@@ -1243,10 +1302,12 @@ class AutonomousAgent:
                     self.git_tracker.best_results[exp_name] = ExperimentResult(
                         **result_data
                     )
-                logger.info(f"Resuming from iteration {start_iteration + 1}")
+                logger.info(
+                    f"[XPR* AGENT] Resuming from iteration {start_iteration + 1}"
+                )
 
         for iteration in range(start_iteration, iterations):
-            logger.info(f"Iteration {iteration + 1}/{iterations}")
+            logger.info(f"[XPR* AGENT] Iteration {iteration + 1}/{iterations}")
 
             # Get current parameters
             current_params = self._get_current_parameters(experiment_name)
@@ -1255,7 +1316,9 @@ class AutonomousAgent:
             if iteration == 0:
                 modifications = {}  # First run with baseline
             else:
-                logger.info(f"Agent generating plan for iteration {iteration}...")
+                logger.info(
+                    f"[XPR* AGENT] Agent generating plan for iteration {iteration}..."
+                )
 
                 # Step 4: Activate Reading from Cognitive Memory
                 past_memories = self.memory_store.retrieve_memories(
@@ -1272,11 +1335,13 @@ class AutonomousAgent:
 
                 # Extract JSON from LLM output
                 try:
-                    plan_data = json.loads(plan_result.output)
+                    plan_data = json.loads(
+                        str(plan_result.result) if plan_result.result else "{}"
+                    )
                     modifications = plan_data.get("modifications", {})
                 except Exception as e:
                     logger.warning(
-                        f"Failed to parse Agent Engine JSON output: {e}. Fallback to empty."
+                        f"[XPR* AGENT] Failed to parse Agent Engine JSON output: {e}. Fallback to empty."
                     )
                     modifications = {}
 
@@ -1303,34 +1368,135 @@ class AutonomousAgent:
                 else ["Valid parameters found"],
                 confidence_score=0.9 if result.status == "success" else 0.1,
             )
+            # Get the generate method if available
+            llm_gen_fn = None
+            if (
+                hasattr(self.agent_engine, "llm_integration")
+                and self.agent_engine.llm_integration
+            ):
+                llm_gen_fn = self.agent_engine.llm_integration.generate_text
+
             update_memory_from_report(
                 asdict(report),
                 self.memory_store,
-                llm_call_fn=self.agent_engine._call_llm,
+                llm_call_fn=llm_gen_fn,
             )
 
             # Phase 3 Step 3: Analyze & Report (enriched context)
-            analysis_res = self.agent_engine.analyze_results(
-                {
-                    "delta": delta,
-                    "primary_metric": result.primary_metric,
-                    "status": result.status,
-                    "experiment": experiment_name,
-                    "iteration": iteration,
-                    "modifications": modifications if iteration > 0 else {},
-                    "performance_history": performance_history[-5:],
-                }
-            )
-            confidence = analysis_res.metadata.get("confidence", 0.0)
+            # Register XPR skills if not already registered
+            if not hasattr(self.agent_engine, "xpr_job_debug"):
+                register_xpr_skills(self.agent_engine)
 
-            # Check if improvement
+            analysis_res = self.agent_engine.execute_skill(
+                "xpr_issue_report",
+                {
+                    "error": str(
+                        getattr(result, "error", "No error information available")
+                    ),
+                    "experiment": experiment_name,
+                    "metrics": {"primary_metric": result.primary_metric},
+                },
+            )
+            confidence = getattr(
+                analysis_res,
+                "confidence",
+                getattr(analysis_res.metadata, "get", lambda x, y=0: 0)(
+                    "confidence", 0.0
+                )
+                if hasattr(analysis_res, "metadata")
+                else 0.0,
+            )
+
+            # Phase 3 Step 4: Human Review Checkpoint Integration
             if confidence > 0.5:
                 logger.info(
-                    f"Improvement verified by Agent! New best: {result.primary_metric:.4f}"
+                    "High confidence improvement detected - checking for human review requirements"
                 )
-                if result.status == "success":
-                    self.git_tracker.best_results[experiment_name] = result
-                    self.git_tracker.save_results(self.git_tracker.best_results)
+
+                # Check if human review is needed based on configuration
+                config = self.human_control.get_configuration_summary()
+
+                # If human interaction mode is not autonomous, pause for review
+                if (
+                    config.get("configured", False)
+                    or config.get("interaction_mode") != "autonomous"
+                ):
+                    logger.info("Human review required - pausing for human oversight")
+
+                    # Prepare result for human review
+                    review_data = {
+                        "experiment_id": f"{experiment_name}_iter_{iteration}",
+                        "hypothesis_id": f"auto_opt_{experiment_name}",
+                        "metrics": result.metrics if hasattr(result, "metrics") else {},
+                        "outcomes": result.outcomes
+                        if hasattr(result, "outcomes")
+                        else {},
+                        "analysis": analysis_res.analysis
+                        if hasattr(analysis_res, "analysis")
+                        else "",
+                        "confidence": confidence,
+                    }
+
+                    # Request human review
+                    review_result = self.human_control.review(review_data)
+
+                    # Apply human decision
+                    if review_result.decision.value == "approve":
+                        logger.info("Human approved - committing improvements")
+                        if result.status == "success":
+                            self.git_tracker.best_results[experiment_name] = result
+                            self.git_tracker.save_results(self.git_tracker.best_results)
+
+                        # Commit with human approval
+                        try:
+                            loop = asyncio.new_event_loop()
+                            loop.run_until_complete(
+                                self.async_git.async_commit(
+                                    f"[XPR* AGENT] Human approved: {experiment_name} iter {iteration}"
+                                )
+                            )
+                            loop.close()
+                        except Exception as git_err:
+                            logger.warning(
+                                f"Failed to commit human approval: {git_err}"
+                            )
+
+                    elif review_result.decision.value == "modify":
+                        logger.info(
+                            "Human requested modifications - generating parameter changes"
+                        )
+                        # Apply modifications and restart optimization
+                        if review_result.modifications:
+                            mod_params = self.optimizer.suggest_modifications(
+                                experiment_name,
+                                {"modifications": review_result.modifications},
+                                performance_history,
+                            )
+                            modifications.update(mod_params)
+
+                        # Continue to next iteration with modifications
+                        continue
+
+                    elif review_result.decision.value == "reject":
+                        logger.info("Human rejected improvements - rolling back")
+                        # Rollback to previous best parameters
+                        if experiment_name in self.git_tracker.best_results:
+                            rollback_params = self.git_tracker.best_results[
+                                experiment_name
+                            ].parameter_modifications
+                            modifications.update(rollback_params)
+
+                        # Continue with rollback parameters
+                        continue
+
+                # If autonomous mode or no human review needed, continue with normal flow
+                if confidence > 0.5:
+                    logger.info(
+                        f"[XPR* AGENT] Improvement verified by Agent! New best: {result.primary_metric:.4f}"
+                    )
+                    if result.status == "success":
+                        self.git_tracker.best_results[experiment_name] = result
+                        self.git_tracker.save_results(self.git_tracker.best_results)
 
                     # Phase 5: Use async Git for high-confidence commits
                     try:
@@ -1340,12 +1506,14 @@ class AutonomousAgent:
                         )
                         loop.run_until_complete(
                             self.async_git.async_commit(
-                                f"[M2* AUTO] {experiment_name} iter {iteration}: "
+                                f"[XPR* AGENT] {experiment_name} iter {iteration}: "
                                 f"metric {result.primary_metric:.4f} (Δ{delta:+.4f})"
                             )
                         )
                         loop.close()
-                        logger.info("AsyncGitOperations: committed improvement.")
+                        logger.info(
+                            "[XPR* AGENT] AsyncGitOperations: committed improvement."
+                        )
                     except Exception as git_err:
                         logger.warning(
                             f"Async git commit failed (non-fatal): {git_err}"
@@ -1362,6 +1530,51 @@ class AutonomousAgent:
                     f"Guardrail triggered: Agent confidence {confidence} is too low. Escalating to human..."
                 )
                 break
+
+            # Phase 3 Step 4b: Metric Regression Detection
+            if len(performance_history) >= 3:
+                recent_3 = performance_history[-3:]
+                direction = self._get_metric_direction(experiment_name)
+                if direction == "higher":
+                    regressing = all(
+                        recent_3[i] <= recent_3[i - 1] for i in range(1, len(recent_3))
+                    )
+                else:
+                    regressing = all(
+                        recent_3[i] >= recent_3[i - 1] for i in range(1, len(recent_3))
+                    )
+                if regressing:
+                    logger.warning(
+                        f"[XPR* AGENT] Metric regression detected over last 3 iterations "
+                        f"({recent_3}). Escalating to human review."
+                    )
+                    # Rollback to best known state
+                    self.git_tracker.rollback_experiment()
+                    break
+
+            # Phase 3 Step 4c: Safety Violation Checks
+            if result.primary_metric is not None:
+                import math as _math
+
+                if _math.isnan(result.primary_metric) or _math.isinf(
+                    result.primary_metric
+                ):
+                    logger.error(
+                        f"[XPR* AGENT] Safety violation: metric is {result.primary_metric}. Halting."
+                    )
+                    self.git_tracker.rollback_experiment()
+                    break
+                # Check for extreme outlier (>10x best known metric)
+                best_metric = self.git_tracker.get_best_metric(experiment_name)
+                if best_metric is not None and best_metric != 0.0:
+                    ratio = abs(result.primary_metric / best_metric)
+                    if ratio > 10.0 or ratio < 0.01:
+                        logger.warning(
+                            f"[XPR* AGENT] Safety violation: metric {result.primary_metric} "
+                            f"is an extreme outlier vs best {best_metric}. Halting."
+                        )
+                        self.git_tracker.rollback_experiment()
+                        break
 
             # Save checkpoint periodically
             if time.time() - self.last_checkpoint_time > self.checkpoint_interval_s:
@@ -1406,26 +1619,18 @@ class AutonomousAgent:
             with open(run_file, "r") as f:
                 content = f.read()
 
-            parameters = {}
+            parameters: Dict[str, Any] = {}
 
             # Common parameter patterns to extract
-            # Extract numeric parameters (float/int)
             numeric_patterns = [
-                r"([A-Z_][A-Z0-9_]*)\s*=\s*([0-9]*\.?[0-9]+)",  # Float/Int
-                r"([A-Z_][A-Z0-9_]*)\s*=\s*([0-9]+)",  # Int only
+                r"([A-Z_][A-Z0-9_]*)\s*=\s*(-?[0-9]*\.?[0-9]+)\b",
             ]
-
-            # Extract boolean parameters
             bool_patterns = [
-                r"([A-Z_][A-Z0-9_]*)\s*=\s*(True|False)",
+                r"([A-Z_][A-Z0-9_]*)\s*=\s*(True|False)\b",
             ]
-
-            # Extract string parameters
             string_patterns = [
                 r'([A-Z_][A-Z0-9_]*)\s*=\s*["\']([^"\']*)["\']',
             ]
-
-            # Extract list parameters
             list_patterns = [
                 r"([A-Z_][A-Z0-9_]*)\s*=\s*\[([^\]]*)\]",
             ]
@@ -1436,38 +1641,39 @@ class AutonomousAgent:
 
             for pattern in all_patterns:
                 matches = re.findall(pattern, content)
-                for param_name, param_value in matches:
-                    # Skip if this looks like a function or class definition
-                    if param_name in [
-                        "def",
-                        "class",
-                        "import",
-                        "from",
-                        "if",
-                        "for",
-                        "while",
-                    ]:
-                        continue
+                for match in matches:
+                    if isinstance(match, tuple) and len(match) >= 2:
+                        param_name = str(match[0])
+                        param_value = str(match[1])
 
-                    # Convert value to appropriate type
-                    try:
-                        if param_value in ["True", "False"]:
-                            parameters[param_name] = param_value == "True"
-                        elif param_value.replace(".", "").replace("-", "").isdigit():
-                            # Numeric value
-                            if "." in param_value:
-                                parameters[param_name] = float(param_value)
+                        # Skip if this looks like a reserved word
+                        if param_name in [
+                            "def",
+                            "class",
+                            "import",
+                            "from",
+                            "if",
+                            "for",
+                            "while",
+                        ]:
+                            continue
+
+                        try:
+                            if param_value in ["True", "False"]:
+                                parameters[param_name] = param_value == "True"
+                            elif re.match(r"^-?[0-9]*\.?[0-9]+$", param_value):
+                                if "." in param_value:
+                                    parameters[param_name] = float(param_value)
+                                else:
+                                    parameters[param_name] = int(param_value)
                             else:
-                                parameters[param_name] = int(param_value)
-                        elif param_value.startswith('"') or param_value.startswith("'"):
-                            # String value (remove quotes)
-                            parameters[param_name] = param_value.strip("\"'")
-                        else:
-                            # Try to evaluate as Python literal for lists, etc.
-                            parameters[param_name] = eval(param_value)
-                    except (ValueError, SyntaxError):
-                        # If conversion fails, keep as string
-                        parameters[param_name] = param_value
+                                # Try to evaluate safely for lists/strings or keep as string
+                                try:
+                                    parameters[param_name] = eval(param_value)
+                                except (ValueError, SyntaxError, NameError, TypeError):
+                                    parameters[param_name] = param_value
+                        except (ValueError, SyntaxError):
+                            parameters[param_name] = param_value
 
             return parameters
 
@@ -1488,9 +1694,9 @@ class AutonomousAgent:
             # Pick random experiment to optimize
             experiment_name = np.random.choice(experiment_names)
 
-            # Run few iterations of optimization
+            # Run more iterations of optimization for overnight mode (increased from 3 to 10)
             try:
-                self.optimize_experiment(experiment_name, iterations=3)
+                self.optimize_experiment(experiment_name, iterations=10)
             except Exception as e:
                 logger.error(f"Error optimizing {experiment_name}: {e}")
 

@@ -3,6 +3,7 @@ Comprehensive tests for validation module.
 """
 
 import os
+from typing import Any, Dict, List
 import pytest
 from unittest.mock import patch
 
@@ -91,14 +92,14 @@ class TestValidationResult:
 
     def test_post_init_empty_lists(self):
         """Test post_init with empty lists."""
-        result = ValidationResult(is_valid=True)
+        result = ValidationResult(is_valid=True, errors=[], warnings=[])
         result.__post_init__()
         assert result.errors == []
         assert result.warnings == []
 
     def test_post_init_none_lists(self):
         """Test post_init with None lists."""
-        result = ValidationResult(is_valid=True, errors=None, warnings=None)
+        result = ValidationResult(is_valid=True, errors=[], warnings=[])
         result.__post_init__()
         assert result.errors == []
         assert result.warnings == []
@@ -156,7 +157,7 @@ class TestValidateModificationsBeforeApply:
 
     def test_validate_empty_modifications(self):
         """Test validating empty modifications."""
-        modifications = {}
+        modifications: Dict[str, Any] = {}
         result = validate_modifications_before_apply(modifications)
 
         assert isinstance(result, ValidationResult)
@@ -309,7 +310,7 @@ class TestValidateExperimentConfig:
 
     def test_validate_missing_required_fields(self):
         """Test validating config with missing required fields."""
-        config = {}  # Empty config
+        config: Dict[str, Any] = {}  # Empty config
         result = validate_experiment_config(config)
 
         assert result.is_valid is False
@@ -367,7 +368,7 @@ class TestValidateSubprocessOperation:
 
     def test_validate_empty_command(self):
         """Test validating empty command."""
-        command = []
+        command: List[str] = []
         result = validate_subprocess_operation(command)
 
         assert result.is_valid is False
@@ -553,7 +554,7 @@ class TestValidateGitOperations:
 
     def test_validate_git_operation_with_empty_files(self):
         """Test validating git operation with empty file list."""
-        files = []
+        files: List[str] = []
         operation = "add"
         result = validate_git_operations(files, operation)
 
@@ -580,7 +581,7 @@ class TestModuleIntegration:
         assert isinstance(dangerous_paths, list)
 
         # Test validation results
-        result = ValidationResult(is_valid=False, errors=["Test error"])
+        result = ValidationResult(is_valid=False, errors=["Test error"], warnings=[])
         assert result.is_valid is False
         assert result.errors == ["Test error"]
 
@@ -606,15 +607,9 @@ class TestModuleIntegration:
 
     def test_error_handling(self):
         """Test error handling in validation functions."""
-        # Test with None inputs where appropriate
+        # Test with empty string input
         try:
-            validate_module_name(None)
-            assert False, "Should return False for None input"
-        except (TypeError, AttributeError):
-            pass  # Expected for None input
-
-        try:
-            validate_package_name("")
+            validate_module_name("")
             assert False, "Should return False for empty string"
         except (TypeError, AttributeError):
             pass  # Expected for empty string

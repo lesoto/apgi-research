@@ -164,7 +164,10 @@ class ExperimentAPGIRunner:
             Results dictionary including both base metrics and APGI metrics
         """
         self.start_time = time.time()
-        self.apgi_metrics_history = []
+
+        # Only reset APGI metrics history if starting fresh (no prior trials)
+        if not self.apgi_metrics_history:
+            self.apgi_metrics_history = []
 
         # Reset APGI state
         if self.apgi:

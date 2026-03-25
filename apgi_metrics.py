@@ -11,7 +11,7 @@ import numpy as np
 import logging
 from typing import Dict, List, Optional
 from dataclasses import dataclass
-from scipy import stats
+from scipy import stats  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ class IgnitionMetrics:
     ignition_threshold: float  # Current threshold for ignition
     ignition_volatility: float  # Variability in ignition timing
     cumulative_ignition_prob: float  # Cumulative ignition probability
+    ignition_events: List[float] = None  # Raw ignition events for statistical testing
 
 
 @dataclass
@@ -60,7 +61,9 @@ class APGIMetricsSummary:
     trial_count: int = 0
     experiment_duration: float = 0.0
     overall_performance_score: float = 0.0
-    statistical_significance: Dict[str, float] = None  # p-values for key metrics
+    statistical_significance: Optional[
+        Dict[str, float]
+    ] = None  # p-values for key metrics
 
 
 class EnhancedAPGIMetrics:
@@ -87,15 +90,15 @@ class EnhancedAPGIMetrics:
             IgnitionMetrics object with comprehensive metrics
         """
         if not reaction_times:
-            return IgnitionMetrics(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+            return IgnitionMetrics(0.0, 0.0, 0.0, 0.0, 0.0, [])
 
         # Basic ignition rate calculation
         if threshold is not None:
             # Dynamic threshold based on reaction time distribution
-            threshold = np.mean(reaction_times) + np.std(reaction_times)
+            threshold = float(np.mean(reaction_times) + np.std(reaction_times))
 
         ignition_events = [1.0 if rt <= threshold else 0.0 for rt in reaction_times]
-        ignition_rate = np.mean(ignition_events)
+        ignition_rate = float(np.mean(ignition_events))
 
         # Advanced ignition dynamics
         mean_ignition_time = np.mean(
@@ -114,7 +117,7 @@ class EnhancedAPGIMetrics:
 
         # Ignition volatility (variability in response patterns)
         ignition_std = np.std(ignition_events)
-        ignition_volatility = ignition_std / (ignition_rate + 1e-6)  # Normalized
+        ignition_volatility = float(ignition_std / (ignition_rate + 1e-6))  # Normalized
 
         # Cumulative ignition probability (exponential decay)
         cumulative_prob = 0.0
@@ -123,11 +126,12 @@ class EnhancedAPGIMetrics:
             cumulative_prob += event * decay_factor * (1 - cumulative_prob)
 
         return IgnitionMetrics(
-            ignition_rate=ignition_rate,
-            mean_ignition_time=mean_ignition_time,
-            ignition_threshold=threshold,
-            ignition_volatility=ignition_volatility,
-            cumulative_ignition_prob=cumulative_prob,
+            ignition_rate=float(ignition_rate),
+            mean_ignition_time=float(mean_ignition_time),
+            ignition_threshold=float(threshold),
+            ignition_volatility=float(ignition_volatility),
+            cumulative_ignition_prob=float(cumulative_prob),
+            ignition_events=ignition_events,
         )
 
     def calculate_surprise_metrics(

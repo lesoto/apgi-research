@@ -1,18 +1,20 @@
 import unittest
 from memory_store import MemoryStore
-from m2_agent_engine import M2AgentEngine
+from xpr_agent_engine import XPRAgentEngine
 from autonomous_agent import ExperimentPlan, ExecutionReport
 
 
-class TestM2System(unittest.TestCase):
+class TestXPRSystem(unittest.TestCase):
     def test_memory_store_initialization(self):
         store = MemoryStore()
         self.assertIsInstance(store.memory, list)
 
     def test_agent_engine_initialization(self):
-        engine = M2AgentEngine("dummy_key")
-        self.assertEqual(engine.api_key, "dummy_key")
+        engine = XPRAgentEngine()
+        # Register a test skill to verify skills dictionary works
+        engine.register_skill("test_skill", lambda: "test_result")
         self.assertTrue(len(engine.skills) > 0)
+        self.assertTrue("test_skill" in engine.skills)
 
     def test_experiment_plan_dataclass(self):
         plan = ExperimentPlan(

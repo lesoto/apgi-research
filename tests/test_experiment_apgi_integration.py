@@ -247,7 +247,14 @@ class TestExperimentAPGIRunner:
         mock_base_runner = MagicMock()
         mock_base_runner.run_experiment.return_value = {"accuracy": 0.8}
 
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         result = runner._run_base_experiment()
@@ -260,7 +267,14 @@ class TestExperimentAPGIRunner:
         mock_base_runner = MagicMock()
         del mock_base_runner.run_experiment  # Remove the method
 
-        mock_params = eai.ExportedAPGIParams("test", True)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         with pytest.raises(
@@ -271,7 +285,14 @@ class TestExperimentAPGIRunner:
     def test_extract_primary_metric_known_key(self):
         """Test extracting primary metric with known key."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", True)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         results = {"accuracy": 0.8, "other": "value"}
@@ -283,7 +304,14 @@ class TestExperimentAPGIRunner:
     def test_extract_primary_metric_unknown_key(self):
         """Test extracting primary metric with unknown key."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         results = {"some_metric": 0.75, "other": "value"}
@@ -295,7 +323,14 @@ class TestExperimentAPGIRunner:
     def test_extract_primary_metric_no_numeric(self):
         """Test extracting primary metric when no numeric values."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         results = {"text": "value", "_private": 5}
@@ -307,7 +342,14 @@ class TestExperimentAPGIRunner:
     def test_process_trial_with_apgi_enabled(self):
         """Test processing trial with APGI enabled."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
 
         with patch("experiment_apgi_integration.APGIIntegration") as mock_apgi:
             mock_apgi_instance = MagicMock()
@@ -327,7 +369,14 @@ class TestExperimentAPGIRunner:
     def test_process_trial_with_apgi_disabled(self):
         """Test processing trial with APGI disabled."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", False, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=False,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
 
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
@@ -341,7 +390,14 @@ class TestExperimentAPGIRunner:
     def test_process_trial_with_precision_overrides(self):
         """Test processing trial with precision overrides."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
 
         with patch("experiment_apgi_integration.APGIIntegration") as mock_apgi:
             mock_apgi_instance = MagicMock()
@@ -488,6 +544,9 @@ class TestIntegrationWorkflow:
                     runner.process_trial_with_apgi(1.0, 0.8, "incongruent")
                     runner.process_trial_with_apgi(0.0, 0.0, "congruent")
 
+                    # Check history before run_experiment
+                    assert len(runner.apgi_metrics_history) == 2
+
                     # Run experiment
                     with patch("time.time") as mock_time:
                         mock_time.side_effect = [0, 5, 10]
@@ -540,7 +599,14 @@ class TestErrorHandling:
         mock_base_runner = MagicMock()
         mock_base_runner.run_experiment.return_value = {"accuracy": 0.8}
 
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
 
         with patch("experiment_apgi_integration.APGIIntegration") as mock_apgi:
             mock_apgi.side_effect = Exception("APGI initialization failed")
@@ -553,7 +619,14 @@ class TestErrorHandling:
         mock_base_runner = MagicMock()
         mock_base_runner.run_experiment.side_effect = Exception("Experiment failed")
 
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         with pytest.raises(Exception):
@@ -562,7 +635,14 @@ class TestErrorHandling:
     def test_metric_extraction_edge_cases(self):
         """Test metric extraction edge cases."""
         mock_base_runner = MagicMock()
-        mock_params = eai.ExportedAPGIParams("test", True, 0.35, 1.5, 0.5, 5.5)
+        mock_params = eai.ExportedAPGIParams(
+            experiment_name="test",
+            enabled=True,
+            tau_s=0.35,
+            beta=1.5,
+            theta_0=0.5,
+            alpha=5.5,
+        )
         runner = eai.ExperimentAPGIRunner(mock_base_runner, mock_params)
 
         # Empty results

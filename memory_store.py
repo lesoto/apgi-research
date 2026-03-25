@@ -42,7 +42,7 @@ class VectorEmbedding:
 
 @dataclass
 class MemoryEntry:
-    """Enhanced memory entry with vector embeddings for M2* Engine."""
+    """Enhanced memory entry with vector embeddings for XPR* Engine."""
 
     timestamp: str
     experiment_name: str
@@ -66,7 +66,7 @@ class MemoryStore:
     Supports both keyword-exact and TF-IDF semantic search for retrieval.
     """
 
-    def __init__(self, storage_path: str = "m2_memory.json"):
+    def __init__(self, storage_path: str = "xpr_memory.json"):
         self.storage_path = Path(storage_path)
         self.memory: List[MemoryEntry] = self._load_memory()
         # TF-IDF caches (rebuilt on first semantic query or after add)
@@ -494,13 +494,15 @@ class MemoryStore:
             return 0.0
         return dot / (mag_a * mag_b)
 
-    def semantic_search(self, query: str, top_k: int = 10) -> List[MemoryEntry]:
+    def retrieve_memories(
+        self, experiment_name: str, limit: int = 10
+    ) -> List[MemoryEntry]:
         """
         Retrieve the top-K most semantically relevant memories using TF-IDF similarity.
 
         Args:
-            query: Natural language query string.
-            top_k: Number of results to return.
+            experiment_name: Experiment name
+            limit: Number of results
 
         Returns:
             List of MemoryEntry objects sorted by relevance (most relevant first).
@@ -512,9 +514,9 @@ class MemoryStore:
             return []
 
         # Build query vector
-        query_tokens = self._tokenize(query)
+        query_tokens = self._tokenize(experiment_name)
         if not query_tokens:
-            return self.memory[:top_k]
+            return self.memory[:limit] if limit else self.memory[:5]
 
         query_tf: Dict[str, float] = {}
         total = len(query_tokens)
@@ -533,9 +535,9 @@ class MemoryStore:
             scored.append((sim, idx))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [self.memory[idx] for _, idx in scored[:top_k]]
+        return [self.memory[idx] for _, idx in scored[:limit]]
 
-    def retrieve_memories(
+    def retrieve_memories_by_filter(
         self, experiment_name: Optional[str] = None, pattern_type: Optional[str] = None
     ) -> List[MemoryEntry]:
         """

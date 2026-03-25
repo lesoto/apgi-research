@@ -342,7 +342,7 @@ class RunningStatistics:
 
     def __init__(self):
         self._mean = 0.0
-        self._m2 = 0.0  # Sum of squared differences
+        self._xpr = 0.0  # Sum of squared differences
         self._n_updates = 0
         self._manual_var: Optional[float] = None  # For manually set variance (testing)
         self._manual_mean: Optional[float] = None  # For manually set mean (testing)
@@ -367,22 +367,22 @@ class RunningStatistics:
             return 1.0  # Default variance when no data
         if self._n_updates == 1:
             return 0.0  # Single value has zero variance
-        return self._m2 / self._n_updates  # Population variance
+        return self._xpr / self._n_updates  # Population variance
 
     @var.setter
     def var(self, value: Optional[float]):
         """Set variance directly (allows manual override for testing)."""
         # Store as _manual_var for z_score to use
         self._manual_var = value
-        # Also update M2 if we have count
+        # Also update XPR if we have count
         if self._n_updates > 0 and value is not None:
-            self._m2 = value * self._n_updates
+            self._xpr = value * self._n_updates
         elif value is None:
-            # If setting to None, reset M2 to 0
-            self._m2 = 0.0
+            # If setting to None, reset XPR to 0
+            self._xpr = 0.0
         else:
             # Set count to 1 for manual setting to make var accessible
-            self._m2 = 0.0  # Will be used via _manual_var
+            self._xpr = 0.0  # Will be used via _manual_var
 
     @property
     def count(self) -> int:
@@ -396,13 +396,13 @@ class RunningStatistics:
         if self._n_updates == 1:
             # First value
             self._mean = value
-            self._m2 = 0.0
+            self._xpr = 0.0
         else:
             # Welford's online algorithm
             delta = value - self._mean
             self._mean += delta / self._n_updates
             delta2 = value - self._mean
-            self._m2 += delta * delta2
+            self._xpr += delta * delta2
 
         return self._mean, np.sqrt(self.var) if self.var > 0 else 0.0
 
@@ -425,7 +425,7 @@ class RunningStatistics:
     def reset(self):
         """Reset statistics to initial state."""
         self._mean = 0.0
-        self._m2 = 0.0
+        self._xpr = 0.0
         self._n_updates = 0
         self._manual_var = None
         self._manual_mean = None
@@ -709,7 +709,7 @@ class APGIIntegration:
         self.precision_gaps: List[float] = []
 
         # Experiment-level summary
-        self.experiment_summary: Optional[Dict[str, float]] = None
+        self.experiment_summary: Optional[Dict[str, Any]] = None
 
     # Proxy properties for dynamical system state
     @property
@@ -814,7 +814,7 @@ class APGIIntegration:
         precision_int: Optional[float] = None,
         reward: float = 0.0,
         stress: float = 0.0,
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """
         Process a single trial with APGI dynamics and neuromodulator effects.
 
@@ -987,7 +987,7 @@ class APGIIntegration:
             precision_ext=precision_ext,
         )
 
-    def finalize(self) -> Dict[str, float]:
+    def finalize(self) -> Dict[str, Any]:
         """
         Finalize experiment and compute comprehensive APGI metrics.
 

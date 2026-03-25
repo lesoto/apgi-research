@@ -1,4 +1,6 @@
-a closed-loop system for iteratively improving AI models using an agent + human oversight stack. It combines:
+# ALGORITH - Autonomous Learning Algorithm
+
+A closed-loop system for iteratively improving AI models using an agent + human oversight stack. It combines:
 
 A control layer (Human)
 An execution layer (Agent Harness + Agent)
@@ -272,5 +274,6 @@ The loop is the product, not the model
 Bad metrics → system becomes confidently wrong
 Most failures come from:
 poor experiment design
+
 weak evaluation
 over-trusting autonomy

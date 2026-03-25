@@ -19,7 +19,7 @@ Modification Guidelines:
 """
 
 import time
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 from prepare_virtual_navigation import (
     VirtualNavigationExperiment,
@@ -99,29 +99,59 @@ class EnhancedVirtualNavRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = VirtualNavigationExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
+
+        # Type annotations for APGI components
+        self.apgi: Optional[APGIIntegration] = None
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
+        self.neuromodulators: Optional[Dict[str, float]] = None
+        self.running_stats: Optional[Dict[str, float]] = None
 
         # Initialize 100/100 APGI components
-        self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
+        self.enable_apgi = enable_apgi and bool(APGI_PARAMS.get("enabled", True))
         if self.enable_apgi:
+            # Type-safe extraction from APGI_PARAMS
+            _tau_s: Any = APGI_PARAMS.get("tau_s", 0.35)
+            _beta: Any = APGI_PARAMS.get("beta", 1.5)
+            _theta_0: Any = APGI_PARAMS.get("theta_0", 0.5)
+            _alpha: Any = APGI_PARAMS.get("alpha", 5.5)
+            _gamma_M: Any = APGI_PARAMS.get("gamma_M", -0.3)
+            _lambda_S: Any = APGI_PARAMS.get("lambda_S", 0.1)
+            _sigma_S: Any = APGI_PARAMS.get("sigma_S", 0.05)
+            _sigma_theta: Any = APGI_PARAMS.get("sigma_theta", 0.02)
+            _sigma_M: Any = APGI_PARAMS.get("sigma_M", 0.03)
+            _rho: Any = APGI_PARAMS.get("rho", 0.7)
+            _theta_survival: Any = APGI_PARAMS.get("theta_survival", 0.3)
+            _theta_neutral: Any = APGI_PARAMS.get("theta_neutral", 0.7)
+
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=float(_tau_s or 0.35),
+                beta=float(_beta or 1.5),
+                theta_0=float(_theta_0 or 0.5),
+                alpha=float(_alpha or 5.5),
+                gamma_M=float(_gamma_M or -0.3),
+                lambda_S=float(_lambda_S or 0.1),
+                sigma_S=float(_sigma_S or 0.05),
+                sigma_theta=float(_sigma_theta or 0.02),
+                sigma_M=float(_sigma_M or 0.03),
+                rho=float(_rho or 0.7),
+                theta_survival=float(_theta_survival or 0.3),
+                theta_neutral=float(_theta_neutral or 0.7),
             )
             self.apgi = APGIIntegration(params)
 
             # 100/100: Hierarchical 5-level processing (requires UltimateAPGIParameters)
             if APGI_PARAMS.get("hierarchical_enabled", True):
+                _beta_cross: Any = APGI_PARAMS.get("beta_cross", 0.2)
+                _tau_levels_raw: Any = APGI_PARAMS.get(
+                    "tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]
+                )
+                _tau_levels: List[float] = (
+                    _tau_levels_raw
+                    if isinstance(_tau_levels_raw, list)
+                    else [0.1, 0.2, 0.4, 1.0, 5.0]
+                )
                 ultimate_params = UltimateAPGIParameters(
                     tau_S=params.tau_S,
                     beta=params.beta,
@@ -135,8 +165,8 @@ class EnhancedVirtualNavRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(_beta_cross or 0.2),
+                    tau_levels=_tau_levels,
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -149,11 +179,15 @@ class EnhancedVirtualNavRunner:
                 self.precision_gap = None
 
             # 100/100: Neuromodulator tracking
+            _ach: Any = APGI_PARAMS.get("ACh", 1.0)
+            _ne: Any = APGI_PARAMS.get("NE", 1.0)
+            _da: Any = APGI_PARAMS.get("DA", 1.0)
+            _ht5: Any = APGI_PARAMS.get("HT5", 1.0)
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": float(_ach or 1.0),
+                "NE": float(_ne or 1.0),
+                "DA": float(_da or 1.0),
+                "HT5": float(_ht5 or 1.0),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -164,11 +198,8 @@ class EnhancedVirtualNavRunner:
                 "rt_var": 25000.0,
             }
         else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
+            # APGI disabled - set all components to None
+            pass
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -178,7 +209,7 @@ class EnhancedVirtualNavRunner:
         for trial_num in range(NUM_TRIALS_CONFIG):
             self._run_single_trial(trial_num)
 
-            if time.time() - self.start_time > TIME_BUDGET:
+            if self.start_time and time.time() - self.start_time > TIME_BUDGET:
                 break
 
         return self._calculate_results()
@@ -199,7 +230,7 @@ class EnhancedVirtualNavRunner:
         )
 
         # 100/100: Process with APGI if enabled
-        if self.apgi:
+        if self.apgi and self.neuromodulators and self.running_stats:
             # Compute prediction error from trial outcome
             observed_accuracy = 1.0  # Navigation doesn't have correct/incorrect
             expected_accuracy = 0.5  # Baseline
@@ -255,7 +286,7 @@ class EnhancedVirtualNavRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - self.start_time if self.start_time else 0.0
 
         apgi_metrics = {}
         if self.apgi and hasattr(self.apgi, "finalize"):
