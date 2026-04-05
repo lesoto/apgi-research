@@ -777,7 +777,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
     def _clear_console(self):
         self.console_text.delete("1.0", "end")
-        self.console_text.insert("0.0", "--- Console Cleared ---\n")
+        self.console_text.insert("1.0", "--- Console Cleared ---\n")
 
     def _update_guardrail_dashboard(
         self,

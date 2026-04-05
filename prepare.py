@@ -91,7 +91,7 @@ def download_single_shard(index: int) -> bool:
             os.replace(temp_path, filepath)
             print(f"  Downloaded {filename}")
             return True
-        except (requests.RequestException, IOError, requests.Timeout) as e:
+        except Exception as e:
             print(
                 f"  Attempt {attempt}/{max_attempts} failed for {filename}: {type(e).__name__}: {e}"
             )
@@ -519,7 +519,8 @@ def main(args: Optional[List[str]] = None) -> int:
                 return 1
 
         if not parsed_args.skip_tokenizer:
-            train_tokenizer()
+            if not train_tokenizer():
+                return 1
 
         return 0
     except Exception:

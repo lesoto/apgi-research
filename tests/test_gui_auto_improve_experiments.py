@@ -311,7 +311,9 @@ class TestExperimentRunnerGUI:
                 mock_button.configure.assert_called()
                 mock_thread.assert_called_once()
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _stop_single_experiment")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _stop_single_experiment"
+    )
     def test_stop_experiment(self):
         """Test stopping an experiment."""
         mock_gui = MagicMock()
@@ -362,7 +364,9 @@ class TestExperimentRunnerGUI:
         # Should not call terminate on finished process
         mock_process.terminate.assert_not_called()
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _request_stop_all")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _request_stop_all"
+    )
     def test_stop_all_experiments(self):
         """Test stopping all running experiments."""
         mock_gui = MagicMock()
@@ -376,7 +380,9 @@ class TestExperimentRunnerGUI:
             assert mock_stop.call_count == 2
             assert mock_gui.stop_all is True
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _monitor_process")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _monitor_process"
+    )
     def test_monitor_experiment_output(self):
         """Test monitoring experiment output."""
         mock_gui = MagicMock()
@@ -418,7 +424,9 @@ class TestExperimentRunnerGUI:
             # Should terminate process when stop_all is True
             mock_process.terminate.assert_called_once()
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _set_status")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _set_status"
+    )
     def test_update_experiment_status(self):
         """Test updating experiment status."""
         mock_gui = MagicMock()
@@ -435,7 +443,9 @@ class TestExperimentRunnerGUI:
             text="Running", text_color="green"
         )
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _create_visualization_panel")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _create_visualization_panel"
+    )
     def test_create_visualization(self):
         """Test creating visualization."""
         mock_gui = MagicMock()
@@ -458,7 +468,9 @@ class TestExperimentRunnerGUI:
                 assert mock_gui.current_figure == mock_figure
                 assert mock_gui.current_canvas == mock_canvas
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _clear_plot")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _clear_plot"
+    )
     def test_clear_visualization(self):
         """Test clearing visualization."""
         mock_gui = MagicMock()
@@ -472,7 +484,9 @@ class TestExperimentRunnerGUI:
         assert mock_gui.current_figure is None
         assert mock_gui.current_canvas is None
 
-    @pytest.mark.skip(reason="GUI implementation changed - uses filedialog not messagebox")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - uses filedialog not messagebox"
+    )
     def test_export_results(self):
         """Test exporting results."""
         mock_gui = MagicMock()
@@ -583,7 +597,9 @@ class TestExperimentRunnerGUI:
             assert "description" in info
             assert "config" in info
 
-    @pytest.mark.skip(reason="GUI implementation changed - method renamed to _on_closing")
+    @pytest.mark.skip(
+        reason="GUI implementation changed - method renamed to _on_closing"
+    )
     def test_cleanup_on_close(self):
         """Test cleanup when GUI is closed."""
         mock_gui = MagicMock()
