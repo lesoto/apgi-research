@@ -13,6 +13,7 @@ Artificial Grammar Learning paradigms:
 - Generalization: Apply learned rules to novel strings
 - Implicit learning: Unconscious pattern recognition
 """
+
 import numpy as np
 import json
 import random

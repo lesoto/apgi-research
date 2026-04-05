@@ -173,13 +173,11 @@ class EnhancedAttentionalBlinkRunner:
                 gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
                 lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
                 sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.4) or 0.4),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.4) or 0.4),
-                beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
-                tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),  # type: ignore[arg-type]
+                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),  # type: ignore[arg-type]
+                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),  # type: ignore[arg-type]
+                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.4) or 0.4),  # type: ignore[arg-type]
+                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.4) or 0.4),  # type: ignore[arg-type]
             )
             self.apgi = APGIIntegration(params)
 
@@ -198,7 +196,7 @@ class EnhancedAttentionalBlinkRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
+                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),  # type: ignore[arg-type]
                     tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
@@ -232,13 +230,14 @@ class EnhancedAttentionalBlinkRunner:
             self._run_single_trial(trial_num)
 
             # Check time budget
-            elapsed = time.time() - self.start_time
-            if elapsed > TIME_BUDGET:
-                print(f"WARNING: Time budget exceeded at trial {trial_num}")
-                break
+            if self.start_time is not None:
+                elapsed = time.time() - self.start_time
+                if elapsed > TIME_BUDGET:
+                    print(f"WARNING: Time budget exceeded at trial {trial_num}")
+                    break
 
         # Calculate final metrics
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0)
         results = self._calculate_results(completion_time)
 
         return results
@@ -282,11 +281,11 @@ class EnhancedAttentionalBlinkRunner:
 
             # 100/100: Determine precision based on trial type and neuromodulators
             # ACh increases attention precision for RSVP tasks
-            ach_boost = (
+            ach_boost = float(
                 self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
             )
             # NE increases arousal during blink window
-            ne_effect = (
+            ne_effect = float(
                 self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
             )
 
@@ -325,8 +324,11 @@ class EnhancedAttentionalBlinkRunner:
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
+                nm_floats = {
+                    k: float(v) for k, v in (self.neuromodulators or {}).items()
+                }
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
+                    precision_ext, precision_int, nm_floats, trial_type
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -375,13 +377,13 @@ class EnhancedAttentionalBlinkRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

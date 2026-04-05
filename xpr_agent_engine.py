@@ -730,12 +730,12 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                 "hypothesis": f"Optimize {task} using adaptive strategy based on performance trend analysis",
                 "analysis": {
                     "current_performance": performance_trend,
-                    "trend_direction": "improving"
-                    if performance_trend["trend"] > 0
-                    else "stable",
-                    "volatility_level": "high"
-                    if performance_trend["volatility"] > 0.15
-                    else "normal",
+                    "trend_direction": (
+                        "improving" if performance_trend["trend"] > 0 else "stable"
+                    ),
+                    "volatility_level": (
+                        "high" if performance_trend["volatility"] > 0.15 else "normal"
+                    ),
                 },
                 "modifications": modifications,
                 "steps": [
@@ -882,9 +882,9 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                 skill_type=XPRSkillType.JOB_DEBUG.value,
                 result=debug_info,
                 execution_time=time.time() - start_time,
-                confidence=float(conf_value)
-                if isinstance(conf_value, (int, float))
-                else 0.5,
+                confidence=(
+                    float(conf_value) if isinstance(conf_value, (int, float)) else 0.5
+                ),
                 metadata={
                     "debug_type": debug_info.get("error_type"),
                     "experiment": experiment_name,
@@ -961,7 +961,7 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
 
             raw_conf = fix_info.get("confidence", 0.5)
             try:
-                conf_val = float(raw_conf) if raw_conf is not None else 0.5
+                conf_val = float(raw_conf) if raw_conf is not None else 0.5  # type: ignore
             except (ValueError, TypeError):
                 conf_val = 0.5
             return XPRSkillResult(
@@ -1123,9 +1123,11 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                         error=str(skill_result.error) if skill_result.error else None,
                         execution_time=skill_result.execution_time,
                         confidence=float(getattr(skill_result, "confidence", 0.5)),
-                        metadata=skill_result.metadata
-                        if hasattr(skill_result, "metadata")
-                        else {},
+                        metadata=(
+                            skill_result.metadata
+                            if hasattr(skill_result, "metadata")
+                            else {}
+                        ),
                     )
                 else:
                     xpr_result = skill_result

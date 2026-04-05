@@ -154,18 +154,26 @@ class EnhancedDualNBackRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulator_levels = {
-                "ACh": cast(float, APGI_PARAMS.get("ACh", 1.0))
-                if isinstance(APGI_PARAMS.get("ACh"), (int, float))
-                else 1.0,
-                "NE": cast(float, APGI_PARAMS.get("NE", 1.0))
-                if isinstance(APGI_PARAMS.get("NE"), (int, float))
-                else 1.0,
-                "DA": cast(float, APGI_PARAMS.get("DA", 1.0))
-                if isinstance(APGI_PARAMS.get("DA"), (int, float))
-                else 1.0,
-                "HT5": cast(float, APGI_PARAMS.get("HT5", 1.0))
-                if isinstance(APGI_PARAMS.get("HT5"), (int, float))
-                else 1.0,
+                "ACh": (
+                    cast(float, APGI_PARAMS.get("ACh", 1.0))
+                    if isinstance(APGI_PARAMS.get("ACh"), (int, float))
+                    else 1.0
+                ),
+                "NE": (
+                    cast(float, APGI_PARAMS.get("NE", 1.0))
+                    if isinstance(APGI_PARAMS.get("NE"), (int, float))
+                    else 1.0
+                ),
+                "DA": (
+                    cast(float, APGI_PARAMS.get("DA", 1.0))
+                    if isinstance(APGI_PARAMS.get("DA"), (int, float))
+                    else 1.0
+                ),
+                "HT5": (
+                    cast(float, APGI_PARAMS.get("HT5", 1.0))
+                    if isinstance(APGI_PARAMS.get("HT5"), (int, float))
+                    else 1.0
+                ),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -318,13 +326,13 @@ class EnhancedDualNBackRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap is not None:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical_processor is not None:

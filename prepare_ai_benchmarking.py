@@ -14,6 +14,7 @@ AI Benchmarking paradigms:
 - Decision making: Choice under uncertainty
 - Learning tasks: Pattern recognition and adaptation
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass

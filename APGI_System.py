@@ -192,16 +192,27 @@ class CoreIgnitionSystem:
         Returns:
             Accumulated surprise S(t) in [nats]
         """
+        # Clamp inputs to prevent overflow
+        MAX_VALUE = 1e150  # Well below float max (~1e308)
+
+        Pi_e = min(Pi_e, MAX_VALUE)
+        eps_e = min(abs(eps_e), MAX_VALUE)
+        Pi_i_eff = min(Pi_i_eff, MAX_VALUE)
+        eps_i = min(abs(eps_i), MAX_VALUE)
+
         exteroceptive_surprise = 0.5 * Pi_e * (eps_e**2)
         interoceptive_surprise = 0.5 * Pi_i_eff * (eps_i**2)
-        return exteroceptive_surprise + interoceptive_surprise
+
+        # Clamp result to prevent overflow
+        result = exteroceptive_surprise + interoceptive_surprise
+        return min(result, 1e300)
 
     @staticmethod
     def effective_interoceptive_precision(
         Pi_i_baseline: float,
         M: float,
         M_0: float,
-        beta: float,
+        beta_som: float,
     ) -> float:
         """
         Compute effective interoceptive precision with sigmoid modulation:
@@ -214,13 +225,13 @@ class CoreIgnitionSystem:
             Pi_i_baseline: Baseline interoceptive precision
             M: Current somatic marker state
             M_0: Reference somatic marker level
-            beta: Modulation strength (β_som ∈ [0, 2])
+            beta_som: Modulation strength (β_som ∈ [0, 2])
 
         Returns:
             Effective interoceptive precision Π^i_eff(t)
         """
         sigmoid = 1.0 / (1.0 + np.exp(np.clip(-(M - M_0), -500, 500)))
-        modulation = 1.0 + beta * sigmoid
+        modulation = 1.0 + beta_som * sigmoid
         return Pi_i_baseline * modulation
 
     @staticmethod
@@ -704,7 +715,7 @@ class DerivedQuantities:
             n_steps = int(T_ignition / dt)
             S_history = S_history[:n_steps]
 
-        return np.trapezoid(S_history, dx=dt)
+        return np.trapz(S_history, dx=dt)
 
     @staticmethod
     def hierarchical_level_dynamics(
@@ -818,10 +829,10 @@ class APGIParameters:
 
     def _validate_time_ranges(self, violations: List[str]) -> None:
         """Validate time-related parameters"""
-        # τ_S
+        # tau_S (τ_S)
         if not (0.2 <= self.tau_S <= 0.5):
             violations.append(
-                f"τ_S = {self.tau_S:.3f}s not in [0.2, 0.5]s (P3b latency)"
+                f"tau_S = {self.tau_S:.3f}s not in [0.2, 0.5]s (P3b latency)"
             )
 
         # Check tau_theta (5-60 s)
@@ -834,16 +845,16 @@ class APGIParameters:
         if not (0.1 <= self.theta_0 <= 1.0):
             violations.append(f"theta_0 = {self.theta_0:.2f} not in [0.1, 1.0] AU")
 
-        # α
+        # alpha
         if not (3.0 <= self.alpha <= 8.0):
             violations.append(
-                f"α = {self.alpha:.1f} not in [3.0, 8.0] (optimal sigmoid)"
+                f"alpha = {self.alpha:.1f} not in [3.0, 8.0] (optimal sigmoid)"
             )
 
-        # β_som validation
+        # beta validation
         if not (0.5 <= self.beta <= 2.5):
             violations.append(
-                f"β_som = {self.beta:.2f} not in [0.5, 2.5] (physiological range)"
+                f"beta = {self.beta:.2f} not in [0.5, 2.5] (physiological range)"
             )
 
         # rho (0.3-0.9)
@@ -874,7 +885,7 @@ class APGIParameters:
 
     def validate(self) -> List[str]:
         """Validate parameters against CORRECTED A.2 constraints"""
-        violations = []
+        violations: List[str] = []
 
         # Validate different parameter groups
         self._validate_time_ranges(violations)
@@ -967,9 +978,9 @@ class PsychologicalState:
 
     # ========== DERIVED PARAMETERS ==========
     Pi_i_eff_actual: Optional[float] = None  # Actual effective interoceptive precision
-    Pi_i_eff_expected: Optional[
-        float
-    ] = None  # Expected effective interoceptive precision
+    Pi_i_eff_expected: Optional[float] = (
+        None  # Expected effective interoceptive precision
+    )
     S_t: Optional[float] = None  # Accumulated surprise
 
     # ========== ADDITIONAL METADATA ==========
@@ -2597,8 +2608,8 @@ class EnhancedSurpriseIgnitionSystem:
         self.running_stats_i = RunningStatistics(alpha_mu=0.01, alpha_sigma=0.005)
 
         # History tracking (must be before reset)
-        self.history = defaultdict(list)
-        self.state_history = []  # Alias for test compatibility
+        self.history: Dict[str, List] = defaultdict(list)
+        self.state_history: List[Dict] = []  # Alias for test compatibility
 
         # Initialize state
         self.reset()
@@ -2647,7 +2658,7 @@ class EnhancedSurpriseIgnitionSystem:
         self.running_stats_i = RunningStatistics(alpha_mu=0.01, alpha_sigma=0.005)
 
         # History for interoceptive errors (for arousal computation)
-        self.eps_i_history = []
+        self.eps_i_history: List[float] = []
 
         # Clear history
         for key in self.history:

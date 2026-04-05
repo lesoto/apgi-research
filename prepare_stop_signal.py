@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -178,15 +179,15 @@ class StopSignalExperiment:
 
         return {
             "num_trials": len(self.trials),
-            "go_accuracy": np.mean([t.response == "press" for t in go_trials])
-            if go_trials
-            else 0,
-            "stop_success_rate": np.mean([t.successful_stop for t in stop_trials])
-            if stop_trials
-            else 0,
-            "mean_go_rt_ms": np.mean([t.rt_ms for t in go_trials if t.rt_ms > 0])
-            if go_trials
-            else 0,
+            "go_accuracy": (
+                np.mean([t.response == "press" for t in go_trials]) if go_trials else 0
+            ),
+            "stop_success_rate": (
+                np.mean([t.successful_stop for t in stop_trials]) if stop_trials else 0
+            ),
+            "mean_go_rt_ms": (
+                np.mean([t.rt_ms for t in go_trials if t.rt_ms > 0]) if go_trials else 0
+            ),
             "ssrt_ms": self.get_ssrt(),
         }
 

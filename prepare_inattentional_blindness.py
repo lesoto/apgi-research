@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -90,6 +91,8 @@ class IBTrial:
     noticed_unexpected: bool = False
     task_accuracy: float = 0.0
     timestamp: float = 0.0
+    detected: bool = False  # Added for compatibility
+    response_time_ms: float = 0.0  # Added for compatibility
 
 
 class InattentionalBlindnessGenerator:
@@ -163,12 +166,12 @@ class InattentionalBlindnessExperiment:
         return {
             "num_trials": len(self.trials),
             "inattentional_blindness_rate": self.get_inattentional_blindness_rate(),
-            "high_load_notice_rate": np.mean([t.noticed_unexpected for t in high_load])
-            if high_load
-            else 0,
-            "low_load_notice_rate": np.mean([t.noticed_unexpected for t in low_load])
-            if low_load
-            else 0,
+            "high_load_notice_rate": (
+                np.mean([t.noticed_unexpected for t in high_load]) if high_load else 0
+            ),
+            "low_load_notice_rate": (
+                np.mean([t.noticed_unexpected for t in low_load]) if low_load else 0
+            ),
             "mean_task_accuracy": np.mean([t.task_accuracy for t in self.trials]),
         }
 

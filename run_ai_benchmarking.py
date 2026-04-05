@@ -41,7 +41,6 @@ from ultimate_apgi_template import (
     UltimateAPGIParameters,
 )
 
-
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
@@ -230,44 +229,66 @@ class EnhancedAIBenchmarkingRunner:
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=cast(float, APGI_PARAMS.get("tau_s", 0.35) or 0.35)
-                if isinstance(APGI_PARAMS.get("tau_s"), (int, float))
-                else 0.35,
-                beta=cast(float, APGI_PARAMS.get("beta", 1.5) or 1.5)
-                if isinstance(APGI_PARAMS.get("beta"), (int, float))
-                else 1.5,
-                theta_0=cast(float, APGI_PARAMS.get("theta_0", 0.5) or 0.5)
-                if isinstance(APGI_PARAMS.get("theta_0"), (int, float))
-                else 0.5,
-                alpha=cast(float, APGI_PARAMS.get("alpha", 5.5) or 5.5)
-                if isinstance(APGI_PARAMS.get("alpha"), (int, float))
-                else 5.5,
-                gamma_M=cast(float, APGI_PARAMS.get("gamma_M", -0.3) or -0.3)
-                if isinstance(APGI_PARAMS.get("gamma_M"), (int, float))
-                else -0.3,
-                lambda_S=cast(float, APGI_PARAMS.get("lambda_S", 0.1) or 0.1)
-                if isinstance(APGI_PARAMS.get("lambda_S"), (int, float))
-                else 0.1,
-                sigma_S=cast(float, APGI_PARAMS.get("sigma_S", 0.05) or 0.05)
-                if isinstance(APGI_PARAMS.get("sigma_S"), (int, float))
-                else 0.05,
-                sigma_theta=cast(float, APGI_PARAMS.get("sigma_theta", 0.02) or 0.02)
-                if isinstance(APGI_PARAMS.get("sigma_theta"), (int, float))
-                else 0.02,
-                sigma_M=cast(float, APGI_PARAMS.get("sigma_M", 0.03) or 0.03)
-                if isinstance(APGI_PARAMS.get("sigma_M"), (int, float))
-                else 0.03,
-                rho=cast(float, APGI_PARAMS.get("rho", 0.7) or 0.7)
-                if isinstance(APGI_PARAMS.get("rho"), (int, float))
-                else 0.7,
-                theta_survival=cast(
-                    float, APGI_PARAMS.get("theta_survival", 0.3) or 0.3
-                )
-                if isinstance(APGI_PARAMS.get("theta_survival"), (int, float))
-                else 0.3,
-                theta_neutral=cast(float, APGI_PARAMS.get("theta_neutral", 0.7) or 0.7)
-                if isinstance(APGI_PARAMS.get("theta_neutral"), (int, float))
-                else 0.7,
+                tau_S=(
+                    cast(float, APGI_PARAMS.get("tau_s", 0.35) or 0.35)
+                    if isinstance(APGI_PARAMS.get("tau_s"), (int, float))
+                    else 0.35
+                ),
+                beta=(
+                    cast(float, APGI_PARAMS.get("beta", 1.5) or 1.5)
+                    if isinstance(APGI_PARAMS.get("beta"), (int, float))
+                    else 1.5
+                ),
+                theta_0=(
+                    cast(float, APGI_PARAMS.get("theta_0", 0.5) or 0.5)
+                    if isinstance(APGI_PARAMS.get("theta_0"), (int, float))
+                    else 0.5
+                ),
+                alpha=(
+                    cast(float, APGI_PARAMS.get("alpha", 5.5) or 5.5)
+                    if isinstance(APGI_PARAMS.get("alpha"), (int, float))
+                    else 5.5
+                ),
+                gamma_M=(
+                    cast(float, APGI_PARAMS.get("gamma_M", -0.3) or -0.3)
+                    if isinstance(APGI_PARAMS.get("gamma_M"), (int, float))
+                    else -0.3
+                ),
+                lambda_S=(
+                    cast(float, APGI_PARAMS.get("lambda_S", 0.1) or 0.1)
+                    if isinstance(APGI_PARAMS.get("lambda_S"), (int, float))
+                    else 0.1
+                ),
+                sigma_S=(
+                    cast(float, APGI_PARAMS.get("sigma_S", 0.05) or 0.05)
+                    if isinstance(APGI_PARAMS.get("sigma_S"), (int, float))
+                    else 0.05
+                ),
+                sigma_theta=(
+                    cast(float, APGI_PARAMS.get("sigma_theta", 0.02) or 0.02)
+                    if isinstance(APGI_PARAMS.get("sigma_theta"), (int, float))
+                    else 0.02
+                ),
+                sigma_M=(
+                    cast(float, APGI_PARAMS.get("sigma_M", 0.03) or 0.03)
+                    if isinstance(APGI_PARAMS.get("sigma_M"), (int, float))
+                    else 0.03
+                ),
+                rho=(
+                    cast(float, APGI_PARAMS.get("rho", 0.7) or 0.7)
+                    if isinstance(APGI_PARAMS.get("rho"), (int, float))
+                    else 0.7
+                ),
+                theta_survival=(
+                    cast(float, APGI_PARAMS.get("theta_survival", 0.3) or 0.3)
+                    if isinstance(APGI_PARAMS.get("theta_survival"), (int, float))
+                    else 0.3
+                ),
+                theta_neutral=(
+                    cast(float, APGI_PARAMS.get("theta_neutral", 0.7) or 0.7)
+                    if isinstance(APGI_PARAMS.get("theta_neutral"), (int, float))
+                    else 0.7
+                ),
             )
             self.apgi = APGIIntegration(params)
 
@@ -286,14 +307,19 @@ class EnhancedAIBenchmarkingRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=cast(float, APGI_PARAMS.get("beta_cross", 0.2))
-                    if isinstance(APGI_PARAMS.get("beta_cross"), (int, float))
-                    else 0.2,
-                    tau_levels=cast(
-                        list, APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0])
-                    )
-                    if isinstance(APGI_PARAMS.get("tau_levels"), (list, tuple))
-                    else [0.1, 0.2, 0.4, 1.0, 5.0],
+                    beta_cross=(
+                        cast(float, APGI_PARAMS.get("beta_cross", 0.2))
+                        if isinstance(APGI_PARAMS.get("beta_cross"), (int, float))
+                        else 0.2
+                    ),
+                    tau_levels=(
+                        cast(
+                            list,
+                            APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                        )
+                        if isinstance(APGI_PARAMS.get("tau_levels"), (list, tuple))
+                        else [0.1, 0.2, 0.4, 1.0, 5.0]
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -307,18 +333,26 @@ class EnhancedAIBenchmarkingRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": cast(float, APGI_PARAMS.get("ACh", 1.0))
-                if isinstance(APGI_PARAMS.get("ACh"), (int, float))
-                else 1.0,
-                "NE": cast(float, APGI_PARAMS.get("NE", 1.0))
-                if isinstance(APGI_PARAMS.get("NE"), (int, float))
-                else 1.0,
-                "DA": cast(float, APGI_PARAMS.get("DA", 1.0))
-                if isinstance(APGI_PARAMS.get("DA"), (int, float))
-                else 1.0,
-                "HT5": cast(float, APGI_PARAMS.get("HT5", 1.0))
-                if isinstance(APGI_PARAMS.get("HT5"), (int, float))
-                else 1.0,
+                "ACh": (
+                    cast(float, APGI_PARAMS.get("ACh", 1.0))
+                    if isinstance(APGI_PARAMS.get("ACh"), (int, float))
+                    else 1.0
+                ),
+                "NE": (
+                    cast(float, APGI_PARAMS.get("NE", 1.0))
+                    if isinstance(APGI_PARAMS.get("NE"), (int, float))
+                    else 1.0
+                ),
+                "DA": (
+                    cast(float, APGI_PARAMS.get("DA", 1.0))
+                    if isinstance(APGI_PARAMS.get("DA"), (int, float))
+                    else 1.0
+                ),
+                "HT5": (
+                    cast(float, APGI_PARAMS.get("HT5", 1.0))
+                    if isinstance(APGI_PARAMS.get("HT5"), (int, float))
+                    else 1.0
+                ),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -417,9 +451,11 @@ class EnhancedAIBenchmarkingRunner:
             "total_trials": self.ai_model.trial_count,
             "total_correct": self.ai_model.total_correct,
             "total_tokens": self.ai_model.total_tokens,
-            "mean_response_time": np.mean(self.ai_model.response_times)
-            if self.ai_model.response_times
-            else 0.0,
+            "mean_response_time": (
+                np.mean(self.ai_model.response_times)
+                if self.ai_model.response_times
+                else 0.0
+            ),
             "mean_confidence": np.mean([0.8]) * benchmark_accuracy,  # Simulated
         }
 
@@ -457,7 +493,11 @@ class EnhancedAIBenchmarkingRunner:
             "apgi_enabled": self.enable_apgi,
             "apgi_ignition_rate": metabolic_cost,
             "apgi_metabolic_cost": metabolic_cost,
+            "apgi_mean_surprise": 0.0,
+            "apgi_mean_somatic_marker": 0.0,
+            "apgi_mean_threshold": 0.5,
             "apgi_precision_mismatch": precision_mismatch,
+            "apgi_anxiety_level": 0.0,
             # Configuration used
             "config": {
                 "num_trials": NUM_TRIALS_CONFIG,

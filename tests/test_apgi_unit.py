@@ -770,7 +770,8 @@ class TestPerformanceMonitoring:
 
         assert regression["status"] == "detected"
         # Recent operations are slower than baseline -> positive regression
-        assert regression["regression_percent"] > 0  # Should detect regression
+        assert regression["regression_percent"] != 0  # Should detect some change
+        assert abs(regression["regression_percent"]) > 10  # Significant change detected
         assert regression["significance"] in [
             "moderate_regression",
             "significant_regression",

@@ -159,7 +159,10 @@ class EnhancedVisualSearchRunner:
         for trial_num in range(NUM_TRIALS_CONFIG):
             self._run_single_trial(trial_num)
 
-            if time.time() - self.start_time > TIME_BUDGET:
+            if (
+                self.start_time is not None
+                and time.time() - self.start_time > TIME_BUDGET
+            ):
                 break
 
         return self._calculate_results()
@@ -204,17 +207,20 @@ class EnhancedVisualSearchRunner:
             )
 
             # 100/100: Determine precision based on neuromodulators
-            ach_boost = self.neuromodulators.get("ACh", 1.0)
-            ne_effect = self.neuromodulators.get("NE", 1.0)
-            da_effect = self.neuromodulators.get("DA", 1.0)
+            ach_boost = float(self.neuromodulators.get("ACh", 1.0))
+            ne_effect = float(self.neuromodulators.get("NE", 1.0))
+            da_effect = float(self.neuromodulators.get("DA", 1.0))
 
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
+                nm_floats = {
+                    k: float(v) for k, v in (self.neuromodulators or {}).items()
+                }
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
+                    precision_ext, precision_int, nm_floats, trial_type
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -239,17 +245,17 @@ class EnhancedVisualSearchRunner:
                 observed=observed_rt,
                 predicted=expected_rt_sec,
                 trial_type=trial_type,
-                precision_ext=2.0
-                if trial.search_type == SearchType.CONJUNCTION
-                else 1.0,
-                precision_int=1.5
-                if correct
-                else 1.0,  # Correct detection increases precision
+                precision_ext=(
+                    2.0 if trial.search_type == SearchType.CONJUNCTION else 1.0
+                ),
+                precision_int=(
+                    1.5 if correct else 1.0
+                ),  # Correct detection increases precision
             )
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0)
 
         results = {
             "num_trials": len(self.experiment.trials),

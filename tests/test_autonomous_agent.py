@@ -215,12 +215,10 @@ class TestGitPerformanceTracker:
 
         # Create a run file that will be committed
         run_file = self.repo_path / "run_test_experiment.py"
-        run_file.write_text(
-            """
+        run_file.write_text("""
 BASE_DETECTION_RATE = 0.5
 NUM_TRIALS_CONFIG = 100
-"""
-        )
+""")
 
         modifications = {"BASE_DETECTION_RATE": 0.5}
         commit_hash = tracker.commit_experiment(modifications)

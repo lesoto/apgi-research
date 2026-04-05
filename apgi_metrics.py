@@ -61,9 +61,9 @@ class APGIMetricsSummary:
     trial_count: int = 0
     experiment_duration: float = 0.0
     overall_performance_score: float = 0.0
-    statistical_significance: Optional[
-        Dict[str, float]
-    ] = None  # p-values for key metrics
+    statistical_significance: Optional[Dict[str, float]] = (
+        None  # p-values for key metrics
+    )
 
 
 class EnhancedAPGIMetrics:

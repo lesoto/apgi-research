@@ -305,11 +305,11 @@ class ProgressTracker:
                     "start_time": datetime.fromtimestamp(
                         self.progress.start_time
                     ).isoformat(),
-                    "end_time": datetime.fromtimestamp(
-                        self.progress.end_time
-                    ).isoformat()
-                    if self.progress.end_time
-                    else None,
+                    "end_time": (
+                        datetime.fromtimestamp(self.progress.end_time).isoformat()
+                        if self.progress.end_time
+                        else None
+                    ),
                     "elapsed_time": self.get_elapsed_time(),
                 },
                 "progress": {
@@ -323,9 +323,9 @@ class ProgressTracker:
                 "apgi_statistics": self.get_apgi_statistics(),
                 "errors": {
                     "total_errors": len(self.progress.error_log),
-                    "error_log": self.progress.error_log[-10:]
-                    if self.progress.error_log
-                    else [],  # Last 10 errors
+                    "error_log": (
+                        self.progress.error_log[-10:] if self.progress.error_log else []
+                    ),  # Last 10 errors
                 },
             }
             return summary

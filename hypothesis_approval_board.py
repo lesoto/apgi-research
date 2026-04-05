@@ -55,9 +55,11 @@ class Hypothesis:
             "success_criteria": self.success_criteria,
             "risk_assessment": self.risk_assessment,
             "reviewer_comments": self.reviewer_comments,
-            "status": self.status.value
-            if isinstance(self.status, HypothesisStatus)
-            else self.status,
+            "status": (
+                self.status.value
+                if isinstance(self.status, HypothesisStatus)
+                else self.status
+            ),
             "created_at": self.created_at,
             "reviewed_at": self.reviewed_at,
             "reviewed_by": self.reviewed_by,

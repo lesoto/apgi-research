@@ -277,9 +277,11 @@ class IGTExperiment:
                 last_n_trials=self.num_trials // 2
             ),
             "learning_rate": self.get_learning_rate(),
-            "mean_reaction_time": np.mean([t.reaction_time_ms for t in self.trials])
-            if self.trials
-            else 0.0,
+            "mean_reaction_time": (
+                np.mean([t.reaction_time_ms for t in self.trials])
+                if self.trials
+                else 0.0
+            ),
         }
 
     def save_results(self, filepath: str):

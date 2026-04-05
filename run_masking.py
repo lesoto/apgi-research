@@ -441,12 +441,12 @@ class EnhancedMaskingRunner:
 
                 mask_type_results[mask_type.value] = {
                     "accuracy": accuracy,
-                    "hit_rate": correct_present / total_present
-                    if total_present > 0
-                    else 0.0,
-                    "correct_rejection": correct_absent / total_absent
-                    if total_absent > 0
-                    else 0.0,
+                    "hit_rate": (
+                        correct_present / total_present if total_present > 0 else 0.0
+                    ),
+                    "correct_rejection": (
+                        correct_absent / total_absent if total_absent > 0 else 0.0
+                    ),
                 }
 
         # Calculate SOA effects
@@ -521,13 +521,13 @@ class EnhancedMaskingRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

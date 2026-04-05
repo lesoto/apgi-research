@@ -36,7 +36,6 @@ from ultimate_apgi_template import (
     UltimateAPGIParameters,
 )
 
-
 # Type alias for cost types
 from enum import Enum
 

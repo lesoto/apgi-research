@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, List, cast
+from typing import Dict, List, cast, Optional
 
 from prepare_somatic_marker_priming import (
     SomaticMarkerExperiment,
@@ -36,7 +36,6 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -86,7 +85,11 @@ class EnhancedSomaticMarkerRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = SomaticMarkerExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
+
+        # APGI component placeholders
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -155,12 +158,12 @@ class EnhancedSomaticMarkerRunner:
                 "rt_var": 40000.0,
             }
         # APGI tracking across trials
-        self.apgi_states = []
-        self.ignition_history = []
-        self.surprise_history = []
-        self.threshold_history = []
-        self.somatic_marker_history = []
-        self.metabolic_cost_history = []
+        self.apgi_states: List[Dict] = []
+        self.ignition_history: List[float] = []
+        self.surprise_history: List[float] = []
+        self.threshold_history: List[float] = []
+        self.somatic_marker_history: List[float] = []
+        self.metabolic_cost_history: List[float] = []
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -180,7 +183,18 @@ class EnhancedSomaticMarkerRunner:
         if trial is None:
             return
 
-        correct, rt = self.participant.process_trial(trial.emotion_type)
+        # Convert EmotionType to PrimeType for compatibility
+        emotion_str = (
+            trial.emotion_type.value
+            if hasattr(trial.emotion_type, "value")
+            else str(trial.emotion_type)
+        )
+        prime_type = (
+            PrimeType.POSITIVE
+            if emotion_str == "positive"
+            else PrimeType.NEGATIVE if emotion_str == "negative" else PrimeType.NEUTRAL
+        )
+        correct, rt = self.participant.process_trial(prime_type)
 
         self.experiment.run_trial(
             trial=trial,
@@ -264,19 +278,21 @@ class EnhancedSomaticMarkerRunner:
         if self.apgi_states:
             apgi_metrics = {
                 "apgi_enabled": True,
-                "apgi_ignition_rate": np.mean(self.ignition_history) * 100,
+                "apgi_ignition_rate": min(
+                    1.0, max(0.0, np.mean(self.ignition_history))
+                ),
                 "apgi_mean_surprise": np.mean(self.surprise_history),
                 "apgi_metabolic_cost": np.mean(self.metabolic_cost_history),
                 "apgi_mean_somatic_marker": np.mean(self.somatic_marker_history),
-                "apgi_mean_threshold": np.mean(self.threshold_history)
-                if self.threshold_history
-                else 0.5,
+                "apgi_mean_threshold": (
+                    np.mean(self.threshold_history) if self.threshold_history else 0.5
+                ),
             }
 
             if self.precision_gap:
-                apgi_metrics[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                apgi_metrics["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
 
             if self.neuromodulators:

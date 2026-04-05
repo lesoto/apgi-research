@@ -39,7 +39,6 @@ from ultimate_apgi_template import (
     UltimateAPGIParameters,
 )
 
-
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------

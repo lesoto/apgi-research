@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Optional, Any
-from apgi_integration import APGIExperiment
+from apgi_integration import APGIIntegration, APGIParameters
 
 
 class BaseExperiment(ABC):
@@ -11,17 +11,18 @@ class BaseExperiment(ABC):
     """
 
     def __init__(self, enable_apgi: bool = True):
-        self.apgi: Optional[APGIExperiment] = self._init_apgi() if enable_apgi else None
+        self.apgi: Optional[APGIIntegration] = (
+            self._init_apgi() if enable_apgi else None
+        )
         self.setup_experiment()
 
-    def _init_apgi(self) -> APGIExperiment:
+    def _init_apgi(self) -> APGIIntegration:
         """
         Initializes the underlying APGI dynamical system instance.
         """
-        return APGIExperiment(
-            experiment_name=self.__class__.__name__,
-            description=f"Automated execution of {self.__class__.__name__}",
-        )
+        # Use default parameters for base experiment
+        params = APGIParameters()
+        return APGIIntegration(params)
 
     @abstractmethod
     def setup_experiment(self) -> None:

@@ -38,7 +38,6 @@ from ultimate_apgi_template import (
     UltimateAPGIParameters,
 )
 
-
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
@@ -102,18 +101,18 @@ class EnhancedArtificialGrammarRunner:
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),  # type: ignore[arg-type]
+                beta=float(APGI_PARAMS.get("beta", 1.5)),  # type: ignore[arg-type]
+                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),  # type: ignore[arg-type]
+                alpha=float(APGI_PARAMS.get("alpha", 5.5)),  # type: ignore[arg-type]
+                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),  # type: ignore[arg-type]
+                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),  # type: ignore[arg-type]
+                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),  # type: ignore[arg-type]
+                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),  # type: ignore[arg-type]
+                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),  # type: ignore[arg-type]
+                rho=float(APGI_PARAMS.get("rho", 0.7)),  # type: ignore[arg-type]
+                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),  # type: ignore[arg-type]
+                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),  # type: ignore[arg-type]
             )
             self.apgi = APGIIntegration(params)
 
@@ -280,13 +279,13 @@ class EnhancedArtificialGrammarRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

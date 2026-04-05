@@ -12,7 +12,7 @@ Key Features:
 
 Usage in Prepare Files:
     from experiment_apgi_integration import export_apgi_params
-    
+
     # At end of prepare file
     APGI_PARAMS = export_apgi_params(
         experiment_name="masking",
@@ -25,7 +25,7 @@ Usage in Prepare Files:
 Usage in Run Files:
     from experiment_apgi_integration import ExperimentAPGIRunner
     from prepare_experiment import APGI_PARAMS, TIME_BUDGET
-    
+
     # Wrap your existing runner
     apgi_runner = ExperimentAPGIRunner(
         base_runner=your_existing_runner,

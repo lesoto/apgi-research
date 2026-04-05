@@ -37,7 +37,6 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
 )
 
-
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
@@ -178,10 +177,12 @@ class EnhancedSternbergRunner:
 
         self.experiment.run_trial(
             trial=trial,
-            response="yes"
-            if (trial.trial_type == TrialType.POSITIVE and correct)
-            or (trial.trial_type == TrialType.NEGATIVE and not correct)
-            else "no",
+            response=(
+                "yes"
+                if (trial.trial_type == TrialType.POSITIVE and correct)
+                or (trial.trial_type == TrialType.NEGATIVE and not correct)
+                else "no"
+            ),
             rt_ms=rt,
         )
 

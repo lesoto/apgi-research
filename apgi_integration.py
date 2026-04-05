@@ -14,17 +14,17 @@ Key Components:
 
 Usage in Experiments:
     from apgi_integration import APGIIntegration, APGIParameters
-    
+
     # Initialize APGI for experiment
     apgi = APGIIntegration()
-    
+
     # Compute ignition probability for trial
     ignition_prob = apgi.compute_ignition_probability(
         prediction_error=error,
         precision=Pi,
         somatic_marker=M
     )
-    
+
     # Track APGI metrics alongside primary metrics
     apgi_metrics = apgi.get_trial_metrics()
 """
@@ -32,7 +32,6 @@ Usage in Experiments:
 import numpy as np
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Any
-
 
 # =============================================================================
 # APGI PARAMETERS
@@ -644,7 +643,7 @@ class DynamicalSystem:
         """Compute total metabolic cost from surprise history."""
         if len(self.S_history) == 0:
             return 0.0
-        return float(np.trapezoid(self.S_history, dx=0.01))
+        return float(np.trapz(self.S_history, dx=0.01))
 
     def get_ignition_rate(self) -> float:
         """Compute proportion of trials with ignition."""

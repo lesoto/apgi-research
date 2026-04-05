@@ -49,8 +49,7 @@ class TestRLLoopIntegration:
         # Create a mock experiment run file with tunable parameters
         self.run_file_name = "run_masked_task.py"
         self.run_file = self.repo_path / self.run_file_name
-        self.run_file.write_text(
-            """
+        self.run_file.write_text("""
 \"\"\"Mock masked task for loop testing.\"\"\"
 TARGET_DURATION = 50
 MASK_DURATION = 100
@@ -69,8 +68,7 @@ if __name__ == "__main__":
     import json
     import sys
     print(json.dumps(run_experiment()))
-"""
-        )
+""")
         self.repo.index.add([self.run_file_name])
         self.repo.index.commit("Add mock experiment")
 

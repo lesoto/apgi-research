@@ -430,9 +430,7 @@ def main():
         status = (
             "✅"
             if len(result.passed) >= 5 and len(result.failed) == 0
-            else "⚠️"
-            if len(result.passed) >= 3
-            else "❌"
+            else "⚠️" if len(result.passed) >= 3 else "❌"
         )
         print(
             f"{status} {result.experiment:35} ({len(result.passed)} passed, {len(result.failed)} failed, {len(result.warnings)} warnings)"

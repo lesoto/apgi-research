@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 APGI Experiment Results Analyzer and Reporter
-Analyzes metrics from all experiments, fixes validation issues, 
+Analyzes metrics from all experiments, fixes validation issues,
 creates visualizations, and generates comprehensive reports.
 """
 
@@ -427,12 +427,12 @@ def analyze_apgi_metrics() -> Dict[str, Any]:
 
     analysis["summary"] = {
         "total_experiments": len(apgi_exp),
-        "avg_ignition_rate": sum(ignition_rates) / len(ignition_rates)
-        if ignition_rates
-        else 0,
-        "avg_metabolic_cost": sum(metabolic_costs) / len(metabolic_costs)
-        if metabolic_costs
-        else 0,
+        "avg_ignition_rate": (
+            sum(ignition_rates) / len(ignition_rates) if ignition_rates else 0
+        ),
+        "avg_metabolic_cost": (
+            sum(metabolic_costs) / len(metabolic_costs) if metabolic_costs else 0
+        ),
         "avg_surprise": sum(surprises) / len(surprises) if surprises else 0,
     }
 
@@ -484,9 +484,9 @@ def identify_issues() -> List[Dict[str, Any]]:
                 {
                     "experiment": name,
                     "issues": exp_issues,
-                    "severity": "high"
-                    if any("0" in i for i in exp_issues)
-                    else "medium",
+                    "severity": (
+                        "high" if any("0" in i for i in exp_issues) else "medium"
+                    ),
                     "issue_type": "validation_error",
                     "description": "; ".join(exp_issues),
                     "suggested_fix": "Review and fix the identified issues",
@@ -804,9 +804,7 @@ def generate_html_report(analysis: Dict, issues: List[Dict], fixes: Dict) -> str
         status_class = (
             "badge-success"
             if status == "Success" and not data.get("issues")
-            else "badge-warning"
-            if data.get("issues")
-            else "badge-success"
+            else "badge-warning" if data.get("issues") else "badge-success"
         )
 
         html += f"""                    <tr>

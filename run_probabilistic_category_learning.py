@@ -19,7 +19,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Any, Dict, List
 
 from prepare_probabilistic_category_learning import (
     PCLExperiment,
@@ -33,7 +33,6 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -101,7 +100,7 @@ class EnhancedProbabilisticRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = PCLExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: float = 0.0
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -123,6 +122,7 @@ class EnhancedProbabilisticRunner:
             self.apgi = APGIIntegration(params)
 
             # 100/100: Hierarchical 5-level processing (requires UltimateAPGIParameters)
+            self.hierarchical: Any = None
             if APGI_PARAMS.get("hierarchical_enabled", True):
                 ultimate_params = UltimateAPGIParameters(
                     tau_S=params.tau_S,
@@ -144,17 +144,14 @@ class EnhancedProbabilisticRunner:
                     ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
-            else:
-                self.hierarchical = None
 
             # 100/100: Precision expectation gap (Π vs Π̂)
+            self.precision_gap: Any = None
             if APGI_PARAMS.get("precision_gap_enabled", True):
                 self.precision_gap = PrecisionExpectationState()
-            else:
-                self.precision_gap = None
 
             # 100/100: Neuromodulator tracking
-            self.neuromodulators = {
+            self.neuromodulators: Dict[str, float] = {
                 "ACh": float(APGI_PARAMS.get("ACh", 1.0) or 1.0),
                 "NE": float(APGI_PARAMS.get("NE", 1.0) or 1.0),
                 "DA": float(APGI_PARAMS.get("DA", 1.0) or 1.0),
@@ -169,12 +166,12 @@ class EnhancedProbabilisticRunner:
                 "rt_var": 40000.0,
             }
         # APGI tracking across trials
-        self.apgi_states = []
-        self.ignition_history = []
-        self.surprise_history = []
-        self.threshold_history = []
-        self.somatic_marker_history = []
-        self.metabolic_cost_history = []
+        self.apgi_states: List[Dict] = []
+        self.ignition_history: List[float] = []
+        self.surprise_history: List[float] = []
+        self.threshold_history: List[float] = []
+        self.somatic_marker_history: List[float] = []
+        self.metabolic_cost_history: List[float] = []
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -268,20 +265,22 @@ class EnhancedProbabilisticRunner:
         if self.apgi_states:
             apgi_metrics = {
                 "apgi_enabled": True,
-                "apgi_ignition_rate": np.mean(self.ignition_history) * 100,
+                "apgi_ignition_rate": min(
+                    1.0, max(0.0, np.mean(self.ignition_history))
+                ),
                 "apgi_mean_surprise": np.mean(self.surprise_history),
                 "apgi_metabolic_cost": np.mean(self.metabolic_cost_history),
                 "apgi_mean_somatic_marker": np.mean(self.somatic_marker_history),
-                "apgi_mean_threshold": np.mean(self.threshold_history)
-                if self.threshold_history
-                else 0.5,
+                "apgi_mean_threshold": (
+                    np.mean(self.threshold_history) if self.threshold_history else 0.5
+                ),
             }
 
             # 100/100: Precision expectation gap
             if self.precision_gap:
-                apgi_metrics[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                apgi_metrics["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
 
             # 100/100: Neuromodulators

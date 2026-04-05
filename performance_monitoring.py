@@ -312,9 +312,9 @@ class PerformanceMonitor:
                 "total_operations": len(metrics),
                 "successful_operations": len(successful_metrics),
                 "failed_operations": len(failed_metrics),
-                "success_rate": len(successful_metrics) / len(metrics)
-                if metrics
-                else 0,
+                "success_rate": (
+                    len(successful_metrics) / len(metrics) if metrics else 0
+                ),
             }
 
             if successful_metrics:
@@ -381,9 +381,9 @@ class PerformanceMonitor:
                 "trend_slope": trend_slope,
                 "trend_direction": trend_direction,
                 "samples": len(memory_values),
-                "time_span_minutes": (timestamps[-1] - timestamps[0]) / 60
-                if len(timestamps) > 1
-                else 0,
+                "time_span_minutes": (
+                    (timestamps[-1] - timestamps[0]) / 60 if len(timestamps) > 1 else 0
+                ),
             }
 
     def get_cpu_trend(self) -> Dict[str, Any]:
@@ -421,9 +421,9 @@ class PerformanceMonitor:
                 "trend_slope": trend_slope,
                 "trend_direction": trend_direction,
                 "samples": len(cpu_values),
-                "time_span_minutes": (timestamps[-1] - timestamps[0]) / 60
-                if len(timestamps) > 1
-                else 0,
+                "time_span_minutes": (
+                    (timestamps[-1] - timestamps[0]) / 60 if len(timestamps) > 1 else 0
+                ),
             }
 
     def detect_performance_regression(

@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -172,12 +173,12 @@ class DualNBackExperiment:
         return {
             "num_trials": len(self.trials),
             "n_level": self.n_level,
-            "hit_rate": np.mean([t.stimulus_correct for t in matches])
-            if matches
-            else 0,
-            "correct_rejection_rate": np.mean([t.stimulus_correct for t in non_matches])
-            if non_matches
-            else 0,
+            "hit_rate": (
+                np.mean([t.stimulus_correct for t in matches]) if matches else 0
+            ),
+            "correct_rejection_rate": (
+                np.mean([t.stimulus_correct for t in non_matches]) if non_matches else 0
+            ),
             "d_prime": self.get_d_prime(),
             "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
         }

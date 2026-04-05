@@ -380,13 +380,13 @@ class EnhancedDRMRunner:
         # Process with memory system
         results = self.memory_system.process_trial(trial)
 
-        # Update trial with results
+        # Update trial with results - set signal detection metrics
         trial.test_results = results["test_results"]
-        trial.response_recognized = results.get("accuracy", 0.0)
-        trial.confidence = results.get("hits", 0)
-        trial.presented = results.get("misses", 0)
-        trial.is_false_memory = results.get("false_alarms", 0)
-        trial.critical_lure = results.get("correct_rejections", 0)
+        trial.accuracy = results.get("accuracy", 0.0)
+        trial.hits = results.get("hits", 0)
+        trial.misses = results.get("misses", 0)
+        trial.false_alarms = results.get("false_alarms", 0)
+        trial.correct_rejections = results.get("correct_rejections", 0)
         trial.list_type = ListType.WORDS  # Default list type
         trial.timestamp = time.time()
 

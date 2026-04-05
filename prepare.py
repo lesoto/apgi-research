@@ -379,7 +379,7 @@ def evaluate_bpb(model, tokenizer, batch_size, device="cpu"):
         nbytes = token_bytes[y_flat]
         mask = nbytes > 0
         total_nats += (loss_flat * mask).sum().item()
-        total_bytes += nbytes.sum().item()
+        total_bytes += int(nbytes.sum().item())
     return total_nats / (math.log(2) * int(total_bytes))
 
 
@@ -533,8 +533,8 @@ def get_cache_info() -> dict:
     if CACHE_DIR.exists():
         try:
             stat = CACHE_DIR.stat()
-            info["size_bytes"] = stat.st_size
-            info["last_modified"] = stat.st_mtime
+            info["size_bytes"] = int(stat.st_size)
+            info["last_modified"] = int(stat.st_mtime)
         except Exception:
             pass
 

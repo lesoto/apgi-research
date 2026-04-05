@@ -6,7 +6,7 @@ meaningful human oversight and decision-making capabilities for the APGI system.
 
 Key Functions:
 - configure_if_needed(): Set up human interaction parameters
-- select_task(): Select and prioritize tasks for execution  
+- select_task(): Select and prioritize tasks for execution
 - review(result): Review experiment results with approve/modify/reject decisions
 """
 

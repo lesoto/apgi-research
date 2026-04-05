@@ -17,7 +17,6 @@ if sys.platform == "darwin" and hasattr(multiprocessing, "set_start_method"):
 if sys.platform == "darwin":
     os.environ["OBJC_DISABLE_MULTITHREADING"] = "1"
 
-import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
 import subprocess
@@ -61,9 +60,9 @@ OPTIONAL_DEPENDENCIES = {
 
 
 class ExperimentRunnerGUI(ctk.CTk):
-    def __init__(self, root: tk.Tk):
-        self.root = root
-        self.root.title("APGI Experiment Auto-Improvement")
+    def __init__(self):
+        super().__init__()
+        self.title("APGI Experiment Auto-Improvement")
         self.geometry("1400x900")
 
         # Set main path to current research directory
@@ -473,11 +472,11 @@ class ExperimentRunnerGUI(ctk.CTk):
                     predicted_outcome=outcome_entry.get(),
                     confidence_score=float(conf_entry.get()),
                     risk_assessment=risk_menu.get(),
-                    success_criteria=criteria_entry.get("0.0", "end")
-                    .strip()
-                    .split("\n")
-                    if criteria_entry.get("0.0", "end").strip()
-                    else [],
+                    success_criteria=(
+                        criteria_entry.get("0.0", "end").strip().split("\n")
+                        if criteria_entry.get("0.0", "end").strip()
+                        else []
+                    ),
                 )
                 self._refresh_hypothesis_display()
                 dialog.destroy()
@@ -845,7 +844,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         self._update_guardrail_dashboard(
             status="ESCALATED", confidence=confidence, experiment=experiment_name
         )
-        self._log(f"\n🚨 [GUARDRAIL ESCALATION] {experiment_name}: {message}", "#e74c3c")
+        self._log(
+            f"\n🚨 [GUARDRAIL ESCALATION] {experiment_name}: {message}", "#e74c3c"
+        )
         # Show a non-blocking alert dialog
         alert = ctk.CTkToplevel(self)
         alert.title("⚠️ Guardrail Escalation")
@@ -1350,10 +1351,6 @@ class ExperimentRunnerGUI(ctk.CTk):
             width=110,
             hover_color="#d68910",
         ).pack(side="left", padx=10)
-        ctk.CTkButton(
-            btn_frame,
-            daemon=True,
-        ).start()
 
     def _run_experiment(self, name, script) -> None:
         if name in self.running_experiments:

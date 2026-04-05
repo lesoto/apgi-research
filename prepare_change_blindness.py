@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import random
 import json
@@ -112,7 +113,7 @@ class CBTrial:
 class ChangeBlindnessGenerator:
     def __init__(self, seed: Optional[int] = None):
         self.rng = np.random.RandomState(seed)
-        self.reset()
+        self.trial_count = 0
 
     def reset(self):
         self.trial_count = 0
@@ -139,10 +140,10 @@ class ChangeBlindnessExperiment:
         self.num_trials = num_trials
         self.generator = ChangeBlindnessGenerator(seed=seed)
         self.trials: List[CBTrial] = []
-        self.current_trial_idx = 0
+        self.current_trial_idx: int = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -173,12 +174,14 @@ class ChangeBlindnessExperiment:
         ]
         return {
             "num_trials": len(self.trials),
-            "detection_rate": np.mean([t.correct for t in change_trials])
-            if change_trials
-            else 0,
-            "correct_rejection_rate": np.mean([t.correct for t in no_change_trials])
-            if no_change_trials
-            else 0,
+            "detection_rate": (
+                np.mean([t.correct for t in change_trials]) if change_trials else 0
+            ),
+            "correct_rejection_rate": (
+                np.mean([t.correct for t in no_change_trials])
+                if no_change_trials
+                else 0
+            ),
             "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
         }
 

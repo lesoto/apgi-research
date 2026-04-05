@@ -90,7 +90,7 @@ class ValidationResult:
 
 
 def validate_modifications_before_apply(
-    modifications: Dict[str, Any]
+    modifications: Dict[str, Any],
 ) -> ValidationResult:
     """
     Comprehensive validation of modifications before applying them.
@@ -328,6 +328,8 @@ def validate_module_name(module_name: str) -> bool:
 
     # Blacklist only truly dangerous modules that allow system access
     dangerous_modules = {
+        "os",
+        "sys",
         "subprocess",
         "shutil",
         "ctypes",

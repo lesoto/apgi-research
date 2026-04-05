@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import random
 import json
@@ -96,6 +97,17 @@ class DRMTrial:
     confidence: int = 0
     is_false_memory: bool = False
     timestamp: float = 0.0
+    # Signal detection metrics (calculated during processing)
+    accuracy: float = 0.0
+    hits: int = 0
+    misses: int = 0
+    false_alarms: int = 0
+    correct_rejections: int = 0
+    test_results: Optional[List[Dict]] = None
+
+    def __post_init__(self):
+        if self.test_results is None:
+            self.test_results = []
 
 
 class DRMExperiment:

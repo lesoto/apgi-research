@@ -21,7 +21,7 @@ Modification Guidelines:
 import numpy as np
 import time
 import sys
-from typing import Dict
+from typing import Dict, Optional
 
 # Import fixed configurations from prepare_inattentional_blindness.py
 from prepare_inattentional_blindness import (
@@ -41,7 +41,6 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
 
 # Type aliases for compatibility
 InattentionalBlindnessTrial = IBTrial
@@ -207,7 +206,7 @@ class EnhancedInattentionalBlindnessRunner:
     def __init__(self, enable_apgi: bool = True):
         self.generator = InattentionalBlindnessGenerator()
         self.attention_system = SimulatedAttentionSystem()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)

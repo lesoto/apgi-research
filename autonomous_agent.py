@@ -816,8 +816,8 @@ class AutonomousAgent:
         """Dynamically load experiment modules."""
         modules = {}
 
-        # Find all prepare_*.py files
-        prepare_files = list(Path(".").glob("prepare_*.py"))
+        # Find all prepare_*.py files in the repository directory
+        prepare_files = list(self.repo_path.glob("prepare_*.py"))
 
         for prepare_file in prepare_files:
             experiment_name = prepare_file.stem.replace("prepare_", "")
@@ -1360,12 +1360,14 @@ class AutonomousAgent:
                 experiment_name=experiment_name,
                 summary=f"Iteration {iteration}: Metric {result.primary_metric:.4f} (Delta: {delta:+.4f})",
                 metric_deltas={experiment_name: delta},
-                root_causes=["Execution failure occurred"]
-                if result.status != "success"
-                else [],
-                suggested_fixes=["Adjust bound limits"]
-                if result.status != "success"
-                else ["Valid parameters found"],
+                root_causes=(
+                    ["Execution failure occurred"] if result.status != "success" else []
+                ),
+                suggested_fixes=(
+                    ["Adjust bound limits"]
+                    if result.status != "success"
+                    else ["Valid parameters found"]
+                ),
                 confidence_score=0.9 if result.status == "success" else 0.1,
             )
             # Get the generate method if available
@@ -1400,11 +1402,13 @@ class AutonomousAgent:
             confidence = getattr(
                 analysis_res,
                 "confidence",
-                getattr(analysis_res.metadata, "get", lambda x, y=0: 0)(
-                    "confidence", 0.0
-                )
-                if hasattr(analysis_res, "metadata")
-                else 0.0,
+                (
+                    getattr(analysis_res.metadata, "get", lambda x, y=0: 0)(
+                        "confidence", 0.0
+                    )
+                    if hasattr(analysis_res, "metadata")
+                    else 0.0
+                ),
             )
 
             # Phase 3 Step 4: Human Review Checkpoint Integration
@@ -1428,12 +1432,14 @@ class AutonomousAgent:
                         "experiment_id": f"{experiment_name}_iter_{iteration}",
                         "hypothesis_id": f"auto_opt_{experiment_name}",
                         "metrics": result.metrics if hasattr(result, "metrics") else {},
-                        "outcomes": result.outcomes
-                        if hasattr(result, "outcomes")
-                        else {},
-                        "analysis": analysis_res.analysis
-                        if hasattr(analysis_res, "analysis")
-                        else "",
+                        "outcomes": (
+                            result.outcomes if hasattr(result, "outcomes") else {}
+                        ),
+                        "analysis": (
+                            analysis_res.analysis
+                            if hasattr(analysis_res, "analysis")
+                            else ""
+                        ),
                         "confidence": confidence,
                     }
 

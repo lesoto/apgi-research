@@ -238,9 +238,9 @@ class EnhancedStroopRunner:
                 predicted=expected_rt_sec,
                 trial_type=trial_type,
                 precision_ext=2.5 if trial.trial_type == TrialType.INCONGRUENT else 1.0,
-                precision_int=1.5
-                if correct
-                else 1.0,  # Correct response increases precision
+                precision_int=(
+                    1.5 if correct else 1.0
+                ),  # Correct response increases precision
             )
 
     def _calculate_results(self) -> Dict:
