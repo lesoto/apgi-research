@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Optional, List, cast
 
 from prepare_change_blindness import (
     ChangeBlindnessExperiment,
@@ -82,24 +82,40 @@ class EnhancedChangeBlindnessRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = ChangeBlindnessExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
+
+        # Helper function to safely get float values from APGI_PARAMS
+        def safe_float(key: str, default: float) -> float:
+            value = APGI_PARAMS.get(key, default)
+            if isinstance(value, (int, float)):
+                return float(value)
+            elif value is not None:
+                return float(str(value))
+            else:
+                return default
+
+        self.apgi: Optional[APGIIntegration] = None
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
+        self.neuromodulators: Optional[Dict[str, float]] = None
+        self.running_stats: Optional[Dict[str, float]] = None
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35) or 0.35),
-                beta=float(APGI_PARAMS.get("beta", 1.5) or 1.5),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5) or 0.5),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5) or 5.5),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3) or 0.3),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7) or 0.7),
+                tau_S=safe_float("tau_s", 0.35),
+                beta=safe_float("beta", 1.5),
+                theta_0=safe_float("theta_0", 0.5),
+                alpha=safe_float("alpha", 5.5),
+                gamma_M=safe_float("gamma_M", -0.3),
+                lambda_S=safe_float("lambda_S", 0.1),
+                sigma_S=safe_float("sigma_S", 0.05),
+                sigma_theta=safe_float("sigma_theta", 0.02),
+                sigma_M=safe_float("sigma_M", 0.03),
+                rho=safe_float("rho", 0.7),
+                theta_survival=safe_float("theta_survival", 0.3),
+                theta_neutral=safe_float("theta_neutral", 0.7),
             )
             self.apgi = APGIIntegration(params)
 
@@ -118,8 +134,11 @@ class EnhancedChangeBlindnessRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=safe_float("beta_cross", 0.2),
+                    tau_levels=cast(
+                        List[float],
+                        APGI_PARAMS.get("tau_levels") or [0.1, 0.2, 0.4, 1.0, 5.0],
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -133,10 +152,10 @@ class EnhancedChangeBlindnessRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0) or 1.0),
-                "NE": float(APGI_PARAMS.get("NE", 1.0) or 1.0),
-                "DA": float(APGI_PARAMS.get("DA", 1.0) or 1.0),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0) or 1.0),
+                "ACh": safe_float("ACh", 1.0),
+                "NE": safe_float("NE", 1.0),
+                "DA": safe_float("DA", 1.0),
+                "HT5": safe_float("HT5", 1.0),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -182,7 +201,11 @@ class EnhancedChangeBlindnessRunner:
         )
 
         # 100/100: Process with APGI if enabled
-        if self.apgi:
+        if (
+            self.apgi
+            and self.neuromodulators is not None
+            and self.running_stats is not None
+        ):
             # Compute prediction error from trial outcome
             observed_accuracy = 1.0 if detected else 0.0
             expected_accuracy = 0.5  # Baseline
@@ -191,26 +214,33 @@ class EnhancedChangeBlindnessRunner:
             trial_type = "neutral"
 
             # 100/100: Determine precision based on neuromodulators
-            ach_boost = self.neuromodulators.get("ACh", 1.0)
-            ne_effect = self.neuromodulators.get("NE", 1.0)
-            da_effect = self.neuromodulators.get("DA", 1.0)
+            ach_boost = (
+                self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
+            )
+            ne_effect = (
+                self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
+            )
+            da_effect = (
+                self.neuromodulators.get("DA", 1.0) if self.neuromodulators else 1.0
+            )
 
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
             # 100/100: Update running statistics
-            alpha_mu = 0.01
-            alpha_sigma = 0.005
-            self.running_stats["outcome_mean"] += alpha_mu * (
-                observed_accuracy - self.running_stats["outcome_mean"]
-            )
-            self.running_stats["outcome_var"] += alpha_sigma * (
-                (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
-                - self.running_stats["outcome_var"]
-            )
-            self.running_stats["outcome_var"] = max(
-                0.01, self.running_stats["outcome_var"]
-            )
+            if self.running_stats is not None:
+                alpha_mu = 0.01
+                alpha_sigma = 0.005
+                self.running_stats["outcome_mean"] += alpha_mu * (
+                    observed_accuracy - self.running_stats["outcome_mean"]
+                )
+                self.running_stats["outcome_var"] += alpha_sigma * (
+                    (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
+                    - self.running_stats["outcome_var"]
+                )
+                self.running_stats["outcome_var"] = max(
+                    0.01, self.running_stats["outcome_var"]
+                )
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
@@ -231,14 +261,15 @@ class EnhancedChangeBlindnessRunner:
 
             # 100/100: Process hierarchical levels
             if self.hierarchical:
-                signal = apgi_state.get("S", 0.0)
+                signal = apgi_state.get("S", 0.0) or 0.0
                 for level_idx in range(5):
                     level_state = self.hierarchical.process_level(level_idx, signal)
                     signal = level_state.S * 0.8
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        start_time = self.start_time if self.start_time is not None else time.time()
+        completion_time = time.time() - start_time
 
         apgi_metrics = {}
         if self.apgi and hasattr(self.apgi, "finalize"):

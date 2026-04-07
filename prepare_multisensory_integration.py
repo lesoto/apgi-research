@@ -114,7 +114,7 @@ class MultisensoryGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> MultisensoryTrial:
-        modality = self.rng.choice(list(Modality))
+        modality: Modality = self.rng.choice(list(Modality))  # type: ignore
         is_congruent = self.rng.random() < 0.5
         soa = int(self.rng.choice(SOA_VALUES))
 
@@ -186,7 +186,7 @@ class MultisensoryExperiment:
         trials = [t for t in self.trials if t.modality == modality and t.correct]
         if not trials:
             return 0.0
-        return np.mean([t.rt_ms for t in trials])
+        return float(np.mean([t.rt_ms for t in trials]))
 
     def get_multisensory_gain(self) -> float:
         """Visual RT + Auditory RT - Bimodal RT (should be ~50-100ms)."""

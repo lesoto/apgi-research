@@ -23,7 +23,7 @@ Modification Guidelines:
 import numpy as np
 import time
 import sys
-from typing import Dict
+from typing import Dict, Optional, List, cast
 
 # APGI Integration with hierarchical processing and precision gap
 from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
@@ -43,14 +43,12 @@ from prepare_masking import (
     MaskingGenerator,
 )
 
-# Local TIME_BUDGET for reference (must match prepare file)
-TIME_BUDGET = APGI_PARAMS.get("time_budget", 600)  # 10 minutes per experiment
+# Local variables for reference
+_TIME_BUDGET_VAL = APGI_PARAMS.get("time_budget", 600)
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
-
-TIME_BUDGET = 600  # noqa: F811
 
 # Task structure parameters
 NUM_TRIALS_CONFIG = 100  # Can adjust: 50-200 trials typical
@@ -139,7 +137,7 @@ class SimulatedParticipant:
         detection_prob += np.random.normal(0, 0.05)
 
         # Clamp between chance and perfect
-        return max(0.1, min(0.95, detection_prob))
+        return float(max(0.1, min(0.95, detection_prob)))
 
     def calculate_response_time(self, trial: MaskingTrial, detected: bool) -> float:
         """Calculate response time for the trial."""
@@ -221,25 +219,43 @@ class EnhancedMaskingRunner:
     def __init__(self, enable_apgi: bool = True):
         self.generator = MaskingGenerator()
         self.participant = SimulatedParticipant()
-        self.start_time = None
-        self.trials = []
+        self.start_time: Optional[float] = None
+        self.trials: List[MaskingTrial] = []
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
+
+        # Helper function to safely get float values from APGI_PARAMS
+        def safe_float(key: str, default: float) -> float:
+            value = APGI_PARAMS.get(key, default)
+            if isinstance(value, (int, float)):
+                return float(value)
+            elif value is not None:
+                return float(str(value))
+            else:
+                return default
+
+        # Declare APGI component types
+        self.apgi: Optional[APGIIntegration] = None
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
+        self.neuromodulators: Optional[Dict[str, float]] = None
+        self.running_stats: Optional[Dict[str, float]] = None
+
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=APGI_PARAMS.get("tau_s", 0.35),
-                beta=APGI_PARAMS.get("beta", 1.5),
-                theta_0=APGI_PARAMS.get("theta_0", 0.5),
-                alpha=APGI_PARAMS.get("alpha", 5.5),
-                gamma_M=APGI_PARAMS.get("gamma_M", -0.3),
-                lambda_S=APGI_PARAMS.get("lambda_S", 0.1),
-                sigma_S=APGI_PARAMS.get("sigma_S", 0.05),
-                sigma_theta=APGI_PARAMS.get("sigma_theta", 0.02),
-                sigma_M=APGI_PARAMS.get("sigma_M", 0.03),
-                rho=APGI_PARAMS.get("rho", 0.7),
-                theta_survival=APGI_PARAMS.get("theta_survival", 0.3),
-                theta_neutral=APGI_PARAMS.get("theta_neutral", 0.7),
+                tau_S=safe_float("tau_s", 0.35),
+                beta=safe_float("beta", 1.5),
+                theta_0=safe_float("theta_0", 0.5),
+                alpha=safe_float("alpha", 5.5),
+                gamma_M=safe_float("gamma_M", -0.3),
+                lambda_S=safe_float("lambda_S", 0.1),
+                sigma_S=safe_float("sigma_S", 0.05),
+                sigma_theta=safe_float("sigma_theta", 0.02),
+                sigma_M=safe_float("sigma_M", 0.03),
+                rho=safe_float("rho", 0.7),
+                theta_survival=safe_float("theta_survival", 0.3),
+                theta_neutral=safe_float("theta_neutral", 0.7),
             )
             self.apgi = APGIIntegration(params)
 
@@ -258,8 +274,11 @@ class EnhancedMaskingRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=safe_float("beta_cross", 0.2),
+                    tau_levels=cast(
+                        List[float],
+                        APGI_PARAMS.get("tau_levels") or [0.1, 0.2, 0.4, 1.0, 5.0],
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -273,10 +292,10 @@ class EnhancedMaskingRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": APGI_PARAMS.get("ACh", 1.0),
-                "NE": APGI_PARAMS.get("NE", 1.0),
-                "DA": APGI_PARAMS.get("DA", 1.0),
-                "HT5": APGI_PARAMS.get("HT5", 1.0),
+                "ACh": safe_float("ACh", 1.0),
+                "NE": safe_float("NE", 1.0),
+                "DA": safe_float("DA", 1.0),
+                "HT5": safe_float("HT5", 1.0),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -286,12 +305,6 @@ class EnhancedMaskingRunner:
                 "rt_mean": 500.0,
                 "rt_var": 25000.0,
             }
-        else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
 
     def run_experiment(self) -> Dict:
         """
@@ -360,26 +373,29 @@ class EnhancedMaskingRunner:
             precision_ext = (
                 2.0 if trial.mask_type == MaskType.BACKWARD else 1.5
             ) * ach_boost
-            precision_int = (1.5 if trial.correct else 1.0) * (1.0 + 0.2 * ne_effect)
+            precision_int = float(
+                (1.5 if trial.correct else 1.0) * (1.0 + 0.2 * ne_effect)
+            )
 
             # 100/100: Update running statistics for z-score normalization
-            alpha_mu = 0.01
-            alpha_sigma = 0.005
-            self.running_stats["outcome_mean"] += alpha_mu * (
-                observed - self.running_stats["outcome_mean"]
-            )
-            self.running_stats["outcome_var"] += alpha_sigma * (
-                (observed - self.running_stats["outcome_mean"]) ** 2
-                - self.running_stats["outcome_var"]
-            )
-            self.running_stats["outcome_var"] = max(
-                0.01, self.running_stats["outcome_var"]
-            )
+            if self.running_stats:
+                alpha_mu = 0.01
+                alpha_sigma = 0.005
+                self.running_stats["outcome_mean"] += alpha_mu * (
+                    observed - self.running_stats["outcome_mean"]
+                )
+                self.running_stats["outcome_var"] += alpha_sigma * (
+                    (observed - self.running_stats["outcome_mean"]) ** 2
+                    - self.running_stats["outcome_var"]
+                )
+                self.running_stats["outcome_var"] = max(
+                    0.01, self.running_stats["outcome_var"]
+                )
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
+                    precision_ext, precision_int, self.neuromodulators or {}
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -479,7 +495,7 @@ class EnhancedMaskingRunner:
         mean_rt = np.mean(rts) if rts else 0.0
 
         # Compile results
-        results = {
+        results: Dict[str, object] = {
             # Primary output metric
             "masking_effect_ms": masking_effect_ms,
             # Timing metrics
@@ -541,7 +557,7 @@ class EnhancedMaskingRunner:
                 results["apgi_dopamine"] = self.neuromodulators.get("DA", 1.0)
                 results["apgi_serotonin"] = self.neuromodulators.get("HT5", 1.0)
 
-            results["apgi_formatted"] = format_apgi_output(apgi_summary)
+            results["apgi_summary_formatted"] = format_apgi_output(apgi_summary)
         else:
             results["apgi_enabled"] = False
 

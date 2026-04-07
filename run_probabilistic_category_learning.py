@@ -19,7 +19,26 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union, cast
+
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    """Safely cast a value to float with fallback."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float_list(
+    value: Any, default: Optional[List[float]] = None
+) -> Optional[List[float]]:
+    """Safely cast a value to list with fallback."""
+    try:
+        return list(value) if value is not None else default
+    except (TypeError, ValueError):
+        return default
+
 
 from prepare_probabilistic_category_learning import (
     PCLExperiment,
@@ -106,18 +125,18 @@ class EnhancedProbabilisticRunner:
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35) or 0.35),
-                beta=float(APGI_PARAMS.get("beta", 1.5) or 1.5),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5) or 0.5),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5) or 5.5),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3) or 0.3),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7) or 0.7),
+                tau_S=safe_float(APGI_PARAMS.get("tau_s", 0.35)),
+                beta=safe_float(APGI_PARAMS.get("beta", 1.5)),
+                theta_0=safe_float(APGI_PARAMS.get("theta_0", 0.5)),
+                alpha=safe_float(APGI_PARAMS.get("alpha", 5.5)),
+                gamma_M=safe_float(APGI_PARAMS.get("gamma_M", -0.3)),
+                lambda_S=safe_float(APGI_PARAMS.get("lambda_S", 0.1)),
+                sigma_S=safe_float(APGI_PARAMS.get("sigma_S", 0.05)),
+                sigma_theta=safe_float(APGI_PARAMS.get("sigma_theta", 0.02)),
+                sigma_M=safe_float(APGI_PARAMS.get("sigma_M", 0.03)),
+                rho=safe_float(APGI_PARAMS.get("rho", 0.7)),
+                theta_survival=safe_float(APGI_PARAMS.get("theta_survival", 0.3)),
+                theta_neutral=safe_float(APGI_PARAMS.get("theta_neutral", 0.7)),
             )
             self.apgi = APGIIntegration(params)
 
@@ -137,10 +156,9 @@ class EnhancedProbabilisticRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
-                    tau_levels=list(
+                    beta_cross=safe_float(APGI_PARAMS.get("beta_cross", 0.2)),
+                    tau_levels=safe_float_list(
                         APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0])
-                        or [0.1, 0.2, 0.4, 1.0, 5.0]
                     ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
@@ -152,10 +170,10 @@ class EnhancedProbabilisticRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators: Dict[str, float] = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0) or 1.0),
-                "NE": float(APGI_PARAMS.get("NE", 1.0) or 1.0),
-                "DA": float(APGI_PARAMS.get("DA", 1.0) or 1.0),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0) or 1.0),
+                "ACh": safe_float(APGI_PARAMS.get("ACh", 1.0)),
+                "NE": safe_float(APGI_PARAMS.get("NE", 1.0)),
+                "DA": safe_float(APGI_PARAMS.get("DA", 1.0)),
+                "HT5": safe_float(APGI_PARAMS.get("HT5", 1.0)),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -295,7 +313,7 @@ class EnhancedProbabilisticRunner:
                 )
         else:
             apgi_metrics = {
-                "apgi_enabled": self.enable_apgi,
+                "apgi_enabled": float(cast(Union[str, int, float], self.enable_apgi)),
                 "apgi_ignition_rate": 0.0,
                 "apgi_mean_surprise": 0.0,
                 "apgi_metabolic_cost": 0.0,
@@ -315,7 +333,7 @@ class EnhancedProbabilisticRunner:
             **apgi_metrics,
         }
 
-    def print_results(results: Dict):
+    def print_results(self, results: Dict) -> None:
         print("\n" + "=" * 60)
         print("PROBABILISTIC CATEGORY LEARNING EXPERIMENT RESULTS")
         print("=" * 60)

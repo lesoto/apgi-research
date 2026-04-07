@@ -12,7 +12,7 @@ Key Functions:
 
 import json
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, cast
 from dataclasses import dataclass
 from pathlib import Path
 from datetime import datetime
@@ -88,7 +88,7 @@ class HumanControlLayer:
         if self.config_path.exists():
             try:
                 with open(self.config_path, "r") as f:
-                    return json.load(f)
+                    return cast(Dict[str, Any], json.load(f))
             except Exception as e:
                 logger.error(f"Failed to load human config: {e}")
                 return {}
@@ -585,7 +585,7 @@ class HumanControlLayer:
 
         try:
             with open(log_path, "r") as f:
-                logs = json.load(f)
+                logs = cast(List[Dict[str, Any]], json.load(f))
                 if logs:
                     return logs[-1]  # Most recent review
         except Exception:

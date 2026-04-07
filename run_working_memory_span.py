@@ -21,7 +21,7 @@ Modification Guidelines:
 import numpy as np
 import time
 import sys
-from typing import Dict
+from typing import Dict, Union, cast, List, Optional
 
 # Import fixed configurations from prepare_working_memory_span.py
 from prepare_working_memory_span import (
@@ -216,24 +216,44 @@ class EnhancedWorkingMemorySpanRunner:
     def __init__(self, enable_apgi: bool = True):
         self.generator = WorkingMemorySpanGenerator()
         self.memory_system = SimulatedWorkingMemorySystem()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("tau_s", 0.35))
+                ),
+                beta=float(cast(Union[str, int, float], APGI_PARAMS.get("beta", 1.5))),
+                theta_0=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_0", 0.5))
+                ),
+                alpha=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("alpha", 5.5))
+                ),
+                gamma_M=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("gamma_M", -0.3))
+                ),
+                lambda_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("lambda_S", 0.1))
+                ),
+                sigma_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_S", 0.05))
+                ),
+                sigma_theta=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_theta", 0.02))
+                ),
+                sigma_M=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_M", 0.03))
+                ),
+                rho=float(cast(Union[str, int, float], APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_survival", 0.3))
+                ),
+                theta_neutral=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_neutral", 0.7))
+                ),
             )
             self.apgi = APGIIntegration(params)
 
@@ -252,25 +272,30 @@ class EnhancedWorkingMemorySpanRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(
+                        cast(Union[str, int, float], APGI_PARAMS.get("beta_cross", 0.2))
+                    ),
+                    tau_levels=cast(
+                        list[float],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
-                self.hierarchical = None
+                self.hierarchical = None  # type: ignore[assignment]
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if APGI_PARAMS.get("precision_gap_enabled", True):
                 self.precision_gap = PrecisionExpectationState()
             else:
-                self.precision_gap = None
+                self.precision_gap = None  # type: ignore[assignment]
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": float(cast(Union[str, int, float], APGI_PARAMS.get("ACh", 1.0))),
+                "NE": float(cast(Union[str, int, float], APGI_PARAMS.get("NE", 1.0))),
+                "DA": float(cast(Union[str, int, float], APGI_PARAMS.get("DA", 1.0))),
+                "HT5": float(cast(Union[str, int, float], APGI_PARAMS.get("HT5", 1.0))),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -281,12 +306,12 @@ class EnhancedWorkingMemorySpanRunner:
                 "rt_var": 40000.0,
             }
         else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
-        self.trials = []
+            self.apgi = None  # type: ignore[assignment]
+            self.hierarchical = None  # type: ignore[assignment]
+            self.precision_gap = None  # type: ignore[assignment]
+            self.neuromodulators = None  # type: ignore[assignment]
+            self.running_stats = None  # type: ignore[assignment]
+        self.trials: List[WMSpanTrial] = []
 
     def run_experiment(self) -> Dict:
         """
@@ -306,13 +331,13 @@ class EnhancedWorkingMemorySpanRunner:
             self.trials.append(trial)
 
             # Check time budget
-            elapsed = time.time() - self.start_time
+            elapsed = time.time() - (self.start_time or 0.0)
             if elapsed > TIME_BUDGET:
                 print(f"WARNING: Time budget exceeded at trial {trial_num}")
                 break
 
         # Calculate final metrics
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0.0)
         results = self._calculate_results(completion_time)
 
         return results
@@ -326,10 +351,8 @@ class EnhancedWorkingMemorySpanRunner:
         results = self.memory_system.process_trial(trial)
 
         # Update trial with results
-        trial.response_sequence = results["response_sequence"]
-        trial.correct_items = results["correct_items"]
-        trial.recall_accuracy = results["accuracy"]
-        trial.response_time_ms = results["response_time_ms"]
+        trial.recalled = results.get("response_sequence", [])
+        trial.recall_accuracy = results.get("accuracy", 0.0)
         trial.timestamp = time.time()
 
         # Simulate inter-trial interval

@@ -36,7 +36,7 @@ import numpy as np
 import signal
 import importlib
 import asyncio
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Tuple, Any, Union, cast
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
@@ -797,7 +797,7 @@ class AutonomousAgent:
             logger.info(
                 f"[XPR* AGENT] Loaded checkpoint from {checkpoint.get('timestamp', 'unknown')}"
             )
-            return checkpoint
+            return cast(Optional[Dict[str, Any]], checkpoint)
         except Exception as e:
             logger.warning(f"[XPR* AGENT] Failed to load checkpoint: {e}")
             return None
@@ -1601,7 +1601,7 @@ class AutonomousAgent:
 
     def apply_modifications(self, run_file: str, modifications: Dict[str, Any]) -> None:
         """Public wrapper for _apply_modifications."""
-        return self._apply_modifications(run_file, modifications)
+        return self._apply_modifications(run_file, modifications)  # type: ignore[no-any-return]
 
     def extract_primary_metric(
         self, results: Dict[str, Any], experiment_name: str = "unknown"

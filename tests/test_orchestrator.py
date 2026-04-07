@@ -26,14 +26,19 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class TestResult:
-    """Individual test result."""
+    """Test result data structure."""
 
-    test_name: str
-    status: str  # passed, failed, skipped, error
+    name: str
+    status: str
     duration: float
     message: str = ""
     category: str = ""
-    file_path: str = ""
+    file_path: Optional[str] = None
+
+    @property
+    def test_name(self) -> str:
+        """Get test name for backward compatibility."""
+        return self.name
 
 
 @dataclass
@@ -50,7 +55,7 @@ class TestSuiteReport:
     coverage_percent: float = 0.0
     branch_coverage: float = 0.0
     results: List[TestResult] = field(default_factory=list)
-    coverage_gaps: List[Dict[str, Any]] = field(default_factory=list)
+    coverage_gaps: Dict[str, Any] = field(default_factory=dict)
     recommendations: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -216,7 +221,7 @@ class TestOrchestrator:
                 status = match.group("status").lower()
 
                 test_result = TestResult(
-                    test_name=test_name,
+                    name=test_name,
                     status=status,
                     duration=0.0,  # Duration not available in short output
                     message="",
@@ -249,18 +254,21 @@ class TestOrchestrator:
 
             # Update report
             for gap in gaps:
-                self.report.coverage_gaps.append(
-                    {
-                        "file": gap.file_path,
-                        "lines": f"{gap.line_start}-{gap.line_end}",
-                        "reason": gap.reason,
-                        "suggested_test": gap.suggested_test,
-                    }
-                )
+                gap_dict = {
+                    "file": gap.file_path,
+                    "lines": f"{gap.line_start}-{gap.line_end}",
+                    "reason": gap.reason,
+                    "suggested_test": gap.suggested_test,
+                }
+                gap_key = f"gap_{gap.line_start}_{gap.line_end}"
+                self.report.coverage_gaps[gap_key] = gap_dict
 
-            # Calculate coverage percentage
-            if analyzer.coverage_data.get("totals"):
-                totals = analyzer.coverage_data["totals"]
+        # Check if analyzer.coverage_data exists and has totals
+        if hasattr(analyzer, "coverage_data") and isinstance(
+            analyzer.coverage_data, dict
+        ):
+            totals = analyzer.coverage_data.get("totals")
+            if totals and isinstance(totals, dict):
                 self.report.coverage_percent = totals.get("percent_covered", 0.0)
                 self.report.branch_coverage = totals.get(
                     "percent_covered_branches", 0.0
@@ -295,7 +303,9 @@ class TestOrchestrator:
 
         # Add specific recommendations based on gaps
         error_gaps = sum(
-            1 for g in self.report.coverage_gaps if "error" in g["reason"].lower()
+            1
+            for g in self.report.coverage_gaps
+            if isinstance(g, dict) and "error" in str(g.get("reason", "")).lower()
         )
         if error_gaps > 5:
             recommendations.append(
@@ -354,14 +364,14 @@ class TestOrchestrator:
         self.report.save(report_path)
 
         # Save coverage gaps separately
+        gaps_path = output_dir / "coverage_gaps.json"
         if self.report.coverage_gaps:
-            gaps_path = output_dir / "coverage_gaps.json"
             with open(gaps_path, "w") as f:
                 json.dump(self.report.coverage_gaps, f, indent=2)
 
         return {
             "main_report": report_path,
-            "coverage_gaps": gaps_path if self.report.coverage_gaps else None,
+            "coverage_gaps": gaps_path,
         }
 
 

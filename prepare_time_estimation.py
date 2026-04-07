@@ -103,7 +103,7 @@ class TimeEstGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> TimeEstTrial:
-        method = self.rng.choice(list(EstimationMethod))
+        method: EstimationMethod = self.rng.choice(list(EstimationMethod))  # type: ignore
         range_name = self.rng.choice(list(DURATION_RANGES.keys()))
         min_d, max_d = DURATION_RANGES[range_name]
         target = int(self.rng.randint(min_d, max_d + 1))
@@ -150,14 +150,15 @@ class TimeEstExperiment:
         trials = [t for t in self.trials if method is None or t.method == method]
         if not trials:
             return 0.0
-        return np.mean([t.error_ms for t in trials])
+        return float(np.mean([t.error_ms for t in trials]))
 
     def get_variability(self) -> float:
         """Coefficient of variation."""
         if not self.trials:
             return 0.0
-        return np.std([t.error_percent for t in self.trials]) / abs(
-            np.mean([t.error_percent for t in self.trials])
+        return float(
+            np.std([t.error_percent for t in self.trials])
+            / abs(np.mean([t.error_percent for t in self.trials]))
         )
 
     def get_summary(self) -> Dict:

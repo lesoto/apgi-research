@@ -149,7 +149,7 @@ class GoNoGoExperiment:
         no_go_trials = [t for t in self.trials if t.trial_type == TrialType.NO_GO]
         hits = np.mean([t.correct for t in go_trials]) if go_trials else 0
         fa_rate = 1 - np.mean([t.correct for t in no_go_trials]) if no_go_trials else 0
-        return hits - fa_rate
+        return float(hits - fa_rate)
 
     def get_summary(self) -> Dict:
         if not self.trials:

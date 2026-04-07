@@ -68,8 +68,10 @@ class SimulatedParticipant:
         self.accuracy = BASE_ACCURACY - (self.n_level - 1) * N_LEVEL_PENALTY
 
     def process_trial(self, is_match: bool) -> tuple:
+        # Match detection accuracy depends on N-level
         correct = np.random.random() < self.accuracy
-        rt = 600 + np.random.normal(0, 100)
+        # Realistic RT for N-back (varies by difficulty)
+        rt = (400 + self.n_level * 100) + np.random.normal(0, 150)
 
         # Response: press if match detected
         detected = (is_match and correct) or (not is_match and not correct)

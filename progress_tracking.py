@@ -8,8 +8,8 @@ import json
 import time
 import threading
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any, Optional, Callable, Union
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 import pickle
 
@@ -43,7 +43,7 @@ class ExperimentProgress:
     apgi_summary: Optional[Dict[str, float]] = None
     status: str = "running"  # running, completed, failed, paused
     end_time: Optional[float] = None
-    error_log: List[str] = None
+    error_log: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.trials is None:
@@ -127,9 +127,9 @@ class ProgressTracker:
                     self.log_error(f"Trial callback error: {e}")
 
             # Call progress callbacks
-            for callback in self.progress_callbacks:
+            for callback in self.progress_callbacks:  # type: ignore[assignment]
                 try:
-                    callback(self.progress)
+                    callback(self.progress)  # type: ignore[arg-type]
                 except Exception as e:
                     self.log_error(f"Progress callback error: {e}")
 
@@ -193,7 +193,7 @@ class ProgressTracker:
                 t.accuracy for t in self.progress.trials if t.accuracy is not None
             ]
 
-            stats = {
+            stats: Dict[str, Union[int, float]] = {
                 "completed_trials": len(self.progress.trials),
                 "error_trials": len(
                     [t for t in self.progress.trials if t.error is not None]
@@ -203,18 +203,20 @@ class ProgressTracker:
             if response_times:
                 stats.update(
                     {
-                        "avg_response_time": sum(response_times) / len(response_times),
-                        "min_response_time": min(response_times),
-                        "max_response_time": max(response_times),
+                        "avg_response_time": float(
+                            sum(response_times) / len(response_times)
+                        ),
+                        "min_response_time": float(min(response_times)),
+                        "max_response_time": float(max(response_times)),
                     }
                 )
 
             if accuracies:
                 stats.update(
                     {
-                        "avg_accuracy": sum(accuracies) / len(accuracies),
-                        "min_accuracy": min(accuracies),
-                        "max_accuracy": max(accuracies),
+                        "avg_accuracy": float(sum(accuracies) / len(accuracies)),
+                        "min_accuracy": float(min(accuracies)),
+                        "max_accuracy": float(max(accuracies)),
                     }
                 )
 
@@ -361,7 +363,7 @@ class ProgressMonitor:
 
     def get_overall_status(self) -> Dict[str, Any]:
         """Get overall status of all experiments."""
-        status = {
+        status: Dict[str, Any] = {
             "total_experiments": len(self.active_experiments),
             "running_experiments": len(
                 [

@@ -19,6 +19,32 @@ if sys.platform == "darwin":
 
 from tkinter import messagebox
 import customtkinter as ctk
+
+
+# Fix for customtkinter DropdownMenu bug: _add_menu_commands fails on empty menu
+def _patched_add_menu_commands(self):
+    """Patched version that handles empty menus safely."""
+    try:
+        # Check if menu has items before trying to delete
+        end_index = self.index("end")
+        if end_index is not None and end_index != "":
+            self.delete(0, "end")
+    except Exception:
+        pass  # Menu is empty or not fully initialized
+
+    # Add the actual menu commands
+    for i, value in enumerate(self._values):
+        self.add_command(
+            label=value,
+            command=lambda v=value: self._command(v) if self._command else None,
+        )
+
+
+# Apply the patch
+ctk.windows.widgets.core_widget_classes.dropdown_menu.DropdownMenu._add_menu_commands = (
+    _patched_add_menu_commands
+)
+
 import subprocess
 import threading
 import re
@@ -669,7 +695,6 @@ class ExperimentRunnerGUI(ctk.CTk):
 
     def _refresh_hypothesis_display(self):
         """Refresh the hypothesis display scrollable frame."""
-        # Clear existing items
         for widget in self.hypothesis_scrollable.winfo_children():
             widget.destroy()
 
@@ -1474,7 +1499,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                     line = line.split("] ", 1)[1] if "] " in line else line
 
                 # Parse standard APGI metrics (with percentages)
-                if "Ignition Rate:" in line:
+                if "Ignition Rate:" in line or "- Ignition Rate:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip().rstrip("%")
                         value = float(value_str)
@@ -1489,7 +1514,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Ignition Rate: {line} - {e}"
                         )
 
-                elif "Mean Surprise:" in line:
+                elif "Mean Surprise:" in line or "- Mean Surprise:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
                         value = float(value_str)
@@ -1503,9 +1528,12 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Mean Surprise: {line} - {e}"
                         )
 
-                elif "Metabolic Cost:" in line:
+                elif "Metabolic Cost:" in line or "- Total Metabolic Cost:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
+                        if not value_str:
+                            # Skip empty values (as seen in the log error)
+                            continue
                         value = float(value_str)
                         if value < 0:
                             validation_errors.append(
@@ -1517,7 +1545,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Metabolic Cost: {line} - {e}"
                         )
 
-                elif "Mean Somatic Marker:" in line:
+                elif "Mean Somatic Marker:" in line or "- Mean Somatic Marker:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
                         value = float(value_str)
@@ -1531,7 +1559,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Mean Somatic Marker: {line} - {e}"
                         )
 
-                elif "Mean Threshold:" in line:
+                elif "Mean Threshold:" in line or "- Mean Threshold:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
                         value = float(value_str)

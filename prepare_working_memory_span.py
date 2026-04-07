@@ -108,7 +108,7 @@ class WMSpanTrial:
     span_type: SpanType
     to_remember: List[str]
     processing_items: List[Dict]
-    recalled: List[str] = None
+    recalled: Optional[List[str]] = None
     recall_accuracy: float = 0.0
     processing_accuracy: float = 0.0
     timestamp: float = 0.0
@@ -128,7 +128,7 @@ class WorkingMemorySpanGenerator:
 
     def create_trial(self, trial_number: int) -> WMSpanTrial:
         span_size = int(self.rng.choice(SPAN_LEVELS))
-        span_type = self.rng.choice([SpanType.SIMPLE, SpanType.COMPLEX])
+        span_type: SpanType = self.rng.choice([SpanType.SIMPLE, SpanType.COMPLEX])  # type: ignore
         to_remember = list(self.rng.choice(WORDS, size=span_size, replace=False))
         processing_items = []
         for _ in range(span_size):
@@ -193,7 +193,9 @@ class WorkingMemorySpanExperiment:
             if trial.to_remember
             else 0
         )
-        trial.processing_accuracy = np.mean(proc_answers) if proc_answers else 0
+        trial.processing_accuracy = (
+            float(np.mean(proc_answers)) if proc_answers else 0.0
+        )
         import time
 
         trial.timestamp = time.time()
@@ -207,9 +209,11 @@ class WorkingMemorySpanExperiment:
             return 0.0
         perfect = [t.span_size for t in self.trials if t.recall_accuracy == 1.0]
         return (
-            np.mean(perfect)
+            float(np.mean(perfect))
             if perfect
-            else max((t.span_size * t.recall_accuracy for t in self.trials), default=0)
+            else float(
+                max((t.span_size * t.recall_accuracy for t in self.trials), default=0)
+            )
         )
 
     def get_summary(self) -> Dict:

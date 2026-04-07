@@ -33,13 +33,8 @@ if spec is not None and spec.loader is not None:
 else:
     raise ImportError("Could not load GUI_auto_improve_experiments module")
 
-# Save original matplotlib modules before mocking
-_original_matplotlib = sys.modules.get("matplotlib")
-_original_matplotlib_figure = sys.modules.get("matplotlib.figure")
-_original_matplotlib_backend = sys.modules.get("matplotlib.backends.backend_tkagg")
 
-
-# Mock GUI dependencies after importing
+# Mock classes for customtkinter
 class MockCTkFont:
     """Simple mock for CTkFont to prevent MagicMock recursion."""
 
@@ -66,24 +61,39 @@ class MockCustomTkinter:
         return SimpleMock()
 
 
-sys.modules["customtkinter"] = MockCustomTkinter()
-sys.modules["matplotlib"] = MagicMock()
-sys.modules["matplotlib.figure"] = MagicMock()
-sys.modules["matplotlib.backends.backend_tkagg"] = MagicMock()
+@pytest.fixture(scope="module", autouse=True)
+def mock_gui_dependencies():
+    """Mock GUI dependencies for the module."""
+    # Store original modules
+    original_customtkinter = sys.modules.get("customtkinter")
+    original_matplotlib = sys.modules.get("matplotlib")
+    original_matplotlib_figure = sys.modules.get("matplotlib.figure")
+    original_matplotlib_backend = sys.modules.get("matplotlib.backends.backend_tkagg")
 
+    # Mock customtkinter
+    mock_ctk = MockCustomTkinter()
+    sys.modules["customtkinter"] = mock_ctk  # type: ignore[assignment]
 
-def restore_matplotlib_modules():
-    """Restore original matplotlib modules to prevent test pollution."""
-    if _original_matplotlib:
-        sys.modules["matplotlib"] = _original_matplotlib
+    yield
+
+    # Restore original modules
+    if original_customtkinter:
+        sys.modules["customtkinter"] = original_customtkinter
+    elif "customtkinter" in sys.modules:
+        del sys.modules["customtkinter"]
+
+    if original_matplotlib:
+        sys.modules["matplotlib"] = original_matplotlib
     elif "matplotlib" in sys.modules:
         del sys.modules["matplotlib"]
-    if _original_matplotlib_figure:
-        sys.modules["matplotlib.figure"] = _original_matplotlib_figure
+
+    if original_matplotlib_figure:
+        sys.modules["matplotlib.figure"] = original_matplotlib_figure
     elif "matplotlib.figure" in sys.modules:
         del sys.modules["matplotlib.figure"]
-    if _original_matplotlib_backend:
-        sys.modules["matplotlib.backends.backend_tkagg"] = _original_matplotlib_backend
+
+    if original_matplotlib_backend:
+        sys.modules["matplotlib.backends.backend_tkagg"] = original_matplotlib_backend
     elif "matplotlib.backends.backend_tkagg" in sys.modules:
         del sys.modules["matplotlib.backends.backend_tkagg"]
 
@@ -619,6 +629,3 @@ class TestExperimentRunnerGUI:
 
 if __name__ == "__main__":
     pytest.main([__file__])
-
-# Restore matplotlib modules after all tests to prevent pollution
-restore_matplotlib_modules()

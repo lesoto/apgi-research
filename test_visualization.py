@@ -41,13 +41,12 @@ def test_visualization():
         print("Figure saved successfully")
 
         plt.close(fig)
-        return True
     except Exception as e:
         print(f"Error: {type(e).__name__}: {e}")
         import traceback
 
         traceback.print_exc()
-        return False
+        raise
 
 
 if __name__ == "__main__":

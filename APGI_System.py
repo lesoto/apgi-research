@@ -84,7 +84,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Any, Tuple
 
 import matplotlib
 
@@ -230,8 +230,8 @@ class CoreIgnitionSystem:
         Returns:
             Effective interoceptive precision Π^i_eff(t)
         """
-        sigmoid = 1.0 / (1.0 + np.exp(np.clip(-(M - M_0), -500, 500)))
-        modulation = 1.0 + beta_som * sigmoid
+        sigmoid: float = 1.0 / (1.0 + np.exp(np.clip(-(M - M_0), -500, 500)))
+        modulation: float = 1.0 + beta_som * sigmoid
         return Pi_i_baseline * modulation
 
     @staticmethod
@@ -255,12 +255,12 @@ class CoreIgnitionSystem:
         Returns:
             Broadcast probability B(t) ∈ [0, 1]
         """
-        z = alpha * (S - theta)
+        z: float = alpha * (S - theta)
         if z >= 0:
-            return 1.0 / (1.0 + np.exp(-z))
+            return float(1.0 / (1.0 + np.exp(-z)))
         else:
-            z_exp = np.exp(z)
-            return z_exp / (1.0 + z_exp)
+            z_exp: float = float(np.exp(z))
+            return float(z_exp / (1.0 + z_exp))
 
 
 # =============================================================================
@@ -313,12 +313,12 @@ class DynamicalSystemEquations:
         interoceptive_input = 0.5 * Pi_i_eff * (eps_i**2)
 
         # Stochastic noise
-        xi_S = rng.normal(0, 1)
-        noise = sigma_S * xi_S / np.sqrt(dt)
+        xi_S: float = rng.normal(0, 1)
+        noise: float = sigma_S * xi_S / np.sqrt(dt)
 
         # Euler integration
-        dS_dt = decay + exteroceptive_input + interoceptive_input + noise
-        S_new = S + dS_dt * dt
+        dS_dt: float = decay + exteroceptive_input + interoceptive_input + noise
+        S_new: float = S + dS_dt * dt
 
         return max(0.0, S_new)  # Surprise must be non-negative
 
@@ -379,8 +379,8 @@ class DynamicalSystemEquations:
         noise = sigma_theta * xi_theta / np.sqrt(dt)
 
         # Euler integration
-        dtheta_dt = restoration + somatic_modulation + metabolic_feedback + noise
-        theta_new = theta + dtheta_dt * dt
+        dtheta_dt: float = restoration + somatic_modulation + metabolic_feedback + noise
+        theta_new: float = theta + dtheta_dt * dt
 
         return max(0.01, theta_new)  # Threshold must be positive
 
@@ -432,15 +432,15 @@ class DynamicalSystemEquations:
         context_modulation = gamma_context * C
 
         # Stochastic noise
-        xi_M = rng.normal(0, 1)
-        noise = sigma_M * xi_M / np.sqrt(dt)
+        xi_M: float = rng.normal(0, 1)
+        noise: float = sigma_M * xi_M / np.sqrt(dt)
 
         # Euler integration
-        dM_dt = dynamics + context_modulation + noise
-        M_new = M + dM_dt * dt
+        dM_dt: float = dynamics + context_modulation + noise
+        M_new: float = M + dM_dt * dt
 
         # Clip to reasonable range [-2, 2]
-        return np.clip(M_new, -2.0, 2.0)
+        return float(np.clip(M_new, -2.0, 2.0))
 
     @staticmethod
     def arousal_dynamics(
@@ -484,7 +484,7 @@ class DynamicalSystemEquations:
         A_new = A + dA_dt * dt
 
         # Clip to [0, 1] range
-        return np.clip(A_new, 0.0, 1.0)
+        return float(np.clip(A_new, 0.0, 1.0))
 
     @staticmethod
     def compute_arousal_target(
@@ -527,12 +527,12 @@ class DynamicalSystemEquations:
                 if len(eps_i_history) >= int(tau_int)
                 else np.mean(eps_i_history)
             )
-            interoceptive = min(1.0, 0.3 * recent_eps_i)
+            interoceptive = min(1.0, 0.3 * float(recent_eps_i))
         else:
             interoceptive = 0.0
 
         A_target = A_circ + 0.3 * g_stim + 0.2 * interoceptive
-        return np.clip(A_target, 0.0, 1.0)
+        return float(np.clip(A_target, 0.0, 1.0))
 
     @staticmethod
     def precision_dynamics(
@@ -575,7 +575,7 @@ class DynamicalSystemEquations:
         dPi_dt = dynamics + noise
         Pi_new = Pi + dPi_dt * dt
 
-        return max(0.01, Pi_new)  # Precision must be positive
+        return float(max(0.01, Pi_new))  # Precision must be positive
 
 
 # =============================================================================
@@ -644,7 +644,17 @@ class RunningStatistics:
         std = np.sqrt(self.variance)
         if std <= 0:
             return 0.0
-        return (error - self.mu) / std
+        return float((error - self.mu) / std)
+
+    def get_mean_std(self) -> tuple:
+        """
+        Get current mean and standard deviation.
+
+        Returns:
+            Tuple of (mean, std)
+        """
+        std = np.sqrt(self.variance)
+        return self.mu, std
 
 
 # =============================================================================
@@ -688,7 +698,7 @@ class DerivedQuantities:
             return 0.0  # Already at steady state
 
         t_star = tau_S * np.log((S_0 - I_tau_S) / (theta - I_tau_S))
-        return max(0.0, t_star)
+        return float(max(0.0, t_star))
 
     @staticmethod
     def metabolic_cost(
@@ -715,7 +725,7 @@ class DerivedQuantities:
             n_steps = int(T_ignition / dt)
             S_history = S_history[:n_steps]
 
-        return np.trapz(S_history, dx=dt)
+        return float(np.trapz(S_history, dx=dt))
 
     @staticmethod
     def hierarchical_level_dynamics(
@@ -1018,12 +1028,12 @@ class PsychologicalState:
         self.Pi_i_eff_actual = self.Pi_i_baseline_actual * (
             1.0 + self.beta_som * sigmoid
         )
-        self.Pi_i_eff_actual = np.clip(self.Pi_i_eff_actual, 0.1, 10.0)
+        self.Pi_i_eff_actual = float(np.clip(self.Pi_i_eff_actual, 0.1, 10.0))
 
         # ========== COMPUTE EXPECTED EFFECTIVE PRECISION ==========
         # Π_i_eff_expected = Π_i_expected · [1 + β_som·σ(M_ca - M₀)]
         self.Pi_i_eff_expected = self.Pi_i_expected * (1.0 + self.beta_som * sigmoid)
-        self.Pi_i_eff_expected = np.clip(self.Pi_i_eff_expected, 0.1, 10.0)
+        self.Pi_i_eff_expected = float(np.clip(self.Pi_i_eff_expected, 0.1, 10.0))
 
         # ========== COMPUTE ACCUMULATED SURPRISE ==========
         # Using ACTUAL precision
@@ -1039,15 +1049,21 @@ class PsychologicalState:
 
     def compute_ignition_probability(self, domain_aware: bool = True) -> float:
         """Compute P(ignite) with domain-specific thresholds"""
+        effective_theta = self.theta_t
         if domain_aware and self.content_domain == "survival":
             # Use lower threshold for survival-relevant content
             effective_theta = self.theta_t * 0.7
-        else:
-            effective_theta = self.theta_t
 
-        return 1.0 / (
-            1.0 + np.exp(np.clip(-5.5 * (self.S_t - effective_theta), -500, 500))
-        )
+        if self.S_t is not None and effective_theta is not None:
+            return float(
+                1.0
+                / (
+                    1.0
+                    + np.exp(np.clip(-5.5 * (self.S_t - effective_theta), -500, 500))
+                )
+            )
+        else:
+            return 0.0
 
     def get_anxiety_index(self) -> float:
         """Compute anxiety index based on precision expectation gap"""
@@ -1056,7 +1072,7 @@ class PsychologicalState:
 
     def to_dynamical_inputs(
         self, time: float = 0.0, include_expectation: bool = False
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """Convert state to dynamical system inputs"""
 
         if include_expectation:
@@ -1069,27 +1085,37 @@ class PsychologicalState:
             Pi_i = self.Pi_i_eff_actual
 
         return {
-            "Pi_e": Pi_e
-            * (
-                1
-                + OSCILLATION_AMPLITUDE_PRECISION
-                * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_PRECISION)
+            "Pi_e": float(
+                Pi_e
+                * (
+                    1
+                    + OSCILLATION_AMPLITUDE_PRECISION
+                    * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_PRECISION)
+                )
             ),
-            "eps_e": self.z_e
-            + OSCILLATION_AMPLITUDE_ERROR
-            * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_ERROR_E),
+            "eps_e": float(
+                self.z_e
+                + OSCILLATION_AMPLITUDE_ERROR
+                * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_ERROR_E)
+            ),
             "beta_som": self.beta_som,
-            "Pi_i": Pi_i,
-            "eps_i": self.z_i
-            + OSCILLATION_AMPLITUDE_ERROR
-            * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_ERROR_I),
-            "M": SOMATIC_MARKER_BASE
-            + SOMATIC_MARKER_SCALE * self.M_ca
-            + OSCILLATION_AMPLITUDE_ERROR
-            * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_SOMATIC),
-            "A": self.arousal_level
-            + OSCILLATION_AMPLITUDE_ERROR
-            * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_AROUSAL),
+            "Pi_i": float(Pi_i) if Pi_i is not None else 0.0,
+            "eps_i": float(
+                (self.z_i or 0.0)
+                + OSCILLATION_AMPLITUDE_ERROR
+                * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_ERROR_I)
+            ),
+            "M": float(
+                SOMATIC_MARKER_BASE
+                + SOMATIC_MARKER_SCALE * self.M_ca
+                + OSCILLATION_AMPLITUDE_ERROR
+                * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_SOMATIC)
+            ),
+            "arousal": float(
+                (self.arousal_level or 0.0)
+                + OSCILLATION_AMPLITUDE_ERROR
+                * np.sin(2 * np.pi * time / OSCILLATION_PERIOD_AROUSAL)
+            ),
             "content_domain": self.content_domain,
         }
 
@@ -2266,7 +2292,7 @@ class MeasurementEquations:
         # Add noise
         P3b_latency += np.random.normal(0, P3B_LATENCY_NOISE_STD)
 
-        return np.clip(P3b_latency, P3B_MIN_LATENCY, P3B_MAX_LATENCY)
+        return float(np.clip(P3b_latency, P3B_MIN_LATENCY, P3B_MAX_LATENCY))
 
     @staticmethod
     def compute_detection_threshold(
@@ -2329,7 +2355,7 @@ class MeasurementEquations:
         # Add variability
         duration += np.random.normal(0, IGNITION_DURATION_NOISE_STD)
 
-        return np.clip(duration, IGNITION_MIN_DURATION, IGNITION_MAX_DURATION)
+        return float(np.clip(duration, IGNITION_MIN_DURATION, IGNITION_MAX_DURATION))
 
     @classmethod
     def compute_all_measurements(
@@ -2341,11 +2367,13 @@ class MeasurementEquations:
         measurements = {}
 
         measurements["HEP_amplitude"] = cls.compute_HEP(
-            state.Pi_i_eff_actual, state.M_ca, state.beta_som
+            state.Pi_i_eff_actual or 0.0,
+            state.M_ca,
+            state.beta_som,
         )
 
         measurements["P3b_latency"] = cls.compute_P3b_latency(
-            state.S_t, state.theta_t, state.Pi_e_actual
+            state.S_t or 0.0, state.theta_t or 0.5, state.Pi_e_actual or 1.0
         )
 
         measurements["detection_threshold"] = cls.compute_detection_threshold(
@@ -2354,7 +2382,7 @@ class MeasurementEquations:
 
         measurements["ignition_probability"] = state.compute_ignition_probability()
         measurements["ignition_duration"] = cls.compute_ignition_duration(
-            measurements["ignition_probability"], state.S_t
+            measurements["ignition_probability"], state.S_t or 0.0
         )
 
         # Anxiety-specific measurement
@@ -2448,7 +2476,7 @@ class NeuromodulatorSystem:
         self.modulation_functions = (
             self.PARAMETER_MAPPINGS.copy()
         )  # Alias for test compatibility
-        self.history = defaultdict(list)
+        self.history: defaultdict[str, List[float]] = defaultdict(list)
 
     def set_levels(self, **kwargs) -> None:
         """Set neuromodulator levels"""
@@ -2463,7 +2491,7 @@ class NeuromodulatorSystem:
 
     def compute_parameter_modifications(self) -> Dict[str, float]:
         """Compute APGI parameter modifications from current neuromodulator levels"""
-        modifications = defaultdict(float)
+        modifications: defaultdict[str, float] = defaultdict(float)
 
         for mod, level in self.levels.items():
             if mod in self.PARAMETER_MAPPINGS:
@@ -2546,6 +2574,49 @@ class NeuromodulatorSystem:
     def get_summary(self) -> Dict[str, float]:
         """Get current neuromodulator summary"""
         return self.levels.copy()
+
+    def compute_neuromodulators(
+        self,
+        arousal_level: float,
+        Pi_e: float,
+        Pi_i: float,
+        content_domain: str = "neutral",
+    ) -> Dict[str, float]:
+        """
+        Compute neuromodulator levels based on arousal and precision.
+
+        Args:
+            arousal_level: Current arousal level [0, 1]
+            Pi_e: Exteroceptive precision
+            Pi_i: Interoceptive precision
+            content_domain: Content domain ("neutral", "survival")
+
+        Returns:
+            Dictionary of neuromodulator levels
+        """
+        # Clip arousal to valid range
+        arousal = float(np.clip(arousal_level, 0.0, 3.0))  # Allow some overflow
+
+        # Base levels
+        NE = 0.5 + 1.5 * arousal  # NE increases with arousal
+        ACh = 0.8 + 0.4 * Pi_e  # ACh increases with exteroceptive precision
+        DA = 0.7 + 0.3 * arousal  # DA increases with arousal
+        HT5 = 1.2 - 0.4 * arousal  # 5-HT decreases with arousal
+        CRF = 0.5 + 1.0 * arousal  # CRF increases with arousal
+
+        # Domain-specific adjustments
+        if content_domain == "survival":
+            NE *= 1.3  # Higher NE for survival content
+            CRF *= 1.5  # Higher stress response
+
+        # Clip to valid ranges
+        return {
+            "NE": float(np.clip(NE, NEUROMOD_MIN_LEVEL, NEUROMOD_MAX_LEVEL)),
+            "ACh": float(np.clip(ACh, NEUROMOD_MIN_LEVEL, NEUROMOD_MAX_LEVEL)),
+            "DA": float(np.clip(DA, NEUROMOD_MIN_LEVEL, NEUROMOD_MAX_LEVEL)),
+            "5-HT": float(np.clip(HT5, NEUROMOD_MIN_LEVEL, NEUROMOD_MAX_LEVEL)),
+            "CRF": float(np.clip(CRF, NEUROMOD_MIN_LEVEL, NEUROMOD_MAX_LEVEL)),
+        }
 
 
 # =============================================================================
@@ -2684,10 +2755,10 @@ class EnhancedSurpriseIgnitionSystem:
         """Sigmoid function with overflow protection"""
         z = self.params.alpha * x
         if z >= 0:
-            return 1.0 / (1.0 + np.exp(-z))
+            return float(1.0 / (1.0 + np.exp(-z)))
         else:
-            z_exp = np.exp(z)
-            return z_exp / (1.0 + z_exp)
+            z_exp = float(np.exp(z))
+            return float(z_exp / (1.0 + z_exp))
 
     def compute_domain_threshold(self, content_domain: str) -> float:
         """Compute threshold based on content domain"""
@@ -2943,8 +3014,11 @@ class EnhancedSurpriseIgnitionSystem:
 
         return state
 
-    def simulate(
-        self, duration: float, dt: float, input_generator: callable
+    def run_simulation(
+        self,
+        duration: float,
+        dt: float,
+        input_generator: Callable[[float], Dict[str, float]],
     ) -> Dict[str, np.ndarray]:
         """Run a complete simulation"""
         self.reset()
@@ -2962,6 +3036,8 @@ class EnhancedSurpriseIgnitionSystem:
             history_arrays[key] = np.array(value)
 
         return history_arrays
+
+    simulate = run_simulation  # Alias for compatibility
 
 
 # =============================================================================
@@ -3063,7 +3139,9 @@ class CompleteAPGIVisualizer:
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Magnitude")
         ax.set_title("Core Dynamical Variables", fontweight="bold")
-        ax.legend()
+        # Only add legend if there are labeled artists
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
         ax.grid(True, alpha=0.3)
 
     def _plot_measurements(self, ax, history) -> None:
@@ -3117,7 +3195,9 @@ class CompleteAPGIVisualizer:
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Neuromodulator Level")
         ax.set_title("Neuromodulator Dynamics", fontweight="bold")
-        ax.legend()
+        # Only add legend if there are labeled artists
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
         ax.grid(True, alpha=0.3)
 
     def _plot_domain_analysis(self, ax, history) -> None:
@@ -3160,7 +3240,9 @@ class CompleteAPGIVisualizer:
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Domain / Normalized S")
         ax.set_title("Domain-Specific Analysis", fontweight="bold")
-        ax.legend()
+        # Only add legend if there are labeled artists
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
         ax.grid(True, alpha=0.3)
         ax.set_ylim(0, 1.1)
 
@@ -3212,7 +3294,9 @@ class CompleteAPGIVisualizer:
         ax.set_title("Psychiatric Profile Comparison (vs Normal)", fontweight="bold")
         ax.set_xticks(x)
         ax.set_xticklabels(parameters, rotation=45, ha="right")
-        ax.legend()
+        # Only add legend if there are labeled artists
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
         ax.grid(True, alpha=0.3, axis="y")
 
     def _plot_state_space(self, ax, history) -> None:
@@ -3241,7 +3325,9 @@ class CompleteAPGIVisualizer:
         ax.set_xlabel("Surprise (S)")
         ax.set_ylabel("Threshold (θ)")
         ax.set_title("State Space Trajectory", fontweight="bold")
-        ax.legend()
+        # Only add legend if there are labeled artists
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
         ax.grid(True, alpha=0.3)
 
         # Add colorbar
@@ -3291,7 +3377,9 @@ class CompleteAPGIVisualizer:
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Precision Expectation Gap")
         ax.set_title("Anxiety Index: Π̂ - Π Gap", fontweight="bold")
-        ax.legend()
+        # Only add legend if there are labeled artists
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
         ax.grid(True, alpha=0.3)
 
 
@@ -3300,7 +3388,7 @@ class CompleteAPGIVisualizer:
 # =============================================================================
 
 
-def run_complete_demo() -> None:
+def run_complete_demo() -> Tuple[Any, Any, Any, Any]:
     """Run complete demonstration with all critical fixes"""
 
     print("=" * 80)
@@ -3430,7 +3518,9 @@ def run_complete_demo() -> None:
 
         # Add occasional surprise events
         if np.random.random() < 0.01:  # 1% chance per timestep
-            complete_inputs["observed_e"] += np.random.normal(3.0, 0.8)
+            complete_inputs["observed_e"] = float(
+                complete_inputs.get("observed_e", 0.0) + np.random.normal(3.0, 0.8)
+            )
             print(f"      Surprise event at t={t:.1f}s")
 
         return complete_inputs

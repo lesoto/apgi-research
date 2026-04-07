@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Optional, Union, List, cast
 
 from prepare_sternberg_memory import (
     SternbergExperiment,
@@ -84,24 +84,51 @@ class EnhancedSternbergRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = SternbergExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
+
+        # Initialize APGI components to None (will be set if enabled)
+        self.apgi: Optional[APGIIntegration] = None
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
+        self.neuromodulators: Optional[Dict[str, float]] = None
+        self.running_stats: Optional[Dict[str, float]] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("tau_s", 0.35))
+                ),
+                beta=float(cast(Union[str, int, float], APGI_PARAMS.get("beta", 1.5))),
+                theta_0=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_0", 0.5))
+                ),
+                alpha=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("alpha", 5.5))
+                ),
+                gamma_M=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("gamma_M", -0.3))
+                ),
+                lambda_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("lambda_S", 0.1))
+                ),
+                sigma_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_S", 0.05))
+                ),
+                sigma_theta=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_theta", 0.02))
+                ),
+                sigma_M=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_M", 0.03))
+                ),
+                rho=float(cast(Union[str, int, float], APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_survival", 0.3))
+                ),
+                theta_neutral=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_neutral", 0.7))
+                ),
             )
             self.apgi = APGIIntegration(params)
 
@@ -120,8 +147,13 @@ class EnhancedSternbergRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(
+                        cast(Union[str, int, float], APGI_PARAMS.get("beta_cross", 0.2))
+                    ),
+                    tau_levels=cast(
+                        Optional[List[float]],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -135,10 +167,18 @@ class EnhancedSternbergRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("ACh", 1.0) or 1.0)
+                ),
+                "NE": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("NE", 1.0) or 1.0)
+                ),
+                "DA": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("DA", 1.0) or 1.0)
+                ),
+                "HT5": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("HT5", 1.0) or 1.0)
+                ),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -149,11 +189,7 @@ class EnhancedSternbergRunner:
                 "rt_var": 40000.0,
             }
         else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
+            pass
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -188,6 +224,10 @@ class EnhancedSternbergRunner:
 
         # 100/100: Process with APGI if enabled
         if self.apgi:
+            # Assert APGI components are initialized
+            assert self.neuromodulators is not None
+            assert self.running_stats is not None
+
             # Compute prediction error from trial outcome
             observed_accuracy = 1.0 if correct else 0.0
             expected_accuracy = 0.5  # Baseline
@@ -243,8 +283,11 @@ class EnhancedSternbergRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
+        assert self.start_time is not None
         completion_time = time.time() - self.start_time
-        apgi_metrics = {}  # Initialize empty if no APGI data available
+        apgi_metrics: Dict[str, float] = (
+            {}
+        )  # Initialize empty if no APGI data available
 
         return {
             **{

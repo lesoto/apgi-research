@@ -74,11 +74,13 @@ class SimulatedParticipant:
         if trial_type == TrialType.GO:
             rt = self.go_rt + np.random.normal(0, RT_VARIABILITY)
             correct = np.random.random() < GO_ACCURACY
-            return correct, max(200, rt) if correct else (0, 0)
+            return correct, max(200, rt)
         else:
             # No-Go: correct = no response
             correct = np.random.random() < self.no_go_inhibition
-            return correct, 0.0
+            # Return 0 RT for correct inhibition, penalty RT for false alarm
+            rt = 0 if correct else 350 + np.random.normal(0, 50)
+            return correct, max(0, rt)
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +275,7 @@ class EnhancedGoNoGoRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0.0)
 
         results = {
             "num_trials": len(self.experiment.trials),

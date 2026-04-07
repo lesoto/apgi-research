@@ -11,7 +11,7 @@ import numpy as np
 import logging
 from typing import Dict, List, Optional
 from dataclasses import dataclass
-from scipy import stats  # type: ignore
+from scipy import stats
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class IgnitionMetrics:
     ignition_threshold: float  # Current threshold for ignition
     ignition_volatility: float  # Variability in ignition timing
     cumulative_ignition_prob: float  # Cumulative ignition probability
-    ignition_events: List[float] = None  # Raw ignition events for statistical testing
+    ignition_events: List[float] = []  # Raw ignition events for statistical testing
 
 
 @dataclass
@@ -97,7 +97,11 @@ class EnhancedAPGIMetrics:
             # Dynamic threshold based on reaction time distribution
             threshold = float(np.mean(reaction_times) + np.std(reaction_times))
 
-        ignition_events = [1.0 if rt <= threshold else 0.0 for rt in reaction_times]
+        ignition_events = (
+            [1.0 if rt <= threshold else 0.0 for rt in reaction_times]
+            if threshold is not None
+            else []
+        )
         ignition_rate = float(np.mean(ignition_events))
 
         # Advanced ignition dynamics
@@ -128,7 +132,7 @@ class EnhancedAPGIMetrics:
         return IgnitionMetrics(
             ignition_rate=float(ignition_rate),
             mean_ignition_time=float(mean_ignition_time),
-            ignition_threshold=float(threshold),
+            ignition_threshold=float(threshold) if threshold is not None else 0.0,
             ignition_volatility=float(ignition_volatility),
             cumulative_ignition_prob=float(cumulative_prob),
             ignition_events=ignition_events,
@@ -174,12 +178,12 @@ class EnhancedAPGIMetrics:
             )
 
         return SurpriseMetrics(
-            mean_surprise=mean_surprise,
-            surprise_variance=surprise_variance,
+            mean_surprise=float(mean_surprise),
+            surprise_variance=float(surprise_variance),
             max_surprise=max_surprise,
             min_surprise=min_surprise,
             surprise_entropy=surprise_entropy,
-            prediction_error_variance=prediction_error_variance,
+            prediction_error_variance=float(prediction_error_variance),
         )
 
     def calculate_metabolic_metrics(
@@ -232,11 +236,11 @@ class EnhancedAPGIMetrics:
             optimal_cost_rate = 1.0
 
         return MetabolicMetrics(
-            mean_metabolic_cost=mean_metabolic_cost,
+            mean_metabolic_cost=float(mean_metabolic_cost),
             total_metabolic_cost=total_metabolic_cost,
             metabolic_efficiency=metabolic_efficiency,
-            cost_variance=cost_variance,
-            optimal_cost_rate=optimal_cost_rate,
+            cost_variance=float(cost_variance),
+            optimal_cost_rate=float(optimal_cost_rate),
         )
 
     def calculate_comprehensive_metrics(

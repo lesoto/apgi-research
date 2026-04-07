@@ -268,7 +268,8 @@ NUM_TRIALS_CONFIG = 100
             else:
                 return new_metric < best_metric
 
-        tracker.is_improvement = mock_is_improvement
+        # Use setattr to properly monkey-patch the method
+        setattr(tracker, "is_improvement", mock_is_improvement)
 
         # Test improvements
         assert tracker.is_improvement("test_experiment", 0.9) is True

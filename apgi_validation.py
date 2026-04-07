@@ -18,7 +18,7 @@ import shutil
 import psutil
 import logging
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional, Callable, cast
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 
@@ -632,7 +632,7 @@ class ExperimentProgressTracker:
             return None
 
         with open(checkpoint_file, "r") as f:
-            return json.load(f)
+            return cast(Optional[Dict[str, Any]], json.load(f))
 
     def get_progress_percentage(self) -> float:
         """Get progress as percentage."""

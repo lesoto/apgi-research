@@ -26,7 +26,7 @@ from prepare import (
 os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable, Any
 
 # Detect available device and set up training context
 cap: Optional[Tuple[int, int]]
@@ -226,7 +226,7 @@ class GPT(nn.Module):
     @torch.no_grad()
     def init_weights(self):
         # Embedding and unembedding
-        torch.nn.init.normal_(self.transformer.wte.weight, mean=0.0, std=1.0)  # type: ignore[union-attr]
+        torch.nn.init.normal_(self.transformer.wte.weight, mean=0.0, std=1.0)  # type: ignore[arg-type,union-attr]
         torch.nn.init.normal_(self.lm_head.weight, mean=0.0, std=0.001)
         # Transformer blocks
         n_embd = self.config.n_embd
@@ -242,8 +242,8 @@ class GPT(nn.Module):
         self.resid_lambdas.fill_(1.0)
         self.x0_lambdas.fill_(0.1)
         # Value embeddings
-        for ve in self.value_embeds.values():  # type: ignore[union-attr]
-            torch.nn.init.uniform_(ve.weight, -s, s)  # type: ignore[union-attr]
+        for ve in self.value_embeds.values():
+            torch.nn.init.uniform_(ve.weight, -s, s)  # type: ignore[arg-type]
         # Gate weights init to zero
         # (sigmoid(0)=0.5, scaled by 2 -> 1.0 = neutral)
         for block in self.transformer.h:  # type: ignore[union-attr]
@@ -256,7 +256,7 @@ class GPT(nn.Module):
 
     def _precompute_rotary_embeddings(self, seq_len, head_dim, base=10000, device=None):
         if device is None:
-            device = self.transformer.wte.weight.device
+            device = self.transformer.wte.weight.device  # type: ignore[union-attr]
         channel_range = torch.arange(0, head_dim, 2, dtype=torch.float32)
         inv_freq = 1.0 / (base ** (channel_range / head_dim))
         t = torch.arange(seq_len, dtype=torch.float32)
@@ -284,9 +284,9 @@ class GPT(nn.Module):
     def estimate_flops(self):
         """Estimated FLOPs per token (forward + backward)."""
         nparams = sum(p.numel() for p in self.parameters())
-        value_embeds_numel = sum(ve.weight.numel() for ve in self.value_embeds.values())  # type: ignore[union-attr]
+        value_embeds_numel = sum(ve.weight.numel() for ve in self.value_embeds.values())  # type: ignore[misc,operator]
         nparams_exclude = (
-            self.transformer.wte.weight.numel()  # type: ignore[union-attr]
+            self.transformer.wte.weight.numel()  # type: ignore[union-attr,operator]
             + value_embeds_numel
             + self.resid_lambdas.numel()
             + self.x0_lambdas.numel()
@@ -302,10 +302,10 @@ class GPT(nn.Module):
         return 6 * (nparams - nparams_exclude) + attn_flops
 
     def num_scaling_params(self):
-        wte = sum(p.numel() for p in self.transformer.wte.parameters())  # type: ignore[union-attr]
-        value_embeds = sum(p.numel() for p in self.value_embeds.parameters())  # type: ignore[union-attr]
+        wte = sum(p.numel() for p in self.transformer.wte.parameters())  # type: ignore[union-attr,misc]
+        value_embeds = sum(p.numel() for p in self.value_embeds.parameters())
         lm_head = sum(p.numel() for p in self.lm_head.parameters())
-        transformer_matrices = sum(p.numel() for p in self.transformer.h.parameters())  # type: ignore[union-attr]
+        transformer_matrices = sum(p.numel() for p in self.transformer.h.parameters())  # type: ignore[union-attr,misc]
         scalars = self.resid_lambdas.numel() + self.x0_lambdas.numel()
         total = wte + value_embeds + lm_head + transformer_matrices + scalars
         return {
@@ -337,7 +337,7 @@ class GPT(nn.Module):
             p for p in list(self.transformer.h.parameters()) if has_grad(p)  # type: ignore[union-attr]
         ]
         value_embeds_params = [
-            p for p in list(self.value_embeds.parameters()) if has_grad(p)  # type: ignore[union-attr]
+            p for p in list(self.value_embeds.parameters()) if has_grad(p)
         ]
         embedding_params = [
             p for p in list(self.transformer.wte.parameters()) if has_grad(p)  # type: ignore[union-attr]
@@ -635,7 +635,7 @@ class MuonAdamW(torch.optim.Optimizer):
         torch._foreach_copy_(params, list(stacked_params.unbind(0)))
 
     @torch.no_grad()
-    def step(self, closure: Optional[callable] = None) -> None:  # type: ignore[override]
+    def step(self, closure: Optional[Callable[[], Any]] = None) -> None:  # type: ignore[override]
         for group in self.param_groups:
             if group["kind"] == "adamw":
                 self._step_adamw(group)

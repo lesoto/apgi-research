@@ -154,7 +154,7 @@ class InattentionalBlindnessExperiment:
         critical = [t for t in self.trials if t.trial_type == TrialType.CRITICAL]
         if not critical:
             return 0.0
-        return 1 - np.mean([t.noticed_unexpected for t in critical])
+        return float(1 - np.mean([t.noticed_unexpected for t in critical]))
 
     def get_summary(self) -> Dict:
         if not self.trials:

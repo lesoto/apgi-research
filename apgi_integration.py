@@ -419,7 +419,7 @@ class RunningStatistics:
             return 0.0
         # Use manually set mean if available, otherwise use computed mean
         mean_to_use = self._manual_mean if self._manual_mean is not None else self._mean
-        return (value - mean_to_use) / std
+        return float((value - mean_to_use) / std)
 
     def reset(self):
         """Reset statistics to initial state."""
@@ -479,7 +479,7 @@ class CoreEquations:
         """
         sigmoid = 1.0 / (1.0 + np.exp(np.clip(-(M - M_0), -500, 500)))
         modulation = 1.0 + beta * sigmoid
-        return Pi_i_baseline * modulation
+        return float(Pi_i_baseline * modulation)
 
     @staticmethod
     def ignition_probability(S: float, theta: float, alpha: float) -> float:
@@ -489,10 +489,10 @@ class CoreEquations:
         """
         z = alpha * (S - theta)
         if z >= 0:
-            return 1.0 / (1.0 + np.exp(-z))
+            return float(1.0 / (1.0 + np.exp(-z)))
         else:
             z_exp = np.exp(z)
-            return z_exp / (1.0 + z_exp)
+            return float(z_exp / (1.0 + z_exp))
 
 
 # =============================================================================
@@ -879,17 +879,18 @@ class APGIIntegration:
         else:
             state["effective_threshold"] = self.params.theta_neutral
 
-        # Store trial type in state for testing/tracking
-        state["trial_type"] = trial_type
+        # Create extended state dict with additional metadata
+        extended_state = dict(state)  # Copy the float state
+        extended_state["trial_type"] = str(trial_type)  # type: ignore[assignment]
 
         # Add neuromodulator state if enabled
         if self.enable_neuromodulators and self.neuromodulators:
-            state["neuromodulators"] = self.neuromodulators.state.to_dict()
+            extended_state["neuromodulators"] = dict(self.neuromodulators.state.to_dict())  # type: ignore[assignment]
 
         # Store trial metrics
-        self.trial_metrics.append(state)
+        self.trial_metrics.append(extended_state)
 
-        return state
+        return extended_state
 
     def process_rt_trial(
         self, rt: float, expected_rt: float, correct: bool, trial_type: str = "neutral"
@@ -1026,7 +1027,8 @@ class APGIIntegration:
         # Add neuromodulator summary if enabled
         if self.enable_neuromodulators and self.neuromodulators:
             nm_summary = self.neuromodulators.get_summary()
-            self.experiment_summary["neuromodulators"] = nm_summary
+            if self.experiment_summary is not None:
+                self.experiment_summary["neuromodulators"] = dict(nm_summary)  # type: ignore[assignment]
 
         return self.experiment_summary
 

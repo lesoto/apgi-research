@@ -126,7 +126,7 @@ class MaskingGenerator:
 
     def create_trial(self, trial_number: int) -> MaskingTrial:
         is_present = self.rng.random() < TARGET_PROBABILITY
-        mask_type = self.rng.choice(list(MaskType))
+        mask_type: MaskType = self.rng.choice(list(MaskType))  # type: ignore
         target = self.rng.choice(TARGETS) if is_present else None
         mask_dur = int(self.rng.choice(MASK_DURATIONS))
         soa = int(self.rng.choice([0, 30, 60, 100]))

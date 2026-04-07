@@ -21,6 +21,7 @@ dependencies = [
     "tiktoken>=0.11.0",
     "torch==2.9.1",
     "tqdm>=4.65.0",
+    "pixelmatch>=0.4.0",
 ]
 
 [tool.uv.sources]

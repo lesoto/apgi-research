@@ -73,7 +73,7 @@ def create_mock_experiment(config=None):
     return MockExperiment(config)
 
 
-from typing import Any, Dict
+from typing import Any, Dict, Generator, MutableMapping
 from unittest.mock import patch
 
 import numpy as np
@@ -94,7 +94,7 @@ class TestBaseExperimentIntegration:
     """Integration tests for BaseExperiment class."""
 
     @pytest.fixture
-    def temp_output_dir(self) -> Path:
+    def temp_output_dir(self) -> Generator[Path, None, None]:
         """Create temporary output directory."""
         with tempfile.TemporaryDirectory() as tmp:
             yield Path(tmp)
@@ -228,8 +228,8 @@ class TestAPGIIntegration:
         }
 
         # Verify parameters are accessible
-        assert config["apgi_params"].tau_S == 0.35
-        assert config["apgi_params"].beta == 1.5
+        assert getattr(config["apgi_params"], "tau_S", None) == 0.35
+        assert getattr(config["apgi_params"], "beta", None) == 1.5
 
     def test_apgi_params_validation_in_integration(
         self, apgi_params: APGIParameters
@@ -254,7 +254,7 @@ class TestFileIOIntegration:
     """Integration tests for file I/O operations."""
 
     @pytest.fixture
-    def temp_dir(self) -> Path:
+    def temp_dir(self) -> Generator[Path, None, None]:
         """Create temporary directory."""
         with tempfile.TemporaryDirectory() as tmp:
             yield Path(tmp)
@@ -329,7 +329,7 @@ class TestConfigurationIntegration:
     """Integration tests for configuration handling."""
 
     @pytest.fixture
-    def env_vars(self) -> Dict[str, str]:
+    def env_vars(self) -> Generator[MutableMapping[str, str], None, None]:
         """Set and return test environment variables."""
         original = dict(os.environ)
         os.environ["TEST_VAR"] = "test_value"

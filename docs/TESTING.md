@@ -248,7 +248,7 @@ jobs:
 
 ## Requirements
 
-```
+```text
 pytest>=7.0.0
 pytest-cov>=4.0.0
 pytest-json-report>=1.5.0

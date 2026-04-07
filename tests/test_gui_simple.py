@@ -8,16 +8,23 @@ import pytest
 import sys
 import os
 from pathlib import Path
+from typing import Optional
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+tk: Optional[object] = None
+ctk: Optional[object] = None
+
 try:
-    import tkinter as tk  # type: ignore
-    import customtkinter as ctk  # type: ignore
+    import tkinter
+
+    tk = tkinter
+    import customtkinter
+
+    ctk = customtkinter
 except ImportError:
-    tk = None  # type: ignore
-    ctk = None  # type: ignore
+    pass
 
 
 class TestGUIComponents:
@@ -40,8 +47,10 @@ class TestGUIComponents:
                     "GUI-auto_improve_experiments.py",
                 ),
             )
-            GUI_module = importlib.util.module_from_spec(spec)
-            pass
+            if spec is not None:
+                GUI_module = importlib.util.module_from_spec(spec)
+            else:
+                pytest.skip("Could not load GUI module spec")
 
             assert GUI_module is not None
         except ImportError:

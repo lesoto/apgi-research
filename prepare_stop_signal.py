@@ -169,7 +169,7 @@ class StopSignalExperiment:
         idx = int(len(go_rts) * p_respond)
         mean_ssd = np.mean([t.ssd_ms for t in stop_trials])
 
-        return go_rts[min(idx, len(go_rts) - 1)] - mean_ssd
+        return float(go_rts[min(idx, len(go_rts) - 1)] - mean_ssd)
 
     def get_summary(self) -> Dict:
         if not self.trials:

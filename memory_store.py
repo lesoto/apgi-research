@@ -357,7 +357,7 @@ class MemoryStore:
             Combined ranked results with composite scores
         """
         # Get TF-IDF results
-        tfidf_results = self.semantic_search(query, top_k=top_k * 2)
+        tfidf_results = self.vector_semantic_search(query, top_k=top_k * 2)
         tfidf_scores = (
             {id(r): 1.0 - (i / len(tfidf_results)) for i, r in enumerate(tfidf_results)}
             if tfidf_results
@@ -369,8 +369,10 @@ class MemoryStore:
         vector_scores = {id(entry): score for entry, score in vector_results}
 
         # Combine scores
-        all_entries = set(tfidf_results) | set(e for e, _ in vector_results)
-        combined_scores = []
+        tfidf_entries = {entry for entry, _ in tfidf_results}
+        vector_entries = {entry for entry, _ in vector_results}
+        all_entries = tfidf_entries | vector_entries
+        combined_scores: List[Tuple[MemoryEntry, float]] = []
 
         for entry in all_entries:
             tfidf_score = tfidf_scores.get(id(entry), 0.0)
@@ -564,7 +566,7 @@ class MemoryStore:
 
         return filtered
 
-    def update_embeddings_for_all(self):
+    def refresh_all_embeddings(self):
         """Generate embeddings for all memories that don't have them."""
         updated_count = 0
         for entry in self.memory:

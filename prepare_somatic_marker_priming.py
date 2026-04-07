@@ -114,8 +114,8 @@ class SomaticMarkerGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> SomaticTrial:
-        emotion = self.rng.choice([e.value for e in EmotionType])  # type: ignore
-        task = self.rng.choice([t.value for t in TaskType])  # type: ignore
+        emotion: EmotionType = self.rng.choice([e.value for e in EmotionType])
+        task: TaskType = self.rng.choice([t.value for t in TaskType])
         feedback = self.rng.choice(FEEDBACK_TYPES)
 
         # Create choice options with expected values
@@ -187,7 +187,7 @@ class SomaticMarkerExperiment:
         advantageous = [1 if t.selected_option == "A" else 0 for t in self.trials]
         if len(somatic) < 2:
             return 0.0
-        return np.corrcoef(somatic, advantageous)[0, 1]
+        return float(np.corrcoef(somatic, advantageous)[0, 1])
 
     def get_summary(self) -> Dict:
         if not self.trials:

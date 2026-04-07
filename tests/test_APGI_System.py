@@ -570,20 +570,27 @@ class TestCompleteAPGIVisualizer:
         viz = CompleteAPGIVisualizer(library)
         assert viz.state_library == library
 
-    @patch("matplotlib.pyplot.savefig")
-    def test_plot_parameter_distributions(self, mock_savefig):
+        # Clean up matplotlib state
+        import matplotlib.pyplot as plt
+
+        plt.close("all")
+        plt.style.use("default")
+
+    def test_plot_parameter_distributions(self):
         """Test plotting parameter distributions."""
         library = APGIStateLibrary()
         viz = CompleteAPGIVisualizer(library)
 
-        viz.plot_parameter_distributions()
-        # Should call savefig
-        mock_savefig.assert_called()
+        with patch("matplotlib.pyplot.savefig") as mock_savefig:
+            viz.plot_parameter_distributions()
+            # Should call savefig
+            mock_savefig.assert_called()
 
         # Clean up matplotlib state to prevent pollution of other tests
         import matplotlib.pyplot as plt
 
         plt.close("all")
+        plt.style.use("default")
 
 
 class TestModuleFunctions:

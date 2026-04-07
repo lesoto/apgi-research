@@ -101,6 +101,32 @@ def reset_random_state() -> Generator[None, None, None]:
     yield
 
 
+@pytest.fixture(autouse=True)
+def restore_matplotlib_modules() -> Generator[None, None, None]:
+    """Ensure matplotlib modules are properly restored after tests that mock them."""
+    # Store original matplotlib modules before test
+    original_modules = {}
+    for key in list(sys.modules.keys()):
+        if key.startswith("matplotlib"):
+            original_modules[key] = sys.modules[key]
+
+    yield
+
+    # After test: restore any matplotlib modules that were removed or replaced
+    for key, module in original_modules.items():
+        if key not in sys.modules or sys.modules[key] is not module:
+            sys.modules[key] = module
+
+    # Also ensure matplotlib.pyplot is properly restored if it was partially mocked
+    if "matplotlib.pyplot" in sys.modules:
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.close("all")
+        except Exception:
+            pass
+
+
 # =============================================================================
 # FIXTURE FACTORIES FOR TEST DATA GENERATION
 # =============================================================================
@@ -332,7 +358,7 @@ def measure_performance(
 
 
 @pytest.fixture
-def performance_monitor() -> Callable[..., contextmanager]:
+def performance_monitor() -> Callable[..., Any]:
     """Provide performance monitoring context manager."""
     return measure_performance
 

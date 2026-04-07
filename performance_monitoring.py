@@ -189,7 +189,7 @@ class PerformanceMonitor:
         return CPUSnapshot(
             timestamp=time.time(),
             percent=cpu_percent,
-            count=cpu_count,
+            count=cpu_count or 1,
             freq_mhz=cpu_freq.current if cpu_freq else 0,
             load_avg=load_avg,
         )
@@ -517,7 +517,8 @@ class PerformanceMonitor:
                 # Memory usage plot
                 fig, ax = plt.subplots(figsize=(10, 6))
                 timestamps = [
-                    datetime.fromtimestamp(s.timestamp) for s in self.memory_history
+                    datetime.fromtimestamp(s.timestamp).timestamp()
+                    for s in self.memory_history
                 ]
                 memory_values = [s.rss_mb for s in self.memory_history]
 
@@ -541,7 +542,8 @@ class PerformanceMonitor:
                 # CPU usage plot
                 fig, ax = plt.subplots(figsize=(10, 6))
                 timestamps = [
-                    datetime.fromtimestamp(s.timestamp) for s in self.cpu_history
+                    datetime.fromtimestamp(s.timestamp).timestamp()
+                    for s in self.cpu_history
                 ]
                 cpu_values = [s.percent for s in self.cpu_history]
 
