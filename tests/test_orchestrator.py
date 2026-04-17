@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 class TestResult:
     """Test result data structure."""
 
+    __test__ = False  # Not a pytest test class
     name: str
     status: str
     duration: float
@@ -45,6 +46,7 @@ class TestResult:
 class TestSuiteReport:
     """Complete test suite report."""
 
+    __test__ = False  # Not a pytest test class
     timestamp: str
     total_tests: int = 0
     passed: int = 0
@@ -95,6 +97,8 @@ class TestSuiteReport:
 
 class TestOrchestrator:
     """Orchestrate comprehensive test execution."""
+
+    __test__ = False  # Not a pytest test class
 
     def __init__(self, project_root: Optional[Path] = None) -> None:
         self.project_root = project_root or Path(".")

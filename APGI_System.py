@@ -725,7 +725,7 @@ class DerivedQuantities:
             n_steps = int(T_ignition / dt)
             S_history = S_history[:n_steps]
 
-        return float(np.trapz(S_history, dx=dt))
+        return float(np.trapezoid(S_history, dx=dt))
 
     @staticmethod
     def hierarchical_level_dynamics(

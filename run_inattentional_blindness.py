@@ -152,7 +152,7 @@ class SimulatedAttentionSystem:
         if not detected:
             return 0.0
 
-            base_rt: float = 800.0  # Base response time in ms
+        base_rt: float = 800.0  # Base response time in ms
 
         # Add load effect
         if PRIMARY_TASK_LOAD > 0.5:

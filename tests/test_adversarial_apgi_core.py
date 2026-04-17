@@ -559,7 +559,7 @@ class TestDerivedQuantities:
         S_history = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         result = DerivedQuantities.metabolic_cost(S_history, dt=0.1)
         # Trapezoidal integration of linear function
-        expected = np.trapz(S_history, dx=0.1)
+        expected = np.trapezoid(S_history, dx=0.1)
         assert result == pytest.approx(expected, rel=1e-10)
 
     def test_metabolic_cost_with_truncation(self) -> None:
@@ -567,7 +567,7 @@ class TestDerivedQuantities:
         S_history = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         result = DerivedQuantities.metabolic_cost(S_history, dt=0.1, T_ignition=0.2)
         # Should only use first 2 steps
-        assert result < np.trapz(S_history, dx=0.1)
+        assert result < float(np.trapezoid(S_history, dx=0.1))
 
     @pytest.mark.adversarial
     def test_metabolic_cost_edge_cases(self) -> None:

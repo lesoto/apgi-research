@@ -248,7 +248,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         self.navigation_frame_label = ctk.CTkLabel(
             self.navigation_frame,
-            text="APGI HUB",
+            text="APGI Research",
             font=ctk.CTkFont(size=24, weight="bold"),
         )
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
@@ -2367,7 +2367,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         viz_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Create window-local figure/canvas (not shared with main panel)
-        viz_figure = Figure(figsize=(15, 10), dpi=100, facecolor="#2b2b2b")
+        viz_figure = Figure(
+            figsize=(15, 10), dpi=100, facecolor="#2b2b2b", constrained_layout=True
+        )
         viz_canvas = FigureCanvasTkAgg(viz_figure, master=viz_frame)
         viz_canvas.draw()
         viz_canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -2535,7 +2537,6 @@ class ExperimentRunnerGUI(ctk.CTk):
             ax7.set_title("7. Precision Gap over Time")
             ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
 
-            viz_figure.tight_layout()
             viz_canvas.draw()
         else:
             # Show placeholder with debug info
@@ -2616,7 +2617,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             text="APGI Experiment Runner",
             font=ctk.CTkFont(size=16, weight="bold"),
         ).pack(pady=10)
-        ctk.CTkLabel(help_menu, text="Version 2.0 - APGI Research Hub").pack(pady=5)
+        ctk.CTkLabel(help_menu, text="APGI Research").pack(pady=5)
         ctk.CTkButton(help_menu, text="Close", command=help_menu.destroy).pack(pady=20)
 
 

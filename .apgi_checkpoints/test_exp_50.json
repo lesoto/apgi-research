@@ -1,0 +1,9 @@
+{
+  "experiment_name": "test_exp",
+  "iteration": 50,
+  "total_iterations": 100,
+  "metric_value": 0.5,
+  "status": "running",
+  "timestamp": 1776395852.3773582,
+  "elapsed_time": 4.8160552978515625e-05
+}

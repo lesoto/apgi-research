@@ -10,7 +10,7 @@ Tests async git commands, concurrent operations, and error handling.
 from __future__ import annotations
 
 import asyncio
-import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -34,14 +34,37 @@ async def temp_git_repo() -> AsyncGenerator[Path, None]:
         repo_path = Path(tmp)
 
         # Initialize git repo
-        os.system(f"cd {repo_path} && git init --initial-branch=main")
-        os.system(f"cd {repo_path} && git config user.email 'test@test.com'")
-        os.system(f"cd {repo_path} && git config user.name 'Test User'")
+        subprocess.run(
+            ["git", "init", "--initial-branch=main"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "test@test.com"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
 
         # Create initial commit
         initial_file = repo_path / "initial.txt"
         initial_file.write_text("Initial content")
-        os.system(f"cd {repo_path} && git add . && git commit -m 'Initial commit'")
+        subprocess.run(
+            ["git", "add", "."], cwd=repo_path, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=repo_path,
+            check=True,
+            capture_output=True,
+        )
 
         yield repo_path
 
@@ -193,9 +216,14 @@ class TestAsyncGitOperations:
         assert result.is_valid, f"Failed to create branch: {result.errors}"
 
         # Verify branch was created
-        branches = os.popen(
-            f"cd {temp_git_repo} && git branch --list async-test-branch"
-        ).read()
+        proc_result = subprocess.run(
+            ["git", "branch", "--list", "async-test-branch"],
+            cwd=temp_git_repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        branches = proc_result.stdout
         assert "async-test-branch" in branches
 
         manager.cleanup_backups()

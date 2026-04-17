@@ -68,7 +68,7 @@ class SimulatedParticipant:
         self.response_rt = RESPONSE_RT + np.random.normal(0, RT_VARIABILITY)
 
     def process_trial(self, trial_type) -> tuple:
-        if trial_type.value == "cue":
+        if trial_type == "cue":
             rt = self.cue_rt + np.random.normal(0, RT_VARIABILITY)
         else:
             rt = self.response_rt + np.random.normal(0, RT_VARIABILITY)

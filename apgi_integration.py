@@ -32,6 +32,9 @@ Usage in Experiments:
 import numpy as np
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Any
+from collections import deque
+
+from apgi_profiler import enforce_budget, profile_hot_path
 
 # =============================================================================
 # APGI PARAMETERS
@@ -523,11 +526,11 @@ class DynamicalSystem:
         self.stats_exteroceptive = RunningStatistics()
         self.stats_interoceptive = RunningStatistics()
 
-        # History tracking
-        self.S_history: List[float] = []
-        self.theta_history: List[float] = []
-        self.M_history: List[float] = []
-        self.ignition_history: List[bool] = []
+        # History tracking (ring-buffered to prevent memory growth)
+        self.S_history: deque = deque(maxlen=10000)
+        self.theta_history: deque = deque(maxlen=10000)
+        self.M_history: deque = deque(maxlen=10000)
+        self.ignition_history: deque = deque(maxlen=10000)
 
     def step(
         self,
@@ -643,7 +646,7 @@ class DynamicalSystem:
         """Compute total metabolic cost from surprise history."""
         if len(self.S_history) == 0:
             return 0.0
-        return float(np.trapz(self.S_history, dx=0.01))
+        return float(np.trapezoid(self.S_history, dx=0.01))
 
     def get_ignition_rate(self) -> float:
         """Compute proportion of trials with ignition."""
@@ -700,12 +703,12 @@ class APGIIntegration:
             NeuromodulatorSystem() if enable_neuromodulators else None
         )
 
-        # Trial-level tracking
-        self.trial_metrics: List[Dict[str, Any]] = []
+        # Trial-level tracking (ring-buffered)
+        self.trial_metrics: deque[Dict[str, float]] = deque(maxlen=10000)
 
         # Precision expectation tracking (Π vs Π̂ distinction)
         self.precision_expectations: Dict[str, float] = {}
-        self.precision_gaps: List[float] = []
+        self.precision_gaps: deque = deque(maxlen=10000)
 
         # Experiment-level summary
         self.experiment_summary: Optional[Dict[str, Any]] = None
@@ -891,6 +894,124 @@ class APGIIntegration:
         self.trial_metrics.append(extended_state)
 
         return extended_state
+
+    @profile_hot_path
+    @enforce_budget(max_time_ms=500.0)
+    def process_trials(
+        self,
+        observed: np.ndarray,
+        predicted: np.ndarray,
+        trial_type: str = "neutral",
+        precision_ext_arr: Optional[np.ndarray] = None,
+        precision_int_arr: Optional[np.ndarray] = None,
+        dt: float = 0.01,
+    ) -> Dict[str, np.ndarray]:
+        """
+        High-performance batch processing API using NumPy.
+        Returns synchronized vectors of process variables across all trials.
+        Optimized hot path.
+        """
+        n_trials = len(observed)
+        if precision_ext_arr is None:
+            precision_ext_arr = np.full(
+                n_trials, 2.0 if trial_type in ["survival", "incongruent"] else 1.0
+            )
+        if precision_int_arr is None:
+            precision_int_arr = np.full(
+                n_trials, 1.5 if trial_type in ["survival", "incongruent"] else 1.0
+            )
+
+        error_ext = observed - predicted
+        error_int = error_ext * 0.3
+
+        # Memory allocations
+        S_arr = np.zeros(n_trials)
+        theta_arr = np.zeros(n_trials)
+        M_arr = np.zeros(n_trials)
+        ignition_arr = np.zeros(n_trials, dtype=bool)
+
+        # Pull parameters locally for loop speed
+        tau_S = self.params.tau_S
+        tau_theta = self.params.tau_theta
+        tau_M = self.params.tau_M
+        theta_0 = self.params.theta_0
+        alpha = self.params.alpha
+        beta = self.params.beta
+        rho = self.params.rho
+        sigma_S = self.params.sigma_S
+        sigma_theta = self.params.sigma_theta
+        sigma_M = self.params.sigma_M
+        gamma_M = self.params.gamma_M
+        lambda_S = self.params.lambda_S
+        M_0 = self.params.M_0
+
+        S = self.dynamics.S
+        theta = self.dynamics.theta
+        M = self.dynamics.M
+        rng = self.dynamics.rng
+
+        sqrt_dt = np.sqrt(dt)
+
+        for i in range(n_trials):
+            e_ext = error_ext[i]
+            e_int = error_int[i]
+            Pi_e = precision_ext_arr[i]
+            Pi_i_base = precision_int_arr[i]
+
+            # Effective interoceptive precision
+            sigmoid = 1.0 / (1.0 + np.exp(np.clip(-(M - M_0), -500, 500)))
+            Pi_i_eff = Pi_i_base * (1.0 + beta * sigmoid)
+
+            # Signal dynamics
+            input_S = 0.5 * Pi_e * (e_ext**2) + 0.5 * Pi_i_eff * (e_int**2)
+            noise_S = sigma_S * rng.normal() / sqrt_dt
+            dS_dt = -S / tau_S + input_S + noise_S
+            S = max(0.0, S + dS_dt * dt)
+
+            # Threshold dynamics
+            noise_theta = sigma_theta * rng.normal() / sqrt_dt
+            dtheta_dt = (
+                ((theta_0 - theta) / tau_theta)
+                + gamma_M * M
+                + lambda_S * S
+                + noise_theta
+            )
+            theta = max(0.01, theta + dtheta_dt * dt)
+
+            # Somatic marker
+            M_star = np.tanh(beta * e_int)
+            noise_M = sigma_M * rng.normal() / sqrt_dt
+            dM_dt = (M_star - M) / tau_M + noise_M
+            M = np.clip(M + dM_dt * dt, -2.0, 2.0)
+
+            # Ignition
+            z = alpha * (S - theta)
+            if z >= 0:
+                prob = 1.0 / (1.0 + np.exp(-z))
+            else:
+                z_exp = np.exp(z)
+                prob = z_exp / (1.0 + z_exp)
+
+            ignited = rng.random() < prob or prob > 0.8
+            if ignited:
+                S *= 1.0 - rho
+
+            S_arr[i] = S
+            theta_arr[i] = theta
+            M_arr[i] = M
+            ignition_arr[i] = ignited
+
+        self.dynamics.S = S
+        self.dynamics.theta = theta
+        self.dynamics.M = M
+
+        # Synchronize ring buffers roughly (for simplicity omitting all the extra stat details)
+        self.dynamics.S_history.extend(S_arr)
+        self.dynamics.theta_history.extend(theta_arr)
+        self.dynamics.M_history.extend(M_arr)
+        self.dynamics.ignition_history.extend(ignition_arr)
+
+        return {"S": S_arr, "theta": theta_arr, "M": M_arr, "ignited": ignition_arr}
 
     def process_rt_trial(
         self, rt: float, expected_rt: float, correct: bool, trial_type: str = "neutral"

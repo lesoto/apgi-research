@@ -12,6 +12,7 @@ import logging
 import time
 import json
 import os
+from apgi_compliance import ComplianceManager, DataClassification
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ class XPRAgentEngine:
         self.skills: Dict[str, Callable] = {}
         self.execution_history: List[ExecutionReport] = []
         self.current_plan: Optional[Dict[str, Any]] = None
+        self.compliance_manager = ComplianceManager()
 
     def register_skill(self, name: str, skill_func: Callable[..., Any]) -> None:
         """Register a skill function."""
@@ -124,6 +126,10 @@ class XPRAgentEngine:
     def add_execution_report(self, report: ExecutionReport) -> None:
         """Add execution report to history."""
         self.execution_history.append(report)
+        self.compliance_manager.log_experiment_run(
+            experiment_id=report.experiment_name,
+            classification=DataClassification.INTERNAL,
+        )
         logger.info(f"Added execution report for {report.experiment_name}")
 
     def set_current_plan(self, plan: Dict[str, Any]) -> None:

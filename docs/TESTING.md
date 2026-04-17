@@ -27,7 +27,7 @@ python tests/test_orchestrator.py
 ### Test Files
 
 | File | Description | Coverage |
-|------|-------------|----------|
+| ------ | ------------- | ---------- |
 | `conftest.py` | Test infrastructure, fixtures, and utilities | 100% |
 | `test_adversarial_apgi_core.py` | Adversarial unit tests for core APGI | Line, Branch, Path |
 | `test_integration_experiments.py` | Integration tests for workflows | E2E, I/O, Config |
@@ -140,7 +140,7 @@ python tests/mutation_testing.py --max-mutants 100
 ### Mutation Operators
 
 | Operator | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | AOR | Arithmetic Operator Replacement (+ → -, * → /) |
 | COR | Comparison Operator Replacement (== → !=, < → >=) |
 | LOR | Logical Operator Replacement (and → or) |
@@ -215,7 +215,7 @@ def reset_random_state():
 Use markers to categorize and filter tests:
 
 | Marker | Description | Usage |
-|--------|-------------|-------|
+| -------- | ------------- | ------- |
 | `@pytest.mark.slow` | Long-running tests | Exclude with `-m "not slow"` |
 | `@pytest.mark.integration` | Integration tests | Run with `-m integration` |
 | `@pytest.mark.e2e` | End-to-end tests | Run with `-m e2e` |
