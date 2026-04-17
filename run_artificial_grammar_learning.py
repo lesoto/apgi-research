@@ -22,7 +22,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, cast
 
 from prepare_artificial_grammar_learning import (
     AGExperiment,
@@ -37,7 +37,6 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -72,10 +71,12 @@ class SimulatedParticipant:
         # Learning improves with correct responses
         if response_made and is_grammatical:
             self.grammar_accuracy += self.learning_rate * np.random.uniform(0.5, 1.5)
+            self.grammar_accuracy = min(0.95, self.grammar_accuracy)
 
         # Simulate response based on current accuracy
         response_correct = np.random.random() < self.grammar_accuracy
-        rt = 800 + np.random.normal(0, 200)
+        # Realistic RT: 400-1200ms
+        rt = 600 + np.random.normal(0, 150)
 
         return response_correct, max(300, rt)
 
@@ -93,27 +94,35 @@ class EnhancedArtificialGrammarRunner:
     neuromodulator mapping, and domain-specific thresholds for implicit learning.
     """
 
+    apgi: APGIIntegration | None
+    hierarchical: HierarchicalProcessor | None
+    precision_gap: PrecisionExpectationState | None
+    neuromodulators: dict[str, float] | None
+    running_stats: dict[str, float] | None
+
     def __init__(self, enable_apgi: bool = True):
         self.experiment = AGExperiment()
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: float | None = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=float(cast(float, APGI_PARAMS.get("tau_s", 0.35))),
+                beta=float(cast(float, APGI_PARAMS.get("beta", 1.5))),
+                theta_0=float(cast(float, APGI_PARAMS.get("theta_0", 0.5))),
+                alpha=float(cast(float, APGI_PARAMS.get("alpha", 5.5))),
+                gamma_M=float(cast(float, APGI_PARAMS.get("gamma_M", -0.3))),
+                lambda_S=float(cast(float, APGI_PARAMS.get("lambda_S", 0.1))),
+                sigma_S=float(cast(float, APGI_PARAMS.get("sigma_S", 0.05))),
+                sigma_theta=float(cast(float, APGI_PARAMS.get("sigma_theta", 0.02))),
+                sigma_M=float(cast(float, APGI_PARAMS.get("sigma_M", 0.03))),
+                rho=float(cast(float, APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(
+                    cast(float, APGI_PARAMS.get("theta_survival", 0.3))
+                ),
+                theta_neutral=float(cast(float, APGI_PARAMS.get("theta_neutral", 0.7))),
             )
             self.apgi = APGIIntegration(params)
 
@@ -132,8 +141,14 @@ class EnhancedArtificialGrammarRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(cast(float, APGI_PARAMS.get("beta_cross", 0.2))),
+                    tau_levels=[
+                        float(x)
+                        for x in cast(
+                            list[float],
+                            APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                        )
+                    ],
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -147,10 +162,10 @@ class EnhancedArtificialGrammarRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": float(cast(float, APGI_PARAMS.get("ACh", 1.0))),
+                "NE": float(cast(float, APGI_PARAMS.get("NE", 1.0))),
+                "DA": float(cast(float, APGI_PARAMS.get("DA", 1.0))),
+                "HT5": float(cast(float, APGI_PARAMS.get("HT5", 1.0))),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -204,11 +219,17 @@ class EnhancedArtificialGrammarRunner:
 
             # 100/100: Determine precision based on neuromodulators
             # ACh increases attention precision for implicit learning
-            ach_boost = self.neuromodulators.get("ACh", 1.0)
+            ach_boost = (
+                self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
+            )
             # DA is critical for reward prediction in learning
-            da_effect = self.neuromodulators.get("DA", 1.0)
+            da_effect = (
+                self.neuromodulators.get("DA", 1.0) if self.neuromodulators else 1.0
+            )
             # NE affects arousal during novel pattern detection
-            ne_effect = self.neuromodulators.get("NE", 1.0)
+            ne_effect = (
+                self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
+            )
 
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
@@ -216,19 +237,20 @@ class EnhancedArtificialGrammarRunner:
             # 100/100: Update running statistics for z-score normalization
             alpha_mu = 0.01
             alpha_sigma = 0.005
-            self.running_stats["outcome_mean"] += alpha_mu * (
-                observed_accuracy - self.running_stats["outcome_mean"]
-            )
-            self.running_stats["outcome_var"] += alpha_sigma * (
-                (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
-                - self.running_stats["outcome_var"]
-            )
-            self.running_stats["outcome_var"] = max(
-                0.01, self.running_stats["outcome_var"]
-            )
+            if self.running_stats:
+                self.running_stats["outcome_mean"] += alpha_mu * (
+                    observed_accuracy - self.running_stats["outcome_mean"]
+                )
+                self.running_stats["outcome_var"] += alpha_sigma * (
+                    (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
+                    - self.running_stats["outcome_var"]
+                )
+                self.running_stats["outcome_var"] = max(
+                    0.01, self.running_stats["outcome_var"]
+                )
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
-            if self.precision_gap:
+            if self.precision_gap and self.neuromodulators:
                 self.precision_gap.update(
                     precision_ext, precision_int, self.neuromodulators, trial_type
                 )
@@ -253,6 +275,7 @@ class EnhancedArtificialGrammarRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
+        assert self.start_time is not None, "start_time should be set by run_experiment"
         completion_time = time.time() - self.start_time
 
         results = {
@@ -280,13 +303,13 @@ class EnhancedArtificialGrammarRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

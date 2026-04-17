@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import random
 import json
@@ -112,7 +113,7 @@ class CBTrial:
 class ChangeBlindnessGenerator:
     def __init__(self, seed: Optional[int] = None):
         self.rng = np.random.RandomState(seed)
-        self.reset()
+        self.trial_count = 0
 
     def reset(self):
         self.trial_count = 0
@@ -139,10 +140,10 @@ class ChangeBlindnessExperiment:
         self.num_trials = num_trials
         self.generator = ChangeBlindnessGenerator(seed=seed)
         self.trials: List[CBTrial] = []
-        self.current_trial_idx = 0
+        self.current_trial_idx: int = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -173,12 +174,14 @@ class ChangeBlindnessExperiment:
         ]
         return {
             "num_trials": len(self.trials),
-            "detection_rate": np.mean([t.correct for t in change_trials])
-            if change_trials
-            else 0,
-            "correct_rejection_rate": np.mean([t.correct for t in no_change_trials])
-            if no_change_trials
-            else 0,
+            "detection_rate": (
+                np.mean([t.correct for t in change_trials]) if change_trials else 0
+            ),
+            "correct_rejection_rate": (
+                np.mean([t.correct for t in no_change_trials])
+                if no_change_trials
+                else 0
+            ),
             "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
         }
 
@@ -202,49 +205,36 @@ class ChangeBlindnessExperiment:
             json.dump(data, f, indent=2)
 
 
-# Standardized APGI Parameters Export (READ-ONLY)
-# These parameters are used by the AGENT-EDITABLE run file for APGI integration
 APGI_PARAMS = {
-    # Core identification
     "experiment_name": "change_blindness",
     "enabled": APGI_ENABLED,
-    # Dynamical system timescales
     "tau_s": APGI_TAU_S,
     "tau_theta": APGI_TAU_THETA,
     "tau_M": APGI_TAU_M,
-    # Threshold and ignition parameters
     "theta_0": APGI_THETA_0,
     "alpha": APGI_ALPHA,
     "rho": APGI_RHO,
-    # Somatic modulation
     "beta": APGI_BETA,
     "beta_M": APGI_BETA_M,
     "M_0": APGI_M_0,
-    # Sensitivities
     "gamma_M": APGI_GAMMA_M,
     "gamma_A": APGI_GAMMA_A,
     "lambda_S": APGI_LAMBDA_S,
-    # Noise strengths
     "sigma_S": APGI_SIGMA_S,
     "sigma_theta": APGI_SIGMA_THETA,
     "sigma_M": APGI_SIGMA_M,
-    # Domain-specific thresholds
     "theta_survival": APGI_THETA_SURVIVAL,
     "theta_neutral": APGI_THETA_NEUTRAL,
-    # Hierarchical processing
     "hierarchical_enabled": APGI_HIERARCHICAL_ENABLED,
     "beta_cross": APGI_BETA_CROSS,
     "tau_levels": APGI_TAU_LEVELS,
-    # Neuromodulator baselines
     "ACh": APGI_ACHT,
     "NE": APGI_NE,
     "DA": APGI_DA,
     "HT5": APGI_HT5,
-    # Precision expectation gap
     "precision_gap_enabled": APGI_ENABLE_PRECISION_GAP,
     "Pi_e_expected": APGI_PI_E_EXPECTED,
     "Pi_i_expected": APGI_PI_I_EXPECTED,
-    # Psychiatric profiles
     "GAD_profile": APGI_GAD_PROFILE,
     "MDD_profile": APGI_MDD_PROFILE,
     "psychosis_profile": APGI_PSYCHOSIS_PROFILE,

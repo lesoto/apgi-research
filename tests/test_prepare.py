@@ -139,7 +139,9 @@ class TestDownloadFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_file", return_value=True) as mock_download:
+        with patch.object(
+            prep, "download_single_shard", return_value=True
+        ) as mock_download:
             result = prep.download_shard(1, prep.DATA_DIR)
             assert result is True
             mock_download.assert_called_once()
@@ -151,7 +153,9 @@ class TestDownloadFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_file", return_value=False) as mock_download:
+        with patch.object(
+            prep, "download_single_shard", return_value=False
+        ) as mock_download:
             result = prep.download_shard(1, prep.DATA_DIR)
             assert result is False
             mock_download.assert_called_once()
@@ -205,7 +209,7 @@ class TestTokenizerTraining:
 class TestDataProcessing:
     """Test data processing functionality."""
 
-    @patch("prepare.pyarrow.parquet.read_table")
+    @patch("pyarrow.parquet.read_table")
     @patch("prepare.Path.exists")
     def test_read_shard_success(self, mock_exists, mock_read):
         """Test successful shard reading."""
@@ -227,7 +231,7 @@ class TestDataProcessing:
         result = prep.read_shard(1, prep.DATA_DIR)
         assert result is None
 
-    @patch("prepare.pyarrow.parquet.read_table")
+    @patch("pyarrow.parquet.read_table")
     @patch("prepare.Path.exists")
     def test_read_shard_error(self, mock_exists, mock_read):
         """Test shard reading with error."""
@@ -263,26 +267,21 @@ class TestDataProcessing:
 class TestValidation:
     """Test validation functionality."""
 
-    @patch("prepare.tiktoken.get_encoding")
-    def test_validate_tokenizer_success(self, mock_get_encoding):
+    def test_validate_tokenizer_success(self):
         """Test successful tokenizer validation."""
-        mock_encoding = MagicMock()
-        mock_encoding.decode.return_value = "test text"
-        mock_get_encoding.return_value = mock_encoding
-
         # Mock tokenizer
         mock_tokenizer = MagicMock()
-        mock_tokenizer.decode.return_value = "test text"
+        mock_tokenizer.encode.return_value = [1, 2, 3]
+        mock_tokenizer.decode.return_value = "Hello, world!"
 
         result = prep.validate_tokenizer(mock_tokenizer)
         assert result is True
+        mock_tokenizer.encode.assert_called_once()
 
-    @patch("prepare.tiktoken.get_encoding")
-    def test_validate_tokenizer_failure(self, mock_get_encoding):
+    def test_validate_tokenizer_failure(self):
         """Test tokenizer validation failure."""
-        mock_get_encoding.side_effect = Exception("Validation failed")
-
         mock_tokenizer = MagicMock()
+        mock_tokenizer.encode.side_effect = Exception("Validation failed")
 
         result = prep.validate_tokenizer(mock_tokenizer)
         assert result is False
@@ -349,16 +348,16 @@ class TestMainFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_shards", return_value=True) as mock_download:
+        with patch.object(prep, "download_data") as mock_download:
             with patch.object(prep, "train_tokenizer", return_value=True) as mock_train:
+                mock_download.return_value = None
                 with patch.object(
-                    prep, "validate_tokenizer", return_value=True
-                ) as mock_validate:
+                    prep, "list_parquet_files", return_value=[Path("test.parquet")]
+                ):
                     result = prep.main([])
                     assert result == 0
                     mock_download.assert_called_once()
                     mock_train.assert_called_once()
-                    mock_validate.assert_called_once()
 
     @patch("prepare.Path.exists")
     @patch("prepare.Path.mkdir")
@@ -367,12 +366,16 @@ class TestMainFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_shards", return_value=True) as mock_download:
+        with patch.object(prep, "download_data") as mock_download:
             with patch.object(prep, "train_tokenizer", return_value=True) as mock_train:
-                result = prep.main(["--skip-tokenizer"])
-                assert result == 0
-                mock_download.assert_called_once()
-                mock_train.assert_not_called()
+                mock_download.return_value = None
+                with patch.object(
+                    prep, "list_parquet_files", return_value=[Path("test.parquet")]
+                ):
+                    result = prep.main(["--skip-tokenizer"])
+                    assert result == 0
+                    mock_download.assert_called_once()
+                    mock_train.assert_not_called()
 
     @patch("prepare.Path.exists")
     @patch("prepare.Path.mkdir")
@@ -381,12 +384,16 @@ class TestMainFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_shards", return_value=True) as mock_download:
+        with patch.object(prep, "download_data") as mock_download:
             with patch.object(prep, "train_tokenizer", return_value=True) as mock_train:
-                result = prep.main(["--skip-download"])
-                assert result == 0
-                mock_download.assert_not_called()
-                mock_train.assert_called_once()
+                mock_download.return_value = None
+                with patch.object(
+                    prep, "list_parquet_files", return_value=[Path("test.parquet")]
+                ):
+                    result = prep.main(["--skip-download"])
+                    assert result == 0
+                    mock_download.assert_not_called()
+                    mock_train.assert_called_once()
 
     @patch("prepare.Path.exists")
     @patch("prepare.Path.mkdir")
@@ -395,10 +402,12 @@ class TestMainFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_shards", return_value=False) as mock_download:
-            result = prep.main([])
-            assert result == 1
-            mock_download.assert_called_once()
+        with patch.object(prep, "download_data") as mock_download:
+            with patch.object(prep, "list_parquet_files", return_value=[]):
+                mock_download.return_value = None
+                result = prep.main([])
+                assert result == 1
+                mock_download.assert_called_once()
 
     @patch("prepare.Path.exists")
     @patch("prepare.Path.mkdir")
@@ -407,23 +416,29 @@ class TestMainFunction:
         mock_exists.return_value = False
         mock_mkdir.return_value = None
 
-        with patch.object(prep, "download_shards", return_value=True) as mock_download:
+        with patch.object(prep, "download_data") as mock_download:
             with patch.object(
                 prep, "train_tokenizer", return_value=False
             ) as mock_train:
-                result = prep.main([])
-                assert result == 1
-                mock_download.assert_called_once()
-                mock_train.assert_called_once()
+                mock_download.return_value = None
+                with patch.object(
+                    prep, "list_parquet_files", return_value=[Path("test.parquet")]
+                ):
+                    result = prep.main([])
+                    assert result == 1
+                    mock_download.assert_called_once()
+                    mock_train.assert_called_once()
 
     def test_main_custom_shards(self):
         """Test main function with custom number of shards."""
-        with patch.object(prep, "download_shards", return_value=True) as mock_download:
+        with patch.object(prep, "download_data") as mock_download:
             with patch.object(prep, "train_tokenizer", return_value=True):
-                with patch.object(prep, "validate_tokenizer", return_value=True):
+                with patch.object(
+                    prep, "list_parquet_files", return_value=[Path("test.parquet")]
+                ):
                     result = prep.main(["--num-shards", "5"])
                     assert result == 0
-                    mock_download.assert_called_once_with(5, prep.DATA_DIR)
+                    mock_download.assert_called_once_with(5, 8)
 
 
 class TestMultiprocessing:

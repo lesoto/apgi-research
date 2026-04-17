@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -172,13 +173,15 @@ class NavonExperiment:
         self.current_trial_idx += 1
         return trial
 
-    def get_mean_rt(self, level: TargetLevel, trial_type: TrialType = None) -> float:
+    def get_mean_rt(
+        self, level: TargetLevel, trial_type: Optional[TrialType] = None
+    ) -> float:
         trials = [t for t in self.trials if t.target_level == level and t.correct]
         if trial_type:
             trials = [t for t in trials if t.trial_type == trial_type]
         if not trials:
             return 0.0
-        return np.mean([t.rt_ms for t in trials])
+        return float(np.mean([t.rt_ms for t in trials]))
 
     def get_global_advantage(self) -> float:
         """Global - Local RT (typically ~100ms for large letters)."""

@@ -143,7 +143,7 @@ class PosnerCueGenerator:
         """Select cue type based on probabilities."""
         types = list(CUE_PROBABILITIES.keys())
         probs = list(CUE_PROBABILITIES.values())
-        return self.rng.choice(types, p=probs)
+        return self.rng.choice(types, p=probs)  # type: ignore
 
     def create_trial(self, trial_number: int) -> PosnerTrial:
         """Create a trial with appropriate cueing."""
@@ -215,7 +215,7 @@ class PosnerExperiment:
         trials = [t for t in self.trials if t.cue_type == cue_type and t.correct]
         if not trials:
             return 0.0
-        return np.mean([t.rt_ms for t in trials])
+        return float(np.mean([t.rt_ms for t in trials]))
 
     def get_validity_effect(self) -> float:
         """
@@ -228,7 +228,7 @@ class PosnerExperiment:
         if valid_rt == 0 or invalid_rt == 0:
             return 0.0
 
-        return invalid_rt - valid_rt
+        return float(invalid_rt - valid_rt)
 
     def get_benefit_cost(self) -> tuple:
         """
@@ -248,7 +248,7 @@ class PosnerExperiment:
         trials = [t for t in self.trials if cue_type is None or t.cue_type == cue_type]
         if not trials:
             return 0.0
-        return np.mean([t.correct for t in trials])
+        return float(np.mean([t.correct for t in trials]))
 
     def get_summary(self) -> Dict:
         """Generate experiment summary."""

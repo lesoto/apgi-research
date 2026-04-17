@@ -21,7 +21,7 @@ Modification Guidelines:
 import numpy as np
 import time
 import sys
-from typing import Dict
+from typing import Dict, Optional, cast
 
 # Import fixed configurations from prepare_ai_benchmarking.py
 from prepare_ai_benchmarking import (
@@ -40,7 +40,6 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
@@ -214,27 +213,82 @@ class EnhancedAIBenchmarkingRunner:
     - Metrics calculation
     """
 
+    # Type annotations for APGI components
+    apgi: Optional[APGIIntegration]
+    hierarchical: Optional[HierarchicalProcessor]
+    precision_gap: Optional[PrecisionExpectationState]
+    neuromodulators: Optional[Dict[str, float]]
+    running_statistics: Optional[Dict[str, float]]
+
     def __init__(self, enable_apgi: bool = True):
         self.generator = AIBenchmarkGenerator()
         self.ai_model = SimulatedAIModel()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35) or 0.35),
-                beta=float(APGI_PARAMS.get("beta", 1.5) or 1.5),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5) or 0.5),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5) or 5.5),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3) or 0.3),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7) or 0.7),
+                tau_S=(
+                    cast(float, APGI_PARAMS.get("tau_s", 0.35) or 0.35)
+                    if isinstance(APGI_PARAMS.get("tau_s"), (int, float))
+                    else 0.35
+                ),
+                beta=(
+                    cast(float, APGI_PARAMS.get("beta", 1.5) or 1.5)
+                    if isinstance(APGI_PARAMS.get("beta"), (int, float))
+                    else 1.5
+                ),
+                theta_0=(
+                    cast(float, APGI_PARAMS.get("theta_0", 0.5) or 0.5)
+                    if isinstance(APGI_PARAMS.get("theta_0"), (int, float))
+                    else 0.5
+                ),
+                alpha=(
+                    cast(float, APGI_PARAMS.get("alpha", 5.5) or 5.5)
+                    if isinstance(APGI_PARAMS.get("alpha"), (int, float))
+                    else 5.5
+                ),
+                gamma_M=(
+                    cast(float, APGI_PARAMS.get("gamma_M", -0.3) or -0.3)
+                    if isinstance(APGI_PARAMS.get("gamma_M"), (int, float))
+                    else -0.3
+                ),
+                lambda_S=(
+                    cast(float, APGI_PARAMS.get("lambda_S", 0.1) or 0.1)
+                    if isinstance(APGI_PARAMS.get("lambda_S"), (int, float))
+                    else 0.1
+                ),
+                sigma_S=(
+                    cast(float, APGI_PARAMS.get("sigma_S", 0.05) or 0.05)
+                    if isinstance(APGI_PARAMS.get("sigma_S"), (int, float))
+                    else 0.05
+                ),
+                sigma_theta=(
+                    cast(float, APGI_PARAMS.get("sigma_theta", 0.02) or 0.02)
+                    if isinstance(APGI_PARAMS.get("sigma_theta"), (int, float))
+                    else 0.02
+                ),
+                sigma_M=(
+                    cast(float, APGI_PARAMS.get("sigma_M", 0.03) or 0.03)
+                    if isinstance(APGI_PARAMS.get("sigma_M"), (int, float))
+                    else 0.03
+                ),
+                rho=(
+                    cast(float, APGI_PARAMS.get("rho", 0.7) or 0.7)
+                    if isinstance(APGI_PARAMS.get("rho"), (int, float))
+                    else 0.7
+                ),
+                theta_survival=(
+                    cast(float, APGI_PARAMS.get("theta_survival", 0.3) or 0.3)
+                    if isinstance(APGI_PARAMS.get("theta_survival"), (int, float))
+                    else 0.3
+                ),
+                theta_neutral=(
+                    cast(float, APGI_PARAMS.get("theta_neutral", 0.7) or 0.7)
+                    if isinstance(APGI_PARAMS.get("theta_neutral"), (int, float))
+                    else 0.7
+                ),
             )
             self.apgi = APGIIntegration(params)
 
@@ -253,8 +307,19 @@ class EnhancedAIBenchmarkingRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=(
+                        cast(float, APGI_PARAMS.get("beta_cross", 0.2))
+                        if isinstance(APGI_PARAMS.get("beta_cross"), (int, float))
+                        else 0.2
+                    ),
+                    tau_levels=(
+                        cast(
+                            list,
+                            APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                        )
+                        if isinstance(APGI_PARAMS.get("tau_levels"), (list, tuple))
+                        else [0.1, 0.2, 0.4, 1.0, 5.0]
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -268,14 +333,30 @@ class EnhancedAIBenchmarkingRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": (
+                    cast(float, APGI_PARAMS.get("ACh", 1.0))
+                    if isinstance(APGI_PARAMS.get("ACh"), (int, float))
+                    else 1.0
+                ),
+                "NE": (
+                    cast(float, APGI_PARAMS.get("NE", 1.0))
+                    if isinstance(APGI_PARAMS.get("NE"), (int, float))
+                    else 1.0
+                ),
+                "DA": (
+                    cast(float, APGI_PARAMS.get("DA", 1.0))
+                    if isinstance(APGI_PARAMS.get("DA"), (int, float))
+                    else 1.0
+                ),
+                "HT5": (
+                    cast(float, APGI_PARAMS.get("HT5", 1.0))
+                    if isinstance(APGI_PARAMS.get("HT5"), (int, float))
+                    else 1.0
+                ),
             }
 
             # 100/100: Running statistics for z-score normalization
-            self.running_stats = {
+            self.running_statistics = {
                 "outcome_mean": 0.5,
                 "outcome_var": 0.25,
                 "rt_mean": 800.0,
@@ -286,7 +367,7 @@ class EnhancedAIBenchmarkingRunner:
             self.hierarchical = None
             self.precision_gap = None
             self.neuromodulators = None
-            self.running_stats = None
+            self.running_statistics = None
 
     def run_experiment(self) -> Dict:
         """
@@ -296,6 +377,7 @@ class EnhancedAIBenchmarkingRunner:
             Dictionary with all experiment results and metrics
         """
         self.start_time = time.time()
+        assert self.start_time is not None
         self.generator.reset()
         self.ai_model.reset()
 
@@ -303,14 +385,13 @@ class EnhancedAIBenchmarkingRunner:
         for trial_num in range(NUM_TRIALS_CONFIG):
             self._run_single_trial(trial_num)
 
-            # Check time budget
             elapsed = time.time() - self.start_time
             if elapsed > TIME_BUDGET:
                 print(f"WARNING: Time budget exceeded at trial {trial_num}")
                 break
 
-        # Calculate final metrics
         completion_time = time.time() - self.start_time
+        assert self.start_time is not None
         results = self._calculate_results(completion_time)
 
         return results
@@ -370,11 +451,27 @@ class EnhancedAIBenchmarkingRunner:
             "total_trials": self.ai_model.trial_count,
             "total_correct": self.ai_model.total_correct,
             "total_tokens": self.ai_model.total_tokens,
-            "mean_response_time": np.mean(self.ai_model.response_times)
-            if self.ai_model.response_times
-            else 0.0,
+            "mean_response_time": (
+                np.mean(self.ai_model.response_times)
+                if self.ai_model.response_times
+                else 0.0
+            ),
             "mean_confidence": np.mean([0.8]) * benchmark_accuracy,  # Simulated
         }
+
+        metabolic_cost = 0.0
+        if self.enable_apgi and hasattr(self, "apgi") and self.apgi:
+            metabolic_cost = self.apgi.dynamics.get_metabolic_cost()
+
+        precision_mismatch = 0.0
+        if (
+            self.enable_apgi
+            and hasattr(self, "precision_expectation")
+            and self.precision_expectation
+        ):
+            precision_mismatch = (
+                self.precision_expectation.calculate_precision_mismatch()
+            )
 
         # Compile results
         results = {
@@ -392,6 +489,15 @@ class EnhancedAIBenchmarkingRunner:
             "difficulty_performance": difficulty_performance,
             # AI model info
             "ai_stats": ai_stats,
+            # APGI metrics
+            "apgi_enabled": self.enable_apgi,
+            "apgi_ignition_rate": metabolic_cost,
+            "apgi_metabolic_cost": metabolic_cost,
+            "apgi_mean_surprise": 0.0,
+            "apgi_mean_somatic_marker": 0.0,
+            "apgi_mean_threshold": 0.5,
+            "apgi_precision_mismatch": precision_mismatch,
+            "apgi_anxiety_level": 0.0,
             # Configuration used
             "config": {
                 "num_trials": NUM_TRIALS_CONFIG,

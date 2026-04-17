@@ -24,7 +24,7 @@ APGI Framework Integration:
 import numpy as np
 import json
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, cast
 
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)
@@ -178,18 +178,17 @@ class IowaGamblingTaskDeck:
     def _generate_penalty_schedule(self):
         """Generate shuffled penalty schedule for card blocks."""
         freq = self.config["penalty_frequency"]
-        penalty_amounts = self.config["penalty_amounts"]
+        penalty_amounts = cast(List[int], self.config["penalty_amounts"])
 
         # Create penalty sequence for many blocks
         blocks = 20  # Support up to 200 trials
         self.penalty_schedule = []
 
         for _ in range(blocks):
-            block_size = 10
-            num_penalties = int(block_size * freq)
-
             # Create block with specified penalty frequency
-            block = [1] * num_penalties + [0] * (block_size - num_penalties)
+            block_size = 10
+            num_penalties = int(cast(float, freq) * block_size)
+            block = [True] * num_penalties + [False] * (block_size - num_penalties)
             np.random.shuffle(block)
 
             # Assign penalty amounts
@@ -209,7 +208,7 @@ class IowaGamblingTaskDeck:
         Returns:
             (win_amount, penalty_amount)
         """
-        win = int(self.config["win_amount"])
+        win = int(cast(int, self.config["win_amount"]))
         penalty = int(
             self.penalty_schedule[self.card_index % len(self.penalty_schedule)]
         )
@@ -344,9 +343,11 @@ class IowaGamblingTaskExperiment:
                 last_n_trials=self.num_trials // 2
             ),
             "learning_rate": self.get_learning_rate(),
-            "mean_reaction_time": np.mean([t.reaction_time_ms for t in self.trials])
-            if self.trials
-            else 0.0,
+            "mean_reaction_time": (
+                np.mean([t.reaction_time_ms for t in self.trials])
+                if self.trials
+                else 0.0
+            ),
         }
 
     def save_results(self, filepath: str):
@@ -399,8 +400,10 @@ def verify_deck_configurations():
     for deck_id, config in DECK_CONFIGURATIONS.items():
         print(f"\nDeck {config['label']}:")
         print(f"  Win Amount: ${config['win_amount']}")
-        print(f"  Win Frequency: {config['win_frequency'] * 100:.0f}%")
-        print(f"  Penalty Frequency: {config['penalty_frequency'] * 100:.0f}%")
+        print(f"  Win Frequency: {cast(float, config['win_frequency']) * 100:.0f}%")
+        print(
+            f"  Penalty Frequency: {cast(float, config['penalty_frequency']) * 100:.0f}%"
+        )
         print(f"  Penalty Amounts: {config['penalty_amounts']}")
         print(f"  Advantageous: {config['advantageous']}")
 

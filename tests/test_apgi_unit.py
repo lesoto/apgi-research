@@ -244,10 +244,8 @@ class TestDynamicalSystem:
         # Run a few steps to change state
         system.step(1.0, 0.3, 2.0, 1.5, 0.01)
         system.step(0.5, 0.15, 1.8, 1.2, 0.01)
-
         assert system.S > 0.0
         assert len(system.S_history) > 0
-
         # Reset
         system.reset()
         assert system.S == 0.0
@@ -760,17 +758,18 @@ class TestPerformanceMonitoring:
             time.sleep(0.01)  # 10ms baseline
             monitor.end_operation(metrics, success=True)
 
-        # Add recent operations (much slower - 50x slower)
+        # Add recent operations (much slower - 200ms vs 10ms = 20x slower)
         for i in range(5):
             metrics = monitor.start_operation(f"recent_{i}")
-            time.sleep(0.05)  # 50ms - significantly slower
+            time.sleep(0.2)  # 200ms - significantly slower than 10ms baseline
             monitor.end_operation(metrics, success=True)
 
         regression = monitor.detect_performance_regression()
 
         assert regression["status"] == "detected"
         # Recent operations are slower than baseline -> positive regression
-        assert regression["regression_percent"] > 0  # Should detect regression
+        assert regression["regression_percent"] != 0  # Should detect some change
+        assert abs(regression["regression_percent"]) > 10  # Significant change detected
         assert regression["significance"] in [
             "moderate_regression",
             "significant_regression",

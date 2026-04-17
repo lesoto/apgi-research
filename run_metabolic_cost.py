@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, List, cast
 
 from prepare_metabolic_cost import (
     MetabolicCostExperiment,
@@ -35,7 +35,6 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
 
 # Type alias for cost types
 from enum import Enum
@@ -98,24 +97,41 @@ class EnhancedMetabolicCostRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = MetabolicCostExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: float | None = None
+
+        # Initialize APGI-related variables with proper types
+        self.apgi: APGIIntegration | None = None
+        self.hierarchical: HierarchicalProcessor | None = None
+        self.precision_gap: PrecisionExpectationState | None = None
+        self.neuromodulators: dict[str, float] | None = None
+        self.running_stats: dict[str, float] | None = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
+            # Helper function to safely get float values
+            def safe_float(key: str, default: float) -> float:
+                value = APGI_PARAMS.get(key, default)
+                if isinstance(value, (int, float)):
+                    return float(value)
+                elif value is not None:
+                    return float(str(value))
+                else:
+                    return default
+
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=safe_float("tau_s", 0.35),
+                beta=safe_float("beta", 1.5),
+                theta_0=safe_float("theta_0", 0.5),
+                alpha=safe_float("alpha", 5.5),
+                gamma_M=safe_float("gamma_M", -0.3),
+                lambda_S=safe_float("lambda_S", 0.1),
+                sigma_S=safe_float("sigma_S", 0.05),
+                sigma_theta=safe_float("sigma_theta", 0.02),
+                sigma_M=safe_float("sigma_M", 0.03),
+                rho=safe_float("rho", 0.7),
+                theta_survival=safe_float("theta_survival", 0.3),
+                theta_neutral=safe_float("theta_neutral", 0.7),
             )
             self.apgi = APGIIntegration(params)
 
@@ -134,8 +150,12 @@ class EnhancedMetabolicCostRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=safe_float("beta_cross", 0.2),
+                    tau_levels=(
+                        [0.1, 0.2, 0.4, 1.0, 5.0]
+                        if APGI_PARAMS.get("tau_levels") is None
+                        else cast(List[float], APGI_PARAMS.get("tau_levels"))
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -149,10 +169,10 @@ class EnhancedMetabolicCostRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": safe_float("ACh", 1.0),
+                "NE": safe_float("NE", 1.0),
+                "DA": safe_float("DA", 1.0),
+                "HT5": safe_float("HT5", 1.0),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -162,12 +182,6 @@ class EnhancedMetabolicCostRunner:
                 "rt_mean": 500.0,
                 "rt_var": 25000.0,
             }
-        else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -212,31 +226,38 @@ class EnhancedMetabolicCostRunner:
             trial_type = "neutral"
 
             # 100/100: Determine precision based on neuromodulators
-            ach_boost = self.neuromodulators.get("ACh", 1.0)
-            ne_effect = self.neuromodulators.get("NE", 1.0)
-            da_effect = self.neuromodulators.get("DA", 1.0)
+            ach_boost = (
+                self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
+            )
+            ne_effect = (
+                self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
+            )
+            da_effect = (
+                self.neuromodulators.get("DA", 1.0) if self.neuromodulators else 1.0
+            )
 
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
             # 100/100: Update running statistics
-            alpha_mu = 0.01
-            alpha_sigma = 0.005
-            self.running_stats["outcome_mean"] += alpha_mu * (
-                observed_accuracy - self.running_stats["outcome_mean"]
-            )
-            self.running_stats["outcome_var"] += alpha_sigma * (
-                (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
-                - self.running_stats["outcome_var"]
-            )
-            self.running_stats["outcome_var"] = max(
-                0.01, self.running_stats["outcome_var"]
-            )
+            if self.running_stats:
+                alpha_mu = 0.01
+                alpha_sigma = 0.005
+                self.running_stats["outcome_mean"] += alpha_mu * (
+                    observed_accuracy - self.running_stats["outcome_mean"]
+                )
+                self.running_stats["outcome_var"] += alpha_sigma * (
+                    (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
+                    - self.running_stats["outcome_var"]
+                )
+                self.running_stats["outcome_var"] = max(
+                    0.01, self.running_stats["outcome_var"]
+                )
 
-            # 100/100: Update precision expectation gap (Π vs Π̂)
+            # 100/100: Update precision expectation gap (Pi vs Pi_hat)
             if self.precision_gap:
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators, trial_type
+                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -259,7 +280,7 @@ class EnhancedMetabolicCostRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0.0)
 
         apgi_metrics = {}
         if self.apgi and hasattr(self.apgi, "finalize"):

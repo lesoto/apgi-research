@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Optional, cast, List, Union
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -160,16 +160,73 @@ class EnhancedAttentionalBlinkRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = ABExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize APGI integration if enabled
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=APGI_PARAMS.get("tau_s", 0.25),
-                beta=APGI_PARAMS.get("beta", 1.8),
-                theta_0=APGI_PARAMS.get("theta_0", 0.4),
-                alpha=APGI_PARAMS.get("alpha", 6.0),
+                tau_S=float(
+                    cast(
+                        Union[str, int, float], APGI_PARAMS.get("tau_s", "0.25") or 0.25
+                    )
+                ),
+                beta=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("beta", "1.8") or 1.8)
+                ),
+                theta_0=float(
+                    cast(
+                        Union[str, int, float], APGI_PARAMS.get("theta_0", "0.4") or 0.4
+                    )
+                ),
+                alpha=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("alpha", "6.0") or 6.0)
+                ),
+                gamma_M=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("gamma_M", "-0.3") or -0.3,
+                    )
+                ),
+                lambda_S=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("lambda_S", "0.1") or 0.1,
+                    )
+                ),
+                sigma_S=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("sigma_S", "0.05") or 0.05,
+                    )
+                ),
+                sigma_theta=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("sigma_theta", "0.02") or 0.02,
+                    )
+                ),
+                sigma_M=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("sigma_M", "0.03") or 0.03,
+                    )
+                ),
+                rho=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("rho", "0.7") or 0.7)
+                ),
+                theta_survival=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("theta_survival", "0.4") or 0.4,
+                    )
+                ),
+                theta_neutral=float(
+                    cast(
+                        Union[str, int, float],
+                        APGI_PARAMS.get("theta_neutral", "0.6") or 0.6,
+                    )
+                ),
             )
             self.apgi = APGIIntegration(params)
 
@@ -188,28 +245,45 @@ class EnhancedAttentionalBlinkRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(
+                        cast(
+                            Union[str, int, float],
+                            APGI_PARAMS.get("beta_cross", "0.2") or 0.2,
+                        )
+                    ),
+                    tau_levels=cast(
+                        Optional[List[float]],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    )
+                    or [0.1, 0.2, 0.4, 1.0, 5.0],
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
-                self.hierarchical = None
+                self.hierarchical = None  # type: ignore[assignment]
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if APGI_PARAMS.get("precision_gap_enabled", True):
                 self.precision_gap = PrecisionExpectationState()
             else:
-                self.precision_gap = None
+                self.precision_gap = None  # type: ignore[assignment]
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": APGI_PARAMS.get("ACh", 1.0),
-                "NE": APGI_PARAMS.get("NE", 1.0),
-                "DA": APGI_PARAMS.get("DA", 1.0),
-                "HT5": APGI_PARAMS.get("HT5", 1.0),
+                "ACh": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("ACh", "1.0") or 1.0)
+                ),
+                "NE": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("NE", "1.0") or 1.0)
+                ),
+                "DA": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("DA", "1.0") or 1.0)
+                ),
+                "HT5": float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("HT5", "1.0") or 1.0)
+                ),
             }
         else:
-            self.apgi = None
+            self.apgi = None  # type: ignore[assignment]
 
     def run_experiment(self) -> Dict:
         """Execute the full Attentional Blink experiment."""
@@ -222,13 +296,14 @@ class EnhancedAttentionalBlinkRunner:
             self._run_single_trial(trial_num)
 
             # Check time budget
-            elapsed = time.time() - self.start_time
-            if elapsed > TIME_BUDGET:
-                print(f"WARNING: Time budget exceeded at trial {trial_num}")
-                break
+            if self.start_time is not None:
+                elapsed = time.time() - self.start_time
+                if elapsed > TIME_BUDGET:
+                    print(f"WARNING: Time budget exceeded at trial {trial_num}")
+                    break
 
         # Calculate final metrics
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0)
         results = self._calculate_results(completion_time)
 
         return results
@@ -272,11 +347,11 @@ class EnhancedAttentionalBlinkRunner:
 
             # 100/100: Determine precision based on trial type and neuromodulators
             # ACh increases attention precision for RSVP tasks
-            ach_boost = (
+            ach_boost = float(
                 self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
             )
             # NE increases arousal during blink window
-            ne_effect = (
+            ne_effect = float(
                 self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
             )
 
@@ -315,8 +390,13 @@ class EnhancedAttentionalBlinkRunner:
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
+                nm_floats = {
+                    k: float(v)
+                    for k, v in (self.neuromodulators or {}).items()
+                    if v is not None
+                }
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
+                    precision_ext, precision_int, nm_floats, trial_type
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -365,13 +445,13 @@ class EnhancedAttentionalBlinkRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

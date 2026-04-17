@@ -12,7 +12,7 @@ Key Features:
 
 Usage in Prepare Files:
     from experiment_apgi_integration import export_apgi_params
-    
+
     # At end of prepare file
     APGI_PARAMS = export_apgi_params(
         experiment_name="masking",
@@ -25,7 +25,7 @@ Usage in Prepare Files:
 Usage in Run Files:
     from experiment_apgi_integration import ExperimentAPGIRunner
     from prepare_experiment import APGI_PARAMS, TIME_BUDGET
-    
+
     # Wrap your existing runner
     apgi_runner = ExperimentAPGIRunner(
         base_runner=your_existing_runner,
@@ -35,7 +35,7 @@ Usage in Run Files:
 """
 
 import time
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, cast
 from dataclasses import dataclass
 
 # Import core APGI components
@@ -146,6 +146,7 @@ class ExperimentAPGIRunner:
         self.base_runner = base_runner
         self.apgi_params = apgi_params
         self.trial_callback = trial_callback
+        self.apgi: Optional[APGIIntegration] = None
 
         # Initialize APGI integration if enabled
         if apgi_params.enabled:
@@ -164,7 +165,10 @@ class ExperimentAPGIRunner:
             Results dictionary including both base metrics and APGI metrics
         """
         self.start_time = time.time()
-        self.apgi_metrics_history = []
+
+        # Only reset APGI metrics history if starting fresh (no prior trials)
+        if not self.apgi_metrics_history:
+            self.apgi_metrics_history = []
 
         # Reset APGI state
         if self.apgi:
@@ -217,7 +221,8 @@ class ExperimentAPGIRunner:
         """Run the base experiment."""
         # Check if base_runner has run_experiment method
         if hasattr(self.base_runner, "run_experiment"):
-            return self.base_runner.run_experiment()
+            result = self.base_runner.run_experiment()
+            return cast(Dict[str, Any], result)
         else:
             raise ValueError("Base runner must have run_experiment method")
 
@@ -250,7 +255,11 @@ class ExperimentAPGIRunner:
 
         for key in primary_keys:
             if key in results:
-                return results[key]
+                value = results[key]
+                if isinstance(value, (int, float)):
+                    return float(value)
+                elif isinstance(value, str) and value.replace(".", "", 1).isdigit():
+                    return float(value)
 
         # Fallback: try to find any metric
         for key, value in results.items():

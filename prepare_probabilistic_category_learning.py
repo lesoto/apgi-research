@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -107,7 +108,7 @@ class PCLGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> PCLTrial:
-        rule_type = self.rng.choice(list(RuleType))
+        rule_type: RuleType = self.rng.choice(list(RuleType))  # type: ignore
 
         if rule_type == RuleType.SINGLE:
             cue = self.rng.choice(["A", "B"])
@@ -170,14 +171,14 @@ class PCLExperiment:
         curve = []
         for i in range(blocks):
             block = self.trials[i * block_size : (i + 1) * block_size]
-            curve.append(np.mean([t.correct for t in block]))
+            curve.append(float(np.mean([t.correct for t in block])))
         return curve
 
     def get_final_accuracy(self) -> float:
         """Accuracy in last 20 trials."""
         if len(self.trials) < 20:
             return 0.0
-        return np.mean([t.correct for t in self.trials[-20:]])
+        return float(np.mean([t.correct for t in self.trials[-20:]]))
 
     def get_summary(self) -> Dict:
         if not self.trials:

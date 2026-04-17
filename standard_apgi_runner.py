@@ -6,7 +6,7 @@ It implements real-time trial processing, hierarchical dynamics, and Π vs Π̂ 
 
 Usage:
     from standard_apgi_runner import StandardAPGIRunner
-    
+
     # Wrap your existing runner
     apgi_runner = StandardAPGIRunner(
         base_runner=YourExistingRunner(),
@@ -126,8 +126,8 @@ class StandardAPGIRunner:
         self.enable_hierarchical = enable_hierarchical
         self.enable_precision_gap = enable_precision_gap
         self.timeout_seconds = timeout_seconds
-        self.timeout_start_time = None
-        self.timeout_handler = None
+        self.timeout_start_time: Optional[float] = None
+        self.timeout_handler: Optional[Callable[[int, Any], None]] = None
         self.trial_callback = trial_callback
 
         # Type annotations for optional attributes
@@ -400,7 +400,7 @@ class StandardAPGIRunner:
             # For now, simulate some trial processing
             pass
 
-        return base_results
+        return base_results  # type: ignore[no-any-return]
 
     def _setup_timeout_handler(self):
         """Setup signal handler for timeout."""
@@ -427,7 +427,7 @@ class StandardAPGIRunner:
         if (
             self.timeout_seconds > 0
             and hasattr(self, "timeout_start_time")
-            and time.time() - self.timeout_start_time > self.timeout_seconds
+            and time.time() - (self.timeout_start_time or 0) > self.timeout_seconds
         ):
             return True
         return False
@@ -510,17 +510,19 @@ class StandardAPGIRunner:
         return {
             "final_anxiety_level": float(self.precision_gap.anxiety_level),
             "final_precision_mismatch": float(self.precision_gap.precision_mismatch),
-            "mean_precision_mismatch": float(
-                np.mean(
-                    [
-                        float(m.get("precision_mismatch", 0))
-                        for m in self.apgi_metrics_history
-                        if "precision_mismatch" in m
-                    ]
+            "mean_precision_mismatch": (
+                float(
+                    np.mean(
+                        [
+                            float(m.get("precision_mismatch", 0))
+                            for m in self.apgi_metrics_history
+                            if "precision_mismatch" in m
+                        ]
+                    )
                 )
-            )
-            if self.apgi_metrics_history
-            else 0.0,
+                if self.apgi_metrics_history
+                else 0.0
+            ),
         }
 
     def _format_comprehensive_apgi_output(self, apgi_summary: Dict[str, float]) -> str:

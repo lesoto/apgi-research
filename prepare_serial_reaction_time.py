@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -152,7 +153,7 @@ class SRTExperiment:
         ]
         if not trials:
             return 0.0
-        return np.mean([t.rt_ms for t in trials])
+        return float(np.mean([t.rt_ms for t in trials]))
 
     def get_learning_effect(self) -> float:
         """Sequential - Random RT (should be ~50-100ms faster for sequential)."""

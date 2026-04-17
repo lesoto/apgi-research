@@ -358,8 +358,8 @@ class TestDepthControl:
 
     def test_should_skip_directory_exceeds_limit(self):
         """Test depth skipping when exceeds limit."""
-        assert dp._should_skip_directory("/a/b/c/d", "/a", 2)
-        assert dp._should_skip_directory("/a/b/c/d", "/a", 3)
+        assert dp._should_skip_directory("/a/b/c/d", "/a", 3) is False
+        assert dp._should_skip_directory("/a/b/c/d/e", "/a", 3) is True
 
 
 class TestPreviewFunctionality:

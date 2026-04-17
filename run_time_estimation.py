@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Optional, cast, List
 
 from prepare_time_estimation import (
     TimeEstExperiment,
@@ -36,7 +36,6 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -79,24 +78,31 @@ class EnhancedTimeEstRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = TimeEstExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
+
+        # Initialize attributes first
+        self.apgi: Optional[APGIIntegration] = None
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
+        self.neuromodulators: Optional[Dict[str, float]] = None
+        self.running_stats: Optional[Dict[str, float]] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35) or 0.35),
-                beta=float(APGI_PARAMS.get("beta", 1.5) or 1.5),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5) or 0.5),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5) or 5.5),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3) or 0.3),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7) or 0.7),
+                tau_S=float(cast(str, APGI_PARAMS.get("tau_s", 0.35))),
+                beta=float(cast(str, APGI_PARAMS.get("beta", 1.5))),
+                theta_0=float(cast(str, APGI_PARAMS.get("theta_0", 0.5))),
+                alpha=float(cast(str, APGI_PARAMS.get("alpha", 5.5))),
+                gamma_M=float(cast(str, APGI_PARAMS.get("gamma_M", -0.3))),
+                lambda_S=float(cast(str, APGI_PARAMS.get("lambda_S", 0.1))),
+                sigma_S=float(cast(str, APGI_PARAMS.get("sigma_S", 0.05))),
+                sigma_theta=float(cast(str, APGI_PARAMS.get("sigma_theta", 0.02))),
+                sigma_M=float(cast(str, APGI_PARAMS.get("sigma_M", 0.03))),
+                rho=float(cast(str, APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(cast(str, APGI_PARAMS.get("theta_survival", 0.3))),
+                theta_neutral=float(cast(str, APGI_PARAMS.get("theta_neutral", 0.4))),
             )
             self.apgi = APGIIntegration(params)
 
@@ -115,28 +121,26 @@ class EnhancedTimeEstRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
-                    tau_levels=list(
-                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0])
-                        or [0.1, 0.2, 0.4, 1.0, 5.0]
+                    beta_cross=float(cast(str, APGI_PARAMS.get("beta_cross", 0.2))),
+                    tau_levels=cast(
+                        Optional[List[float]],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
                     ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
                 self.hierarchical = None
 
-            # 100/100: Precision expectation gap (Π vs Π̂)
+            # 100/100: Precision expectation gap (Pi vs Pi_hat)
             if APGI_PARAMS.get("precision_gap_enabled", True):
                 self.precision_gap = PrecisionExpectationState()
-            else:
-                self.precision_gap = None
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0) or 1.0),
-                "NE": float(APGI_PARAMS.get("NE", 1.0) or 1.0),
-                "DA": float(APGI_PARAMS.get("DA", 1.0) or 1.0),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0) or 1.0),
+                "ACh": float(cast(str, APGI_PARAMS.get("ACh", 1.0))),
+                "NE": float(cast(str, APGI_PARAMS.get("NE", 1.0))),
+                "DA": float(cast(str, APGI_PARAMS.get("DA", 1.0))),
+                "HT5": float(cast(str, APGI_PARAMS.get("HT5", 1.0))),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -195,31 +199,38 @@ class EnhancedTimeEstRunner:
             trial_type = "neutral"
 
             # 100/100: Determine precision based on neuromodulators
-            ach_boost = self.neuromodulators.get("ACh", 1.0)
-            ne_effect = self.neuromodulators.get("NE", 1.0)
-            da_effect = self.neuromodulators.get("DA", 1.0)
+            ach_boost = (
+                self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
+            )
+            ne_effect = (
+                self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
+            )
+            da_effect = (
+                self.neuromodulators.get("DA", 1.0) if self.neuromodulators else 1.0
+            )
 
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
             # 100/100: Update running statistics
-            alpha_mu = 0.01
-            alpha_sigma = 0.005
-            self.running_stats["outcome_mean"] += alpha_mu * (
-                observed_accuracy - self.running_stats["outcome_mean"]
-            )
-            self.running_stats["outcome_var"] += alpha_sigma * (
-                (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
-                - self.running_stats["outcome_var"]
-            )
-            self.running_stats["outcome_var"] = max(
-                0.01, self.running_stats["outcome_var"]
-            )
+            if self.running_stats is not None:
+                alpha_mu = 0.01
+                alpha_sigma = 0.005
+                self.running_stats["outcome_mean"] += alpha_mu * (
+                    observed_accuracy - self.running_stats["outcome_mean"]
+                )
+                self.running_stats["outcome_var"] += alpha_sigma * (
+                    (observed_accuracy - self.running_stats["outcome_mean"]) ** 2
+                    - self.running_stats["outcome_var"]
+                )
+                self.running_stats["outcome_var"] = max(
+                    0.01, self.running_stats["outcome_var"]
+                )
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators, trial_type
+                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -242,7 +253,7 @@ class EnhancedTimeEstRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0.0)
 
         results = {
             "num_trials": len(self.experiment.trials),
@@ -265,9 +276,9 @@ class EnhancedTimeEstRunner:
             )
             results["apgi_mean_threshold"] = apgi_summary.get("mean_threshold", 0.0)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
             if self.neuromodulators:
                 results["apgi_acetylcholine"] = self.neuromodulators.get("ACh", 1.0)

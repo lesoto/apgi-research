@@ -13,6 +13,7 @@ Masking paradigms:
 - Metacontrast: Mask surrounds target (spatial interference)
 - SOA effects: Performance varies with stimulus onset asynchrony
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -125,7 +126,7 @@ class MaskingGenerator:
 
     def create_trial(self, trial_number: int) -> MaskingTrial:
         is_present = self.rng.random() < TARGET_PROBABILITY
-        mask_type = self.rng.choice(list(MaskType))
+        mask_type: MaskType = self.rng.choice(list(MaskType))  # type: ignore
         target = self.rng.choice(TARGETS) if is_present else None
         mask_dur = int(self.rng.choice(MASK_DURATIONS))
         soa = int(self.rng.choice([0, 30, 60, 100]))
@@ -134,9 +135,9 @@ class MaskingGenerator:
             trial_number=trial_number,
             mask_type=mask_type,
             target=target,
-            trial_type=TrialType.TARGET_PRESENT
-            if is_present
-            else TrialType.TARGET_ABSENT,
+            trial_type=(
+                TrialType.TARGET_PRESENT if is_present else TrialType.TARGET_ABSENT
+            ),
             target_duration_ms=TARGET_DURATION,
             mask_duration_ms=mask_dur,
             soa_ms=soa,

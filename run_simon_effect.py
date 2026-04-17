@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Optional, cast, Union
 
 from prepare_simon_effect import (
     SimonExperiment,
@@ -36,7 +36,6 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -85,46 +84,125 @@ class SimulatedParticipant:
 
 class EnhancedSimonRunner:
     def __init__(self, enable_apgi: bool = True):
+        # Type declarations first
+        self.apgi: Optional[APGIIntegration]
+        self.hierarchical: Optional[HierarchicalProcessor]
+        self.precision_gap: Optional[PrecisionExpectationState]
+        self.neuromodulators: Optional[dict[str, float]]
+        self.running_stats: Optional[dict[str, float]]
+        self.start_time: Optional[float] = None
+
         self.experiment = SimonExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35)),
-                beta=float(APGI_PARAMS.get("beta", 1.5)),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5)),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5)),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3)),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1)),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05)),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02)),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03)),
-                rho=float(APGI_PARAMS.get("rho", 0.7)),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3)),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7)),
+                tau_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("tau_s", 0.35))
+                ),
+                beta=float(cast(Union[str, int, float], APGI_PARAMS.get("beta", 1.5))),
+                theta_0=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_0", 0.5))
+                ),
+                alpha=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("alpha", 5.5))
+                ),
+                gamma_M=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("gamma_M", -0.3))
+                ),
+                lambda_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("lambda_S", 0.1))
+                ),
+                sigma_S=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_S", 0.05))
+                ),
+                sigma_theta=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_theta", 0.02))
+                ),
+                sigma_M=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("sigma_M", 0.03))
+                ),
+                rho=float(cast(Union[str, int, float], APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_survival", 0.3))
+                ),
+                theta_neutral=float(
+                    cast(Union[str, int, float], APGI_PARAMS.get("theta_neutral", 0.7))
+                ),
             )
             self.apgi = APGIIntegration(params)
 
             # 100/100: Hierarchical 5-level processing (requires UltimateAPGIParameters)
             if APGI_PARAMS.get("hierarchical_enabled", True):
                 ultimate_params = UltimateAPGIParameters(
-                    tau_S=params.tau_S,
-                    beta=params.beta,
-                    theta_0=params.theta_0,
-                    alpha=params.alpha,
-                    gamma_M=params.gamma_M,
-                    lambda_S=params.lambda_S,
-                    sigma_S=params.sigma_S,
-                    sigma_theta=params.sigma_theta,
-                    sigma_M=params.sigma_M,
-                    rho=params.rho,
-                    theta_survival=params.theta_survival,
-                    theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    tau_S=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("tau_s", 0.35)),
+                    ),
+                    beta=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("beta", 1.5)),
+                    ),
+                    theta_0=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("theta_0", 0.5)),
+                    ),
+                    alpha=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("alpha", 5.5)),
+                    ),
+                    gamma_M=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("gamma_M", -0.3)),
+                    ),
+                    lambda_S=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("lambda_S", 0.1)),
+                    ),
+                    sigma_S=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("sigma_S", 0.05)),
+                    ),
+                    sigma_theta=cast(
+                        float,
+                        cast(
+                            Union[str, int, float], APGI_PARAMS.get("sigma_theta", 0.02)
+                        ),
+                    ),
+                    sigma_M=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("sigma_M", 0.03)),
+                    ),
+                    rho=cast(
+                        float,
+                        cast(Union[str, int, float], APGI_PARAMS.get("rho", 0.7)),
+                    ),
+                    theta_survival=cast(
+                        float,
+                        cast(
+                            Union[str, int, float],
+                            APGI_PARAMS.get("theta_survival", 0.3),
+                        ),
+                    ),
+                    theta_neutral=cast(
+                        float,
+                        cast(
+                            Union[str, int, float],
+                            APGI_PARAMS.get("theta_neutral", 0.7),
+                        ),
+                    ),
+                    beta_cross=cast(
+                        float,
+                        cast(
+                            Union[str, int, float], APGI_PARAMS.get("beta_cross", 0.2)
+                        ),
+                    ),
+                    tau_levels=cast(
+                        list[float],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -138,10 +216,10 @@ class EnhancedSimonRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0)),
-                "NE": float(APGI_PARAMS.get("NE", 1.0)),
-                "DA": float(APGI_PARAMS.get("DA", 1.0)),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0)),
+                "ACh": float(cast(Union[str, int, float], APGI_PARAMS.get("ACh", 1.0))),
+                "NE": float(cast(Union[str, int, float], APGI_PARAMS.get("NE", 1.0))),
+                "DA": float(cast(Union[str, int, float], APGI_PARAMS.get("DA", 1.0))),
+                "HT5": float(cast(Union[str, int, float], APGI_PARAMS.get("HT5", 1.0))),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -166,7 +244,10 @@ class EnhancedSimonRunner:
         for trial_num in range(NUM_TRIALS_CONFIG):
             self._run_single_trial(trial_num)
 
-            if time.time() - self.start_time > TIME_BUDGET:
+            if (
+                self.start_time is not None
+                and time.time() - self.start_time > TIME_BUDGET
+            ):
                 break
 
         return self._calculate_results()
@@ -186,6 +267,8 @@ class EnhancedSimonRunner:
 
         # 100/100: Process with APGI if enabled
         if self.apgi:
+            assert self.neuromodulators is not None
+            assert self.running_stats is not None
             # Compute prediction error from trial outcome
             observed_accuracy = 1.0 if correct else 0.0
             expected_accuracy = 0.5  # Baseline
@@ -241,7 +324,8 @@ class EnhancedSimonRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        start_time = self.start_time if self.start_time is not None else time.time()
+        completion_time = time.time() - start_time
 
         apgi_metrics = {}
         if self.apgi and hasattr(self.apgi, "finalize"):

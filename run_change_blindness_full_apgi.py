@@ -37,7 +37,6 @@ from prepare_change_blindness import (
 from standard_apgi_runner import StandardAPGIRunner
 from experiment_apgi_integration import get_experiment_apgi_config
 
-
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
 # ---------------------------------------------------------------------------
@@ -283,9 +282,9 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
                 ]
                 if level_trials:
                     level_detections = sum(1 for t in level_trials if t["detected"])
-                    level_performance[
-                        f"level_{level}_detection_rate"
-                    ] = level_detections / len(level_trials)
+                    level_performance[f"level_{level}_detection_rate"] = (
+                        level_detections / len(level_trials)
+                    )
                     level_performance[f"level_{level}_mean_ignition_prob"] = np.mean(
                         [t.get("ignition_prob", 0) for t in level_trials]
                     )
@@ -310,9 +309,9 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
             "trial_metrics": self.trial_metrics,
             "hierarchical_levels_used": self.hierarchical_levels_used,
             # Performance summary
-            "completion_time_s": time.time() - self.start_time
-            if self.start_time
-            else 0,
+            "completion_time_s": (
+                time.time() - self.start_time if self.start_time else 0
+            ),
         }
 
         # Print comprehensive results

@@ -215,12 +215,10 @@ class TestGitPerformanceTracker:
 
         # Create a run file that will be committed
         run_file = self.repo_path / "run_test_experiment.py"
-        run_file.write_text(
-            """
+        run_file.write_text("""
 BASE_DETECTION_RATE = 0.5
 NUM_TRIALS_CONFIG = 100
-"""
-        )
+""")
 
         modifications = {"BASE_DETECTION_RATE": 0.5}
         commit_hash = tracker.commit_experiment(modifications)
@@ -270,7 +268,8 @@ NUM_TRIALS_CONFIG = 100
             else:
                 return new_metric < best_metric
 
-        tracker.is_improvement = mock_is_improvement
+        # Use setattr to properly monkey-patch the method
+        setattr(tracker, "is_improvement", mock_is_improvement)
 
         # Test improvements
         assert tracker.is_improvement("test_experiment", 0.9) is True

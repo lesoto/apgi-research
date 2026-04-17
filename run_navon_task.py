@@ -22,7 +22,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, Optional, cast, Any
 
 # APGI Integration
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -35,13 +35,13 @@ from ultimate_apgi_template import (
 from prepare_navon_task import NavonExperiment, TargetLevel, APGI_PARAMS
 
 # Local TIME_BUDGET for reference (must match prepare file)
-TIME_BUDGET = APGI_PARAMS.get("time_budget", 600)  # 10 minutes per experiment
+TIME_BUDGET = float(
+    cast(Any, APGI_PARAMS.get("time_budget", 600))
+)  # 10 minutes per experiment
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
-
-TIME_BUDGET = 600  # noqa: F811
 
 NUM_TRIALS_CONFIG = 100
 
@@ -93,28 +93,33 @@ class EnhancedNavonRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = NavonExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
+        self.apgi: Optional[APGIIntegration] = None
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
+        self.neuromodulators: Optional[Dict[str, float]] = None
+        self.running_stats: Dict[str, float] = {}
+
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=APGI_PARAMS.get("tau_s", 0.35),
-                beta=APGI_PARAMS.get("beta", 1.5),
-                theta_0=APGI_PARAMS.get("theta_0", 0.5),
-                alpha=APGI_PARAMS.get("alpha", 5.5),
-                gamma_M=APGI_PARAMS.get("gamma_M", -0.3),
-                lambda_S=APGI_PARAMS.get("lambda_S", 0.1),
-                sigma_S=APGI_PARAMS.get("sigma_S", 0.05),
-                sigma_theta=APGI_PARAMS.get("sigma_theta", 0.02),
-                sigma_M=APGI_PARAMS.get("sigma_M", 0.03),
-                rho=APGI_PARAMS.get("rho", 0.7),
-                theta_survival=APGI_PARAMS.get("theta_survival", 0.3),
-                theta_neutral=APGI_PARAMS.get("theta_neutral", 0.7),
+                tau_S=float(cast(Any, APGI_PARAMS.get("tau_s", 0.35))),
+                beta=float(cast(Any, APGI_PARAMS.get("beta", 1.5))),
+                theta_0=float(cast(Any, APGI_PARAMS.get("theta_0", 0.5))),
+                alpha=float(cast(Any, APGI_PARAMS.get("alpha", 5.5))),
+                gamma_M=float(cast(Any, APGI_PARAMS.get("gamma_M", -0.3))),
+                lambda_S=float(cast(Any, APGI_PARAMS.get("lambda_S", 0.1))),
+                sigma_S=float(cast(Any, APGI_PARAMS.get("sigma_S", 0.05))),
+                sigma_theta=float(cast(Any, APGI_PARAMS.get("sigma_theta", 0.02))),
+                sigma_M=float(cast(Any, APGI_PARAMS.get("sigma_M", 0.03))),
+                rho=float(cast(Any, APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(cast(Any, APGI_PARAMS.get("theta_survival", 0.3))),
+                theta_neutral=float(cast(Any, APGI_PARAMS.get("theta_neutral", 0.7))),
             )
             self.apgi = APGIIntegration(params)
 
-            # 100/100: Hierarchical 5-level processing (requires UltimateAPGIParameters)
             if APGI_PARAMS.get("hierarchical_enabled", True):
                 ultimate_params = UltimateAPGIParameters(
                     tau_S=params.tau_S,
@@ -129,38 +134,37 @@ class EnhancedNavonRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(cast(Any, APGI_PARAMS.get("beta_cross", 0.2))),
+                    tau_levels=cast(
+                        list[float],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
-                self.hierarchical = None
+                pass  # self.hierarchical already initialized as None
 
-            # 100/100: Precision expectation gap (Π vs Π̂)
             if APGI_PARAMS.get("precision_gap_enabled", True):
                 self.precision_gap = PrecisionExpectationState()
             else:
-                self.precision_gap = None
+                pass  # self.precision_gap already initialized as None
 
-            # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": APGI_PARAMS.get("ACh", 1.0),
-                "NE": APGI_PARAMS.get("NE", 1.0),
-                "DA": APGI_PARAMS.get("DA", 1.0),
-                "HT5": APGI_PARAMS.get("HT5", 1.0),
+                "ACh": float(cast(Any, APGI_PARAMS.get("ACh", 1.0))),
+                "NE": float(cast(Any, APGI_PARAMS.get("NE", 1.0))),
+                "DA": float(cast(Any, APGI_PARAMS.get("DA", 1.0))),
+                "HT5": float(cast(Any, APGI_PARAMS.get("HT5", 1.0))),
             }
 
             # 100/100: Running statistics for z-score normalization
             self.running_stats = {
-                "rt_mean": 500.0,
-                "rt_var": 25000.0,
+                "outcome_mean": 0.5,
+                "outcome_var": 0.25,
+                "rt_mean": 450.0,
+                "rt_var": 20250.0,
             }
         else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
+            pass  # Variables already initialized with None/default values above
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -170,7 +174,7 @@ class EnhancedNavonRunner:
         for trial_num in range(NUM_TRIALS_CONFIG):
             self._run_single_trial(trial_num)
 
-            if time.time() - self.start_time > TIME_BUDGET:
+            if time.time() - (self.start_time or 0.0) > TIME_BUDGET:
                 break
 
         return self._calculate_results()
@@ -252,7 +256,7 @@ class EnhancedNavonRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0.0)
 
         results = {
             "num_trials": len(self.experiment.trials),
@@ -280,13 +284,13 @@ class EnhancedNavonRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

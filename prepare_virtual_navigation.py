@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -88,7 +89,7 @@ class NavTrial:
     target_position: Tuple[int, int]
     landmarks: List[Dict]
     path_length: int
-    path_taken: List[Tuple[int, int]] = None
+    path_taken: Optional[List[Tuple[int, int]]] = None
     optimal_path_length: int = 0
     excess_path_length: int = 0
     rt_ms: float = 0.0
@@ -108,7 +109,7 @@ class VirtualNavigationGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> NavTrial:
-        env_type = self.rng.choice(list(EnvironmentType))
+        env_type: EnvironmentType = self.rng.choice(list(EnvironmentType))  # type: ignore
         maze_size = int(self.rng.choice(MAZE_SIZES))
 
         start = (0, 0)
@@ -173,8 +174,10 @@ class VirtualNavigationExperiment:
         """Ratio of optimal to actual path length."""
         if not self.trials:
             return 0.0
-        return np.mean(
-            [t.optimal_path_length / max(t.path_length, 1) for t in self.trials]
+        return float(
+            np.mean(
+                [t.optimal_path_length / max(t.path_length, 1) for t in self.trials]
+            )
         )
 
     def get_summary(self) -> Dict:

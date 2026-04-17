@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, List, cast
+from typing import Dict, List, cast, Optional
 
 from prepare_somatic_marker_priming import (
     SomaticMarkerExperiment,
@@ -36,7 +36,6 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -68,12 +67,20 @@ class SimulatedParticipant:
         pass
 
     def process_trial(self, marker_type: PrimeType) -> tuple:
+        # Priming effect: same marker types are processed faster
         if marker_type == PrimeType.POSITIVE:
+            # Simulated bias towards positive outcomes in POSITIVE prime
             rt = SAME_MARKER_RT + np.random.normal(0, RT_VARIABILITY)
-        else:
+            correct = np.random.random() < 0.98  # Higher accuracy
+        elif marker_type == PrimeType.NEGATIVE:
             rt = DIFFERENT_MARKER_RT + np.random.normal(0, RT_VARIABILITY)
+            correct = np.random.random() < 0.92
+        else:
+            rt = (SAME_MARKER_RT + DIFFERENT_MARKER_RT) / 2 + np.random.normal(
+                0, RT_VARIABILITY
+            )
+            correct = np.random.random() < 0.95
 
-        correct = np.random.random() < 0.95
         return correct, max(200, rt)
 
 
@@ -86,24 +93,32 @@ class EnhancedSomaticMarkerRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = SomaticMarkerExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
+
+        # APGI component placeholders
+        self.hierarchical: Optional[HierarchicalProcessor] = None
+        self.precision_gap: Optional[PrecisionExpectationState] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35) or 0.35),
-                beta=float(APGI_PARAMS.get("beta", 1.5) or 1.5),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5) or 0.5),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5) or 5.5),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3) or 0.3),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7) or 0.7),
+                tau_S=float(str(APGI_PARAMS.get("tau_s", 0.35) or 0.35)),
+                beta=float(str(APGI_PARAMS.get("beta", 1.5) or 1.5)),
+                theta_0=float(str(APGI_PARAMS.get("theta_0", 0.5) or 0.5)),
+                alpha=float(str(APGI_PARAMS.get("alpha", 5.5) or 5.5)),
+                gamma_M=float(str(APGI_PARAMS.get("gamma_M", -0.3) or -0.3)),
+                lambda_S=float(str(APGI_PARAMS.get("lambda_S", 0.1) or 0.1)),
+                sigma_S=float(str(APGI_PARAMS.get("sigma_S", 0.05) or 0.05)),
+                sigma_theta=float(str(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02)),
+                sigma_M=float(str(APGI_PARAMS.get("sigma_M", 0.03) or 0.03)),
+                rho=float(str(APGI_PARAMS.get("rho", 0.7) or 0.7)),
+                theta_survival=float(
+                    str(APGI_PARAMS.get("theta_survival", 0.3) or 0.3)
+                ),
+                theta_neutral=float(
+                    str(APGI_PARAMS.get("theta_neutral", "0.7") or 0.7)
+                ),
             )
             self.apgi = APGIIntegration(params)
 
@@ -121,8 +136,8 @@ class EnhancedSomaticMarkerRunner:
                     sigma_M=params.sigma_M,
                     rho=params.rho,
                     theta_survival=params.theta_survival,
-                    theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
+                    theta_neutral=float(params.theta_neutral),
+                    beta_cross=float(str(APGI_PARAMS.get("beta_cross", 0.2) or 0.2)),
                     tau_levels=cast(
                         List[float],
                         APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0])
@@ -141,10 +156,10 @@ class EnhancedSomaticMarkerRunner:
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0) or 1.0),
-                "NE": float(APGI_PARAMS.get("NE", 1.0) or 1.0),
-                "DA": float(APGI_PARAMS.get("DA", 1.0) or 1.0),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0) or 1.0),
+                "ACh": float(str(APGI_PARAMS.get("ACh", "1.0") or 1.0)),
+                "NE": float(str(APGI_PARAMS.get("NE", "1.0") or 1.0)),
+                "DA": float(str(APGI_PARAMS.get("DA", "1.0") or 1.0)),
+                "HT5": float(str(APGI_PARAMS.get("HT5", "1.0") or 1.0)),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -155,12 +170,12 @@ class EnhancedSomaticMarkerRunner:
                 "rt_var": 40000.0,
             }
         # APGI tracking across trials
-        self.apgi_states = []
-        self.ignition_history = []
-        self.surprise_history = []
-        self.threshold_history = []
-        self.somatic_marker_history = []
-        self.metabolic_cost_history = []
+        self.apgi_states: List[Dict] = []
+        self.ignition_history: List[float] = []
+        self.surprise_history: List[float] = []
+        self.threshold_history: List[float] = []
+        self.somatic_marker_history: List[float] = []
+        self.metabolic_cost_history: List[float] = []
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -180,7 +195,18 @@ class EnhancedSomaticMarkerRunner:
         if trial is None:
             return
 
-        correct, rt = self.participant.process_trial(trial.emotion_type)
+        # Convert EmotionType to PrimeType for compatibility
+        emotion_str = (
+            trial.emotion_type.value
+            if hasattr(trial.emotion_type, "value")
+            else str(trial.emotion_type)
+        )
+        prime_type = (
+            PrimeType.POSITIVE
+            if emotion_str == "positive"
+            else PrimeType.NEGATIVE if emotion_str == "negative" else PrimeType.NEUTRAL
+        )
+        correct, rt = self.participant.process_trial(prime_type)
 
         self.experiment.run_trial(
             trial=trial,
@@ -240,15 +266,22 @@ class EnhancedSomaticMarkerRunner:
 
             # 100/100: Track APGI state
             self.apgi_states.append(apgi_state)
-            self.ignition_history.append(apgi_state.get("ignition_prob", 0.0))
-            self.surprise_history.append(apgi_state.get("surprise", 0.0))
-            self.threshold_history.append(apgi_state.get("theta", 0.5))
-            self.somatic_marker_history.append(apgi_state.get("M", 0.0))
-            self.metabolic_cost_history.append(apgi_state.get("metabolic_cost", 0.0))
+            self.ignition_history.append(
+                float(apgi_state.get("ignition_prob", 0.0) or 0.0)
+            )
+            self.surprise_history.append(float(apgi_state.get("surprise", 0.0) or 0.0))
+            self.threshold_history.append(float(apgi_state.get("theta", 0.5) or 0.5))
+            self.somatic_marker_history.append(float(apgi_state.get("M", 0.0) or 0.0))
+            self.metabolic_cost_history.append(
+                float(apgi_state.get("metabolic_cost", 0.0) or 0.0)
+            )
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        if self.start_time is not None:
+            completion_time = time.time() - self.start_time
+        else:
+            completion_time = 0.0
 
         results = {
             "num_trials": len(self.experiment.trials),
@@ -264,33 +297,39 @@ class EnhancedSomaticMarkerRunner:
         if self.apgi_states:
             apgi_metrics = {
                 "apgi_enabled": True,
-                "apgi_ignition_rate": np.mean(self.ignition_history) * 100,
+                "apgi_ignition_rate": min(
+                    1.0, max(0.0, np.mean(self.ignition_history))
+                ),
                 "apgi_mean_surprise": np.mean(self.surprise_history),
                 "apgi_metabolic_cost": np.mean(self.metabolic_cost_history),
                 "apgi_mean_somatic_marker": np.mean(self.somatic_marker_history),
-                "apgi_mean_threshold": np.mean(self.threshold_history)
-                if self.threshold_history
-                else 0.5,
+                "apgi_mean_threshold": (
+                    np.mean(self.threshold_history) if self.threshold_history else 0.5
+                ),
             }
 
             if self.precision_gap:
-                apgi_metrics[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                apgi_metrics["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 apgi_metrics["apgi_anxiety_level"] = self.precision_gap.anxiety_level
 
             if self.neuromodulators:
-                apgi_metrics["apgi_acetylcholine"] = self.neuromodulators.get(
-                    "ACh", 1.0
+                apgi_metrics["apgi_acetylcholine"] = float(
+                    self.neuromodulators.get("ACh", 1.0) or 1.0
                 )
-                apgi_metrics["apgi_norepinephrine"] = self.neuromodulators.get(
-                    "NE", 1.0
+                apgi_metrics["apgi_norepinephrine"] = float(
+                    self.neuromodulators.get("NE", 1.0) or 1.0
                 )
-                apgi_metrics["apgi_dopamine"] = self.neuromodulators.get("DA", 1.0)
-                apgi_metrics["apgi_serotonin"] = self.neuromodulators.get("HT5", 1.0)
+                apgi_metrics["apgi_dopamine"] = float(
+                    self.neuromodulators.get("DA", 1.0) or 1.0
+                )
+                apgi_metrics["apgi_serotonin"] = float(
+                    self.neuromodulators.get("HT5", 1.0) or 1.0
+                )
         else:
             apgi_metrics = {
-                "apgi_enabled": self.enable_apgi,
+                "apgi_enabled": float(bool(self.enable_apgi)),
                 "apgi_ignition_rate": 0.0,
                 "apgi_mean_surprise": 0.0,
                 "apgi_metabolic_cost": 0.0,

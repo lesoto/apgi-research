@@ -90,7 +90,7 @@ class GitRollbackManager:
         """Get the current commit hash."""
         try:
             result = self._run_git_command(["rev-parse", "HEAD"])
-            return result.stdout.strip()
+            return str(result.stdout.strip())
         except RuntimeError:
             # No commits yet, try to get the initial commit or return empty string
             try:
@@ -99,7 +99,7 @@ class GitRollbackManager:
                     check=False,
                 )
                 if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip()
+                    return str(result.stdout.strip())
                 return ""
             except Exception:
                 return ""
@@ -108,7 +108,7 @@ class GitRollbackManager:
         """Get the current branch name."""
         try:
             result = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
-            return result.stdout.strip()
+            return str(result.stdout.strip())
         except RuntimeError:
             # No commits yet or no HEAD, try to get the default branch
             try:
@@ -116,7 +116,7 @@ class GitRollbackManager:
                     ["branch", "--show-current"], check=False
                 )
                 if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip()
+                    return str(result.stdout.strip())
                 return "main"  # Default fallback
             except Exception:
                 return "main"  # Default fallback

@@ -75,7 +75,7 @@ All experiments should implement these components for full compliance.
 # =============================================================================
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import numpy as np
 
 from apgi_integration import APGIParameters
@@ -216,7 +216,7 @@ class HierarchicalProcessor:
     def __init__(self, params: UltimateAPGIParameters):
         self.params = params
         self.levels = [HierarchicalLevel() for _ in range(5)]
-        self.cross_level_broadcast = [False] * 5  # B_ℓ for each level
+        self.cross_level_broadcast: List[float] = [0.0] * 5  # B_ℓ for each level
 
     def process_level(self, level_idx: int, input_signal: float, dt: float = 0.01):
         """Process single hierarchical level."""
@@ -341,13 +341,13 @@ class UltimateAPGIRunner:
         self.dynamics = DynamicalSystem(self.params)
 
         # 100/100 components
-        self.hierarchical = (
+        self.hierarchical: Optional[HierarchicalProcessor] = (
             HierarchicalProcessor(self.params) if enable_hierarchical else None
         )
-        self.precision_gap = (
+        self.precision_gap: Optional[PrecisionExpectationState] = (
             PrecisionExpectationState() if enable_precision_gap else None
         )
-        self.neuromodulators = (
+        self.neuromodulators: Optional[Dict[str, float]] = (
             {
                 "ACh": self.params.ACh,
                 "NE": self.params.NE,
@@ -369,7 +369,7 @@ class UltimateAPGIRunner:
         trial_type: str = "neutral",
         rt_ms: Optional[float] = None,
         confidence: Optional[float] = None,
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """Process trial with 100/100 APGI compliance."""
 
         # 1. Compute prediction errors
@@ -446,7 +446,7 @@ class UltimateAPGIRunner:
 
         return metrics
 
-    def get_ultimate_summary(self) -> Dict[str, float]:
+    def get_ultimate_summary(self) -> Dict[str, Any]:
         """Get comprehensive APGI summary for 100/100 compliance."""
         base_summary = self.apgi.dynamics.get_summary()
 
@@ -467,21 +467,21 @@ class UltimateAPGIRunner:
                 if self.apgi_metrics_history
                 else 0.0
             ),
-            "mean_anxiety_level": np.mean(
-                [m["anxiety_level"] for m in self.apgi_metrics_history]
-            )
-            if self.apgi_metrics_history
-            else 0.0,
-            "mean_z_exteroceptive": np.mean(
-                [m["z_e"] for m in self.apgi_metrics_history]
-            )
-            if self.apgi_metrics_history
-            else 0.0,
-            "mean_z_interoceptive": np.mean(
-                [m["z_i"] for m in self.apgi_metrics_history]
-            )
-            if self.apgi_metrics_history
-            else 0.0,
+            "mean_anxiety_level": (
+                np.mean([m["anxiety_level"] for m in self.apgi_metrics_history])
+                if self.apgi_metrics_history
+                else 0.0
+            ),
+            "mean_z_exteroceptive": (
+                np.mean([m["z_e"] for m in self.apgi_metrics_history])
+                if self.apgi_metrics_history
+                else 0.0
+            ),
+            "mean_z_interoceptive": (
+                np.mean([m["z_i"] for m in self.apgi_metrics_history])
+                if self.apgi_metrics_history
+                else 0.0
+            ),
         }
 
         # Add hierarchical summary

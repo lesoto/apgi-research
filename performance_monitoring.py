@@ -189,7 +189,7 @@ class PerformanceMonitor:
         return CPUSnapshot(
             timestamp=time.time(),
             percent=cpu_percent,
-            count=cpu_count,
+            count=cpu_count or 1,
             freq_mhz=cpu_freq.current if cpu_freq else 0,
             load_avg=load_avg,
         )
@@ -312,9 +312,9 @@ class PerformanceMonitor:
                 "total_operations": len(metrics),
                 "successful_operations": len(successful_metrics),
                 "failed_operations": len(failed_metrics),
-                "success_rate": len(successful_metrics) / len(metrics)
-                if metrics
-                else 0,
+                "success_rate": (
+                    len(successful_metrics) / len(metrics) if metrics else 0
+                ),
             }
 
             if successful_metrics:
@@ -381,9 +381,9 @@ class PerformanceMonitor:
                 "trend_slope": trend_slope,
                 "trend_direction": trend_direction,
                 "samples": len(memory_values),
-                "time_span_minutes": (timestamps[-1] - timestamps[0]) / 60
-                if len(timestamps) > 1
-                else 0,
+                "time_span_minutes": (
+                    (timestamps[-1] - timestamps[0]) / 60 if len(timestamps) > 1 else 0
+                ),
             }
 
     def get_cpu_trend(self) -> Dict[str, Any]:
@@ -421,9 +421,9 @@ class PerformanceMonitor:
                 "trend_slope": trend_slope,
                 "trend_direction": trend_direction,
                 "samples": len(cpu_values),
-                "time_span_minutes": (timestamps[-1] - timestamps[0]) / 60
-                if len(timestamps) > 1
-                else 0,
+                "time_span_minutes": (
+                    (timestamps[-1] - timestamps[0]) / 60 if len(timestamps) > 1 else 0
+                ),
             }
 
     def detect_performance_regression(
@@ -517,7 +517,8 @@ class PerformanceMonitor:
                 # Memory usage plot
                 fig, ax = plt.subplots(figsize=(10, 6))
                 timestamps = [
-                    datetime.fromtimestamp(s.timestamp) for s in self.memory_history
+                    datetime.fromtimestamp(s.timestamp).timestamp()
+                    for s in self.memory_history
                 ]
                 memory_values = [s.rss_mb for s in self.memory_history]
 
@@ -541,7 +542,8 @@ class PerformanceMonitor:
                 # CPU usage plot
                 fig, ax = plt.subplots(figsize=(10, 6))
                 timestamps = [
-                    datetime.fromtimestamp(s.timestamp) for s in self.cpu_history
+                    datetime.fromtimestamp(s.timestamp).timestamp()
+                    for s in self.cpu_history
                 ]
                 cpu_values = [s.percent for s in self.cpu_history]
 

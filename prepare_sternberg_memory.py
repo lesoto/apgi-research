@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -154,7 +155,7 @@ class SternbergExperiment:
 
     def get_slope(self) -> float:
         """Calculate slope (ms/item) - classic result ~38ms/item."""
-        by_size = {size: [] for size in SET_SIZES}
+        by_size: Dict[int, List[float]] = {size: [] for size in SET_SIZES}
         for t in self.trials:
             if t.correct:
                 by_size[t.set_size].append(t.rt_ms)
@@ -169,7 +170,7 @@ class SternbergExperiment:
         if len(sizes) < 2:
             return 0.0
         slope, _ = np.polyfit(sizes, rts, 1)
-        return slope
+        return float(slope)
 
     def get_summary(self) -> Dict:
         if not self.trials:

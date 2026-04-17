@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, cast, Optional, List
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -76,9 +76,11 @@ class SimulatedParticipant:
         self, search_type: SearchType, display_size: int, target_present: bool
     ) -> tuple:
         if search_type == SearchType.FEATURE:
-            base_rt = self.feature_intercept + self.feature_slope * display_size
+            base_rt = float(self.feature_intercept + self.feature_slope * display_size)
         else:
-            base_rt = self.conjunction_intercept + self.conjunction_slope * display_size
+            base_rt = float(
+                self.conjunction_intercept + self.conjunction_slope * display_size
+            )
 
         if not target_present:
             base_rt *= 1.2  # Absent trials ~20% slower
@@ -106,10 +108,10 @@ class EnhancedVisualSearchRunner:
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=APGI_PARAMS.get("tau_s", 0.35),
-                beta=APGI_PARAMS.get("beta", 1.3),
-                theta_0=APGI_PARAMS.get("theta_0", 0.5),
-                alpha=APGI_PARAMS.get("alpha", 5.0),
+                tau_S=float(cast(float, APGI_PARAMS.get("tau_s", 0.35))),
+                beta=float(cast(float, APGI_PARAMS.get("beta", 1.3))),
+                theta_0=float(cast(float, APGI_PARAMS.get("theta_0", 0.5))),
+                alpha=float(cast(float, APGI_PARAMS.get("alpha", 5.0))),
             )
             self.apgi = APGIIntegration(params)
 
@@ -128,38 +130,44 @@ class EnhancedVisualSearchRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(cast(float, APGI_PARAMS.get("beta_cross", 0.2))),
+                    tau_levels=cast(
+                        Optional[List[float]],
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
-                self.hierarchical = None
+                self.hierarchical = None  # type: ignore[assignment]
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if APGI_PARAMS.get("precision_gap_enabled", True):
                 self.precision_gap = PrecisionExpectationState()
             else:
-                self.precision_gap = None
+                self.precision_gap = None  # type: ignore[assignment]
 
             # 100/100: Neuromodulator tracking
-            self.neuromodulators = {
-                "ACh": APGI_PARAMS.get("ACh", 1.0),
-                "NE": APGI_PARAMS.get("NE", 1.0),
-                "DA": APGI_PARAMS.get("DA", 1.0),
-                "HT5": APGI_PARAMS.get("HT5", 1.0),
+            self.neuromodulators: Dict[str, float] = {
+                "ACh": float(cast(float, APGI_PARAMS.get("ACh", 1.0))),
+                "NE": float(cast(float, APGI_PARAMS.get("NE", 1.0))),
+                "DA": float(cast(float, APGI_PARAMS.get("DA", 1.0))),
+                "HT5": float(cast(float, APGI_PARAMS.get("HT5", 1.0))),
             }
         else:
-            self.apgi = None
+            self.apgi = None  # type: ignore[assignment]
 
     def run_experiment(self) -> Dict:
-        self.start_time = time.time()
+        self.start_time = time.time()  # type: ignore[assignment]
         self.experiment.reset()
         self.participant.reset()
 
         for trial_num in range(NUM_TRIALS_CONFIG):
             self._run_single_trial(trial_num)
 
-            if time.time() - self.start_time > TIME_BUDGET:
+            if (
+                self.start_time is not None
+                and time.time() - self.start_time > TIME_BUDGET
+            ):
                 break
 
         return self._calculate_results()
@@ -204,17 +212,20 @@ class EnhancedVisualSearchRunner:
             )
 
             # 100/100: Determine precision based on neuromodulators
-            ach_boost = self.neuromodulators.get("ACh", 1.0)
-            ne_effect = self.neuromodulators.get("NE", 1.0)
-            da_effect = self.neuromodulators.get("DA", 1.0)
+            ach_boost = float(self.neuromodulators.get("ACh", 1.0))
+            ne_effect = float(self.neuromodulators.get("NE", 1.0))
+            da_effect = float(self.neuromodulators.get("DA", 1.0))
 
             precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
             precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
+                nm_floats = {
+                    k: float(v) for k, v in (self.neuromodulators or {}).items()
+                }
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
+                    precision_ext, precision_int, nm_floats, trial_type
                 )
                 precision_ext = self.precision_gap.Pi_e_actual
                 precision_int = self.precision_gap.Pi_i_actual
@@ -239,17 +250,17 @@ class EnhancedVisualSearchRunner:
                 observed=observed_rt,
                 predicted=expected_rt_sec,
                 trial_type=trial_type,
-                precision_ext=2.0
-                if trial.search_type == SearchType.CONJUNCTION
-                else 1.0,
-                precision_int=1.5
-                if correct
-                else 1.0,  # Correct detection increases precision
+                precision_ext=(
+                    2.0 if trial.search_type == SearchType.CONJUNCTION else 1.0
+                ),
+                precision_int=(
+                    1.5 if correct else 1.0
+                ),  # Correct detection increases precision
             )
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0)
 
         results = {
             "num_trials": len(self.experiment.trials),

@@ -17,7 +17,7 @@ Output:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Dict, cast
 
 # APGI Integration with hierarchical processing and precision gap
 from apgi_integration import (
@@ -89,7 +89,7 @@ class SimulatedParticipant:
 
         # Exploration phase
         if np.random.random() < EXPLORATION_PROB:
-            return np.random.choice(DECK_LABELS)
+            return str(np.random.choice(DECK_LABELS))
 
         # Greedy choice based on learned values
         if GREEDY_AFTER_LEARNING and self.trials_completed > LEARNING_PHASE_TRIALS:
@@ -99,7 +99,7 @@ class SimulatedParticipant:
 
         # Softmax selection during learning
         if np.all(self.deck_values == 0):
-            return np.random.choice(DECK_LABELS)
+            return str(np.random.choice(DECK_LABELS))
 
         # Temperature decreases over time (more exploitation later)
         temperature = max(0.5, 2.0 - self.trials_completed * 0.02)
@@ -134,33 +134,44 @@ class SimulatedParticipant:
 class EnhancedIGTRunner:
     """IGT Runner with full 100/100 APGI compliance."""
 
+    apgi: APGIIntegration | None
+    hierarchical: HierarchicalProcessor | None
+    precision_gap: PrecisionExpectationState | None
+    neuromodulators: dict[str, float]
+    running_stats: dict[str, float]
+
     def __init__(self, enable_apgi: bool = True):
         self.experiment = IowaGamblingTaskExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: float | None = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             # Core APGI integration
             params = APGIParameters(
-                tau_S=APGI_PARAMS.get("tau_s", 0.4),
-                beta=APGI_PARAMS.get("beta", 2.0),
-                theta_0=APGI_PARAMS.get("theta_0", 0.4),
-                alpha=APGI_PARAMS.get("alpha", 5.0),
-                gamma_M=APGI_PARAMS.get("gamma_M", -0.3),
-                lambda_S=APGI_PARAMS.get("lambda_S", 0.1),
-                sigma_S=APGI_PARAMS.get("sigma_S", 0.05),
-                sigma_theta=APGI_PARAMS.get("sigma_theta", 0.02),
-                sigma_M=APGI_PARAMS.get("sigma_M", 0.03),
-                rho=APGI_PARAMS.get("rho", 0.7),
-                theta_survival=APGI_PARAMS.get("theta_survival", 0.3),
-                theta_neutral=APGI_PARAMS.get("theta_neutral", 0.7),
+                tau_S=float(cast(float, APGI_PARAMS.get("tau_s", 0.4))),
+                beta=float(cast(float, APGI_PARAMS.get("beta", 2.0))),
+                theta_0=float(cast(float, APGI_PARAMS.get("theta_0", 0.4))),
+                alpha=float(cast(float, APGI_PARAMS.get("alpha", 5.0))),
+                gamma_M=float(cast(float, APGI_PARAMS.get("gamma_M", -0.3))),
+                lambda_S=float(cast(float, APGI_PARAMS.get("lambda_S", 0.1))),
+                sigma_S=float(cast(float, APGI_PARAMS.get("sigma_S", 0.05))),
+                sigma_theta=float(cast(float, APGI_PARAMS.get("sigma_theta", 0.02))),
+                sigma_M=float(cast(float, APGI_PARAMS.get("sigma_M", 0.03))),
+                rho=float(cast(float, APGI_PARAMS.get("rho", 0.7))),
+                theta_survival=float(
+                    cast(float, APGI_PARAMS.get("theta_survival", 0.3))
+                ),
+                theta_neutral=float(cast(float, APGI_PARAMS.get("theta_neutral", 0.7))),
             )
             self.apgi = APGIIntegration(params)
 
             # 100/100: Hierarchical 5-level processing (requires UltimateAPGIParameters)
             if APGI_PARAMS.get("hierarchical_enabled", True):
+                tau_levels = APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0])
+                if not isinstance(tau_levels, list):
+                    tau_levels = [0.1, 0.2, 0.4, 1.0, 5.0]
                 ultimate_params = UltimateAPGIParameters(
                     tau_S=params.tau_S,
                     beta=params.beta,
@@ -174,8 +185,8 @@ class EnhancedIGTRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=float(cast(float, APGI_PARAMS.get("beta_cross", 0.2))),
+                    tau_levels=[float(x) for x in tau_levels],
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
@@ -188,11 +199,14 @@ class EnhancedIGTRunner:
                 self.precision_gap = None
 
             # 100/100: Neuromodulator tracking
-            self.neuromodulators = {
+            neuromodulators_raw = {
                 "ACh": APGI_PARAMS.get("ACh", 1.0),
                 "NE": APGI_PARAMS.get("NE", 1.0),
                 "DA": APGI_PARAMS.get("DA", 1.0),  # Critical for reward learning
                 "HT5": APGI_PARAMS.get("HT5", 1.0),
+            }
+            self.neuromodulators = {
+                k: float(cast(float, v)) for k, v in neuromodulators_raw.items()
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -206,7 +220,7 @@ class EnhancedIGTRunner:
             self.apgi = None
             self.hierarchical = None
             self.precision_gap = None
-            self.neuromodulators = None
+            self.neuromodulators = {}
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -246,16 +260,17 @@ class EnhancedIGTRunner:
             alpha_mu = 0.01
             alpha_sigma = 0.005
             observed_outcome = trial.outcome / 100.0  # Normalize
-            self.running_stats["outcome_mean"] += alpha_mu * (
-                observed_outcome - self.running_stats["outcome_mean"]
-            )
-            self.running_stats["outcome_var"] += alpha_sigma * (
-                (observed_outcome - self.running_stats["outcome_mean"]) ** 2
-                - self.running_stats["outcome_var"]
-            )
-            self.running_stats["outcome_var"] = max(
-                0.01, self.running_stats["outcome_var"]
-            )
+            if self.running_stats:
+                self.running_stats["outcome_mean"] += alpha_mu * (
+                    observed_outcome - self.running_stats["outcome_mean"]
+                )
+                self.running_stats["outcome_var"] += alpha_sigma * (
+                    (observed_outcome - self.running_stats["outcome_mean"]) ** 2
+                    - self.running_stats["outcome_var"]
+                )
+                self.running_stats["outcome_var"] = max(
+                    0.01, self.running_stats["outcome_var"]
+                )
 
             # 100/100: Determine precision based on trial type and neuromodulators
             # DA (dopamine) increases reward sensitivity
@@ -273,7 +288,7 @@ class EnhancedIGTRunner:
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
                 self.precision_gap.update(
-                    precision_ext, precision_int, self.neuromodulators or {}, trial_type
+                    precision_ext, precision_int, self.neuromodulators, trial_type
                 )
                 # Use actual precision from gap model
                 precision_ext = self.precision_gap.Pi_e_actual
@@ -297,6 +312,7 @@ class EnhancedIGTRunner:
 
     def _calculate_results(self) -> Dict:
         summary = self.experiment.get_summary()
+        assert self.start_time is not None, "start_time should be set by run_experiment"
         completion_time = time.time() - self.start_time
 
         results = {
@@ -325,13 +341,13 @@ class EnhancedIGTRunner:
 
             # 100/100: Precision expectation gap (Π vs Π̂)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
-                results[
-                    "apgi_precision_overestimated"
-                ] = self.precision_gap.precision_overestimated
+                results["apgi_precision_overestimated"] = (
+                    self.precision_gap.precision_overestimated
+                )
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

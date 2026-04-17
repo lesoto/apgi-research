@@ -13,6 +13,7 @@ Binocular Rivalry paradigms:
 - Face-house rivalry: Semantic competition
 - Perceptual alternation: Spontaneous switching between percepts
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass

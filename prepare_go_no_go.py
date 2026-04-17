@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -148,7 +149,7 @@ class GoNoGoExperiment:
         no_go_trials = [t for t in self.trials if t.trial_type == TrialType.NO_GO]
         hits = np.mean([t.correct for t in go_trials]) if go_trials else 0
         fa_rate = 1 - np.mean([t.correct for t in no_go_trials]) if no_go_trials else 0
-        return hits - fa_rate
+        return float(hits - fa_rate)
 
     def get_summary(self) -> Dict:
         if not self.trials:
@@ -158,12 +159,12 @@ class GoNoGoExperiment:
         return {
             "num_trials": len(self.trials),
             "go_accuracy": np.mean([t.correct for t in go_trials]) if go_trials else 0,
-            "no_go_accuracy": np.mean([t.correct for t in no_go_trials])
-            if no_go_trials
-            else 0,
-            "mean_go_rt_ms": np.mean([t.rt_ms for t in go_trials if t.correct])
-            if go_trials
-            else 0,
+            "no_go_accuracy": (
+                np.mean([t.correct for t in no_go_trials]) if no_go_trials else 0
+            ),
+            "mean_go_rt_ms": (
+                np.mean([t.rt_ms for t in go_trials if t.correct]) if go_trials else 0
+            ),
             "d_prime": self.get_d_prime(),
         }
 

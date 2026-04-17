@@ -20,7 +20,29 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict
+from typing import Any, Dict, List, Optional
+
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    """Safely cast a value to float with fallback."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float_list(value: Any, default: Optional[List[float]] = None) -> List[float]:
+    """Safely cast a value to list with fallback."""
+    if default is None:
+        default = []
+    try:
+        result = list(value) if value is not None else default
+        if result is None:
+            return default
+        return result
+    except (TypeError, ValueError):
+        return default or []
+
 
 from prepare_multisensory_integration import (
     MultisensoryExperiment,
@@ -36,7 +58,6 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
-
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -88,24 +109,24 @@ class EnhancedMultisensoryRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = MultisensoryExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: float = 0.0
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
         if self.enable_apgi:
             params = APGIParameters(
-                tau_S=float(APGI_PARAMS.get("tau_s", 0.35) or 0.35),
-                beta=float(APGI_PARAMS.get("beta", 1.5) or 1.5),
-                theta_0=float(APGI_PARAMS.get("theta_0", 0.5) or 0.5),
-                alpha=float(APGI_PARAMS.get("alpha", 5.5) or 5.5),
-                gamma_M=float(APGI_PARAMS.get("gamma_M", -0.3) or -0.3),
-                lambda_S=float(APGI_PARAMS.get("lambda_S", 0.1) or 0.1),
-                sigma_S=float(APGI_PARAMS.get("sigma_S", 0.05) or 0.05),
-                sigma_theta=float(APGI_PARAMS.get("sigma_theta", 0.02) or 0.02),
-                sigma_M=float(APGI_PARAMS.get("sigma_M", 0.03) or 0.03),
-                rho=float(APGI_PARAMS.get("rho", 0.7) or 0.7),
-                theta_survival=float(APGI_PARAMS.get("theta_survival", 0.3) or 0.3),
-                theta_neutral=float(APGI_PARAMS.get("theta_neutral", 0.7) or 0.7),
+                tau_S=safe_float(APGI_PARAMS.get("tau_s", 0.35)),
+                beta=safe_float(APGI_PARAMS.get("beta", 1.5)),
+                theta_0=safe_float(APGI_PARAMS.get("theta_0", 0.5)),
+                alpha=safe_float(APGI_PARAMS.get("alpha", 5.5)),
+                gamma_M=safe_float(APGI_PARAMS.get("gamma_M", -0.3)),
+                lambda_S=safe_float(APGI_PARAMS.get("lambda_S", 0.1)),
+                sigma_S=safe_float(APGI_PARAMS.get("sigma_S", 0.05)),
+                sigma_theta=safe_float(APGI_PARAMS.get("sigma_theta", 0.02)),
+                sigma_M=safe_float(APGI_PARAMS.get("sigma_M", 0.03)),
+                rho=safe_float(APGI_PARAMS.get("rho", 0.7)),
+                theta_survival=safe_float(APGI_PARAMS.get("theta_survival", 0.3)),
+                theta_neutral=safe_float(APGI_PARAMS.get("theta_neutral", 0.7)),
             )
             self.apgi = APGIIntegration(params)
 
@@ -124,25 +145,28 @@ class EnhancedMultisensoryRunner:
                     rho=params.rho,
                     theta_survival=params.theta_survival,
                     theta_neutral=params.theta_neutral,
-                    beta_cross=float(APGI_PARAMS.get("beta_cross", 0.2) or 0.2),
-                    tau_levels=APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
+                    beta_cross=safe_float(APGI_PARAMS.get("beta_cross", 0.2)),
+                    tau_levels=safe_float_list(
+                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0])
+                    ),
                 )
                 self.hierarchical = HierarchicalProcessor(ultimate_params)
             else:
-                self.hierarchical = None
+                self.hierarchical = None  # type: ignore
 
             # 100/100: Precision expectation gap (Π vs Π̂)
-            if APGI_PARAMS.get("precision_gap_enabled", True):
-                self.precision_gap = PrecisionExpectationState()
-            else:
-                self.precision_gap = None
+            self.precision_gap = (
+                PrecisionExpectationState()
+                if APGI_PARAMS.get("precision_gap_enabled", True)
+                else None
+            )
 
             # 100/100: Neuromodulator tracking
             self.neuromodulators = {
-                "ACh": float(APGI_PARAMS.get("ACh", 1.0) or 1.0),
-                "NE": float(APGI_PARAMS.get("NE", 1.0) or 1.0),
-                "DA": float(APGI_PARAMS.get("DA", 1.0) or 1.0),
-                "HT5": float(APGI_PARAMS.get("HT5", 1.0) or 1.0),
+                "ACh": safe_float(APGI_PARAMS.get("ACh", "1.0") or 1.0),
+                "NE": safe_float(APGI_PARAMS.get("NE", "1.0") or 1.0),
+                "DA": safe_float(APGI_PARAMS.get("DA", "1.0") or 1.0),
+                "HT5": safe_float(APGI_PARAMS.get("HT5", "1.0") or 1.0),
             }
 
             # 100/100: Running statistics for z-score normalization
@@ -153,11 +177,7 @@ class EnhancedMultisensoryRunner:
                 "rt_var": 40000.0,
             }
         else:
-            self.apgi = None
-            self.hierarchical = None
-            self.precision_gap = None
-            self.neuromodulators = None
-            self.running_stats = None
+            self.apgi = None  # type: ignore
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -267,9 +287,9 @@ class EnhancedMultisensoryRunner:
             )
             results["apgi_mean_threshold"] = apgi_summary.get("mean_threshold", 0.0)
             if self.precision_gap:
-                results[
-                    "apgi_precision_mismatch"
-                ] = self.precision_gap.precision_mismatch
+                results["apgi_precision_mismatch"] = (
+                    self.precision_gap.precision_mismatch
+                )
                 results["apgi_anxiety_level"] = self.precision_gap.anxiety_level
             if self.neuromodulators:
                 results["apgi_acetylcholine"] = self.neuromodulators.get("ACh", 1.0)

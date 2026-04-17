@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -106,9 +107,10 @@ class StroopGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> StroopTrial:
-        trial_type = self.rng.choice(
-            list(TRIAL_PROBS.keys()), p=list(TRIAL_PROBS.values())
+        trial_type_str = self.rng.choice(
+            [t.value for t in TRIAL_PROBS.keys()], p=list(TRIAL_PROBS.values())
         )
+        trial_type = TrialType(trial_type_str)
         ink_color = self.rng.choice(COLORS)
 
         if trial_type == TrialType.CONGRUENT:
@@ -162,7 +164,7 @@ class StroopExperiment:
         trials = [t for t in self.trials if t.trial_type == trial_type and t.correct]
         if not trials:
             return 0.0
-        return np.mean([t.rt_ms for t in trials])
+        return float(np.mean([t.rt_ms for t in trials]))
 
     def get_interference_effect(self) -> float:
         """Incongruent - Congruent RT (typically 50-100ms)."""

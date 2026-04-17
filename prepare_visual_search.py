@@ -138,7 +138,7 @@ class VSDisplay:
 
     def _create_positions(self, n: int, min_dist: float = 0.15) -> List[tuple]:
         """Create non-overlapping positions in display."""
-        positions = []
+        positions: List[tuple[float, float]] = []
         max_attempts = 1000
 
         for _ in range(n):
@@ -233,7 +233,7 @@ class VSDisplay:
     ) -> VSTrial:
         """Create a trial with random parameters."""
         if search_type is None:
-            search_type = self.rng.choice([SearchType.FEATURE, SearchType.CONJUNCTION])
+            search_type = self.rng.choice([SearchType.FEATURE, SearchType.CONJUNCTION])  # type: ignore
         if display_size is None:
             display_size = self.rng.choice(DISPLAY_SIZES)
 
@@ -331,7 +331,7 @@ class VSExperiment:
             return 0.0
 
         slope, _ = np.polyfit(sizes, rts, 1)
-        return slope
+        return float(slope)
 
     def get_intercept(self, search_type: SearchType, target_present: bool) -> float:
         """Calculate intercept (baseline processing time)."""
@@ -355,7 +355,7 @@ class VSExperiment:
             return 0.0
 
         _, intercept = np.polyfit(sizes, rts, 1)
-        return intercept
+        return float(intercept)
 
     def get_accuracy(self, search_type: Optional[SearchType] = None) -> float:
         """Calculate accuracy for given search type."""
@@ -366,7 +366,7 @@ class VSExperiment:
         ]
         if not trials:
             return 0.0
-        return np.mean([t.correct for t in trials])
+        return float(np.mean([t.correct for t in trials]))
 
     def get_summary(self) -> Dict:
         """Generate experiment summary."""

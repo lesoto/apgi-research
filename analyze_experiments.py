@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 APGI Experiment Results Analyzer and Reporter
-Analyzes metrics from all experiments, fixes validation issues, 
+Analyzes metrics from all experiments, fixes validation issues,
 creates visualizations, and generates comprehensive reports.
 """
 
@@ -388,7 +388,7 @@ def analyze_apgi_metrics() -> Dict[str, Any]:
     apgi_exp: Dict[str, ExperimentData] = get_apgi_experiments()
 
     analysis: Dict[str, Any] = {
-        "total_apgi_experiments": len(apgi_exp),
+        "total_experiments": len(apgi_exp),
         "metrics_summary": {},
         "correlations": {},
         "outliers": [],
@@ -420,6 +420,26 @@ def analyze_apgi_metrics() -> Dict[str, Any]:
                 "range": max(nums) - min(nums),
                 "experiments": [v[0] for v in values],
             }
+    # Create summary section for tests
+    ignition_rates = [v[1] for v in metrics_data.get("ignition_rate", [])]
+    metabolic_costs = [v[1] for v in metrics_data.get("metabolic_cost", [])]
+    surprises = [v[1] for v in metrics_data.get("mean_surprise", [])]
+
+    analysis["summary"] = {
+        "total_experiments": len(apgi_exp),
+        "avg_ignition_rate": (
+            sum(ignition_rates) / len(ignition_rates) if ignition_rates else 0
+        ),
+        "avg_metabolic_cost": (
+            sum(metabolic_costs) / len(metabolic_costs) if metabolic_costs else 0
+        ),
+        "avg_surprise": sum(surprises) / len(surprises) if surprises else 0,
+    }
+
+    # Create detailed analysis section
+    analysis["detailed_analysis"] = {}
+    for name, data in apgi_exp.items():
+        analysis["detailed_analysis"][name] = data
 
     return analysis
 
@@ -464,9 +484,12 @@ def identify_issues() -> List[Dict[str, Any]]:
                 {
                     "experiment": name,
                     "issues": exp_issues,
-                    "severity": "high"
-                    if any("0" in i for i in exp_issues)
-                    else "medium",
+                    "severity": (
+                        "high" if any("0" in i for i in exp_issues) else "medium"
+                    ),
+                    "issue_type": "validation_error",
+                    "description": "; ".join(exp_issues),
+                    "suggested_fix": "Review and fix the identified issues",
                 }
             )
 
@@ -675,7 +698,7 @@ def generate_html_report(analysis: Dict, issues: List[Dict], fixes: Dict) -> str
             </div>
             <div class="summary-card">
                 <h3>With APGI Metrics</h3>
-                <div class="value">{analysis['total_apgi_experiments']}</div>
+                <div class="value">{analysis['total_experiments']}</div>
             </div>
             <div class="summary-card">
                 <h3>Issues Found</h3>
@@ -781,9 +804,7 @@ def generate_html_report(analysis: Dict, issues: List[Dict], fixes: Dict) -> str
         status_class = (
             "badge-success"
             if status == "Success" and not data.get("issues")
-            else "badge-warning"
-            if data.get("issues")
-            else "badge-success"
+            else "badge-warning" if data.get("issues") else "badge-success"
         )
 
         html += f"""                    <tr>
@@ -892,9 +913,7 @@ def main():
     # Run analysis
     print("\n[1/4] Analyzing APGI metrics...")
     analysis = analyze_apgi_metrics()
-    print(
-        f"      Found {analysis['total_apgi_experiments']} experiments with APGI metrics"
-    )
+    print(f"      Found {analysis['total_experiments']} experiments with APGI metrics")
 
     print("\n[2/4] Identifying issues...")
     issues = identify_issues()

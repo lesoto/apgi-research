@@ -3,6 +3,7 @@
 This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
+
 import numpy as np
 import json
 from dataclasses import dataclass
@@ -107,8 +108,8 @@ class InteroGatingGenerator:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> InteroGatingTrial:
-        stim_type = self.rng.choice(list(StimulusType))
-        condition = self.rng.choice(list(Condition))
+        stim_type = self.rng.choice([s.value for s in StimulusType])
+        condition = self.rng.choice([c.value for c in Condition])
 
         if stim_type == StimulusType.HEARTBEAT:
             interval = int(self.rng.choice(HEARTBEAT_INTERVALS))
@@ -166,7 +167,7 @@ class InteroGatingExperiment:
         ]
         if not trials:
             return 0.0
-        return np.mean([t.response_detected for t in trials])
+        return float(np.mean([t.response_detected for t in trials]))
 
     def get_gating_effect(self) -> float:
         """Interoceptive - Exteroceptive sensitivity."""

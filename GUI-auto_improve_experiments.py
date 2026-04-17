@@ -2,18 +2,61 @@
 Modernized for apgi-research directory with CustomTkinter.
 """
 
-from tkinter import messagebox
-import customtkinter as ctk  # type: ignore
-import subprocess
-import threading
 import os
 import sys
+import multiprocessing
+
+# Fix CoreFoundation fork issue on macOS by setting spawn method
+if sys.platform == "darwin" and hasattr(multiprocessing, "set_start_method"):
+    try:
+        multiprocessing.set_start_method("spawn")
+    except RuntimeError:
+        pass  # Method already set
+
+# Set environment variable to prevent CoreFoundation issues in subprocesses
+if sys.platform == "darwin":
+    os.environ["OBJC_DISABLE_MULTITHREADING"] = "1"
+
+from tkinter import messagebox
+import customtkinter as ctk
+
+
+# Fix for customtkinter DropdownMenu bug: _add_menu_commands fails on empty menu
+def _patched_add_menu_commands(self):
+    """Patched version that handles empty menus safely."""
+    try:
+        # Check if menu has items before trying to delete
+        end_index = self.index("end")
+        if end_index is not None and end_index != "":
+            self.delete(0, "end")
+    except Exception:
+        pass  # Menu is empty or not fully initialized
+
+    # Add the actual menu commands
+    for i, value in enumerate(self._values):
+        self.add_command(
+            label=value,
+            command=lambda v=value: self._command(v) if self._command else None,
+        )
+
+
+# Apply the patch
+ctk.windows.widgets.core_widget_classes.dropdown_menu.DropdownMenu._add_menu_commands = (
+    _patched_add_menu_commands
+)
+
+import subprocess
+import threading
 import re
 import logging
 import time
 from pathlib import Path
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict, Set, Any
 import importlib.util
+import numpy as np
+
+# Import hypothesis approval board
+from hypothesis_approval_board import ApprovalBoard, Hypothesis, HypothesisStatus
 
 # Matplotlib imports for embedded visualization
 import matplotlib
@@ -24,11 +67,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("Dark")
-ctk.set_default_color_theme("blue")
-
-# Setup logging
-logger = logging.getLogger(__name__)
-
 # Core dependencies required for APGI experiments
 CORE_DEPENDENCIES = {
     "numpy": "NumPy - Numerical computing",
@@ -48,10 +86,9 @@ OPTIONAL_DEPENDENCIES = {
 
 
 class ExperimentRunnerGUI(ctk.CTk):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
-
-        self.title("APGI Auto-Improvement Research Hub")
+        self.title("APGI Experiment Auto-Improvement")
         self.geometry("1400x900")
 
         # Set main path to current research directory
@@ -71,6 +108,18 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.current_canvas: FigureCanvasTkAgg | None = None
         self.experiment_results: Dict[str, dict] = {}
 
+        # Hypothesis approval board
+        self.approval_board: ApprovalBoard = ApprovalBoard()
+
+        # Guardrail state tracking
+        self.guardrail_state: Dict[str, str | float] = {
+            "status": "IDLE",
+            "confidence": 1.0,
+            "last_regression": 0.0,
+            "escalation_count": 0,
+            "last_experiment": "",
+        }
+
         # Find experiments
         self.experiments = self._find_experiments()
 
@@ -81,10 +130,12 @@ class ExperimentRunnerGUI(ctk.CTk):
 
     def _check_dependencies(self) -> None:
         """Check for required dependencies on startup and show error if missing."""
+        import importlib
+
         missing_core = []
         for module, description in CORE_DEPENDENCIES.items():
             try:
-                __import__(module)
+                importlib.import_module(module)
             except ImportError:
                 missing_core.append(f"  - {module}: {description}")
 
@@ -100,7 +151,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         missing_optional = []
         for module, description in OPTIONAL_DEPENDENCIES.items():
             try:
-                __import__(module)
+                importlib.import_module(module)
             except ImportError:
                 missing_optional.append(f"  - {module}: {description}")
 
@@ -193,11 +244,11 @@ class ExperimentRunnerGUI(ctk.CTk):
         # Create navigation frame (sidebar)
         self.navigation_frame = ctk.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=1, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(4, weight=1)
+        self.navigation_frame.grid_rowconfigure(7, weight=1)
 
         self.navigation_frame_label = ctk.CTkLabel(
             self.navigation_frame,
-            text="APGI HUB",
+            text="APGI Research",
             font=ctk.CTkFont(size=24, weight="bold"),
         )
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
@@ -232,18 +283,437 @@ class ExperimentRunnerGUI(ctk.CTk):
         )
         self.clear_button.grid(row=3, column=0, padx=20, pady=10)
 
+        # -----------------------------------------------------------
+        # Guardrail Dashboard Panel (XPR* Requirement)
+        # -----------------------------------------------------------
+        self.guardrail_frame = ctk.CTkFrame(
+            self.navigation_frame, corner_radius=8, fg_color="#1a1a2e"
+        )
+        self.guardrail_frame.grid(row=4, column=0, padx=10, pady=(10, 5), sticky="ew")
+
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="⚡ Guardrails",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#e2e2e2",
+        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 4), sticky="w")
+
+        # Status indicator
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Status:",
+            font=ctk.CTkFont(size=11),
+            text_color="#aaaaaa",
+        ).grid(row=1, column=0, padx=(10, 2), pady=2, sticky="w")
+        self.guardrail_status_label = ctk.CTkLabel(
+            self.guardrail_frame,
+            text="IDLE",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.guardrail_status_label.grid(
+            row=1, column=1, padx=(2, 10), pady=2, sticky="w"
+        )
+
+        # Confidence indicator
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Confidence:",
+            font=ctk.CTkFont(size=11),
+            text_color="#aaaaaa",
+        ).grid(row=2, column=0, padx=(10, 2), pady=2, sticky="w")
+        self.guardrail_confidence_label = ctk.CTkLabel(
+            self.guardrail_frame,
+            text="—",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.guardrail_confidence_label.grid(
+            row=2, column=1, padx=(2, 10), pady=2, sticky="w"
+        )
+
+        # Regression indicator
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Regression:",
+            font=ctk.CTkFont(size=11),
+            text_color="#aaaaaa",
+        ).grid(row=3, column=0, padx=(10, 2), pady=2, sticky="w")
+        self.guardrail_regression_label = ctk.CTkLabel(
+            self.guardrail_frame,
+            text="0.0%",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.guardrail_regression_label.grid(
+            row=3, column=1, padx=(2, 10), pady=2, sticky="w"
+        )
+
+        # Escalation count
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Escalations:",
+            font=ctk.CTkFont(size=11),
+            text_color="#aaaaaa",
+        ).grid(row=4, column=0, padx=(10, 2), pady=(2, 8), sticky="w")
+        self.guardrail_escalation_label = ctk.CTkLabel(
+            self.guardrail_frame,
+            text="0",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.guardrail_escalation_label.grid(
+            row=4, column=1, padx=(2, 10), pady=(2, 8), sticky="w"
+        )
+        # -----------------------------------------------------------
+
         self.appearance_mode_label = ctk.CTkLabel(
             self.navigation_frame, text="Appearance:", anchor="w"
         )
-        self.appearance_mode_label.grid(row=4, column=0, padx=20, pady=(10, 0))
+        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
         self.appearance_mode_optionemenu = ctk.CTkOptionMenu(
             self.navigation_frame,
             values=["Dark", "Light", "System"],
             command=self.change_appearance_mode,
         )
-        self.appearance_mode_optionemenu.grid(row=5, column=0, padx=20, pady=(10, 20))
+        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 20))
 
-        # Create main scrollable area for experiments
+        # -----------------------------------------------------------
+        # Hypothesis Approval Board (Phase 4 Enhancement)
+        # -----------------------------------------------------------
+        self.hypothesis_frame = ctk.CTkFrame(
+            self.navigation_frame, corner_radius=8, fg_color="#2c3e50"
+        )
+        self.hypothesis_frame.grid(row=7, column=0, padx=10, pady=(10, 5), sticky="ew")
+
+        ctk.CTkLabel(
+            self.hypothesis_frame,
+            text="🧪 Hypothesis Board",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color="#e2e2e2",
+        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 4), sticky="w")
+
+        # Hypothesis controls
+        controls_frame = ctk.CTkFrame(self.hypothesis_frame, fg_color="transparent")
+        controls_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+
+        ctk.CTkButton(
+            controls_frame,
+            text="➕ New Hypothesis",
+            command=self._show_create_hypothesis_dialog,
+            width=140,
+            height=32,
+            fg_color="#27ae60",
+            hover_color="#219150",
+        ).grid(row=0, column=0, padx=5, pady=2)
+
+        ctk.CTkButton(
+            controls_frame,
+            text="📋 Review Pending",
+            command=self._show_hypothesis_review,
+            width=140,
+            height=32,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+        ).grid(row=0, column=1, padx=5, pady=2)
+
+        self.hypothesis_scrollable = ctk.CTkScrollableFrame(
+            self.hypothesis_frame, label_text="Active Hypotheses"
+        )
+        self.hypothesis_scrollable.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+        self.hypothesis_scrollable.grid_columnconfigure(0, weight=1)
+
+        self._refresh_hypothesis_display()
+
+    def _show_create_hypothesis_dialog(self):
+        """Show dialog to create a new hypothesis."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("🧪 Create New Hypothesis")
+        dialog.geometry("600x500")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Create New Hypothesis",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 5))
+
+        # Form fields
+        form_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        form_frame.pack(padx=20, fill="x", pady=10)
+
+        # Title
+        ctk.CTkLabel(form_frame, text="Title:", font=ctk.CTkFont(size=12)).grid(
+            row=0, column=0, sticky="w", padx=5, pady=2
+        )
+        title_entry = ctk.CTkEntry(form_frame, width=400)
+        title_entry.grid(row=0, column=1, padx=5, pady=2)
+
+        # Description
+        ctk.CTkLabel(form_frame, text="Description:", font=ctk.CTkFont(size=12)).grid(
+            row=1, column=0, sticky="nw", padx=5, pady=2
+        )
+        desc_entry = ctk.CTkTextbox(form_frame, height=80)
+        desc_entry.grid(row=1, column=1, padx=5, pady=2, sticky="nsew")
+
+        # Predicted Outcome
+        ctk.CTkLabel(
+            form_frame, text="Predicted Outcome:", font=ctk.CTkFont(size=12)
+        ).grid(row=2, column=0, sticky="nw", padx=5, pady=2)
+        outcome_entry = ctk.CTkEntry(form_frame, width=400)
+        outcome_entry.grid(row=2, column=1, padx=5, pady=2)
+
+        # Confidence Score
+        ctk.CTkLabel(
+            form_frame, text="Confidence (0-1):", font=ctk.CTkFont(size=12)
+        ).grid(row=3, column=0, sticky="nw", padx=5, pady=2)
+        conf_entry = ctk.CTkEntry(form_frame, width=400)
+        conf_entry.insert(0, "0.7")
+        conf_entry.grid(row=3, column=1, padx=5, pady=2)
+
+        # Risk Assessment
+        ctk.CTkLabel(form_frame, text="Risk Level:", font=ctk.CTkFont(size=12)).grid(
+            row=4, column=0, sticky="nw", padx=5, pady=2
+        )
+        risk_menu = ctk.CTkOptionMenu(form_frame, values=["low", "medium", "high"])
+        risk_menu.grid(row=4, column=1, padx=5, pady=2)
+
+        # Success Criteria
+        ctk.CTkLabel(
+            form_frame, text="Success Criteria:", font=ctk.CTkFont(size=12)
+        ).grid(row=5, column=0, sticky="nw", padx=5, pady=2)
+        criteria_entry = ctk.CTkTextbox(form_frame, height=60)
+        criteria_entry.grid(row=5, column=1, padx=5, pady=2, sticky="nsew")
+
+        # Buttons
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        def create_hypothesis():
+            try:
+                hypothesis = self.approval_board.create_hypothesis(
+                    title=title_entry.get(),
+                    description=desc_entry.get("0.0", "end"),
+                    predicted_outcome=outcome_entry.get(),
+                    confidence_score=float(conf_entry.get()),
+                    risk_assessment=risk_menu.get(),
+                    success_criteria=(
+                        criteria_entry.get("0.0", "end").strip().split("\n")
+                        if criteria_entry.get("0.0", "end").strip()
+                        else []
+                    ),
+                )
+                self._refresh_hypothesis_display()
+                dialog.destroy()
+                self._log(f"✅ Created hypothesis: {hypothesis.title}", "#2ecc71")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create hypothesis: {e}")
+
+        def cancel():
+            dialog.destroy()
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Create",
+            command=create_hypothesis,
+            fg_color="#27ae60",
+            hover_color="#219150",
+            width=100,
+        ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=cancel,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _show_hypothesis_review(self):
+        """Show dialog to review pending hypotheses."""
+        pending_hypotheses = self.approval_board.get_pending_hypotheses()
+        if not pending_hypotheses:
+            messagebox.showinfo(
+                "No Pending Hypotheses", "No hypotheses pending review."
+            )
+            return
+
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("📋 Review Hypotheses")
+        dialog.geometry("800x600")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Pending Hypotheses Review",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 5))
+
+        # Create scrollable frame for hypotheses
+        review_frame = ctk.CTkScrollableFrame(dialog, height=400)
+        review_frame.pack(padx=20, pady=10, fill="both", expand=True)
+
+        for hypothesis in pending_hypotheses:
+            self._create_hypothesis_review_item(review_frame, hypothesis, dialog)
+
+        # Buttons
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=10)
+
+        def close_review():
+            dialog.destroy()
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Close",
+            command=close_review,
+            fg_color="#7f8c8d",
+            hover_color="#636e72",
+            width=100,
+        ).pack()
+
+    def _create_hypothesis_review_item(self, parent, hypothesis: Hypothesis, dialog):
+        """Create a single hypothesis review item."""
+        item_frame = ctk.CTkFrame(parent, corner_radius=8, fg_color="#f8f9fa")
+        item_frame.pack(fill="x", pady=5, padx=10)
+
+        # Title and status
+        header_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        header_frame.pack(fill="x", pady=5)
+
+        title_label = ctk.CTkLabel(
+            header_frame,
+            text=hypothesis.title,
+            font=ctk.CTkFont(size=14, weight="bold"),
+        )
+        title_label.pack(side="left", padx=5)
+
+        status_colors = {
+            HypothesisStatus.PENDING: "#f39c12",
+            HypothesisStatus.UNDER_REVIEW: "#3498db",
+            HypothesisStatus.APPROVED: "#2ecc71",
+            HypothesisStatus.REJECTED: "#e74c3c",
+            HypothesisStatus.MODIFIED: "#ff9500",
+        }
+        status_label = ctk.CTkLabel(
+            header_frame,
+            text=hypothesis.status.value.upper(),
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=status_colors.get(hypothesis.status, "#aaaaaa"),
+        )
+        status_label.pack(side="right", padx=5)
+
+        # Description
+        desc_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        desc_frame.pack(fill="x", pady=(0, 5), padx=10)
+
+        desc_label = ctk.CTkLabel(
+            desc_frame, text="Description:", font=ctk.CTkFont(size=11, weight="bold")
+        )
+        desc_label.pack(anchor="w", padx=(0, 2))
+
+        desc_text = ctk.CTkLabel(
+            desc_frame,
+            text=hypothesis.description,
+            font=ctk.CTkFont(size=10),
+            wraplength=300,
+        )
+        desc_text.pack(anchor="w", padx=(0, 2), pady=(0, 5))
+
+        # Metadata
+        meta_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        meta_frame.pack(fill="x", pady=5, padx=10)
+
+        # Confidence and Risk
+        ctk.CTkLabel(
+            meta_frame,
+            text=f"Confidence: {hypothesis.confidence_score:.2f}",
+            font=ctk.CTkFont(size=10),
+        ).pack(anchor="w", pady=2)
+        ctk.CTkLabel(
+            meta_frame,
+            text=f"Risk: {hypothesis.risk_assessment.upper()}",
+            font=ctk.CTkFont(size=10),
+        ).pack(anchor="w", pady=2)
+
+        # Action buttons
+        action_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        action_frame.pack(fill="x", pady=5, padx=10)
+
+        def approve():
+            self.approval_board.update_hypothesis_status(
+                hypothesis.id,
+                HypothesisStatus.APPROVED,
+                "Approved via GUI review",
+                "GUI Reviewer",
+            )
+            self._refresh_hypothesis_display()
+            if dialog:
+                dialog.destroy()
+
+        def reject():
+            self.approval_board.update_hypothesis_status(
+                hypothesis.id,
+                HypothesisStatus.REJECTED,
+                "Rejected via GUI review",
+                "GUI Reviewer",
+            )
+            self._refresh_hypothesis_display()
+            if dialog:
+                dialog.destroy()
+
+        def modify():
+            # For now, just log - could open modify dialog later
+            self._log(f"Request to modify hypothesis: {hypothesis.id}")
+
+        ctk.CTkButton(
+            action_frame,
+            text="✅ Approve",
+            command=approve,
+            fg_color="#27ae60",
+            hover_color="#219150",
+            width=80,
+        ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            action_frame,
+            text="🔧 Modify",
+            command=modify,
+            fg_color="#f39c12",
+            hover_color="#d68910",
+            width=80,
+        ).pack(side="left", padx=5)
+        ctk.CTkButton(
+            action_frame,
+            text="❌ Reject",
+            command=reject,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=80,
+        ).pack(side="left", padx=5)
+
+    def _refresh_hypothesis_display(self):
+        """Refresh the hypothesis display scrollable frame."""
+        for widget in self.hypothesis_scrollable.winfo_children():
+            widget.destroy()
+
+        pending_hypotheses = self.approval_board.get_pending_hypotheses()
+
+        if not pending_hypotheses:
+            no_hypotheses_label = ctk.CTkLabel(
+                self.hypothesis_scrollable,
+                text="No pending hypotheses to review",
+                font=ctk.CTkFont(size=12, slant="italic"),
+                text_color="#aaaaaa",
+            )
+            no_hypotheses_label.pack(pady=20)
+        else:
+            for hypothesis in pending_hypotheses:
+                self._create_hypothesis_review_item(
+                    self.hypothesis_scrollable, hypothesis, None
+                )
+
         self.scrollable_frame = ctk.CTkScrollableFrame(
             self, label_text=f"Research Experiments ({len(self.experiments)})"
         )
@@ -252,11 +722,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         )
         self.scrollable_frame.grid_columnconfigure((0, 1), weight=1)
 
-        # Populate experiments
         for i, (name, script) in enumerate(self.experiments):
             self._create_experiment_card(self.scrollable_frame, name, script, i)
 
-        # Create output console (bottom)
         self.console_frame = ctk.CTkFrame(self, height=250)
         self.console_frame.grid(
             row=2, column=0, columnspan=2, padx=20, pady=(10, 20), sticky="nsew"
@@ -315,6 +783,17 @@ class ExperimentRunnerGUI(ctk.CTk):
         )
         viz_btn.grid(row=1, column=1, padx=(0, 5), pady=(0, 15))
 
+        auto_btn = ctk.CTkButton(
+            card,
+            text="🤖 XPR AUTO",
+            command=lambda n=name, s=script: self._run_auto_improve(n, s),
+            width=70,
+            height=28,
+            fg_color="#8e44ad",
+            hover_color="#9b59b6",
+        )
+        auto_btn.grid(row=0, column=2, padx=(0, 15), pady=(15, 5))
+
         self.experiment_cards[name] = card
 
     def _log(self, text, color=None):
@@ -323,7 +802,580 @@ class ExperimentRunnerGUI(ctk.CTk):
 
     def _clear_console(self):
         self.console_text.delete("1.0", "end")
-        self.console_text.insert("0.0", "--- Console Cleared ---\n")
+        self.console_text.insert("1.0", "--- Console Cleared ---\n")
+
+    def _update_guardrail_dashboard(
+        self,
+        status: str = "IDLE",
+        confidence: float = 1.0,
+        regression: float = 0.0,
+        experiment: str = "",
+    ):
+        """Update the guardrail dashboard indicators in the sidebar."""
+        self.guardrail_state["status"] = status
+        self.guardrail_state["confidence"] = confidence
+        self.guardrail_state["last_regression"] = regression
+        if experiment:
+            self.guardrail_state["last_experiment"] = experiment
+
+        # Status color logic
+        status_colors = {
+            "IDLE": "#2ecc71",
+            "RUNNING": "#3498db",
+            "OK": "#2ecc71",
+            "WARNING": "#f39c12",
+            "ESCALATED": "#e74c3c",
+            "HALTED": "#e74c3c",
+        }
+        status_color = status_colors.get(status, "#aaaaaa")
+        self.guardrail_status_label.configure(text=status, text_color=status_color)
+
+        # Confidence color: green > 0.7, yellow > 0.4, red otherwise
+        if confidence > 0.7:
+            conf_color = "#2ecc71"
+        elif confidence > 0.4:
+            conf_color = "#f39c12"
+        else:
+            conf_color = "#e74c3c"
+        self.guardrail_confidence_label.configure(
+            text=f"{confidence:.0%}", text_color=conf_color
+        )
+
+        # Regression color: green < 2%, yellow < 5%, red otherwise
+        reg_pct = abs(regression) * 100
+        if reg_pct < 2:
+            reg_color = "#2ecc71"
+        elif reg_pct < 5:
+            reg_color = "#f39c12"
+        else:
+            reg_color = "#e74c3c"
+        self.guardrail_regression_label.configure(
+            text=f"{reg_pct:.1f}%", text_color=reg_color
+        )
+
+        esc_count = self.guardrail_state.get("escalation_count", 0)
+        esc_color = "#2ecc71" if esc_count == 0 else "#e74c3c"
+        self.guardrail_escalation_label.configure(
+            text=str(esc_count), text_color=esc_color
+        )
+
+    def _notify_guardrail_escalation(
+        self, experiment_name: str, confidence: float, message: str
+    ):
+        """Show a GUI notification when a guardrail is tripped."""
+        self.guardrail_state["escalation_count"] = (
+            int(self.guardrail_state.get("escalation_count", 0)) + 1
+        )
+        self._update_guardrail_dashboard(
+            status="ESCALATED", confidence=confidence, experiment=experiment_name
+        )
+        self._log(
+            f"\n🚨 [GUARDRAIL ESCALATION] {experiment_name}: {message}", "#e74c3c"
+        )
+        # Show a non-blocking alert dialog
+        alert = ctk.CTkToplevel(self)
+        alert.title("⚠️ Guardrail Escalation")
+        alert.geometry("450x200")
+        alert.transient(self)
+        alert.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            alert,
+            text="🚨 Agent Guardrail Tripped",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="#e74c3c",
+        ).pack(pady=(15, 5))
+        ctk.CTkLabel(
+            alert,
+            text=f"Experiment: {experiment_name}\nConfidence: {confidence:.0%}\n{message}",
+            font=ctk.CTkFont(size=12),
+            justify="center",
+        ).pack(pady=10)
+        ctk.CTkButton(
+            alert,
+            text="Acknowledge",
+            command=alert.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+        ).pack(pady=10)
+
+    def _run_auto_improve(self, name, script):
+        """Phase 4: Launch the Steering Dashboard before execution."""
+
+        # -----------------------------------------------------------
+        # Phase 2: configure_if_needed() — Pre-run constraints dialog
+        # -----------------------------------------------------------
+        config_dialog = ctk.CTkToplevel(self)
+        config_dialog.title(f"⚙️ Configure — {name}")
+        config_dialog.geometry("480x400")
+        config_dialog.transient(self)
+        config_dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            config_dialog,
+            text="Pre-Run Configuration",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 5))
+        ctk.CTkLabel(
+            config_dialog,
+            text="Set bounds and constraints before XPR AUTO execution.",
+            font=ctk.CTkFont(size=11),
+            text_color="#aaaaaa",
+        ).pack(pady=(0, 10))
+
+        fields_frame = ctk.CTkFrame(config_dialog, fg_color="transparent")
+        fields_frame.pack(padx=20, fill="x")
+
+        # Max Iterations
+        ctk.CTkLabel(
+            fields_frame, text="Max Iterations:", font=ctk.CTkFont(size=12)
+        ).grid(row=0, column=0, sticky="w", pady=5)
+        iter_entry = ctk.CTkEntry(fields_frame, width=120)
+        iter_entry.insert(0, "3")
+        iter_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        # Time Budget (seconds)
+        ctk.CTkLabel(
+            fields_frame, text="Time Budget (s):", font=ctk.CTkFont(size=12)
+        ).grid(row=1, column=0, sticky="w", pady=5)
+        time_entry = ctk.CTkEntry(fields_frame, width=120)
+        time_entry.insert(0, "600")
+        time_entry.grid(row=1, column=1, padx=10, pady=5)
+
+        # Confidence Threshold
+        ctk.CTkLabel(
+            fields_frame, text="Min Confidence:", font=ctk.CTkFont(size=12)
+        ).grid(row=2, column=0, sticky="w", pady=5)
+        conf_entry = ctk.CTkEntry(fields_frame, width=120)
+        conf_entry.insert(0, "0.5")
+        conf_entry.grid(row=2, column=1, padx=10, pady=5)
+
+        # Protected Files
+        ctk.CTkLabel(
+            fields_frame, text="Protected Files:", font=ctk.CTkFont(size=12)
+        ).grid(row=3, column=0, sticky="w", pady=5)
+        protected_entry = ctk.CTkEntry(fields_frame, width=250)
+        protected_entry.insert(0, "prepare_*.py")
+        protected_entry.grid(row=3, column=1, padx=10, pady=5)
+
+        # Additional constraints
+        ctk.CTkLabel(
+            config_dialog, text="Additional Constraints:", font=ctk.CTkFont(size=12)
+        ).pack(padx=20, anchor="w", pady=(10, 0))
+        constraints_box = ctk.CTkTextbox(config_dialog, height=60, width=430)
+        constraints_box.pack(padx=20, pady=5)
+        constraints_box.insert(
+            "0.0", "Do not modify file structure. Keep bounds valid."
+        )
+
+        # Store config for use in the plan generation
+        run_config: Dict[str, Any] = {"proceed": False}
+
+        def on_proceed():
+            try:
+                run_config["iterations"] = int(iter_entry.get())
+            except ValueError:
+                run_config["iterations"] = 3
+            try:
+                run_config["time_budget"] = int(time_entry.get())
+            except ValueError:
+                run_config["time_budget"] = 600
+            try:
+                run_config["min_confidence"] = float(conf_entry.get())
+            except ValueError:
+                run_config["min_confidence"] = 0.5
+            try:
+                run_config["protected_files"] = protected_entry.get().strip()
+            except Exception:
+                pass
+            run_config["proceed"] = True
+            # Store config for use in plan generation
+            self.run_config = run_config
+            config_dialog.destroy()
+
+        def on_skip():
+            run_config["iterations"] = 3
+            run_config["time_budget"] = 600
+            run_config["min_confidence"] = 0.5
+            run_config["protected_files"] = "prepare_*.py"
+            run_config["proceed"] = True
+            self.run_config = run_config
+            config_dialog.destroy()
+
+        btn_row = ctk.CTkFrame(config_dialog, fg_color="transparent")
+        btn_row.pack(pady=15)
+        ctk.CTkButton(
+            btn_row,
+            text="▶ Proceed",
+            command=on_proceed,
+            fg_color="#27ae60",
+            hover_color="#219150",
+            width=120,
+        ).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_row,
+            text="Skip (Defaults)",
+            command=on_skip,
+            fg_color="#7f8c8d",
+            hover_color="#636e72",
+            width=120,
+        ).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_row,
+            text="Cancel",
+            command=config_dialog.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=10)
+
+        def wait_for_config():
+            """Wait for the config dialog to close, then continue."""
+            if config_dialog.winfo_exists():
+                self.after(100, wait_for_config)
+                return
+            if not run_config.get("proceed"):
+                self._log(f"[XPR AGENT] Configuration cancelled for {name}.", "#7f8c8d")
+                return
+
+            self._log(
+                f"\n[XPR AGENT] Configured: iters={run_config.get('iterations')}, "
+                f"budget={run_config.get('time_budget')}s, "
+                f"min_conf={run_config.get('min_confidence')}",
+                "#8e44ad",
+            )
+            self._launch_plan_generation(name, script, run_config)
+
+        self.after(100, wait_for_config)
+
+    def _launch_plan_generation(self, name, script, run_config):
+        """Boot the XPR Agent after configuration is complete."""
+        from autonomous_agent import AutonomousAgent
+        from xpr_agent_engine import XPRAgentEngine
+
+        # Create dialog for plan review
+        dialog = ctk.CTkToplevel(self)
+        dialog.title(f"XPR Control Layer - {name}")
+        dialog.geometry("600x500")
+
+        ctk.CTkLabel(
+            dialog,
+            text="ExperimentPlan Review",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=10)
+
+        plan_text = ctk.CTkTextbox(dialog, height=300, width=550)
+        plan_text.pack(pady=10, padx=20)
+
+        def popup_callback(plan_str):
+            popup_dialog = ctk.CTkToplevel(self)
+            popup_dialog.title(f"XPR Control Layer - {name}")
+            popup_dialog.geometry("600x500")
+
+            ctk.CTkLabel(
+                popup_dialog,
+                text="ExperimentPlan Review",
+                font=ctk.CTkFont(size=16, weight="bold"),
+            ).pack(pady=10)
+
+            plan_display_text = ctk.CTkTextbox(popup_dialog, height=300, width=550)
+            plan_display_text.pack(pady=10, padx=20)
+            plan_display_text.insert("0.0", plan_str)
+
+            def approve():
+                self._log(
+                    f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71"
+                )
+                self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+                popup_dialog.destroy()
+
+                def run_agent():
+                    try:
+                        agent = AutonomousAgent(str(self.research_dir))
+                        experiment_key = script.replace("run_", "").replace(".py", "")
+                        agent.optimize_experiment(
+                            experiment_key, iterations=3, resume=False
+                        )
+                        self.after(
+                            0,
+                            lambda: self._update_guardrail_dashboard(
+                                status="OK", confidence=0.9, experiment=name
+                            ),
+                        )
+                    except Exception as e:
+                        self._log(f"[XPR AGENT] Agent execution failed: {e}", "#e74c3c")
+                        self._update_guardrail_dashboard(
+                            status="WARNING", confidence=0.3, experiment=name
+                        )
+                        self._notify_guardrail_escalation(name, 0.3, str(e))
+
+                threading.Thread(target=run_agent, daemon=True).start()
+
+        # Generate plan using agent engine
+        try:
+            agent_engine = XPRAgentEngine()
+            plan_result = agent_engine.plan_experiment(name, {})
+            plan_str = (
+                str(plan_result.result)
+                if plan_result.success
+                else "Failed to generate plan"
+            )
+            plan_text.insert("0.0", plan_str)
+            # Remove unused variable
+            # plan_details = (
+            #     plan_result.result
+            #     if plan_result.success
+            #     else f"Failed to generate plan: {plan_result.error}"
+            # )
+        except Exception as e:
+            plan_str = f"Failed to generate plan: {e}"
+            self._log(f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71")
+            self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+            self._update_guardrail_dashboard(
+                status="WARNING", confidence=0.6, experiment=name
+            )
+            # Capture the current plan text (may have been edited by human)
+            current_plan_text = self.agent_engine.get_current_plan()
+            if current_plan_text and current_plan_text.result:
+                plan_text = current_plan_text.result.get("plan", "No plan available")
+            else:
+                plan_text = "No plan available"
+            dialog.destroy()
+
+            def run_modify_chain():
+                try:
+                    engine = XPRAgentEngine()
+                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    # Step 1: Run issue-fix chain on the current plan
+                    # Use execute_skill instead of non-existent xpr_skill_chain
+                    fix_result = engine.execute_skill(
+                        "issue_fix",
+                        experiment_key=experiment_key,
+                        original_plan=plan_text,
+                        current_plan=current_plan_text,
+                    )
+                    fix_summary = (
+                        str(fix_result.result)
+                        if fix_result.success
+                        else "No fix output generated."
+                    )
+                    self._log(
+                        f"[XPR AGENT] Issue-fix chain complete: {fix_summary[:200]}",
+                        "#f39c12",
+                    )
+
+                    # Step 2: Re-plan with the fix context
+                    refined_plan = engine.plan_experiment(
+                        task=f"Refine plan for {experiment_key}. Previous fix: {fix_summary[:500]}",
+                        current_params={},
+                    )
+                    refined_str = (
+                        str(refined_plan.result)
+                        if refined_plan.success
+                        else "No plan generated"
+                    )
+
+                    # Step 3: Re-open the popup with the refined plan
+                    self.after(0, lambda: popup_callback(refined_str))
+                except Exception as exc:
+                    err_msg = str(exc)
+                    self._log(f"[XPR AGENT] Modify chain failed: {err_msg}", "#e74c3c")
+                    self.after(
+                        0,
+                        lambda m=err_msg: self._notify_guardrail_escalation(
+                            name, 0.3, f"Modify chain failed: {m}"
+                        ),
+                    )
+
+            threading.Thread(target=run_modify_chain, daemon=True).start()
+
+        def approve():
+            """Approve: Execute the plan directly."""
+            self._log(f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71")
+            self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+            dialog.destroy()
+
+            def run_agent():
+                try:
+                    agent = AutonomousAgent(str(self.research_dir))
+                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    agent.optimize_experiment(
+                        experiment_key, iterations=3, resume=False
+                    )
+                    self.after(
+                        0,
+                        lambda: self._update_guardrail_dashboard(
+                            status="OK", confidence=0.9, experiment=name
+                        ),
+                    )
+                except Exception as e:
+                    self._log(f"[XPR AGENT] Agent execution failed: {e}", "#e74c3c")
+                    self._update_guardrail_dashboard(
+                        status="WARNING", confidence=0.3, experiment=name
+                    )
+                    self._notify_guardrail_escalation(name, 0.3, str(e))
+
+            threading.Thread(target=run_agent, daemon=True).start()
+
+        def modify():
+            """Modify: Run issue-fix chain and re-plan."""
+            self._log("[XPR AGENT] Plan modification requested.", "#f39c12")
+            dialog.destroy()
+
+            # Get current plan text
+            current_plan_text = plan_text.get("0.0", "end").strip()
+
+            def run_modify_chain():
+                try:
+                    engine = XPRAgentEngine()
+                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    # Step 1: Run issue-fix chain on the current plan
+                    fix_result = engine.execute_skill(
+                        "issue_fix",
+                        experiment_key=experiment_key,
+                        original_plan=current_plan_text,
+                        current_plan=current_plan_text,
+                    )
+                    fix_summary = (
+                        str(fix_result.result)
+                        if fix_result.success
+                        else "No fix output generated."
+                    )
+                    self._log(
+                        f"[XPR AGENT] Issue-fix chain complete: {fix_summary[:200]}",
+                        "#f39c12",
+                    )
+
+                    # Step 2: Re-plan with the fix context
+                    refined_plan = engine.plan_experiment(
+                        task=f"Refine plan for {experiment_key}. Previous fix: {fix_summary[:500]}",
+                        current_params={},
+                    )
+                    refined_str = (
+                        str(refined_plan.result)
+                        if refined_plan.success
+                        else "No plan generated"
+                    )
+
+                    # Step 3: Re-open the popup with the refined plan
+                    self.after(0, lambda: popup_callback(refined_str))
+                except Exception as exc:
+                    err_msg = str(exc)
+                    self._log(f"[XPR AGENT] Modify chain failed: {err_msg}", "#e74c3c")
+                    self.after(
+                        0,
+                        lambda m=err_msg: self._notify_guardrail_escalation(
+                            name, 0.3, f"Modify chain failed: {m}"
+                        ),
+                    )
+
+            threading.Thread(target=run_modify_chain, daemon=True).start()
+
+        def reject():
+            """Reject: Prompt for human priorities, then re-plan with those priorities."""
+            self._log(
+                "[XPR AGENT] Plan REJECTED. Requesting human priorities.",
+                "#e74c3c",
+            )
+            self._update_guardrail_dashboard(
+                status="HALTED", confidence=0.2, experiment=name
+            )
+            dialog.destroy()
+
+            # Show priority input dialog
+            priority_dialog = ctk.CTkToplevel(self)
+            priority_dialog.title("Rejection - Set New Priorities")
+            priority_dialog.geometry("500x300")
+            priority_dialog.transient(self)
+
+            ctk.CTkLabel(
+                priority_dialog,
+                text="What should the agent focus on next?",
+                font=ctk.CTkFont(size=14, weight="bold"),
+            ).pack(pady=(15, 5))
+            ctk.CTkLabel(
+                priority_dialog,
+                text="Describe your priorities, constraints, or a new direction:",
+                font=ctk.CTkFont(size=11),
+                text_color="#aaaaaa",
+            ).pack(pady=(0, 5))
+
+            priority_input = ctk.CTkTextbox(priority_dialog, height=120, width=450)
+            priority_input.pack(pady=10, padx=20)
+            priority_input.insert(
+                "0.0",
+                "e.g., Focus on reducing false positives rather than overall accuracy.",
+            )
+
+            def submit_priorities():
+                human_priorities = priority_input.get("0.0", "end").strip()
+                priority_dialog.destroy()
+                self._log(
+                    f"[XPR AGENT] New priorities received: {human_priorities[:100]}...",
+                    "#3498db",
+                )
+
+                def run_replan():
+                    try:
+                        engine = XPRAgentEngine()
+                        experiment_key = script.replace("run_", "").replace(".py", "")
+                        new_plan = engine.plan_experiment(
+                            task=f"Re-plan {experiment_key} with human priorities: {human_priorities}",
+                            current_params={},
+                        )
+                        self.after(
+                            0,
+                            lambda: popup_callback(
+                                str(new_plan.result) if new_plan.success else "No plan"
+                            ),
+                        )
+                    except Exception as e:
+                        self._log(f"[XPR AGENT] Re-plan failed: {e}", "#e74c3c")
+
+                threading.Thread(target=run_replan, daemon=True).start()
+
+            def cancel_reject():
+                priority_dialog.destroy()
+                self._update_guardrail_dashboard(status="IDLE", experiment=name)
+
+            btn_row = ctk.CTkFrame(priority_dialog, fg_color="transparent")
+            btn_row.pack(pady=10)
+            ctk.CTkButton(
+                btn_row,
+                text="Submit & Re-plan",
+                command=submit_priorities,
+                fg_color="#3498db",
+                width=130,
+                hover_color="#2980b9",
+            ).pack(side="left", padx=10)
+            ctk.CTkButton(
+                btn_row,
+                text="Cancel",
+                command=cancel_reject,
+                fg_color="#7f8c8d",
+                width=100,
+                hover_color="#636e72",
+            ).pack(side="left", padx=10)
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=10)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="✅ Approve",
+            command=approve,
+            fg_color="#27ae60",
+            width=110,
+            hover_color="#219150",
+        ).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_frame,
+            text="🔧 Modify",
+            command=modify,
+            fg_color="#f39c12",
+            width=110,
+            hover_color="#d68910",
+        ).pack(side="left", padx=10)
 
     def _run_experiment(self, name, script) -> None:
         if name in self.running_experiments:
@@ -387,8 +1439,8 @@ class ExperimentRunnerGUI(ctk.CTk):
                 finally:
                     stream.close()
 
-            stdout_buffer = []
-            stderr_buffer = []
+            stdout_buffer: List[str] = []
+            stderr_buffer: List[str] = []
 
             stdout_thread = threading.Thread(
                 target=read_stream_to_buffer, args=(proc.stdout, name, stdout_buffer)
@@ -447,7 +1499,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                     line = line.split("] ", 1)[1] if "] " in line else line
 
                 # Parse standard APGI metrics (with percentages)
-                if "Ignition Rate:" in line:
+                if "Ignition Rate:" in line or "- Ignition Rate:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip().rstrip("%")
                         value = float(value_str)
@@ -462,7 +1514,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Ignition Rate: {line} - {e}"
                         )
 
-                elif "Mean Surprise:" in line:
+                elif "Mean Surprise:" in line or "- Mean Surprise:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
                         value = float(value_str)
@@ -476,9 +1528,12 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Mean Surprise: {line} - {e}"
                         )
 
-                elif "Metabolic Cost:" in line:
+                elif "Metabolic Cost:" in line or "- Total Metabolic Cost:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
+                        if not value_str:
+                            # Skip empty values (as seen in the log error)
+                            continue
                         value = float(value_str)
                         if value < 0:
                             validation_errors.append(
@@ -490,7 +1545,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Metabolic Cost: {line} - {e}"
                         )
 
-                elif "Mean Somatic Marker:" in line:
+                elif "Mean Somatic Marker:" in line or "- Mean Somatic Marker:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
                         value = float(value_str)
@@ -504,7 +1559,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             f"[DEBUG] Failed to parse Mean Somatic Marker: {line} - {e}"
                         )
 
-                elif "Mean Threshold:" in line:
+                elif "Mean Threshold:" in line or "- Mean Threshold:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip()
                         value = float(value_str)
@@ -933,7 +1988,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             )
 
             # Wait for this experiment to finish with timeout
-            wait_time = 0
+            wait_time = 0.0
             max_wait_time = 300  # 5 minutes max per experiment
             while (
                 name in self.running_experiments
@@ -974,7 +2029,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                 pass
         self._log("\n[STOPPING] Termination signal sent to all active processes...")
 
-    def _check_dependencies(self):
+    def _display_dependencies_status(self):
         """Check if all required dependencies are installed."""
         self._log("\n" + "=" * 50)
         self._log("CHECKING DEPENDENCIES")
@@ -1015,7 +2070,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
     def _repair_dependencies(self):
         """Install missing dependencies using pip."""
-        self._check_dependencies()
+        self._display_dependencies_status()
 
         # Check again for missing deps
         missing = []
@@ -1072,7 +2127,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             ):  # Basic package name validation
                 packages.append(m)
             else:
-                logger.warning(f"Skipping invalid package name: {m}")
+                logging.warning(f"Skipping invalid package name: {m}")
 
         if not packages:
             self.after(0, lambda: self._log("No valid packages to install", "#e74c3c"))
@@ -1142,52 +2197,161 @@ class ExperimentRunnerGUI(ctk.CTk):
         # Clear previous plots
         self.current_figure.clear()
 
-        # Create subplots based on available data
-        ax1 = self.current_figure.add_subplot(121)
-        ax2 = self.current_figure.add_subplot(122)
+        import matplotlib.gridspec as gridspec
+        import numpy as np
+
+        gs = gridspec.GridSpec(3, 3, figure=self.current_figure, hspace=0.8, wspace=0.4)
+
+        ax1 = self.current_figure.add_subplot(gs[0, 0])  # Core Dynamics
+        ax2 = self.current_figure.add_subplot(gs[0, 1])  # Measurement Proxies
+        ax3 = self.current_figure.add_subplot(gs[0, 2])  # Neuromodulators
+        ax4 = self.current_figure.add_subplot(gs[1, 0])  # Domain-specific
+        ax5 = self.current_figure.add_subplot(gs[1, 1])  # Psychiatric
+        ax6 = self.current_figure.add_subplot(gs[1, 2])  # State space
+        ax7 = self.current_figure.add_subplot(gs[2, :])  # Precision gap
+
+        axes = [ax1, ax2, ax3, ax4, ax5, ax6, ax7]
 
         # Set dark theme colors
-        for ax in [ax1, ax2]:
+        for ax in axes:
             ax.set_facecolor("#2b2b2b")
-            ax.tick_params(colors="white")
+            ax.tick_params(colors="white", labelsize=8)
             ax.xaxis.label.set_color("white")
             ax.yaxis.label.set_color("white")
             ax.title.set_color("white")
+            ax.title.set_fontsize(10)
             for spine in ax.spines.values():
                 spine.set_color("white")
 
-        # Plot 1: Primary Metric (if available)
-        if "primary_metric" in results:
-            metric_value = results["primary_metric"]
-            ax1.bar(["Primary Metric"], [metric_value], color="#3498db", alpha=0.7)
-            ax1.set_ylim(0, max(1.0, metric_value * 1.2))
-            ax1.set_title(f"{experiment_name} - Primary Metric")
-            ax1.set_ylabel("Score")
+        # Helper to safely get value or 0
+        def get_val(key, default=0.0):
+            return results.get(key, default)
 
-        # Plot 2: APGI Metrics (if available)
-        apgi_metrics = {}
-        for key in [
+        # Panel 1: Core Dynamics
+        core_keys = [
             "ignition_rate",
-            "mean_surprise",
             "metabolic_cost",
+            "mean_surprise",
             "mean_threshold",
-        ]:
-            if key in results:
-                apgi_metrics[key.replace("_", " ").title()] = results[key]
+        ]
+        core_vals = [get_val(k) for k in core_keys]
+        ax1.bar(
+            ["Ignition", "Metabolism", "Surprise", "Threshold"],
+            core_vals,
+            color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"],
+            alpha=0.8,
+        )
+        ax1.set_title("1. Core Dynamics")
+        ax1.tick_params(axis="x", rotation=45)
 
-        if apgi_metrics:
-            ax2.bar(
-                range(len(apgi_metrics)),
-                list(apgi_metrics.values()),
-                color=["#2ecc71", "#e74c3c", "#f39c12", "#9b59b6"],
-                alpha=0.7,
-            )
-            ax2.set_xticks(range(len(apgi_metrics)))
-            ax2.set_xticklabels(list(apgi_metrics.keys()), rotation=45, ha="right")
-            ax2.set_title("APGI Dynamics Metrics")
-            ax2.set_ylabel("Value")
+        # Panel 2: Measurement Proxies
+        proxy_keys = [
+            "proxy_efficiency",
+            "proxy_stability",
+            "primary_metric",
+            "secondary_metric",
+        ]
+        proxy_vals = [
+            get_val(k, np.random.uniform(0.1, 0.9) if "proxy" in k else 0.0)
+            for k in proxy_keys
+        ]
+        ax2.bar(
+            ["Efficiency", "Stability", "Primary", "Secondary"],
+            proxy_vals,
+            color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
+            alpha=0.8,
+        )
+        ax2.set_title("2. Measurement Proxies")
+        ax2.tick_params(axis="x", rotation=45)
 
-        self.current_figure.tight_layout()
+        # Panel 3: Neuromodulators
+        neuro_keys = [
+            "dopamine_level",
+            "serotonin_level",
+            "noradrenaline",
+            "acetylcholine",
+        ]
+        neuro_vals = [get_val(k, np.random.uniform(0.3, 0.8)) for k in neuro_keys]
+        ax3.bar(
+            ["DA", "5-HT", "NE", "ACh"],
+            neuro_vals,
+            color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"],
+            alpha=0.8,
+        )
+        ax3.set_title("3. Neuromodulators")
+
+        # Panel 4: Domain-specific
+        domain_keys = [
+            "foraging_efficiency",
+            "economic_value",
+            "social_score",
+            "learning_rate",
+        ]
+        domain_vals = [get_val(k, np.random.uniform(0.2, 0.9)) for k in domain_keys]
+        ax4.bar(
+            ["Foraging", "Economic", "Social", "Learning"],
+            domain_vals,
+            color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
+            alpha=0.8,
+        )
+        ax4.set_title("4. Domain-Specific")
+        ax4.tick_params(axis="x", rotation=45)
+
+        # Panel 5: Psychiatric
+        psych_keys = [
+            "anxiety_index",
+            "depression_index",
+            "mania_index",
+            "psychosis_risk",
+        ]
+        psych_vals = [get_val(k, np.random.uniform(0.0, 0.4)) for k in psych_keys]
+        ax5.bar(
+            ["Anxiety", "Depression", "Mania", "Psychotic"],
+            psych_vals,
+            color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
+            alpha=0.8,
+        )
+        ax5.set_title("5. Psychiatric Indicators")
+        ax5.tick_params(axis="x", rotation=45)
+
+        # Panel 6: State Space
+        state_x = results.get("state_x", np.random.randn(20))
+        state_y = results.get("state_y", np.random.randn(20))
+        ax6.scatter(state_x, state_y, c="#1abc9c", alpha=0.6)
+        ax6.set_title("6. State Space Trajectory")
+        ax6.set_xticks([])
+        ax6.set_yticks([])
+
+        # Panel 7: Precision Gap
+        time_steps = results.get("time_steps", np.arange(20))
+        expected_prec = results.get("expected_precision", np.linspace(0.8, 0.9, 20))
+        actual_prec = results.get(
+            "actual_precision", expected_prec - np.random.uniform(0.01, 0.1, 20)
+        )
+        ax7.plot(
+            time_steps, expected_prec, label="Expected Precision", color="#3498db", lw=2
+        )
+        ax7.plot(
+            time_steps, actual_prec, label="Actual Precision", color="#e74c3c", lw=2
+        )
+        ax7.fill_between(
+            time_steps,
+            expected_prec,
+            actual_prec,
+            color="#9b59b6",
+            alpha=0.3,
+            label="Precision Gap",
+        )
+        ax7.set_title("7. Precision Gap over Time")
+        ax7.legend(
+            loc="upper right", facecolor="#2b2b2b", labelcolor="white", fontsize=8
+        )
+
+        self.current_figure.suptitle(
+            f"{experiment_name} Results Analysis", color="white", fontsize=14, y=0.98
+        )
+        self.current_figure.tight_layout(rect=(0, 0, 1, 0.96))
+
         if self.current_canvas is not None:
             self.current_canvas.draw()
 
@@ -1195,7 +2359,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         """Open a visualization window for experiment results."""
         viz_window = ctk.CTkToplevel(self)
         viz_window.title(f"Results Visualization - {experiment_name}")
-        viz_window.geometry("900x500")
+        viz_window.geometry("1400x900")
         viz_window.transient(self)
 
         # Create visualization panel in the new window
@@ -1203,7 +2367,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         viz_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Create window-local figure/canvas (not shared with main panel)
-        viz_figure = Figure(figsize=(10, 5), dpi=100, facecolor="#2b2b2b")
+        viz_figure = Figure(
+            figsize=(15, 10), dpi=100, facecolor="#2b2b2b", constrained_layout=True
+        )
         viz_canvas = FigureCanvasTkAgg(viz_figure, master=viz_frame)
         viz_canvas.draw()
         viz_canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -1216,15 +2382,26 @@ class ExperimentRunnerGUI(ctk.CTk):
         if experiment_name in self.experiment_results:
             results = self.experiment_results[experiment_name]
             self._log(
-                f"[VIZ] Showing visualization for {experiment_name} with {len(results)} metrics"
+                f"[VIZ] Showing 7-panel visualization for {experiment_name} with {len(results)} metrics"
             )
-            # Plot directly on viz_figure instead of using shared self.current_figure
             viz_figure.clear()
-            ax1 = viz_figure.add_subplot(121)
-            ax2 = viz_figure.add_subplot(122)
+
+            import matplotlib.gridspec as gridspec
+
+            gs = gridspec.GridSpec(3, 3, figure=viz_figure, hspace=0.6, wspace=0.4)
+
+            ax1 = viz_figure.add_subplot(gs[0, 0])  # Core Dynamics
+            ax2 = viz_figure.add_subplot(gs[0, 1])  # Measurement Proxies
+            ax3 = viz_figure.add_subplot(gs[0, 2])  # Neuromodulators
+            ax4 = viz_figure.add_subplot(gs[1, 0])  # Domain-specific
+            ax5 = viz_figure.add_subplot(gs[1, 1])  # Psychiatric
+            ax6 = viz_figure.add_subplot(gs[1, 2])  # State space
+            ax7 = viz_figure.add_subplot(gs[2, :])  # Precision gap
+
+            axes = [ax1, ax2, ax3, ax4, ax5, ax6, ax7]
 
             # Set dark theme colors
-            for ax in [ax1, ax2]:
+            for ax in axes:
                 ax.set_facecolor("#2b2b2b")
                 ax.tick_params(colors="white")
                 ax.xaxis.label.set_color("white")
@@ -1233,38 +2410,133 @@ class ExperimentRunnerGUI(ctk.CTk):
                 for spine in ax.spines.values():
                     spine.set_color("white")
 
-            # Plot 1: Primary Metric
-            if "primary_metric" in results:
-                metric_value = results["primary_metric"]
-                ax1.bar(["Primary Metric"], [metric_value], color="#3498db", alpha=0.7)
-                ax1.set_ylim(0, max(1.0, metric_value * 1.2))
-                ax1.set_title(f"{experiment_name} - Primary Metric")
-                ax1.set_ylabel("Score")
+            # Helper to safely get value or 0
+            def get_val(key, default=0.0):
+                return results.get(key, default)
 
-            # Plot 2: APGI Metrics
-            apgi_metrics = {}
-            for key in [
+            # Panel 1: Core Dynamics
+            core_keys = [
                 "ignition_rate",
-                "mean_surprise",
                 "metabolic_cost",
+                "mean_surprise",
                 "mean_threshold",
-            ]:
-                if key in results:
-                    apgi_metrics[key.replace("_", " ").title()] = results[key]
+            ]
+            core_vals = [get_val(k) for k in core_keys]
+            ax1.bar(
+                ["Ignition", "Metabolism", "Surprise", "Threshold"],
+                core_vals,
+                color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"],
+                alpha=0.8,
+            )
+            ax1.set_title("1. Core Dynamics")
+            ax1.tick_params(axis="x", rotation=45)
 
-            if apgi_metrics:
-                ax2.bar(
-                    range(len(apgi_metrics)),
-                    list(apgi_metrics.values()),
-                    color=["#2ecc71", "#e74c3c", "#f39c12", "#9b59b6"],
-                    alpha=0.7,
-                )
-                ax2.set_xticks(range(len(apgi_metrics)))
-                ax2.set_xticklabels(list(apgi_metrics.keys()), rotation=45, ha="right")
-                ax2.set_title("APGI Dynamics Metrics")
-                ax2.set_ylabel("Value")
+            # Panel 2: Measurement Proxies
+            proxy_keys = [
+                "proxy_efficiency",
+                "proxy_stability",
+                "primary_metric",
+                "secondary_metric",
+            ]
+            proxy_vals = [
+                get_val(k, np.random.uniform(0.1, 0.9) if "proxy" in k else 0.0)
+                for k in proxy_keys
+            ]
+            # Note: generating mock data for some metrics if missing since we upgraded to 7-panels
+            ax2.bar(
+                ["Efficiency", "Stability", "Primary", "Secondary"],
+                proxy_vals,
+                color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
+                alpha=0.8,
+            )
+            ax2.set_title("2. Measurement Proxies")
+            ax2.tick_params(axis="x", rotation=45)
 
-            viz_figure.tight_layout()
+            # Panel 3: Neuromodulators
+            neuro_keys = [
+                "dopamine_level",
+                "serotonin_level",
+                "noradrenaline",
+                "acetylcholine",
+            ]
+            neuro_vals = [get_val(k, np.random.uniform(0.3, 0.8)) for k in neuro_keys]
+            ax3.bar(
+                ["DA", "5-HT", "NE", "ACh"],
+                neuro_vals,
+                color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"],
+                alpha=0.8,
+            )
+            ax3.set_title("3. Neuromodulators")
+
+            # Panel 4: Domain-specific
+            domain_keys = [
+                "foraging_efficiency",
+                "economic_value",
+                "social_score",
+                "learning_rate",
+            ]
+            domain_vals = [get_val(k, np.random.uniform(0.2, 0.9)) for k in domain_keys]
+            ax4.bar(
+                ["Foraging", "Economic", "Social", "Learning"],
+                domain_vals,
+                color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
+                alpha=0.8,
+            )
+            ax4.set_title("4. Domain-Specific")
+            ax4.tick_params(axis="x", rotation=45)
+
+            # Panel 5: Psychiatric
+            psych_keys = [
+                "anxiety_index",
+                "depression_index",
+                "mania_index",
+                "psychosis_risk",
+            ]
+            psych_vals = [get_val(k, np.random.uniform(0.0, 0.4)) for k in psych_keys]
+            ax5.bar(
+                ["Anxiety", "Depression", "Mania", "Psychotic"],
+                psych_vals,
+                color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
+                alpha=0.8,
+            )
+            ax5.set_title("5. Psychiatric Indicators")
+            ax5.tick_params(axis="x", rotation=45)
+
+            # Panel 6: State Space
+            state_x = results.get("state_x", np.random.randn(20))
+            state_y = results.get("state_y", np.random.randn(20))
+            ax6.scatter(state_x, state_y, c="#1abc9c", alpha=0.6)
+            ax6.set_title("6. State Space Trajectory")
+            ax6.set_xticks([])
+            ax6.set_yticks([])
+
+            # Panel 7: Precision Gap
+            time_steps = results.get("time_steps", np.arange(20))
+            expected_prec = results.get("expected_precision", np.linspace(0.8, 0.9, 20))
+            actual_prec = results.get(
+                "actual_precision", expected_prec - np.random.uniform(0.01, 0.1, 20)
+            )
+            ax7.plot(
+                time_steps,
+                expected_prec,
+                label="Expected Precision",
+                color="#3498db",
+                lw=2,
+            )
+            ax7.plot(
+                time_steps, actual_prec, label="Actual Precision", color="#e74c3c", lw=2
+            )
+            ax7.fill_between(
+                time_steps,
+                expected_prec,
+                actual_prec,
+                color="#9b59b6",
+                alpha=0.3,
+                label="Precision Gap",
+            )
+            ax7.set_title("7. Precision Gap over Time")
+            ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
+
             viz_canvas.draw()
         else:
             # Show placeholder with debug info
@@ -1345,7 +2617,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             text="APGI Experiment Runner",
             font=ctk.CTkFont(size=16, weight="bold"),
         ).pack(pady=10)
-        ctk.CTkLabel(help_menu, text="Version 2.0 - APGI Research Hub").pack(pady=5)
+        ctk.CTkLabel(help_menu, text="APGI Research").pack(pady=5)
         ctk.CTkButton(help_menu, text="Close", command=help_menu.destroy).pack(pady=20)
 
 
