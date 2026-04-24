@@ -647,6 +647,9 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
         self.skill_dependencies: Dict[str, List[str]] = {}
         self.optimization_strategies: Dict[str, Any] = {}
 
+        # Register XPR enhanced skills automatically
+        register_xpr_skills(self)
+
     def _extract_missing_module(self, error_msg: str) -> Optional[str]:
         """Extract missing module name from error message."""
         match = re.search(r"No module named '([^']+)'", error_msg)

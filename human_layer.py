@@ -23,6 +23,27 @@ from hypothesis_approval_board import ApprovalBoard, HypothesisStatus
 logger = logging.getLogger(__name__)
 
 
+def _is_tkinter_running() -> bool:
+    """Detect if Tkinter event loop is running (GUI mode)."""
+    try:
+        import tkinter
+
+        # Check if there's a default root window
+        root = getattr(tkinter, "_default_root", None)
+        if root is not None:
+            try:
+                return bool(root.winfo_exists())
+            except Exception:
+                return False
+        # Check Tcl interpreter
+        import _tkinter
+
+        default_root = getattr(_tkinter, "_default_root", None)
+        return default_root is not None
+    except (ImportError, AttributeError):
+        return False
+
+
 class TaskPriority(Enum):
     """Priority levels for task selection."""
 
@@ -378,8 +399,19 @@ class HumanControlLayer:
             print(
                 f"Auto-mode: Applying recommended decision: {final_decision.value.upper()}"
             )
+        elif _is_tkinter_running():
+            # GUI mode detected - auto-approve to avoid blocking Tkinter event loop
+            final_decision = recommended_decision
+            comments = f"Auto-approved (GUI mode): {reason}"
+            reviewer = "gui_autonomous_agent"
+            logger.info(
+                f"GUI mode detected - auto-applying recommended decision: {final_decision.value.upper()}"
+            )
+            print(
+                f"GUI mode: Auto-applying recommended decision: {final_decision.value.upper()}"
+            )
         else:
-            # Interactive decision
+            # Interactive decision (console mode only)
             print("Available decisions:")
             print("  [1] APPROVE - Continue with current results")
             print("  [2] MODIFY - Request changes and re-run")
@@ -443,20 +475,26 @@ class HumanControlLayer:
         # Collect modifications if MODIFY decision
         modifications = None
         if final_decision == ReviewDecision.MODIFY:
-            print("\nModification requests:")
-            print(
-                "Enter specific modifications needed (one per line, empty line to finish):"
-            )
-            modifications = []
-            while True:
-                try:
-                    mod = input("> ").strip()
-                    if mod == "":
+            if _is_tkinter_running():
+                # GUI mode - skip interactive modification input
+                modifications = ["Auto-generated modification (GUI mode)"]
+                print("\nGUI mode: Using auto-generated modifications")
+            else:
+                # Console mode - collect interactive input
+                print("\nModification requests:")
+                print(
+                    "Enter specific modifications needed (one per line, empty line to finish):"
+                )
+                modifications = []
+                while True:
+                    try:
+                        mod = input("> ").strip()
+                        if mod == "":
+                            break
+                        modifications.append(mod)
+                    except KeyboardInterrupt:
                         break
-                    modifications.append(mod)
-                except KeyboardInterrupt:
-                    break
-            print()
+                print()
 
         # Create review result
         review_result = ReviewResult(

@@ -42,7 +42,7 @@ class VectorEmbedding:
 
 @dataclass
 class MemoryEntry:
-    """Enhanced memory entry with vector embeddings for XPR* Engine."""
+    """Enhanced memory entry with vector embeddings for APGI Engine."""
 
     timestamp: str
     experiment_name: str

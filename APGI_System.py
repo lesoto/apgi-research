@@ -91,6 +91,10 @@ import matplotlib
 matplotlib.use("Agg")  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
+import warnings
+
+# Suppress numpy overflow warnings from legitimate numerical operations
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
 
 try:
     import plotly.io as pio
@@ -99,7 +103,6 @@ try:
     pio.templates.default = "plotly_white+plotly_dark"
 except ImportError:
     PLOTLY_AVAILABLE = False
-    warnings.warn("Plotly not available. Install with: pip install plotly")
 
 
 # =============================================================================

@@ -15,14 +15,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the GUI module using importlib due to hyphen in filename
+# Import the GUI module using importlib due to underscore in filename
 import importlib.util
 
 spec = importlib.util.spec_from_file_location(
     "GUI_auto_improve_experiments",
     os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "GUI-auto_improve_experiments.py",
+        "GUI_auto_improve_experiments.py",
     ),
 )
 if spec is not None and spec.loader is not None:

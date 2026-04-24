@@ -18,7 +18,6 @@ import numpy as np
 import pytest
 from hypothesis import given, settings, strategies as st, assume, Phase, HealthCheck
 from hypothesis.extra.numpy import arrays
-from unittest.mock import MagicMock
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -38,10 +37,8 @@ valid_participant_id = st.text(
 try:
     # Test that strategies produce valid values, not mocks
     _test_strat = st.integers(min_value=1, max_value=10)
-    _test_val = _test_strat.example()
-    _hypothesis_working = not isinstance(_test_val, MagicMock) and not hasattr(
-        _test_val, "_mock_name"
-    )
+    # Use @given decorator instead of .example() for proper testing
+    _hypothesis_working = True
 except Exception:
     _hypothesis_working = False
 

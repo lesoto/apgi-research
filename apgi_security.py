@@ -10,7 +10,7 @@ import hashlib
 import json
 from typing import Any
 
-ALLOWED_SUBPROCESS_CMDS = ["git", "pytest", "python"]
+ALLOWED_SUBPROCESS_CMDS = ["git", "pytest", "python", "screencapture"]
 
 
 def _secure_subprocess_popen(*args, **kwargs):

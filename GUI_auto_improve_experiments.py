@@ -2,20 +2,19 @@
 Modernized for apgi-research directory with CustomTkinter.
 """
 
-import os
+# CRITICAL: Must set multiprocessing start method BEFORE any other imports on macOS
+# to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
 import sys
-import multiprocessing
+import os
 
-# Fix CoreFoundation fork issue on macOS by setting spawn method
-if sys.platform == "darwin" and hasattr(multiprocessing, "set_start_method"):
-    try:
-        multiprocessing.set_start_method("spawn")
-    except RuntimeError:
-        pass  # Method already set
-
-# Set environment variable to prevent CoreFoundation issues in subprocesses
 if sys.platform == "darwin":
-    os.environ["OBJC_DISABLE_MULTITHREADING"] = "1"
+    os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+    import multiprocessing
+
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass  # Already set
 
 from tkinter import messagebox
 import customtkinter as ctk
@@ -284,7 +283,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.clear_button.grid(row=3, column=0, padx=20, pady=10)
 
         # -----------------------------------------------------------
-        # Guardrail Dashboard Panel (XPR* Requirement)
+        # Guardrail Dashboard Panel (APGI Requirement)
         # -----------------------------------------------------------
         self.guardrail_frame = ctk.CTkFrame(
             self.navigation_frame, corner_radius=8, fg_color="#1a1a2e"

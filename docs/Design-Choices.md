@@ -1,12 +1,6 @@
 # Architecture Decision Record (ADR): APGI Design Choices
 
-## Status
-
-Accepted
-
-## Context
-
-The Attention, Perception, and General Intelligence (APGI) system requires robust, scalable, and secure architectural frameworks. As the system involves running autonomous experiments and generative modeling, we need clear boundaries for compliance, security, and reproducibility.
+The APGI requires robust, scalable, and secure architectural frameworks. As the system involves running autonomous experiments and generative modeling, we need clear boundaries for compliance, security, and reproducibility.
 
 ## Decision
 
