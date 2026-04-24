@@ -1,0 +1,134 @@
+[
+  {
+    "timestamp": "2026-04-24T18:27:50.261217",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "454a7b536765"
+  },
+  {
+    "timestamp": "2026-04-24T18:27:51.428928",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "d72e2ec67464"
+  },
+  {
+    "timestamp": "2026-04-24T18:27:51.429819",
+    "experiment_name": "masked_task",
+    "pattern_type": "success_pattern",
+    "content": "Successful execution: Iteration 1: Metric 0.8000 (Delta: +0.3000)",
+    "context": {
+      "metric_deltas": "{'masked_task': 0.30000000000000004}"
+    },
+    "embedding": null,
+    "memory_id": "b04cd1a983fc"
+  },
+  {
+    "timestamp": "2026-04-24T18:27:52.948314",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "2a6e14456eef"
+  },
+  {
+    "timestamp": "2026-04-24T18:30:20.938040",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "53f2b8b7e944"
+  },
+  {
+    "timestamp": "2026-04-24T18:30:22.071416",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "b7b1e2abe049"
+  },
+  {
+    "timestamp": "2026-04-24T18:30:22.071860",
+    "experiment_name": "masked_task",
+    "pattern_type": "success_pattern",
+    "content": "Successful execution: Iteration 1: Metric 0.8000 (Delta: +0.3000)",
+    "context": {
+      "metric_deltas": "{'masked_task': 0.30000000000000004}"
+    },
+    "embedding": null,
+    "memory_id": "18e730e70dec"
+  },
+  {
+    "timestamp": "2026-04-24T18:30:23.574562",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "aad8c829974c"
+  },
+  {
+    "timestamp": "2026-04-24T19:12:59.421991",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "aa6fd22d54f7"
+  },
+  {
+    "timestamp": "2026-04-24T19:13:00.586109",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "89d64ea16cf3"
+  },
+  {
+    "timestamp": "2026-04-24T19:13:00.586705",
+    "experiment_name": "masked_task",
+    "pattern_type": "success_pattern",
+    "content": "Successful execution: Iteration 1: Metric 0.8000 (Delta: +0.3000)",
+    "context": {
+      "metric_deltas": "{'masked_task': 0.30000000000000004}"
+    },
+    "embedding": null,
+    "memory_id": "8afb77e798ad"
+  },
+  {
+    "timestamp": "2026-04-24T19:13:02.179465",
+    "experiment_name": "masked_task",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "48687645c5f3"
+  }
+]
