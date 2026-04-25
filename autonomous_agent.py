@@ -36,7 +36,7 @@ import numpy as np
 import signal
 import importlib
 import asyncio
-from typing import Dict, List, Optional, Tuple, Any, Union, cast
+from typing import Dict, List, Optional, Tuple, Any, Union, cast, Callable
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
@@ -68,7 +68,7 @@ class TimeoutError(Exception):
     pass
 
 
-def timeout_handler(signum, frame):
+def timeout_handler(signum: int, frame: Any) -> None:
     """Signal handler for timeout."""
     raise TimeoutError("Experiment execution timed out")
 
@@ -127,7 +127,7 @@ class OptimizationStrategy:
 class GitPerformanceTracker:
     """Git-based performance tracking and optimization."""
 
-    def __init__(self, repo_path: str = ".", agent=None):
+    def __init__(self, repo_path: str = ".", agent: Optional[Any] = None):
         self.repo_path = Path(repo_path)
         self.repo = git.Repo(self.repo_path)
         self.results_file = self.repo_path / "optimization_results.json"
@@ -151,7 +151,7 @@ class GitPerformanceTracker:
                 logger.warning(f"Could not load results file: {e}")
         return {}
 
-    def save_results(self, results: Dict[str, ExperimentResult]):
+    def save_results(self, results: Dict[str, ExperimentResult]) -> None:
         """Save results to file."""
         try:
             with open(self.results_file, "w") as f:
@@ -243,7 +243,7 @@ class GitPerformanceTracker:
 class ParameterOptimizer:
     """AI-driven parameter optimization algorithms."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.strategies = self._initialize_strategies()
         self.current_strategy = None
 
@@ -476,7 +476,9 @@ class RequestRetryHandler:
         self.backoff_base = backoff_base
         self.max_backoff = max_backoff
 
-    def execute_with_retry(self, func, *args, **kwargs) -> Any:
+    def execute_with_retry(
+        self, func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
         """Execute a function with retry logic.
 
         Args:
@@ -548,12 +550,10 @@ def validate_subprocess_command(command: Union[str, List[str]]) -> bool:
         if not cmd_parts:
             return False
         executable = cmd_parts[0]
-    elif isinstance(command, list):
+    else:  # isinstance(command, list)
         if not command:
             return False
         executable = command[0]
-    else:
-        return False
 
     # Remove path components if present
     executable_name = Path(executable).name
@@ -567,7 +567,7 @@ def validate_subprocess_command(command: Union[str, List[str]]) -> bool:
 
 def safe_subprocess_run(
     command: Union[str, List[str]],
-    **kwargs,
+    **kwargs: Any,
 ) -> subprocess.CompletedProcess:
     """Execute subprocess command with validation and timeout.
 
@@ -767,7 +767,7 @@ class AutonomousAgent:
         iteration: int,
         current_params: dict,
         performance_history: list,
-    ):
+    ) -> None:
         """Save checkpoint for resuming after crash."""
         checkpoint = {
             "timestamp": datetime.now().isoformat(),
@@ -802,7 +802,7 @@ class AutonomousAgent:
             logger.warning(f"[APGI AGENT] Failed to load checkpoint: {e}")
             return None
 
-    def _clear_checkpoint(self):
+    def _clear_checkpoint(self) -> None:
         """Clear checkpoint after successful completion."""
         try:
             if self.checkpoint_file.exists():
@@ -1049,7 +1049,9 @@ class AutonomousAgent:
             status="crash",
         )
 
-    def _apply_modifications(self, run_file: str, modifications: Dict[str, Any]):
+    def _apply_modifications(
+        self, run_file: str, modifications: Dict[str, Any]
+    ) -> None:
         """Apply parameter modifications to run file with validation."""
         # Parameter validation whitelist - only allow known safe parameters
         ALLOWED_PARAMETERS = {
@@ -1264,7 +1266,7 @@ class AutonomousAgent:
             # Default to higher is better
             return "higher"
 
-    def _create_session_branch(self, experiment_name: str):
+    def _create_session_branch(self, experiment_name: str) -> None:
         """Create a Git branch for this optimization session (USAGE.md requirement)."""
         tag = datetime.now().strftime("%Y%m%d_%H%M%S")
         branch_name = f"{experiment_name}/{tag}"
@@ -1601,7 +1603,7 @@ class AutonomousAgent:
 
     def apply_modifications(self, run_file: str, modifications: Dict[str, Any]) -> None:
         """Public wrapper for _apply_modifications."""
-        return self._apply_modifications(run_file, modifications)  # type: ignore[no-any-return]
+        return self._apply_modifications(run_file, modifications)
 
     def extract_primary_metric(
         self, results: Dict[str, Any], experiment_name: str = "unknown"
@@ -1687,7 +1689,7 @@ class AutonomousAgent:
             logger.warning(f"Failed to extract parameters from {run_file}: {e}")
             return {}
 
-    def run_overnight_optimization(self, max_hours: float = 8.0):
+    def run_overnight_optimization(self, max_hours: float = 8.0) -> None:
         """Run overnight optimization across all experiments."""
         logger.info(f"Starting overnight optimization ({max_hours} hours)")
 
@@ -1713,7 +1715,7 @@ class AutonomousAgent:
         logger.info("Overnight optimization completed")
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Autonomous APGI Agent")
     parser.add_argument(

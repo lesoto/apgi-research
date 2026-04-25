@@ -17,7 +17,7 @@ Output:
 
 import numpy as np
 import time
-from typing import Dict, cast
+from typing import Dict, Any, cast
 
 # APGI Integration with hierarchical processing and precision gap
 from apgi_integration import (
@@ -38,6 +38,9 @@ from prepare_iowa_gambling_task import (
 from experiment_apgi_integration import (
     APGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -71,10 +74,10 @@ class SimulatedParticipant:
     Uses reinforcement learning with exploration/exploitation tradeoff.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         # Track expected value for each deck (A, B, C, D)
         self.deck_values = np.zeros(4)
         self.deck_counts = np.zeros(4)
@@ -108,7 +111,7 @@ class SimulatedParticipant:
         chosen_idx = np.random.choice(4, p=probs)
         return DECK_LABELS[chosen_idx]
 
-    def update_from_outcome(self, deck_choice: str, outcome: int):
+    def update_from_outcome(self, deck_choice: str, outcome: int) -> None:
         """
         Update learned values based on trial outcome.
         """
@@ -235,7 +238,7 @@ class EnhancedIGTRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         # Participant chooses a deck
         deck_choice = self.participant.choose_deck()
 
@@ -368,7 +371,7 @@ class EnhancedIGTRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("IOWA GAMBLING TASK EXPERIMENT RESULTS")
     print("=" * 60)
@@ -409,10 +412,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Iowa Gambling Task Experiment...")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedIGTRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nnet_score: {results['net_score']:.4f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Iowa Gambling Task  experiment")
+    cli_entrypoint(main, parser)

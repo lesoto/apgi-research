@@ -2,7 +2,7 @@ import json
 import logging
 import math
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
@@ -52,7 +52,7 @@ class MemoryEntry:
     embedding: Optional[VectorEmbedding] = None  # Semantic vector representation
     memory_id: str = ""  # Unique identifier
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.memory_id:
             self.memory_id = hashlib.md5(
                 f"{self.timestamp}:{self.experiment_name}:{self.content}".encode()
@@ -105,7 +105,7 @@ class MemoryStore:
                 logger.error(f"Failed to load memory store: {e}")
         return []
 
-    def _save_memory(self):
+    def _save_memory(self) -> None:
         """Save the memory list to the file."""
         try:
             with open(self.storage_path, "w") as f:
@@ -119,7 +119,7 @@ class MemoryStore:
         pattern_type: str,
         content: str,
         context: Optional[Dict[str, str]] = None,
-    ):
+    ) -> None:
         """Add a new insight to the memory store."""
         new_entry = MemoryEntry(
             timestamp=datetime.now().isoformat(),
@@ -420,7 +420,7 @@ class MemoryStore:
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored[:top_k]
 
-    def update_embeddings_for_all(self):
+    def update_embeddings_for_all(self) -> None:
         """Generate embeddings for all memories that don't have them."""
         updated_count = 0
         for entry in self.memory:
@@ -442,7 +442,7 @@ class MemoryStore:
         """Simple whitespace + punctuation tokenizer."""
         return re.findall(r"[a-z0-9_]+", text.lower())
 
-    def _build_tfidf_index(self):
+    def _build_tfidf_index(self) -> None:
         """Build IDF values and per-document TF vectors."""
         if not self.memory:
             self._idf = {}
@@ -566,7 +566,7 @@ class MemoryStore:
 
         return filtered
 
-    def refresh_all_embeddings(self):
+    def refresh_all_embeddings(self) -> None:
         """Generate embeddings for all memories that don't have them."""
         updated_count = 0
         for entry in self.memory:
@@ -583,8 +583,8 @@ class MemoryStore:
 def update_memory_from_report(
     report_data: dict,
     memory_store: MemoryStore,
-    llm_call_fn=None,
-):
+    llm_call_fn: Any = None,
+) -> None:
     """
     Extract lessons learned from an ExecutionReport and store them.
 

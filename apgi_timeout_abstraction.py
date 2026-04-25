@@ -11,7 +11,7 @@ Supports:
 """
 
 import threading
-from typing import Callable, Any, Optional, TypeVar
+from typing import Callable, Any, Optional, TypeVar, Generator
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 import sys
@@ -39,7 +39,7 @@ class TimeoutStrategy(ABC):
 class ThreadBasedTimeout(TimeoutStrategy):
     """Portable thread-based timeout (works on all platforms)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("apgi.timeout.thread")
         self.timer: Optional[threading.Timer] = None
         self.timed_out = False
@@ -49,7 +49,7 @@ class ThreadBasedTimeout(TimeoutStrategy):
         if timeout_seconds <= 0:
             return
 
-        def timeout_handler():
+        def timeout_handler() -> None:
             self.timed_out = True
             self.logger.warning(f"Timeout triggered after {timeout_seconds}s")
             callback()
@@ -69,7 +69,7 @@ class ThreadBasedTimeout(TimeoutStrategy):
 class SignalBasedTimeout(TimeoutStrategy):
     """Unix-only signal-based timeout (SIGALRM)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("apgi.timeout.signal")
         self.original_handler = None
 
@@ -81,11 +81,13 @@ class SignalBasedTimeout(TimeoutStrategy):
 
         import signal
 
-        def signal_handler(signum, frame):
+        def signal_handler(signum: int, frame: Any) -> None:
             self.logger.warning(f"Timeout triggered after {timeout_seconds}s")
             callback()
 
-        self.original_handler = signal.signal(signal.SIGALRM, signal_handler)
+        self.original_handler = signal.signal(  # type: ignore
+            signal.SIGALRM, signal_handler
+        )
         signal.alarm(int(timeout_seconds))
         self.logger.debug(f"Started signal-based timeout: {timeout_seconds}s")
 
@@ -98,7 +100,7 @@ class SignalBasedTimeout(TimeoutStrategy):
 
         signal.alarm(0)
         if self.original_handler:
-            signal.signal(signal.SIGALRM, self.original_handler)
+            signal.signal(signal.SIGALRM, self.original_handler)  # type: ignore
         self.logger.debug("Cancelled signal-based timeout")
 
 
@@ -120,7 +122,7 @@ class TimeoutManager:
     @contextmanager
     def timeout(
         self, timeout_seconds: float, error_message: str = "Operation timed out"
-    ):
+    ) -> Generator[None, None, None]:
         """Context manager for timeout."""
         if timeout_seconds <= 0:
             yield
@@ -129,7 +131,7 @@ class TimeoutManager:
         strategy = self._select_strategy()
         timed_out = False
 
-        def on_timeout():
+        def on_timeout() -> None:
             nonlocal timed_out
             timed_out = True
 
@@ -159,7 +161,7 @@ class TimeoutManager:
 class CancellationToken:
     """Token for cooperative cancellation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cancelled = False
         self._lock = threading.Lock()
 
@@ -229,7 +231,9 @@ def set_timeout_manager(manager: TimeoutManager) -> None:
 
 
 # Convenience functions
-def with_timeout(timeout_seconds: float):
+def with_timeout(
+    timeout_seconds: float,
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """Decorator for timeout."""
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:

@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, Optional, cast, Any
+from typing import Dict, Any, Optional, cast
 
 from prepare_posner_cueing import (
     PosnerExperiment,
@@ -37,6 +37,9 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -64,7 +67,7 @@ class SimulatedParticipant:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         pass
 
     def process_trial(self, cue_type: CueType) -> tuple:
@@ -173,7 +176,7 @@ class EnhancedPosnerRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -290,7 +293,7 @@ class EnhancedPosnerRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("POSNER CUEING EXPERIMENT RESULTS")
     print("=" * 60)
@@ -331,11 +334,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Posner Cueing Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedPosnerRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nvalidity_effect_ms: {results['validity_effect_ms']:.2f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Posner Cueing  experiment")
+    cli_entrypoint(main, parser)

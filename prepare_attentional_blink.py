@@ -148,7 +148,7 @@ class ABStream:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset stream generator."""
         self.trial_count = 0
 
@@ -237,7 +237,7 @@ class ABExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset experiment state."""
         self.trials = []
         self.current_trial_idx = 0
@@ -367,7 +367,7 @@ class ABExperiment:
             },
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         """Save trial data to JSON file."""
         data = {
             "trials": [
@@ -394,7 +394,7 @@ class ABExperiment:
             json.dump(data, f, indent=2)
 
 
-def verify_configurations():
+def verify_configurations() -> None:
     """Verify and print stimulus configurations."""
     print("=" * 60)
     print("Attentional Blink - Configuration Verification")

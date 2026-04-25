@@ -161,7 +161,7 @@ class TestChangeBlindnessExperimentRunner:
                 },
             ]
             runner_instance.hierarchical_levels_used = [1, 1, 1, 1]
-            runner_instance.start_time = 0
+            runner_instance.start_time = None
 
             with patch("time.time", return_value=10):
                 results = runner_instance._calculate_comprehensive_results()
@@ -179,7 +179,7 @@ class TestChangeBlindnessExperimentRunner:
 
             # Set up trial_metrics to test the method
             runner_instance.trial_metrics = []
-            runner_instance.start_time = 0
+            runner_instance.start_time = None
             with patch("time.time", return_value=10):
                 results = runner_instance._calculate_comprehensive_results()
                 rate = results["detection_rate"]
@@ -234,7 +234,7 @@ class TestChangeBlindnessExperimentRunner:
                 },
             ]
             runner_instance.hierarchical_levels_used = [1, 1]
-            runner_instance.start_time = 0
+            runner_instance.start_time = None
 
             with patch("time.time", return_value=10):
                 summary = runner_instance._calculate_comprehensive_results()

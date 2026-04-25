@@ -127,10 +127,40 @@ class ImmutableAuditSink:
         self.sequence_counter = 0
 
     def _get_default_key(self) -> str:
-        """Get default signing key."""
+        """
+        Get signing key from secure provisioning (fail-closed).
+
+        Raises:
+            RuntimeError: If APGI_AUDIT_KEY environment variable is not set
+                        or if the key has insufficient entropy.
+        """
         import os
 
-        return os.environ.get("APGI_AUDIT_KEY", "default_audit_key_2026")
+        key = os.environ.get("APGI_AUDIT_KEY")
+        if not key:
+            raise RuntimeError(
+                "APGI_AUDIT_KEY environment variable must be set for audit signing. "
+                "Generate a secure key with: openssl rand -hex 32"
+            )
+
+        # Validate minimum entropy (256 bits = 32 bytes = 64 hex chars)
+        if len(key.encode()) < 32:
+            raise RuntimeError(
+                f"APGI_AUDIT_KEY has insufficient entropy ({len(key.encode())} bytes). "
+                f"Minimum required: 32 bytes (256 bits). "
+                "Generate with: openssl rand -hex 32"
+            )
+
+        # Warn if using potentially weak key patterns
+        weak_patterns = ["default", "test", "dev", "local", "changeme", "password"]
+        for pattern in weak_patterns:
+            if pattern in key.lower():
+                raise RuntimeError(
+                    f"APGI_AUDIT_KEY appears to use a weak pattern: '{pattern}'. "
+                    "Generate a secure random key with: openssl rand -hex 32"
+                )
+
+        return key
 
     def record_event(
         self,

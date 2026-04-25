@@ -18,7 +18,10 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
+
+if TYPE_CHECKING:
+    from conftest import SecurityTester
 
 import numpy as np
 import pytest
@@ -48,7 +51,7 @@ class TestInputSanitization:
         ],
     )
     def test_sql_injection_resistance(
-        self, malicious_input: str, security_tester
+        self, malicious_input: str, security_tester: SecurityTester
     ) -> None:
         """Test that SQL injection patterns are detected."""
         matches = security_tester.detect_sql_injection(malicious_input)
@@ -67,7 +70,9 @@ class TestInputSanitization:
             "<body onload=alert(1)>",
         ],
     )
-    def test_xss_detection(self, malicious_input: str, security_tester) -> None:
+    def test_xss_detection(
+        self, malicious_input: str, security_tester: SecurityTester
+    ) -> None:
         """Test that XSS patterns are detected."""
         matches = security_tester.detect_xss(malicious_input)
         assert len(matches) > 0, f"XSS pattern not detected: {malicious_input}"
@@ -83,7 +88,7 @@ class TestInputSanitization:
         ],
     )
     def test_html_escaping(
-        self, input_value: str, expected_safe: str, security_tester
+        self, input_value: str, expected_safe: str, security_tester: SecurityTester
     ) -> None:
         """Test HTML escaping for XSS prevention."""
         sanitized = security_tester.sanitize_input(input_value)

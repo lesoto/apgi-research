@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, Optional, List, cast
+from typing import Dict, Any, Optional, List, cast
 
 from prepare_change_blindness import (
     ChangeBlindnessExperiment,
@@ -35,6 +35,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -55,13 +58,13 @@ MASK_DURATION_EFFECT = -0.002  # Per ms of mask
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         pass
 
-    def process_trial(self, trial_type, mask_duration_ms: int) -> tuple:
+    def process_trial(self, trial_type: Any, mask_duration_ms: int) -> tuple:
         if trial_type.value == "change":
             prob = BASE_DETECTION_RATE + MASK_DURATION_EFFECT * mask_duration_ms
             detected = np.random.random() < max(0.1, prob)
@@ -185,7 +188,7 @@ class EnhancedChangeBlindnessRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -289,7 +292,7 @@ class EnhancedChangeBlindnessRunner:
         }
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("CHANGE BLINDNESS EXPERIMENT RESULTS")
     print("=" * 60)
@@ -302,11 +305,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Change Blindness Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedChangeBlindnessRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\ndetection_rate: {results['detection_rate']:.3f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Change Blindness  experiment")
+    cli_entrypoint(main, parser)

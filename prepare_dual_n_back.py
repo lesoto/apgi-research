@@ -93,7 +93,7 @@ class DualNBackGenerator:
         self.stimulus_history: List[str] = []
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
         self.stimulus_history = []
 
@@ -127,7 +127,7 @@ class DualNBackExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -183,7 +183,7 @@ class DualNBackExperiment:
             "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -253,7 +253,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Dual N-Back - Configuration Verification")
     print(f"Stimuli: {STIMULI[:5]}... (n={len(STIMULI)})")
     print(f"N-Back Levels: {N_BACK_LEVELS}")

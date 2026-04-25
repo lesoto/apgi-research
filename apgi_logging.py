@@ -5,7 +5,7 @@ Production-grade logging for the APGI system.
 import logging
 import json
 import uuid
-from typing import Optional
+from typing import Optional, Any
 
 
 class JSONFormatter(logging.Formatter):
@@ -40,24 +40,24 @@ class APGIContextLogger:
         self.correlation_id = correlation_id or str(uuid.uuid4())
         self.trial_id = "none"
 
-    def set_trial(self, trial_id: str):
+    def set_trial(self, trial_id: str) -> None:
         self.trial_id = trial_id
 
-    def _log(self, level: int, msg: str, *args, **kwargs):
+    def _log(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         extra = kwargs.get("extra", {})
         extra["correlation_id"] = self.correlation_id
         extra["trial_id"] = self.trial_id
         kwargs["extra"] = extra
         self.logger.log(level, msg, *args, **kwargs)
 
-    def info(self, msg: str, *args, **kwargs):
+    def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._log(logging.INFO, msg, *args, **kwargs)
 
-    def error(self, msg: str, *args, **kwargs):
+    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._log(logging.ERROR, msg, *args, **kwargs)
 
-    def warning(self, msg: str, *args, **kwargs):
+    def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._log(logging.WARNING, msg, *args, **kwargs)
 
-    def debug(self, msg: str, *args, **kwargs):
+    def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
         self._log(logging.DEBUG, msg, *args, **kwargs)

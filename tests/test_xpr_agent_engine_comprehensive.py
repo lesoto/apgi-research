@@ -22,6 +22,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Callable
 from unittest.mock import patch
 
 import pytest
@@ -194,7 +195,9 @@ class TestXPRAgentEngine:
         assert engine.execution_history == []
         assert engine.current_plan is None
 
-    def test_register_skill(self, engine: XPRAgentEngine, sample_skill_func) -> None:
+    def test_register_skill(
+        self, engine: XPRAgentEngine, sample_skill_func: Callable[[int], int]
+    ) -> None:
         """Test registering a skill."""
         engine.register_skill("double", sample_skill_func)
         assert "double" in engine.skills
@@ -207,7 +210,7 @@ class TestXPRAgentEngine:
         assert len(engine.skills) == 2
 
     def test_execute_skill_success(
-        self, engine: XPRAgentEngine, sample_skill_func
+        self, engine: XPRAgentEngine, sample_skill_func: Callable[[int], int]
     ) -> None:
         """Test executing a registered skill successfully."""
         engine.register_skill("double", sample_skill_func)
@@ -228,7 +231,7 @@ class TestXPRAgentEngine:
         assert result.confidence == 0.0
 
     def test_execute_skill_failure(
-        self, engine: XPRAgentEngine, sample_failing_skill
+        self, engine: XPRAgentEngine, sample_failing_skill: Callable[[int], int]
     ) -> None:
         """Test executing a skill that raises an exception."""
         engine.register_skill("failing", sample_failing_skill)
@@ -259,7 +262,7 @@ class TestXPRAgentEngine:
         assert summary["avg_execution_time"] == 0.0
 
     def test_get_performance_summary_with_data(
-        self, engine: XPRAgentEngine, sample_execution_report
+        self, engine: XPRAgentEngine, sample_execution_report: ExecutionReport
     ) -> None:
         """Test performance summary with execution history."""
         engine.add_execution_report(sample_execution_report)
@@ -682,8 +685,13 @@ class TestXPRAgentEngineEnhanced:
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test job debug exception handling."""
-        # Pass None to trigger exception
-        result = enhanced_engine.xpr_job_debug(None)  # type: ignore[arg-type]
+
+        # Trigger an exception during dictionary access
+        class BadDict(dict):
+            def get(self, *args):
+                raise ValueError("Skill failed")
+
+        result = enhanced_engine.xpr_job_debug(BadDict())
 
         assert result.success is False
         assert result.error is not None
@@ -736,9 +744,16 @@ class TestXPRAgentEngineEnhanced:
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test issue fix exception handling."""
-        result = enhanced_engine.xpr_issue_fix(None)  # type: ignore[arg-type]
+
+        # Trigger an exception during dictionary access
+        class BadDict(dict):
+            def get(self, *args):
+                raise ValueError("Skill failed")
+
+        result = enhanced_engine.xpr_issue_fix(BadDict())
 
         assert result.success is False
+        assert result.error is not None
 
     def test_xpr_issue_report_success(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -762,9 +777,16 @@ class TestXPRAgentEngineEnhanced:
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test issue report exception handling."""
-        result = enhanced_engine.xpr_issue_report(None)  # type: ignore[arg-type]
+
+        # Trigger an exception during dictionary access
+        class BadDict(dict):
+            def get(self, *args):
+                raise ValueError("Skill failed")
+
+        result = enhanced_engine.xpr_issue_report(BadDict())
 
         assert result.success is False
+        assert result.error is not None
 
     def test_assess_severity_critical(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -858,11 +880,11 @@ class TestXPRAgentEngineEnhanced:
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test successful skill chaining."""
-        # Register skills that work with simple values
-        enhanced_engine.register_skill("skill1", lambda x: x + 1)
-        enhanced_engine.register_skill("skill2", lambda x: x * 2)
+        # Register skills that work with dictionaries
+        enhanced_engine.register_skill("skill1", lambda x: {"value": x["value"] + 1})
+        enhanced_engine.register_skill("skill2", lambda x: {"value": x["value"] * 2})
 
-        results = enhanced_engine.xpr_skill_chain(5, ["skill1", "skill2"])  # type: ignore[arg-type]
+        results = enhanced_engine.xpr_skill_chain({"value": 5}, ["skill1", "skill2"])
 
         assert len(results) == 2
         assert all(isinstance(r, XPRSkillResult) for r in results)

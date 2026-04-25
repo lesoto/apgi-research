@@ -138,7 +138,7 @@ class UltimateAPGIParameters(APGIParameters):
     Pi_e_expected_default: float = 1.0
     Pi_i_expected_default: float = 1.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.tau_levels is None:
             # Hierarchical timescales: 100ms, 200ms, 400ms, 1s, 5s
             self.tau_levels = [0.1, 0.2, 0.4, 1.0, 5.0]
@@ -218,7 +218,9 @@ class HierarchicalProcessor:
         self.levels = [HierarchicalLevel() for _ in range(5)]
         self.cross_level_broadcast: List[float] = [0.0] * 5  # B_ℓ for each level
 
-    def process_level(self, level_idx: int, input_signal: float, dt: float = 0.01):
+    def process_level(
+        self, level_idx: int, input_signal: float, dt: float = 0.01
+    ) -> Any:
         """Process single hierarchical level."""
         level = self.levels[level_idx]
         params = self.params

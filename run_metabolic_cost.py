@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, List, cast
+from typing import Any, Dict, List, cast
 
 from prepare_metabolic_cost import (
     MetabolicCostExperiment,
@@ -38,6 +38,9 @@ from ultimate_apgi_template import (
 
 # Type alias for cost types
 from enum import Enum
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 
 class CostType(Enum):
@@ -68,14 +71,14 @@ TASK_DURATION_S = 60  # seconds per task
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.base_cost_ratio = BASE_COST_RATIO
         self.skill_level = 1
 
-    def process_trial(self, cost_type, difficulty: int) -> tuple:
+    def process_trial(self, cost_type: str, difficulty: int) -> tuple:
         # Cost depends on difficulty and skill
         cost_multiplier = 1.0 + (difficulty - 1) * 0.3
         base_cost = self.base_cost_ratio * TASK_DURATION_S * cost_multiplier
@@ -196,7 +199,7 @@ class EnhancedMetabolicCostRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -299,7 +302,7 @@ class EnhancedMetabolicCostRunner:
         }
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("METABOLIC COST EXPERIMENT RESULTS")
     print("=" * 60)
@@ -311,11 +314,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Metabolic Cost Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedMetabolicCostRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nmetabolic_cost_ratio: {results['metabolic_cost_ratio']:.4f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Metabolic Cost  experiment")
+    cli_entrypoint(main, parser)

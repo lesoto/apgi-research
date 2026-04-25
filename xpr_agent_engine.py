@@ -51,7 +51,7 @@ class ExecutionReport:
     confidence: float = 0.0
     metadata: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.metadata is None:
             self.metadata = {}
 
@@ -69,7 +69,7 @@ class SkillType(Enum):
 class XPRAgentEngine:
     """Core XPR Agent Engine for autonomous experimentation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.skills: Dict[str, Callable] = {}
         self.execution_history: List[ExecutionReport] = []
         self.current_plan: Optional[Dict[str, Any]] = None
@@ -546,7 +546,7 @@ Return ONLY the complete modified Python source code, no commentary."""
 class EnhancedXPRAgentEngine(XPRAgentEngine):
     """Enhanced XPR Agent Engine with LLM integration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize base engine
         super().__init__()
 
@@ -622,7 +622,7 @@ class XPRSkillResult:
     dependencies: Optional[List[str]] = None
     recommendations: Optional[List[str]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.metadata is None:
             self.metadata = {}
         if self.dependencies is None:
@@ -634,7 +634,7 @@ class XPRSkillResult:
 class XPRAgentEngineEnhanced(XPRAgentEngine):
     """Enhanced XPR Agent Engine with advanced autonomous capabilities."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize base engine
         super().__init__()
 
@@ -782,9 +782,18 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                 confidence=0.0,
             )
 
-    def xpr_job_debug(self, experiment_data: Dict[str, Any]) -> XPRSkillResult:
+    def xpr_job_debug(self, experiment_data: Any) -> XPRSkillResult:
         """Enhanced debugging with pattern recognition and fix suggestions."""
         start_time = time.time()
+
+        if not isinstance(experiment_data, dict):
+            return XPRSkillResult(
+                success=False,
+                skill_type=XPRSkillType.JOB_DEBUG.value,
+                error="experiment_data must be a dictionary",
+                execution_time=time.time() - start_time,
+                confidence=0.0,
+            )
 
         try:
             error_msg = experiment_data.get("error", "")
@@ -910,9 +919,18 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                 confidence=0.0,
             )
 
-    def xpr_issue_fix(self, experiment_data: Dict[str, Any]) -> XPRSkillResult:
+    def xpr_issue_fix(self, experiment_data: Any) -> XPRSkillResult:
         """Enhanced issue fixing with code generation and application."""
         start_time = time.time()
+
+        if not isinstance(experiment_data, dict):
+            return XPRSkillResult(
+                success=False,
+                skill_type=XPRSkillType.ISSUE_FIX.value,
+                error="experiment_data must be a dictionary",
+                execution_time=time.time() - start_time,
+                confidence=0.0,
+            )
 
         try:
             error_msg = experiment_data.get("error", "")
@@ -991,9 +1009,18 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                 confidence=0.0,
             )
 
-    def xpr_issue_report(self, experiment_data: Dict[str, Any]) -> XPRSkillResult:
+    def xpr_issue_report(self, experiment_data: Any) -> XPRSkillResult:
         """Enhanced issue reporting with comprehensive analysis."""
         start_time = time.time()
+
+        if not isinstance(experiment_data, dict):
+            return XPRSkillResult(
+                success=False,
+                skill_type=XPRSkillType.ISSUE_REPORT.value,
+                error="experiment_data must be a dictionary",
+                execution_time=time.time() - start_time,
+                confidence=0.0,
+            )
 
         try:
             error_msg = experiment_data.get("error", "")

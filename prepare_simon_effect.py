@@ -50,7 +50,7 @@ class SimonGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> SimonTrial:
@@ -82,7 +82,7 @@ class SimonExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -127,7 +127,7 @@ class SimonExperiment:
             "accuracy": np.mean([t.correct for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -161,7 +161,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Simon Effect - Configuration Verification")
     print(f"Colors: {COLORS}")
     print(f"Positions: {POSITIONS}")

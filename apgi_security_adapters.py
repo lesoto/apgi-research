@@ -48,7 +48,7 @@ class SecurityContext:
     security_level: SecurityLevel = SecurityLevel.STANDARD
     created_at: datetime = field(default_factory=datetime.utcnow)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate context configuration."""
         if not self.operator_id:
             self.operator_id = "anonymous"
@@ -86,7 +86,7 @@ class SecurityEvent:
 class SecurityMetrics:
     """Tracks security telemetry and deny metrics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.allowed_operations: Dict[str, int] = {}
         self.denied_operations: Dict[str, int] = {}
         self.audit_events: List[SecurityEvent] = []
@@ -131,7 +131,7 @@ class SubprocessSecurityAdapter:
     def create_secure_popen(self, context: SecurityContext) -> Callable:
         """Create a secure Popen wrapper for the given context."""
 
-        def secure_popen(*args, **kwargs) -> subprocess.Popen:
+        def secure_popen(*args: Any, **kwargs: Any) -> subprocess.Popen:
             """Secure subprocess.Popen wrapper."""
             # Extract command
             cmd = self._extract_command(args, kwargs)
@@ -302,7 +302,7 @@ class ConfigChecksumAdapter:
 class SecurityAdapterFactory:
     """Factory for creating security adapters with shared metrics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics = SecurityMetrics()
         self.subprocess_adapter = SubprocessSecurityAdapter(self.metrics)
         self.serialization_adapter = SerializationSecurityAdapter(self.metrics)

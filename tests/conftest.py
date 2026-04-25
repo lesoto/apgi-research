@@ -127,6 +127,38 @@ def restore_matplotlib_modules() -> Generator[None, None, None]:
             pass
 
 
+@pytest.fixture(autouse=True)
+def restore_apgi_modules() -> Generator[None, None, None]:
+    """Ensure APGI modules are properly restored after tests that mock them."""
+    # Modules to protect from mock pollution
+    apgi_modules = [
+        "apgi_integration",
+        "ultimate_apgi_template",
+        "run_attentional_blink",
+        "run_go_no_go",
+        "run_stroop_effect",
+    ]
+
+    # Store original modules before test
+    original_modules = {}
+    for key in list(sys.modules.keys()):
+        if any(key.startswith(mod) or key == mod for mod in apgi_modules):
+            original_modules[key] = sys.modules[key]
+
+    yield
+
+    # After test: remove any apgi modules that may have been mocked
+    # This forces fresh imports on next test
+    for key in list(sys.modules.keys()):
+        if any(key.startswith(mod) or key == mod for mod in apgi_modules):
+            if (
+                key not in original_modules
+                or sys.modules[key] is not original_modules[key]
+            ):
+                # Module was replaced or added with mock - remove it
+                sys.modules.pop(key, None)
+
+
 # =============================================================================
 # FIXTURE FACTORIES FOR TEST DATA GENERATION
 # =============================================================================

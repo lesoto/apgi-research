@@ -207,7 +207,7 @@ class MultisensoryExperiment:
             "accuracy": np.mean([t.correct for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {

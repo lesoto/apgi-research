@@ -104,7 +104,7 @@ class APGIOrchestrationKernel:
     - Timeout and error handling
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("apgi.kernel")
         self.authz_manager = get_authz_manager()
         self.audit_sink = get_audit_sink()

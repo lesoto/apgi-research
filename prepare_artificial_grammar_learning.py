@@ -159,7 +159,7 @@ class AGExperiment:
         self.test_items: List[AGTrial] = []
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.study_items = []
         self.test_items = []
 
@@ -200,7 +200,7 @@ class AGExperiment:
 
     def record_response(
         self, trial: AGTrial, response: bool, confidence: int, rt_ms: float
-    ):
+    ) -> None:
         trial.response = response
         trial.confidence = confidence
         trial.correct = response == trial.is_grammatical
@@ -240,7 +240,7 @@ class AGExperiment:
             ),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "study_items": self.study_items,
             "test_results": [
@@ -308,7 +308,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Artificial Grammar Learning - Configuration Verification")
     print(f"Grammar Strings: {len(GRAMMAR_STRINGS)}")
     print(f"Non-Grammar Strings: {len(NON_GRAMMAR_STRINGS)}")

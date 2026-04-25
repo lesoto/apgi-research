@@ -37,8 +37,6 @@ def safe_float_list(value: Any, default: Optional[List[float]] = None) -> List[f
         default = []
     try:
         result = list(value) if value is not None else default
-        if result is None:
-            return default
         return result
     except (TypeError, ValueError):
         return default or []
@@ -58,6 +56,9 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -85,7 +86,7 @@ class SimulatedParticipant:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         pass
 
     def process_trial(self, modality: Modality) -> tuple:
@@ -192,7 +193,7 @@ class EnhancedMultisensoryRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -302,7 +303,7 @@ class EnhancedMultisensoryRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("MULTISENSORY INTEGRATION EXPERIMENT RESULTS")
     print("=" * 60)
@@ -343,11 +344,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Multisensory Integration Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedMultisensoryRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nmultisensory_gain_ms: {results['multisensory_gain_ms']:.2f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Multisensory Integration  experiment")
+    cli_entrypoint(main, parser)

@@ -135,7 +135,7 @@ class PosnerCueGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset generator."""
         self.trial_count = 0
 
@@ -181,7 +181,7 @@ class PosnerExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset experiment state."""
         self.trials = []
         self.current_trial_idx = 0
@@ -269,7 +269,7 @@ class PosnerExperiment:
             "cost_ms": self.get_benefit_cost()[1],
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         """Save trial data to JSON file."""
         data = {
             "trials": [
@@ -293,7 +293,7 @@ class PosnerExperiment:
             json.dump(data, f, indent=2)
 
 
-def verify_configurations():
+def verify_configurations() -> None:
     """Verify and print configurations."""
     print("=" * 60)
     print("Posner Cueing - Configuration Verification")

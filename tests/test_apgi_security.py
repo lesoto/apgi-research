@@ -1,29 +1,27 @@
 import pytest
-import subprocess
-import pickle
-from apgi_security import validate_config_checksum
+from apgi_security import (
+    validate_config_checksum,
+    secure_popen,
+    secure_loads,
+    SecureSubprocessError,
+    PickleSecurityError,
+)
 
 
-def test_subprocess_allowlist_bypass():
-    with pytest.raises(PermissionError, match="not allowed"):
-        subprocess.Popen(["ls", "-la"])
+def test_secure_popen_blocks_disallowed_commands():
+    """Test that secure_popen blocks commands not in allowlist."""
+    with pytest.raises(SecureSubprocessError, match="not in the allowlist"):
+        secure_popen(["rm", "-rf", "/"])
 
-    with pytest.raises(PermissionError, match="not allowed"):
-        subprocess.Popen("rm -rf /", shell=True)
-
-    # Allowed command should not raise permission error
-    try:
-        subprocess.Popen(
-            ["python", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-    except OSError:
-        pass
+    with pytest.raises(SecureSubprocessError, match="not in the allowlist"):
+        secure_popen("ls -la", shell=True)
 
 
-def test_pickle_bypass():
+def test_secure_loads_blocks_pickle_by_default():
+    """Test that secure_loads blocks pickle by default."""
     payload = b"cos\nsystem\n(S'echo hacked'\ntR."
-    with pytest.raises(ValueError, match="Pickle is disabled"):
-        pickle.loads(payload)
+    with pytest.raises(PickleSecurityError, match="Pickle is disabled"):
+        secure_loads(payload)
 
 
 def test_config_signing_validation():

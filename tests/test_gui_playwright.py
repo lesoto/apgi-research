@@ -21,6 +21,7 @@ from typing import Any, Generator, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pytest import MonkeyPatch
 from playwright.sync_api import Page
 
 # Add project root to path
@@ -154,7 +155,7 @@ class TestGUIBasic:
         except ImportError as e:
             pytest.skip(f"Cannot import GUI: {e}")
 
-    def test_gui_initialization_without_display(self, monkeypatch) -> None:
+    def test_gui_initialization_without_display(self, monkeypatch: Any) -> None:
         """Test GUI can be initialized (headless mode)."""
         # Skip if no display available
         if not os.environ.get("DISPLAY") and sys.platform != "darwin":
@@ -175,7 +176,9 @@ class TestGUIBasic:
                 assert hasattr(app, "experiment_cards")
                 app.destroy()
 
-    def test_gui_experiment_discovery(self, temp_research_dir, monkeypatch) -> None:
+    def test_gui_experiment_discovery(
+        self, temp_research_dir: Path, monkeypatch: Any
+    ) -> None:
         """Test that experiments are discovered correctly."""
         try:
             import customtkinter as ctk
@@ -204,7 +207,7 @@ class TestGUIBasic:
 class TestGUIInteraction:
     """GUI interaction tests."""
 
-    def test_menu_bar_creation(self, monkeypatch) -> None:
+    def test_menu_bar_creation(self, monkeypatch: MonkeyPatch) -> None:
         """Test menu bar is created with all menu items."""
         try:
             import customtkinter as ctk
@@ -219,7 +222,9 @@ class TestGUIInteraction:
                 assert hasattr(app, "_create_menu_bar")
                 app.destroy()
 
-    def test_experiment_button_creation(self, temp_research_dir, monkeypatch) -> None:
+    def test_experiment_button_creation(
+        self, temp_research_dir: Any, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test experiment buttons are created."""
         try:
             import customtkinter as ctk
@@ -239,7 +244,9 @@ class TestGUIInteraction:
                             assert exp_name in app.experiment_buttons
                         app.destroy()
 
-    def test_status_indicators(self, temp_research_dir, monkeypatch) -> None:
+    def test_status_indicators(
+        self, temp_research_dir: Any, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test status indicators are tracked."""
         try:
             import customtkinter as ctk
@@ -273,7 +280,7 @@ class TestGUIVisualRegression:
         return baseline_dir
 
     def test_gui_screenshot_comparison(
-        self, temp_research_dir, visual_baseline_dir, monkeypatch
+        self, temp_research_dir: Any, visual_baseline_dir: Any, monkeypatch: MonkeyPatch
     ) -> None:
         """Test GUI rendering against baseline."""
         try:
@@ -350,7 +357,9 @@ class TestGUIVisualRegression:
 class TestGUIE2E:
     """End-to-end GUI tests."""
 
-    def test_full_experiment_workflow(self, temp_research_dir, monkeypatch) -> None:
+    def test_full_experiment_workflow(
+        self, temp_research_dir: Any, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test complete experiment workflow from selection to completion."""
         try:
             import customtkinter as ctk
@@ -405,7 +414,9 @@ sys.exit(0)
 class TestGUIPerformance:
     """GUI performance tests."""
 
-    def test_gui_startup_time(self, temp_research_dir, request, monkeypatch) -> None:
+    def test_gui_startup_time(
+        self, temp_research_dir: Any, request: Any, monkeypatch: MonkeyPatch
+    ) -> None:
         """Benchmark GUI startup time."""
         try:
             import customtkinter as ctk
@@ -432,7 +443,9 @@ class TestGUIPerformance:
         # Should start in less than 5 seconds
         assert duration < 5.0
 
-    def test_gui_memory_usage(self, temp_research_dir, monkeypatch) -> None:
+    def test_gui_memory_usage(
+        self, temp_research_dir: Any, monkeypatch: MonkeyPatch
+    ) -> None:
         """Test GUI memory usage stays within bounds."""
         try:
             import customtkinter as ctk

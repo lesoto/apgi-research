@@ -18,7 +18,7 @@ import shutil
 import psutil
 import logging
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable, cast
+from typing import Dict, List, Any, Optional, Callable, cast, Iterator
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 
@@ -129,17 +129,17 @@ class ValidationReport:
     modifications_validated: List[str] = field(default_factory=list)
     modifications_rejected: List[str] = field(default_factory=list)
 
-    def add_error(self, message: str):
+    def add_error(self, message: str) -> None:
         self.errors.append(message)
         self.is_valid = False
 
-    def add_warning(self, message: str):
+    def add_warning(self, message: str) -> None:
         self.warnings.append(message)
 
-    def add_validated(self, param: str):
+    def add_validated(self, param: str) -> None:
         self.modifications_validated.append(param)
 
-    def add_rejected(self, param: str):
+    def add_rejected(self, param: str) -> None:
         self.modifications_rejected.append(param)
 
 
@@ -546,7 +546,7 @@ class ModificationBackupManager:
             logger.error(f"Failed to restore backup: {e}")
             return False
 
-    def cleanup_old_backups(self, max_age_hours: float = 24.0):
+    def cleanup_old_backups(self, max_age_hours: float = 24.0) -> None:
         """Remove backups older than specified hours."""
         current_time = time.time()
         max_age_seconds = max_age_hours * 3600
@@ -601,7 +601,7 @@ class ExperimentProgressTracker:
 
         return snapshot
 
-    def _save_checkpoint(self, snapshot: ProgressSnapshot):
+    def _save_checkpoint(self, snapshot: ProgressSnapshot) -> None:
         """Save progress checkpoint to disk."""
         checkpoint_file = (
             self._checkpoint_dir / f"{self.experiment_name}_{snapshot.iteration}.json"
@@ -822,13 +822,13 @@ class RollbackManager:
         self.failed_operations: List[Dict[str, Any]] = []
         self.rollback_hooks: List[Callable] = []
 
-    def register_rollback_hook(self, hook: Callable):
+    def register_rollback_hook(self, hook: Callable) -> None:
         """Register a function to call during rollback."""
         self.rollback_hooks.append(hook)
 
     def record_failure(
         self, operation: str, error: Exception, context: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """Record a failed operation."""
         self.failed_operations.append(
             {
@@ -874,7 +874,7 @@ def validated_modifications(
     modifications: Dict[str, Any],
     backup_manager: ModificationBackupManager,
     commit_hash: Optional[str] = None,
-):
+) -> Iterator[ValidationReport]:
     """
     Context manager for validated modifications with automatic rollback.
 
@@ -905,7 +905,7 @@ def validated_modifications(
 
 
 @contextmanager
-def git_operation_guard(rollback_manager: RollbackManager):
+def git_operation_guard(rollback_manager: RollbackManager) -> Iterator[None]:
     """
     Context manager for git operations with rollback support.
 

@@ -7,7 +7,7 @@ hypotheses for experiments before execution.
 
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
@@ -102,12 +102,12 @@ class ApprovalBoard:
                 logger.error(f"Failed to load hypotheses: {e}")
         return []
 
-    def _save_hypotheses(self):
+    def _save_hypotheses(self) -> None:
         """Save hypotheses to storage file."""
         try:
             with open(self.storage_path, "w") as f:
                 # Custom encoder to handle Enums specifically
-                def enum_encoder(obj):
+                def enum_encoder(obj: Any) -> Any:
                     if isinstance(obj, HypothesisStatus):
                         return obj.value
                     return asdict(obj)

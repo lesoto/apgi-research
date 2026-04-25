@@ -168,14 +168,14 @@ class IowaGamblingTaskDeck:
         self.config = config or DECK_CONFIGURATIONS[deck_id]
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset deck state for new experiment."""
         self.trial_count = 0
         self.card_index = 0
         # Pre-generate penalty schedule (shuffled per block)
         self._generate_penalty_schedule()
 
-    def _generate_penalty_schedule(self):
+    def _generate_penalty_schedule(self) -> None:
         """Generate shuffled penalty schedule for card blocks."""
         freq = self.config["penalty_frequency"]
         penalty_amounts = cast(List[int], self.config["penalty_amounts"])
@@ -231,7 +231,7 @@ class IowaGamblingTaskExperiment:
         self.total_money = 2000  # Starting amount (typical IGT)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset experiment state."""
         self.trials = []
         self.total_money = 2000
@@ -350,7 +350,7 @@ class IowaGamblingTaskExperiment:
             ),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         """Save trial data to JSON file."""
         data = {
             "trials": [
@@ -391,7 +391,7 @@ def evaluate_net_score(
     return float(advantageous - disadvantageous)
 
 
-def verify_deck_configurations():
+def verify_deck_configurations() -> None:
     """Verify and print deck configurations."""
     print("=" * 60)
     print("Iowa Gambling Task - Deck Configuration Verification")

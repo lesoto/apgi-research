@@ -306,11 +306,15 @@ class TestOrchestrator:
             )
 
         # Add specific recommendations based on gaps
-        error_gaps = sum(
-            1
-            for g in self.report.coverage_gaps
-            if isinstance(g, dict) and "error" in str(g.get("reason", "")).lower()
-        )
+        error_gaps = 0
+        for gap in self.report.coverage_gaps.values():
+            try:
+                if isinstance(gap, dict):
+                    reason = str(gap.get("reason", ""))
+                    if "error" in reason.lower():
+                        error_gaps += 1
+            except (AttributeError, TypeError):
+                pass
         if error_gaps > 5:
             recommendations.append(
                 f"Add {error_gaps} tests for exception handling paths"

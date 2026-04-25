@@ -129,7 +129,7 @@ class AuthorizationContext:
 class AuthorizationManager:
     """Manages authorization checks and decisions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("apgi.authz")
         self.operators: Dict[str, OperatorIdentity] = {}
         self.authorization_log: List[Dict] = []

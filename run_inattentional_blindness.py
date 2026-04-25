@@ -20,8 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-import sys
-from typing import Dict, Optional, cast, Union, List
+from typing import Any, Dict, Optional, cast, Union, List
 
 # Import fixed configurations from prepare_inattentional_blindness.py
 from prepare_inattentional_blindness import (
@@ -41,6 +40,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # Type aliases for compatibility
 InattentionalBlindnessTrial = IBTrial
@@ -97,11 +99,11 @@ class SimulatedAttentionSystem:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset attention system state for new experiment."""
         self.trial_count = 0
         self.total_detected = 0
-        self.response_times = []
+        self.response_times: List[float] = []
 
     def calculate_detection_probability(
         self, trial: InattentionalBlindnessTrial
@@ -466,7 +468,7 @@ class EnhancedInattentionalBlindnessRunner:
 # ---------------------------------------------------------------------------
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     """Print formatted experiment results."""
     print("\n" + "=" * 60)
     print("Inattentional Blindness Experiment Results")
@@ -526,8 +528,8 @@ def print_results(results: Dict):
     print("\n" + "=" * 60)
 
 
-def main():
-    """Main entry point for inattentional blindness experiment."""
+def run_standalone() -> Dict:
+    """Standalone entry point for inattentional blindness experiment."""
     import gc
 
     gc.collect()
@@ -563,13 +565,13 @@ def main():
     return results
 
 
-if __name__ == "__main__":
-    try:
-        results = main()
-        sys.exit(0)
-    except Exception as e:
-        print(f"ERROR: Experiment failed with exception: {e}")
-        import traceback
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
+    runner = EnhancedInattentionalBlindnessRunner()
+    results = runner.run_experiment()
+    return results
 
-        traceback.print_exc()
-        sys.exit(1)
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Inattentional Blindness  experiment")
+    cli_entrypoint(main, parser)

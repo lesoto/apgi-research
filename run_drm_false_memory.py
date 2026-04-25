@@ -20,7 +20,6 @@ Modification Guidelines:
 
 import numpy as np
 import time
-import sys
 from typing import Dict, Optional, List, Any, cast
 from enum import Enum
 
@@ -41,6 +40,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 
 # Type aliases for compatibility
@@ -121,12 +123,12 @@ class SimulatedMemorySystem:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset memory system state for new experiment."""
         self.trial_count = 0
         self.total_correct = 0
         self.total_false_alarms = 0
-        self.confidence_ratings = []
+        self.confidence_ratings: List[int] = []
 
     def calculate_recognition_probability(
         self, item: str, was_studied: bool, list_type: ListType
@@ -240,7 +242,8 @@ class SimulatedMemorySystem:
         self.trial_count += 1
         self.total_correct += total_correct
         self.total_false_alarms += false_alarms
-        self.confidence_ratings.extend([r["confidence"] for r in test_results])
+        new_ratings: List[int] = [r["confidence"] for r in test_results]  # type: ignore[misc]
+        self.confidence_ratings.extend(new_ratings)
 
         return {
             "test_results": test_results,
@@ -378,9 +381,7 @@ class EnhancedDRMRunner:
                 break
 
         # Calculate final metrics
-        if self.start_time is None:
-            self.start_time = 0.0
-        completion_time = time.time() - self.start_time
+        completion_time = time.time() - (self.start_time or 0.0)
         results = self._calculate_results(completion_time)
 
         return results
@@ -488,10 +489,12 @@ class EnhancedDRMRunner:
             0.50: 0.00,
         }
 
-        def z_to_p(z):
-            return max(0.01, min(0.99, 0.5 + z * 0.3989423 * np.exp(-z * z / 2)))
+        def z_to_p(z: float) -> float:
+            return float(
+                max(0.01, min(0.99, 0.5 + z * 0.3989423 * float(np.exp(-z * z / 2))))
+            )
 
-        def p_to_z(p):
+        def p_to_z(p: float) -> float:
             for z_val, p_val in z_scores.items():
                 if abs(p - p_val) < 0.01:
                     return z_val
@@ -560,7 +563,7 @@ class EnhancedDRMRunner:
 # ---------------------------------------------------------------------------
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     """Print formatted experiment results."""
     print("\n" + "=" * 60)
     print("DRM False Memory Experiment Results")
@@ -621,51 +624,13 @@ def print_results(results: Dict):
     print("\n" + "=" * 60)
 
 
-def main():
-    """Main entry point for DRM false memory experiment."""
-    import gc
-
-    gc.collect()
-
-    # Run experiment
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedDRMRunner()
     results = runner.run_experiment()
-
-    # Print results
-    print_results(results)
-
-    # Final summary output (for automated parsing)
-    print("\n---")
-    print(f"accuracy:          {results['accuracy']:.3f}")
-    print(f"completion_time_s: {results['completion_time_s']:.1f}")
-    print(f"num_trials:        {results['num_trials']}")
-    print(f"total_items:       {results['total_items']}")
-    print(f"hits:              {results['hits']}")
-    print(f"false_alarms:      {results['false_alarms']}")
-    print(f"d_prime:           {results['d_prime']:.3f}")
-
-    # Memory tracking (simplified - using placeholder)
-    peak_memory_mb = 0.0
-    print(f"peak_vram_mb:      {peak_memory_mb:.1f}")
-
-    # APGI Metrics Output (if enabled)
-    if results.get("apgi_enabled"):
-        print("\n" + "=" * 40)
-        print("APGI METRICS")
-        print("=" * 40)
-        print(results.get("apgi_formatted", "No APGI metrics available"))
-        print("=" * 40)
-
     return results
 
 
 if __name__ == "__main__":
-    try:
-        results = main()
-        sys.exit(0)
-    except Exception as e:
-        print(f"ERROR: Experiment failed with exception: {e}")
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
+    parser = create_standard_parser("Run Drm False Memory  experiment")
+    cli_entrypoint(main, parser)

@@ -99,7 +99,7 @@ class StopSignalGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> StopSignalTrial:
@@ -123,7 +123,7 @@ class StopSignalExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -191,7 +191,7 @@ class StopSignalExperiment:
             "ssrt_ms": self.get_ssrt(),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -261,7 +261,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Stop Signal - Configuration Verification")
     print(f"Go Stimuli: {GO_STIMULI}")
     print(f"Stop Probability: {STOP_PROBABILITY}")

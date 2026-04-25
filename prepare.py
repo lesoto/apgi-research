@@ -18,7 +18,7 @@ import math
 import argparse
 import pickle
 from multiprocessing import Pool
-from typing import Iterator, List, Optional, cast
+from typing import Iterator, List, Optional, Any, Tuple, cast
 
 import requests
 import pyarrow.parquet as pq
@@ -208,12 +208,12 @@ def train_tokenizer(
 class Tokenizer:
     """Minimal tokenizer wrapper. Training is handled above."""
 
-    def __init__(self, enc):
+    def __init__(self, enc: Any) -> None:
         self.enc = enc
         self.bos_token_id = enc.encode_single_token(BOS_TOKEN)
 
     @classmethod
-    def from_directory(cls, tokenizer_dir=TOKENIZER_DIR):
+    def from_directory(cls, tokenizer_dir: Path = TOKENIZER_DIR) -> "Tokenizer":
         # Security note: pickle.load is used here for tokenizer deserialization
         # This is loading a trusted local file created by train_tokenizer()
         # For untrusted sources, consider using a safer serialization format
@@ -221,13 +221,13 @@ class Tokenizer:
             enc = pickle.load(f)
         return cls(enc)
 
-    def get_vocab_size(self):
-        return self.enc.n_vocab
+    def get_vocab_size(self) -> int:
+        return cast(int, self.enc.n_vocab)
 
-    def get_bos_token_id(self):
-        return self.bos_token_id
+    def get_bos_token_id(self) -> int:
+        return cast(int, self.bos_token_id)
 
-    def encode(self, text, prepend=None, num_threads=8):
+    def encode(self, text: Any, prepend: Any = None, num_threads: int = 8) -> List[int]:
         if prepend is not None:
             prepend_id = (
                 prepend
@@ -245,10 +245,10 @@ class Tokenizer:
                     row.insert(0, prepend_id)
         else:
             raise ValueError(f"Invalid input type: {type(text)}")
-        return ids
+        return cast(List[int], ids)
 
-    def decode(self, ids):
-        return self.enc.decode(ids)
+    def decode(self, ids: List[int]) -> str:
+        return cast(str, self.enc.decode(ids))
 
 
 def get_token_bytes(device: str = "cpu") -> torch.Tensor:
@@ -258,7 +258,9 @@ def get_token_bytes(device: str = "cpu") -> torch.Tensor:
         return cast(torch.Tensor, torch.load(f, map_location=device))
 
 
-def _document_batches(split, tokenizer_batch_size=128):
+def _document_batches(
+    split: str, tokenizer_batch_size: int = 128
+) -> Iterator[Tuple[List[str], int]]:
     """Infinite iterator over document batches from parquet files."""
     parquet_paths = list_parquet_files()
     assert len(parquet_paths) > 0, "No parquet files found. Run prepare.py first."
@@ -280,7 +282,9 @@ def _document_batches(split, tokenizer_batch_size=128):
         epoch += 1
 
 
-def make_dataloader(tokenizer, B, T, split, buffer_size=1000):
+def make_dataloader(
+    tokenizer: Tokenizer, B: int, T: int, split: str, buffer_size: int = 1000
+) -> Iterator[Tuple[torch.Tensor, torch.Tensor, int]]:
     """
     BOS-aligned dataloader with best-fit packing.
     Every row starts with BOS. Documents packed using best-fit
@@ -294,7 +298,7 @@ def make_dataloader(tokenizer, B, T, split, buffer_size=1000):
     doc_buffer = []
     epoch = 1
 
-    def refill_buffer():
+    def refill_buffer() -> None:
         nonlocal epoch
         doc_batch, epoch = next(batches)
         token_lists = tokenizer.encode(doc_batch, prepend=bos_token)
@@ -325,25 +329,26 @@ def make_dataloader(tokenizer, B, T, split, buffer_size=1000):
                 best_idx = -1
                 best_len = 0
                 for i, doc in enumerate(doc_buffer):
-                    doc_len = len(doc)
+                    doc_len = len(cast(List[int], doc))
                     if doc_len <= remaining and doc_len > best_len:
                         best_idx = i
                         best_len = doc_len
 
                 if best_idx >= 0:
                     doc = doc_buffer.pop(best_idx)
-                    row_buffer[row_idx, pos : pos + len(doc)] = torch.tensor(
-                        doc, dtype=torch.long
+                    row_buffer[row_idx, pos : pos + len(cast(List[int], doc))] = (
+                        torch.tensor(cast(List[int], doc), dtype=torch.long)
                     )
-                    pos += len(doc)
+                    pos += len(cast(List[int], doc))
                 else:
                     # No doc fits - crop shortest to fill remaining
                     shortest_idx = min(
-                        range(len(doc_buffer)), key=lambda i: len(doc_buffer[i])
+                        range(len(doc_buffer)),
+                        key=lambda i: len(cast(List[int], doc_buffer[i])),
                     )
                     doc = doc_buffer.pop(shortest_idx)
                     row_buffer[row_idx, pos : pos + remaining] = torch.tensor(
-                        doc[:remaining], dtype=torch.long
+                        cast(List[int], doc)[:remaining], dtype=torch.long
                     )
                     pos += remaining
 
@@ -359,7 +364,9 @@ def make_dataloader(tokenizer, B, T, split, buffer_size=1000):
 
 
 @torch.no_grad()
-def evaluate_bpb(model, tokenizer, batch_size, device="cpu"):
+def evaluate_bpb(
+    model: Any, tokenizer: Tokenizer, batch_size: int, device: str = "cpu"
+) -> float:
     """
     Bits per byte (BPB): vocab size-independent evaluation metric.
     Sums per-token cross-entropy (in nats), sums target byte lengths,
@@ -422,7 +429,7 @@ def download_shard(index: int, data_dir: Path) -> bool:
 def download_shards_parallel(shard_indices: List[int], data_dir: Path) -> bool:
     """Download multiple shards in parallel."""
 
-    def worker(args):
+    def worker(args: Tuple[int, Path]) -> Tuple[int, bool]:
         index, dir_path = args
         return index, download_shard(index, dir_path)
 
@@ -432,13 +439,13 @@ def download_shards_parallel(shard_indices: List[int], data_dir: Path) -> bool:
     return all(success for _, success in results)
 
 
-def download_worker(args) -> tuple:
+def download_worker(args: Tuple[int, Path]) -> Tuple[int, bool]:
     """Worker function for parallel downloads."""
     index, data_dir = args
     return index, download_shard(index, data_dir)
 
 
-def read_shard(index: int, data_dir: Path):
+def read_shard(index: int, data_dir: Path) -> Optional[Any]:
     """Read a parquet shard and return the data."""
     filename = f"shard_{index:05d}.parquet"
     filepath = data_dir / filename
@@ -453,17 +460,17 @@ def read_shard(index: int, data_dir: Path):
         return None
 
 
-def tokenize_text(text: str, tokenizer) -> List[int]:
+def tokenize_text(text: str, tokenizer: Any) -> List[int]:
     """Tokenize a single text."""
     return cast(List[int], tokenizer.encode(text))
 
 
-def tokenize_batch(texts: List[str], tokenizer) -> List[List[int]]:
+def tokenize_batch(texts: List[str], tokenizer: Any) -> List[List[int]]:
     """Tokenize a batch of texts."""
     return [tokenizer.encode(text) for text in texts]
 
 
-def validate_tokenizer(tokenizer) -> bool:
+def validate_tokenizer(tokenizer: Any) -> bool:
     """Validate that tokenizer works correctly."""
     try:
         test_text = "Hello, world!"
@@ -488,7 +495,7 @@ def validate_data_format(data: List[dict]) -> bool:
     return True
 
 
-def parse_args(args: Optional[List[str]] = None):
+def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Prepare data and tokenizer")
     parser.add_argument("--num-shards", type=int, default=None)

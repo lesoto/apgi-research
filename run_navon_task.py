@@ -22,7 +22,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, Optional, cast, Any
+from typing import Any, Dict, Optional, cast
 
 # APGI Integration
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -33,6 +33,9 @@ from ultimate_apgi_template import (
 )
 
 from prepare_navon_task import NavonExperiment, TargetLevel, APGI_PARAMS
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # Local TIME_BUDGET for reference (must match prepare file)
 TIME_BUDGET = float(
@@ -60,10 +63,10 @@ LOCAL_ACC = 0.90
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         pass
 
     def process_trial(self, target_level: TargetLevel) -> tuple:
@@ -179,7 +182,7 @@ class EnhancedNavonRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -311,7 +314,7 @@ class EnhancedNavonRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("NAVON TASK EXPERIMENT RESULTS")
     print("=" * 60)
@@ -352,10 +355,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Navon Task Experiment...")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedNavonRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nglobal_advantage_ms: {results['global_advantage_ms']:.2f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Navon Task  experiment")
+    cli_entrypoint(main, parser)

@@ -45,11 +45,8 @@ class ExperimentProgress:
     end_time: Optional[float] = None
     error_log: List[str] = field(default_factory=list)
 
-    def __post_init__(self):
-        if self.trials is None:
-            self.trials = []
-        if self.error_log is None:
-            self.error_log = []
+    def __post_init__(self) -> None:
+        return
 
 
 class ProgressTracker:

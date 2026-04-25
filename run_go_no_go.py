@@ -39,6 +39,9 @@ from prepare_go_no_go import (
     APGI_PARAMS,  # APGI parameters from prepare file
 )
 
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
@@ -63,10 +66,10 @@ NO_GO_ACCURACY = 0.85  # Harder to inhibit
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.go_rt = GO_RT_BASE
         self.no_go_inhibition = NO_GO_ACCURACY
 
@@ -175,6 +178,11 @@ class EnhancedGoNoGoRunner:
         else:
             pass  # Variables already initialized with None/default values above
 
+    def reset(self) -> None:
+        """Reset experiment and participant state."""
+        self.experiment.reset()
+        self.participant.reset()
+
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
         self.experiment.reset()
@@ -188,7 +196,7 @@ class EnhancedGoNoGoRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -329,7 +337,7 @@ class EnhancedGoNoGoRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("GO/NO-GO EXPERIMENT RESULTS")
     print("=" * 60)
@@ -369,11 +377,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Go/No-Go Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedGoNoGoRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nd_prime: {results['d_prime']:.3f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Go No Go  experiment")
+    cli_entrypoint(main, parser)

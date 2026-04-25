@@ -104,7 +104,7 @@ class InteroGatingGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> InteroGatingTrial:
@@ -137,7 +137,7 @@ class InteroGatingExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -187,7 +187,7 @@ class InteroGatingExperiment:
             "mean_confidence": np.mean([t.response_confidence for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -257,7 +257,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Interoceptive Gating - Configuration Verification")
     print(f"Stimulus Types: {[s.value for s in StimulusType]}")
     print(f"Conditions: {[c.value for c in Condition]}")

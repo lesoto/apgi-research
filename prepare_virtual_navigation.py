@@ -95,7 +95,7 @@ class NavTrial:
     rt_ms: float = 0.0
     timestamp: float = 0.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.path_taken is None:
             self.path_taken = []
 
@@ -105,7 +105,7 @@ class VirtualNavigationGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> NavTrial:
@@ -145,7 +145,7 @@ class VirtualNavigationExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -193,7 +193,7 @@ class VirtualNavigationExperiment:
             "path_efficiency": self.get_path_efficiency(),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -264,7 +264,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Virtual Navigation - Configuration Verification")
     print(f"Environment Types: {[e.value for e in EnvironmentType]}")
     print(f"Maze Sizes: {MAZE_SIZES}")

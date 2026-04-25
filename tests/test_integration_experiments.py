@@ -18,9 +18,13 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from conftest import MockFactory
 
 
-def create_mock_experiment(config=None):
+def create_mock_experiment(config: Any = None) -> Any:
     """Helper function to create a concrete MockExperiment for testing."""
 
     class MockExperiment(BaseExperiment):
@@ -377,7 +381,7 @@ class TestConfigurationIntegration:
 class TestExternalServiceMocking:
     """Integration tests with mocked external services."""
 
-    def test_matplotlib_mocking(self, mock_factory) -> None:
+    def test_matplotlib_mocking(self, mock_factory: MockFactory) -> None:
         """Test matplotlib mocking in integration."""
         mock_plt = mock_factory.mock_matplotlib()
 
@@ -393,7 +397,7 @@ class TestExternalServiceMocking:
             mock_plt.pyplot.figure.assert_called()
             mock_plt.pyplot.plot.assert_called()
 
-    def test_requests_mocking(self, mock_factory) -> None:
+    def test_requests_mocking(self, mock_factory: MockFactory) -> None:
         """Test requests mocking in integration."""
         mock_requests = mock_factory.mock_requests()
 
@@ -403,7 +407,7 @@ class TestExternalServiceMocking:
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
-    def test_database_mocking(self, mock_factory) -> None:
+    def test_database_mocking(self, mock_factory: MockFactory) -> None:
         """Test database mocking in integration."""
         mock_db = mock_factory.mock_database()
 

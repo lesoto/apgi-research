@@ -213,7 +213,7 @@ class NeuromodulatorState:
             rho=params.rho,
         )
 
-    def update_from_stress(self, stress_level: float, dt: float = 1.0):
+    def update_from_stress(self, stress_level: float, dt: float = 1.0) -> None:
         """
         Update neuromodulator levels based on stress input.
 
@@ -234,7 +234,7 @@ class NeuromodulatorState:
         if stress_level > 0.7:
             self.ACh = max(0.2, self.ACh - 0.03 * dt)
 
-    def update_from_reward(self, reward: float, dt: float = 1.0):
+    def update_from_reward(self, reward: float, dt: float = 1.0) -> None:
         """
         Update neuromodulator levels based on reward feedback.
 
@@ -324,7 +324,7 @@ class NeuromodulatorSystem:
             "final_CRF": self.state.CRF,
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset to initial state."""
         self.state = NeuromodulatorState()
         self.state_history.clear()
@@ -342,7 +342,7 @@ class RunningStatistics:
     Computes exact arithmetic mean and variance (not exponential moving averages).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._mean = 0.0
         self._xpr = 0.0  # Sum of squared differences
         self._n_updates = 0
@@ -355,7 +355,7 @@ class RunningStatistics:
         return self._mean
 
     @mean.setter
-    def mean(self, value: float):
+    def mean(self, value: float) -> None:
         self._mean = value
         self._manual_mean = value  # Store for testing
 
@@ -372,7 +372,7 @@ class RunningStatistics:
         return self._xpr / self._n_updates  # Population variance
 
     @var.setter
-    def var(self, value: Optional[float]):
+    def var(self, value: Optional[float]) -> None:
         """Set variance directly (allows manual override for testing)."""
         # Store as _manual_var for z_score to use
         self._manual_var = value
@@ -424,7 +424,7 @@ class RunningStatistics:
         mean_to_use = self._manual_mean if self._manual_mean is not None else self._mean
         return float((value - mean_to_use) / std)
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset statistics to initial state."""
         self._mean = 0.0
         self._xpr = 0.0
@@ -564,12 +564,11 @@ class DynamicalSystem:
         z_i = self.stats_interoceptive.z_score(prediction_error_int)
 
         # Compute effective interoceptive precision
+        Pi_i_eff: float = 1.0  # Default value
         if precision_int_baseline is not None:
             Pi_i_eff = CoreEquations.effective_interoceptive_precision(
                 precision_int_baseline, self.M, params.M_0, params.beta
             )
-        else:
-            Pi_i_eff = 1.0
 
         # Signal dynamics: dS/dt = -τ_S⁻¹S + input + noise
         input_S = CoreEquations.accumulated_signal(
@@ -630,7 +629,7 @@ class DynamicalSystem:
             "ignition": ignited,  # Alias for test compatibility
         }
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset dynamical system to initial state."""
         self.S = 0.0
         self.theta = self.params.theta_0
@@ -720,7 +719,7 @@ class APGIIntegration:
         return self.dynamics.S
 
     @S.setter
-    def S(self, value: float):
+    def S(self, value: float) -> None:
         self.dynamics.S = value
 
     @property
@@ -729,7 +728,7 @@ class APGIIntegration:
         return self.dynamics.theta
 
     @theta.setter
-    def theta(self, value: float):
+    def theta(self, value: float) -> None:
         self.dynamics.theta = value
 
     @property
@@ -738,7 +737,7 @@ class APGIIntegration:
         return self.dynamics.M
 
     @M.setter
-    def M(self, value: float):
+    def M(self, value: float) -> None:
         self.dynamics.M = value
 
     # Wrapper methods for CoreEquations
@@ -785,7 +784,7 @@ class APGIIntegration:
             dt=dt,
         )
 
-    def reset_after_ignition(self):
+    def reset_after_ignition(self) -> None:
         """Reset surprise after ignition event."""
         self.dynamics.S *= 1.0 - self.params.rho
 
@@ -1153,7 +1152,7 @@ class APGIIntegration:
 
         return self.experiment_summary
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset for new experiment."""
         self.dynamics.reset()
         self.trial_metrics.clear()

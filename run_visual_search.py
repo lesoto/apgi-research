@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, cast, Optional, List
+from typing import Any, Dict, cast, Optional, List
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -36,6 +36,9 @@ from prepare_visual_search import (
     TIME_BUDGET,
     APGI_PARAMS,  # APGI parameters from prepare file
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -63,10 +66,10 @@ CONJUNCTION_SLOPE = 25  # ms/item
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.feature_intercept = FEATURE_SEARCH_INTERCEPT
         self.feature_slope = FEATURE_SLOPE
         self.conjunction_intercept = CONJUNCTION_SEARCH_INTERCEPT
@@ -102,7 +105,7 @@ class EnhancedVisualSearchRunner:
     def __init__(self, enable_apgi: bool = True):
         self.experiment = VSExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
-        self.start_time = None
+        self.start_time: Optional[float] = None
 
         # Initialize APGI integration if enabled
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -157,7 +160,7 @@ class EnhancedVisualSearchRunner:
             self.apgi = None  # type: ignore[assignment]
 
     def run_experiment(self) -> Dict:
-        self.start_time = time.time()  # type: ignore[assignment]
+        self.start_time = time.time()
         self.experiment.reset()
         self.participant.reset()
 
@@ -172,7 +175,7 @@ class EnhancedVisualSearchRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -290,7 +293,7 @@ class EnhancedVisualSearchRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("VISUAL SEARCH EXPERIMENT RESULTS")
     print("=" * 60)
@@ -317,10 +320,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Visual Search Experiment...")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedVisualSearchRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nconjunction_present_slope: {results['conjunction_present_slope']:.2f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Visual Search  experiment")
+    cli_entrypoint(main, parser)

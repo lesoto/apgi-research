@@ -132,7 +132,7 @@ class VSDisplay:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset display generator."""
         self.trial_count = 0
 
@@ -266,7 +266,7 @@ class VSExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset experiment state."""
         self.trials = []
         self.current_trial_idx = 0
@@ -389,7 +389,7 @@ class VSExperiment:
             "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         """Save trial data to JSON file."""
         data = {
             "trials": [
@@ -411,7 +411,7 @@ class VSExperiment:
             json.dump(data, f, indent=2)
 
 
-def verify_configurations():
+def verify_configurations() -> None:
     """Verify and print configurations."""
     print("=" * 60)
     print("Visual Search - Configuration Verification")

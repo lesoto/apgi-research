@@ -904,7 +904,7 @@ def generate_html_report(analysis: Dict, issues: List[Dict], fixes: Dict) -> str
     return html
 
 
-def main():
+def main() -> None:
     """Main function to run analysis and generate report."""
     print("=" * 60)
     print("APGI EXPERIMENT RESULTS ANALYZER")
@@ -964,8 +964,6 @@ def main():
     print("=" * 60)
     print("\nOpen the report in your browser:")
     print("  file://{}".format(report_path.absolute()))
-
-    return analysis, issues, fixes, report_path
 
 
 if __name__ == "__main__":

@@ -17,11 +17,12 @@ if sys.platform == "darwin":
         pass  # Already set
 
 from tkinter import messagebox
+from typing import Any, cast
 import customtkinter as ctk
 
 
 # Fix for customtkinter DropdownMenu bug: _add_menu_commands fails on empty menu
-def _patched_add_menu_commands(self):
+def _patched_add_menu_commands(self: Any) -> None:
     """Patched version that handles empty menus safely."""
     try:
         # Check if menu has items before trying to delete
@@ -85,7 +86,7 @@ OPTIONAL_DEPENDENCIES = {
 
 
 class ExperimentRunnerGUI(ctk.CTk):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.title("APGI Experiment Auto-Improvement")
         self.geometry("1400x900")
@@ -424,7 +425,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         self._refresh_hypothesis_display()
 
-    def _show_create_hypothesis_dialog(self):
+    def _show_create_hypothesis_dialog(self) -> None:
         """Show dialog to create a new hypothesis."""
         dialog = ctk.CTkToplevel(self)
         dialog.title("🧪 Create New Hypothesis")
@@ -489,7 +490,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(pady=15)
 
-        def create_hypothesis():
+        def create_hypothesis() -> None:
             try:
                 hypothesis = self.approval_board.create_hypothesis(
                     title=title_entry.get(),
@@ -509,7 +510,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to create hypothesis: {e}")
 
-        def cancel():
+        def cancel() -> None:
             dialog.destroy()
 
         ctk.CTkButton(
@@ -529,7 +530,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             width=100,
         ).pack(side="left", padx=5)
 
-    def _show_hypothesis_review(self):
+    def _show_hypothesis_review(self) -> None:
         """Show dialog to review pending hypotheses."""
         pending_hypotheses = self.approval_board.get_pending_hypotheses()
         if not pending_hypotheses:
@@ -561,7 +562,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(pady=10)
 
-        def close_review():
+        def close_review() -> None:
             dialog.destroy()
 
         ctk.CTkButton(
@@ -573,7 +574,12 @@ class ExperimentRunnerGUI(ctk.CTk):
             width=100,
         ).pack()
 
-    def _create_hypothesis_review_item(self, parent, hypothesis: Hypothesis, dialog):
+    def _create_hypothesis_review_item(
+        self,
+        parent: ctk.CTkFrame,
+        hypothesis: Hypothesis,
+        dialog: ctk.CTkToplevel | None,
+    ) -> None:
         """Create a single hypothesis review item."""
         item_frame = ctk.CTkFrame(parent, corner_radius=8, fg_color="#f8f9fa")
         item_frame.pack(fill="x", pady=5, padx=10)
@@ -641,7 +647,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         action_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
         action_frame.pack(fill="x", pady=5, padx=10)
 
-        def approve():
+        def approve() -> None:
             self.approval_board.update_hypothesis_status(
                 hypothesis.id,
                 HypothesisStatus.APPROVED,
@@ -652,7 +658,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             if dialog:
                 dialog.destroy()
 
-        def reject():
+        def reject() -> None:
             self.approval_board.update_hypothesis_status(
                 hypothesis.id,
                 HypothesisStatus.REJECTED,
@@ -663,7 +669,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             if dialog:
                 dialog.destroy()
 
-        def modify():
+        def modify() -> None:
             # For now, just log - could open modify dialog later
             self._log(f"Request to modify hypothesis: {hypothesis.id}")
 
@@ -692,7 +698,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             width=80,
         ).pack(side="left", padx=5)
 
-    def _refresh_hypothesis_display(self):
+    def _refresh_hypothesis_display(self) -> None:
         """Refresh the hypothesis display scrollable frame."""
         for widget in self.hypothesis_scrollable.winfo_children():
             widget.destroy()
@@ -735,7 +741,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.console_text.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.console_text.insert("0.0", "--- APGI Research Console Ready ---\n")
 
-    def _create_experiment_card(self, parent, name, script, index) -> None:
+    def _create_experiment_card(
+        self, parent: Any, name: str, script: str, index: int
+    ) -> None:
         row = index // 2
         col = index % 2
 
@@ -795,11 +803,11 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         self.experiment_cards[name] = card
 
-    def _log(self, text, color=None):
+    def _log(self, text: str, color: str | None = None) -> None:
         self.console_text.insert("end", text + "\n")
         self.console_text.see("end")
 
-    def _clear_console(self):
+    def _clear_console(self) -> None:
         self.console_text.delete("1.0", "end")
         self.console_text.insert("1.0", "--- Console Cleared ---\n")
 
@@ -809,7 +817,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         confidence: float = 1.0,
         regression: float = 0.0,
         experiment: str = "",
-    ):
+    ) -> None:
         """Update the guardrail dashboard indicators in the sidebar."""
         self.guardrail_state["status"] = status
         self.guardrail_state["confidence"] = confidence
@@ -860,7 +868,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
     def _notify_guardrail_escalation(
         self, experiment_name: str, confidence: float, message: str
-    ):
+    ) -> None:
         """Show a GUI notification when a guardrail is tripped."""
         self.guardrail_state["escalation_count"] = (
             int(self.guardrail_state.get("escalation_count", 0)) + 1
@@ -898,7 +906,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             hover_color="#c0392b",
         ).pack(pady=10)
 
-    def _run_auto_improve(self, name, script):
+    def _run_auto_improve(self, name: str, script: str) -> None:
         """Phase 4: Launch the Steering Dashboard before execution."""
 
         # -----------------------------------------------------------
@@ -970,7 +978,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         # Store config for use in the plan generation
         run_config: Dict[str, Any] = {"proceed": False}
 
-        def on_proceed():
+        def on_proceed() -> None:
             try:
                 run_config["iterations"] = int(iter_entry.get())
             except ValueError:
@@ -992,7 +1000,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             self.run_config = run_config
             config_dialog.destroy()
 
-        def on_skip():
+        def on_skip() -> None:
             run_config["iterations"] = 3
             run_config["time_budget"] = 600
             run_config["min_confidence"] = 0.5
@@ -1028,7 +1036,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             width=100,
         ).pack(side="left", padx=10)
 
-        def wait_for_config():
+        def wait_for_config() -> None:
             """Wait for the config dialog to close, then continue."""
             if config_dialog.winfo_exists():
                 self.after(100, wait_for_config)
@@ -1047,7 +1055,9 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         self.after(100, wait_for_config)
 
-    def _launch_plan_generation(self, name, script, run_config):
+    def _launch_plan_generation(
+        self, name: str, script: str, run_config: Dict[str, Any]
+    ) -> None:
         """Boot the XPR Agent after configuration is complete."""
         from autonomous_agent import AutonomousAgent
         from xpr_agent_engine import XPRAgentEngine
@@ -1066,7 +1076,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         plan_text = ctk.CTkTextbox(dialog, height=300, width=550)
         plan_text.pack(pady=10, padx=20)
 
-        def popup_callback(plan_str):
+        def popup_callback(plan_str: str) -> None:
             popup_dialog = ctk.CTkToplevel(self)
             popup_dialog.title(f"XPR Control Layer - {name}")
             popup_dialog.geometry("600x500")
@@ -1081,14 +1091,14 @@ class ExperimentRunnerGUI(ctk.CTk):
             plan_display_text.pack(pady=10, padx=20)
             plan_display_text.insert("0.0", plan_str)
 
-            def approve():
+            def approve() -> None:
                 self._log(
                     f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71"
                 )
                 self._update_guardrail_dashboard(status="RUNNING", experiment=name)
                 popup_dialog.destroy()
 
-                def run_agent():
+                def run_agent() -> None:
                     try:
                         agent = AutonomousAgent(str(self.research_dir))
                         experiment_key = script.replace("run_", "").replace(".py", "")
@@ -1141,7 +1151,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                 plan_text = "No plan available"
             dialog.destroy()
 
-            def run_modify_chain():
+            def run_modify_chain() -> None:
                 try:
                     engine = XPRAgentEngine()
                     experiment_key = script.replace("run_", "").replace(".py", "")
@@ -1188,13 +1198,13 @@ class ExperimentRunnerGUI(ctk.CTk):
 
             threading.Thread(target=run_modify_chain, daemon=True).start()
 
-        def approve():
+        def approve() -> None:
             """Approve: Execute the plan directly."""
             self._log(f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71")
             self._update_guardrail_dashboard(status="RUNNING", experiment=name)
             dialog.destroy()
 
-            def run_agent():
+            def run_agent() -> None:
                 try:
                     agent = AutonomousAgent(str(self.research_dir))
                     experiment_key = script.replace("run_", "").replace(".py", "")
@@ -1216,7 +1226,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
             threading.Thread(target=run_agent, daemon=True).start()
 
-        def modify():
+        def modify() -> None:
             """Modify: Run issue-fix chain and re-plan."""
             self._log("[XPR AGENT] Plan modification requested.", "#f39c12")
             dialog.destroy()
@@ -1224,7 +1234,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             # Get current plan text
             current_plan_text = plan_text.get("0.0", "end").strip()
 
-            def run_modify_chain():
+            def run_modify_chain() -> None:
                 try:
                     engine = XPRAgentEngine()
                     experiment_key = script.replace("run_", "").replace(".py", "")
@@ -1270,7 +1280,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
             threading.Thread(target=run_modify_chain, daemon=True).start()
 
-        def reject():
+        def reject() -> None:
             """Reject: Prompt for human priorities, then re-plan with those priorities."""
             self._log(
                 "[XPR AGENT] Plan REJECTED. Requesting human priorities.",
@@ -1306,7 +1316,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                 "e.g., Focus on reducing false positives rather than overall accuracy.",
             )
 
-            def submit_priorities():
+            def submit_priorities() -> None:
                 human_priorities = priority_input.get("0.0", "end").strip()
                 priority_dialog.destroy()
                 self._log(
@@ -1314,7 +1324,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                     "#3498db",
                 )
 
-                def run_replan():
+                def run_replan() -> None:
                     try:
                         engine = XPRAgentEngine()
                         experiment_key = script.replace("run_", "").replace(".py", "")
@@ -1333,7 +1343,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
                 threading.Thread(target=run_replan, daemon=True).start()
 
-            def cancel_reject():
+            def cancel_reject() -> None:
                 priority_dialog.destroy()
                 self._update_guardrail_dashboard(status="IDLE", experiment=name)
 
@@ -1376,7 +1386,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             hover_color="#d68910",
         ).pack(side="left", padx=10)
 
-    def _run_experiment(self, name, script) -> None:
+    def _run_experiment(self, name: str, script: str) -> None:
         if name in self.running_experiments:
             return
 
@@ -1389,7 +1399,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         thread.daemon = True
         thread.start()
 
-    def _execute_script(self, name, script, output_callback=None):
+    def _execute_script(
+        self, name: str, script: str, output_callback: Any = None
+    ) -> None:
         """Execute script with optional output callback and input sanitization."""
         try:
             # Validate and sanitize script name
@@ -1426,7 +1438,9 @@ class ExperimentRunnerGUI(ctk.CTk):
             self.active_processes[name] = proc
 
             # Collect output in a buffer instead of calling after() for every line
-            def read_stream_to_buffer(stream, prefix, buffer):
+            def read_stream_to_buffer(
+                stream: Any, prefix: str, buffer: List[str]
+            ) -> None:
                 try:
                     for line in iter(stream.readline, ""):
                         if self.stop_all:
@@ -1481,7 +1495,9 @@ class ExperimentRunnerGUI(ctk.CTk):
             if name in self.active_processes:
                 del self.active_processes[name]
 
-    def _parse_experiment_results(self, experiment_name: str, output_lines: List[str]):
+    def _parse_experiment_results(
+        self, experiment_name: str, output_lines: List[str]
+    ) -> None:
         """Parse experiment results from stdout output for visualization with validation."""
         results = {}
         validation_errors = []
@@ -1949,14 +1965,14 @@ class ExperimentRunnerGUI(ctk.CTk):
         except Exception as e:
             self._log(f"[ERROR] Failed to parse results: {e}")
 
-    def _finish_experiment(self, name, status, color):
+    def _finish_experiment(self, name: str, status: str, color: str) -> None:
         self.running_experiments.discard(name)
         if name in self.experiment_buttons:
             self.experiment_buttons[name].configure(state="normal")
             self.status_indicators[name].configure(text=status, text_color=color)
         self._log(f"[FINISHED] {name}: {status}")
 
-    def _run_all(self):
+    def _run_all(self) -> None:
         if self.running_experiments:
             if not messagebox.askyesno(
                 "Confirm", "Some experiments are already running. Run all sequentially?"
@@ -1972,7 +1988,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         thread.daemon = True
         thread.start()
 
-    def _run_all_sequential(self):
+    def _run_all_sequential(self) -> None:
         """Run all experiments sequentially with proper synchronization."""
         for i, (name, script) in enumerate(self.experiments):
             if self.stop_all:
@@ -2009,17 +2025,11 @@ class ExperimentRunnerGUI(ctk.CTk):
                 if name in self.active_processes:
                     self._stop_experiment(name)
 
-            if self.stop_all:
-                self.after(
-                    0, lambda: self._log("\n!!! SEQUENTIAL RUN ABORTED !!!", "#e74c3c")
-                )
-                break
-
         self.after(
             0, lambda: self._log("\n### ALL EXPERIMENTS COMPLETE ###", "#2ecc71")
         )
 
-    def _stop_all(self):
+    def _stop_all(self) -> None:
         self.stop_all = True
         for name, proc in list(self.active_processes.items()):
             try:
@@ -2028,7 +2038,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                 pass
         self._log("\n[STOPPING] Termination signal sent to all active processes...")
 
-    def _display_dependencies_status(self):
+    def _display_dependencies_status(self) -> None:
         """Check if all required dependencies are installed."""
         self._log("\n" + "=" * 50)
         self._log("CHECKING DEPENDENCIES")
@@ -2067,7 +2077,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         self._log("=" * 50)
 
-    def _repair_dependencies(self):
+    def _repair_dependencies(self) -> None:
         """Install missing dependencies using pip."""
         self._display_dependencies_status()
 
@@ -2132,7 +2142,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             self.after(0, lambda: self._log("No valid packages to install", "#e74c3c"))
             return
 
-        def install():
+        def install() -> None:
             try:
                 proc = subprocess.Popen(
                     [sys.executable, "-m", "pip", "install"] + packages,
@@ -2169,10 +2179,10 @@ class ExperimentRunnerGUI(ctk.CTk):
         thread.daemon = True
         thread.start()
 
-    def change_appearance_mode(self, new_appearance_mode: str):
+    def change_appearance_mode(self, new_appearance_mode: str) -> None:
         ctk.set_appearance_mode(new_appearance_mode)
 
-    def _create_visualization_panel(self, parent_frame):
+    def _create_visualization_panel(self, parent_frame: Any) -> None:
         """Create an embedded matplotlib visualization panel."""
         # Create figure and canvas
         self.current_figure = Figure(figsize=(8, 4), dpi=100, facecolor="#2b2b2b")
@@ -2188,7 +2198,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         toolbar = NavigationToolbar2Tk(self.current_canvas, parent_frame)
         toolbar.update()
 
-    def _plot_experiment_results(self, experiment_name: str, results: dict):
+    def _plot_experiment_results(self, experiment_name: str, results: dict) -> None:
         """Plot experiment results in the embedded visualization panel."""
         if self.current_figure is None:
             return
@@ -2223,8 +2233,8 @@ class ExperimentRunnerGUI(ctk.CTk):
                 spine.set_color("white")
 
         # Helper to safely get value or 0
-        def get_val(key, default=0.0):
-            return results.get(key, default)
+        def get_val(key: str, default: float = 0.0) -> float:
+            return float(results.get(key, default))
 
         # Panel 1: Core Dynamics
         core_keys = [
@@ -2354,7 +2364,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         if self.current_canvas is not None:
             self.current_canvas.draw()
 
-    def _show_results_visualization(self, experiment_name: str):
+    def _show_results_visualization(self, experiment_name: str) -> None:
         """Open a visualization window for experiment results."""
         viz_window = ctk.CTkToplevel(self)
         viz_window.title(f"Results Visualization - {experiment_name}")
@@ -2410,8 +2420,8 @@ class ExperimentRunnerGUI(ctk.CTk):
                     spine.set_color("white")
 
             # Helper to safely get value or 0
-            def get_val(key, default=0.0):
-                return results.get(key, default)
+            def get_val(key: str, default: float = 0.0) -> float:
+                return cast(float, results.get(key, default))
 
             # Panel 1: Core Dynamics
             core_keys = [
@@ -2570,7 +2580,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             )
 
         # No need to restore - we used window-local variables
-        def on_close():
+        def on_close() -> None:
             viz_window.destroy()
 
         viz_window.protocol("WM_DELETE_WINDOW", on_close)

@@ -130,7 +130,7 @@ class HumanControlLayer:
             },
         }
 
-    def _save_config(self):
+    def _save_config(self) -> None:
         """Save human configuration to file."""
         try:
             with open(self.config_path, "w") as f:
@@ -320,7 +320,7 @@ class HumanControlLayer:
 
         return selected_task
 
-    def add_task(self, task: Task):
+    def add_task(self, task: Task) -> None:
         """Add a new task to the queue."""
         self.tasks.append(task)
         logger.info(f"Added task: {task.title}")
@@ -562,7 +562,7 @@ class HumanControlLayer:
         review_result: ReviewResult,
         experiment_result: Dict[str, Any],
         success_criteria_met: bool,
-    ):
+    ) -> None:
         """Log review result for audit trail."""
         log_entry = {
             "review_timestamp": review_result.timestamp,

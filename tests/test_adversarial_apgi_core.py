@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import math
 import sys
-from typing import List
+from typing import TYPE_CHECKING, Any, Callable, List
+
+if TYPE_CHECKING:
+    pass
 
 import numpy as np
 import pytest
@@ -274,7 +277,7 @@ class TestDynamicalSystemEquations:
         ],
     )
     def test_signal_dynamics_non_negative(
-        self, S: float, dt: float, expected_constraint
+        self, S: float, dt: float, expected_constraint: Callable[[float], bool]
     ) -> None:
         """Test signal_dynamics maintains non-negative constraint."""
         result = DynamicalSystemEquations.signal_dynamics(
@@ -723,13 +726,13 @@ class TestSnapshotRegression:
     """Snapshot tests to detect unintended changes."""
 
     @pytest.mark.snapshot
-    def test_prediction_error_deterministic(self, snapshot_manager) -> None:
+    def test_prediction_error_deterministic(self, snapshot_manager: Any) -> None:
         """Snapshot test for prediction_error function."""
         result = FoundationalEquations.prediction_error(5.0, 3.0)
         assert snapshot_manager.assert_match("prediction_error_basic", result)
 
     @pytest.mark.snapshot
-    def test_accumulated_signal_deterministic(self, snapshot_manager) -> None:
+    def test_accumulated_signal_deterministic(self, snapshot_manager: Any) -> None:
         """Snapshot test for accumulated_signal function."""
         result = CoreIgnitionSystem.accumulated_signal(
             Pi_e=1.0, eps_e=2.0, Pi_i_eff=1.0, eps_i=2.0
@@ -737,7 +740,7 @@ class TestSnapshotRegression:
         assert snapshot_manager.assert_match("accumulated_signal_basic", result)
 
     @pytest.mark.snapshot
-    def test_ignition_probability_deterministic(self, snapshot_manager) -> None:
+    def test_ignition_probability_deterministic(self, snapshot_manager: Any) -> None:
         """Snapshot test for ignition_probability function."""
         result = CoreIgnitionSystem.ignition_probability(S=1.0, theta=0.5, alpha=5.5)
         assert snapshot_manager.assert_match("ignition_probability_basic", result)
@@ -752,7 +755,9 @@ class TestConcurrency:
     """Tests for thread-safety and race conditions."""
 
     @pytest.mark.race_condition
-    def test_running_statistics_thread_safety(self, race_condition_detector) -> None:
+    def test_running_statistics_thread_safety(
+        self, race_condition_detector: Any
+    ) -> None:
         """Test RunningStatistics for race conditions."""
         stats = RunningStatistics()
 
@@ -776,7 +781,7 @@ class TestPerformance:
     """Performance benchmark tests."""
 
     @pytest.mark.performance
-    def test_signal_dynamics_performance(self, performance_monitor) -> None:
+    def test_signal_dynamics_performance(self, performance_monitor: Any) -> None:
         """Benchmark signal_dynamics execution speed."""
         with performance_monitor(
             threshold_ms=3000
@@ -795,7 +800,9 @@ class TestPerformance:
         assert len(metrics.errors) == 0, f"Performance issues: {metrics.errors}"
 
     @pytest.mark.performance
-    def test_ignition_probability_performance(self, performance_monitor) -> None:
+    def test_ignition_probability_performance(
+        self, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Benchmark ignition_probability execution speed."""
         with performance_monitor(
             threshold_ms=2000

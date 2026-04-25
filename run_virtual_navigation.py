@@ -33,6 +33,9 @@ from ultimate_apgi_template import (
     UltimateAPGIParameters,
 )
 
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
 # ---------------------------------------------------------------------------
@@ -51,10 +54,10 @@ LEARNING_RATE = 0.02
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.base_efficiency = BASE_PATH_EFFICIENCY
         self.learning_rate = LEARNING_RATE
         self.trial_count = 0
@@ -213,7 +216,7 @@ class EnhancedVirtualNavRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -303,7 +306,7 @@ class EnhancedVirtualNavRunner:
         }
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("VIRTUAL NAVIGATION EXPERIMENT RESULTS")
     print("=" * 60)
@@ -314,11 +317,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Virtual Navigation Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedVirtualNavRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\npath_efficiency: {results['path_efficiency']:.4f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Virtual Navigation  experiment")
+    cli_entrypoint(main, parser)

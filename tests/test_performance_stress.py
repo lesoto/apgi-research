@@ -19,6 +19,7 @@ import sys
 import time
 import tracemalloc
 from pathlib import Path
+from typing import Any, Callable
 
 import numpy as np
 import pytest
@@ -36,7 +37,9 @@ class TestPerformanceBenchmarks:
     """Performance benchmark tests for core functions."""
 
     @pytest.mark.performance
-    def test_prediction_error_performance(self, performance_monitor) -> None:
+    def test_prediction_error_performance(
+        self, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Benchmark prediction_error function performance."""
         from APGI_System import FoundationalEquations
 
@@ -49,7 +52,7 @@ class TestPerformanceBenchmarks:
         ), f"prediction_error took {metrics.execution_time:.2f}ms, expected < 500ms"
 
     @pytest.mark.performance
-    def test_z_score_performance(self, performance_monitor) -> None:
+    def test_z_score_performance(self, performance_monitor: Callable[..., Any]) -> None:
         """Benchmark z_score function performance."""
         from APGI_System import FoundationalEquations
 
@@ -60,7 +63,9 @@ class TestPerformanceBenchmarks:
         assert metrics.execution_time < 500
 
     @pytest.mark.performance
-    def test_precision_performance(self, performance_monitor) -> None:
+    def test_precision_performance(
+        self, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Benchmark precision function performance."""
         from APGI_System import FoundationalEquations
 
@@ -71,7 +76,9 @@ class TestPerformanceBenchmarks:
         assert metrics.execution_time < 500
 
     @pytest.mark.performance
-    def test_accumulated_signal_performance(self, performance_monitor) -> None:
+    def test_accumulated_signal_performance(
+        self, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Benchmark accumulated_signal function performance."""
         from APGI_System import CoreIgnitionSystem
 
@@ -82,7 +89,9 @@ class TestPerformanceBenchmarks:
         assert metrics.execution_time < 1000
 
     @pytest.mark.performance
-    def test_ignition_probability_performance(self, performance_monitor) -> None:
+    def test_ignition_probability_performance(
+        self, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Benchmark ignition_probability function performance."""
         from APGI_System import CoreIgnitionSystem
 
@@ -93,7 +102,9 @@ class TestPerformanceBenchmarks:
         assert metrics.execution_time < 1500
 
     @pytest.mark.performance
-    def test_signal_dynamics_performance(self, performance_monitor) -> None:
+    def test_signal_dynamics_performance(
+        self, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Benchmark signal_dynamics function performance."""
         from APGI_System import DynamicalSystemEquations
 
@@ -332,7 +343,9 @@ class TestScalability:
         "n_trials",
         [10, 100, 1000, 10000],
     )
-    def test_scalability_with_trials(self, n_trials: int, performance_monitor) -> None:
+    def test_scalability_with_trials(
+        self, n_trials: int, performance_monitor: Callable[..., Any]
+    ) -> None:
         """Test scalability with increasing number of trials."""
         from APGI_System import RunningStatistics
 

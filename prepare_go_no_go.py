@@ -95,7 +95,7 @@ class GoNoGoGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> GoNoGoTrial:
@@ -116,7 +116,7 @@ class GoNoGoExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -168,7 +168,7 @@ class GoNoGoExperiment:
             "d_prime": self.get_d_prime(),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -237,7 +237,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Go/No-Go - Configuration Verification")
     print(f"Stimuli: {STIMULI}")
     print(f"Go Probability: {GO_PROBABILITY}")

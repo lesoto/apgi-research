@@ -111,7 +111,7 @@ class MetabolicCostGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> MetabolicTrial:
@@ -139,7 +139,7 @@ class MetabolicCostExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -189,7 +189,7 @@ class MetabolicCostExperiment:
             "mean_rt_ms": np.mean([t.rt_ms for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -260,7 +260,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Metabolic Cost - Configuration Verification")
     print(f"Effort Levels: {[e.value for e in EffortLevel]}")
     print(f"Reward Values: {REWARD_VALUES}")

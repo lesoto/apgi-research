@@ -113,7 +113,7 @@ class WMSpanTrial:
     processing_accuracy: float = 0.0
     timestamp: float = 0.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.recalled is None:
             self.recalled = []
 
@@ -123,7 +123,7 @@ class WorkingMemorySpanGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> WMSpanTrial:
@@ -173,7 +173,7 @@ class WorkingMemorySpanExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -228,7 +228,7 @@ class WorkingMemorySpanExperiment:
             ),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -298,7 +298,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Working Memory Span - Configuration Verification")
     print(f"Span Levels: {SPAN_LEVELS}")
     print(f"Word Pool Size: {len(WORDS)}")

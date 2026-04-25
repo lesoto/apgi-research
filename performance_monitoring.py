@@ -156,18 +156,11 @@ class PerformanceMonitor:
         gc_objects = len(gc.get_objects())
         gc_stats_raw = gc.get_stats()
 
-        # gc.get_stats() returns list of dicts in Python 3.7+, tuples in older versions
+        # gc.get_stats() returns list of dicts in Python 3.7+
         gc_stats = {}
         for i, stat in enumerate(gc_stats_raw):
-            if isinstance(stat, dict):
-                # New format: dictionary with keys
-                gc_stats[f"generation_{i}"] = stat.get("collected", 0)
-            else:
-                # Old format: tuple (generation, collections, collected, uncollectable)
-                try:
-                    gc_stats[f"generation_{i}"] = stat[2] if len(stat) > 2 else 0
-                except (IndexError, TypeError):
-                    gc_stats[f"generation_{i}"] = 0
+            key = f"generation_{i}"
+            gc_stats[key] = stat.get("collected", 0)
 
         return MemorySnapshot(
             timestamp=time.time(),
@@ -574,11 +567,13 @@ def create_performance_monitor(
     return PerformanceMonitor(output_dir)
 
 
-def monitor_function_performance(monitor: PerformanceMonitor, operation_name: str):
+def monitor_function_performance(
+    monitor: PerformanceMonitor, operation_name: str
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to monitor function performance."""
 
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             metrics = monitor.start_operation(operation_name)
             try:
                 result = func(*args, **kwargs)

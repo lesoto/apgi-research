@@ -358,7 +358,7 @@ class TestMemoryStress:
 class TestMemoryPerformance:
     """Memory performance tests."""
 
-    def test_memory_allocation_speed(self, request) -> None:
+    def test_memory_allocation_speed(self, request: Any) -> None:
         """Benchmark memory allocation speed."""
         # Check if benchmark fixture is available
         if not hasattr(request, "node") or not hasattr(

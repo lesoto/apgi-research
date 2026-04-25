@@ -88,7 +88,7 @@ def export_apgi_params(
     theta_0: float = 0.5,
     alpha: float = 5.5,
     enabled: bool = True,
-    **kwargs,
+    **kwargs: Any,
 ) -> ExportedAPGIParams:
     """
     Export APGI parameters from prepare files in standardized format.

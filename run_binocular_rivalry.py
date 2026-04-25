@@ -20,8 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-import sys
-from typing import Dict, List, cast
+from typing import Dict, Any, List, cast
 
 # Import fixed configurations from prepare_binocular_rivalry.py
 from prepare_binocular_rivalry import (
@@ -38,6 +37,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
@@ -83,11 +85,11 @@ class SimulatedPerceptualSystem:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset perceptual system state for new experiment."""
         self.trial_count = 0
         self.total_alternations = 0
-        self.dominance_durations = []
+        self.dominance_durations: List[float] = []
 
     def generate_rivalry_dynamics(self, trial: Dict) -> List[Dict]:
         """Generate perceptual alternations for a trial."""
@@ -409,7 +411,7 @@ class EnhancedBinocularRivalryRunner:
 # ---------------------------------------------------------------------------
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     """Print formatted experiment results."""
     print("\n" + "=" * 60)
     print("Binocular Rivalry Experiment Results")
@@ -465,49 +467,13 @@ def print_results(results: Dict):
     print("\n" + "=" * 60)
 
 
-def main():
-    """Main entry point for binocular rivalry experiment."""
-    import gc
-
-    gc.collect()
-
-    # Run experiment
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedBinocularRivalryRunner()
     results = runner.run_experiment()
-
-    # Print results
-    print_results(results)
-
-    # Final summary output (for automated parsing)
-    print("\n---")
-    print(f"masking_effect_ms: {results['alternation_rate']:.3f}")
-    print(f"completion_time_s: {results['completion_time_s']:.1f}")
-    print(f"num_trials:        {results['num_trials']}")
-    print(f"total_alternations: {results['total_alternations']}")
-    print(f"mean_dominance_duration_s: {results['mean_dominance_duration_s']:.2f}")
-
-    # Memory tracking (simplified - using placeholder)
-    peak_memory_mb = 0.0
-    print(f"peak_vram_mb:      {peak_memory_mb:.1f}")
-
-    # APGI Metrics Output (if enabled)
-    if results.get("apgi_enabled"):
-        print("\n" + "=" * 40)
-        print("APGI METRICS")
-        print("=" * 40)
-        print(results.get("apgi_formatted", "No APGI metrics available"))
-        print("=" * 40)
-
     return results
 
 
 if __name__ == "__main__":
-    try:
-        results = main()
-        sys.exit(0)
-    except Exception as e:
-        print(f"ERROR: Experiment failed with exception: {e}")
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
+    parser = create_standard_parser("Run Binocular Rivalry  experiment")
+    cli_entrypoint(main, parser)

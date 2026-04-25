@@ -105,7 +105,7 @@ class DRMTrial:
     correct_rejections: int = 0
     test_results: Optional[List[Dict]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.test_results is None:
             self.test_results = []
 
@@ -118,7 +118,7 @@ class DRMExperiment:
         self.test_items: List[DRMTrial] = []
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.study_lists = []
         self.test_items = []
 
@@ -178,7 +178,9 @@ class DRMExperiment:
         self.test_items = test_items
         return test_items
 
-    def record_recognition(self, trial: DRMTrial, recognized: bool, confidence: int):
+    def record_recognition(
+        self, trial: DRMTrial, recognized: bool, confidence: int
+    ) -> None:
         trial.response_recognized = recognized
         trial.confidence = confidence
         import time
@@ -209,7 +211,7 @@ class DRMExperiment:
             "mean_confidence": np.mean([t.confidence for t in self.test_items]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "study_lists": [
                 {"list_name": t.list_name, "items": t.list_items}
@@ -280,7 +282,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("DRM False Memory - Configuration Verification")
     print(f"Number of DRM Lists: {len(DRM_LISTS)}")
     print("Items per List: 6 (5 associates + 1 critical lure)")

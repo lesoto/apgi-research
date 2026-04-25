@@ -701,7 +701,7 @@ class TestPerformanceMonitoring:
         monitor.end_operation(metrics, success=True)
 
         assert metrics.end_time is not None
-        assert metrics.duration is not None
+        assert metrics.duration is not None  # type: ignore[unreachable]
         assert metrics.duration > 0
         assert metrics.success is True
 

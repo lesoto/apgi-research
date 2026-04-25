@@ -50,12 +50,12 @@ RETENTION_POLICIES = {
 class ComplianceManager:
     """Manages system-wide compliance, auditing, and data lifecycle rules."""
 
-    def __init__(self):
-        self.audit_trail = []
+    def __init__(self) -> None:
+        self.audit_trail: list[dict[str, Any]] = []
 
     def log_parameter_change(
         self, user: str, param_name: str, old_value: Any, new_value: Any
-    ):
+    ) -> None:
         """Creates an audit trail entry for configuration parameter changes."""
         entry = {
             "timestamp": datetime.now().isoformat(),
@@ -70,7 +70,7 @@ class ComplianceManager:
 
     def log_experiment_run(
         self, experiment_id: str, classification: DataClassification
-    ):
+    ) -> None:
         """Creates an audit trail entry for experiment invocations."""
         entry = {
             "timestamp": datetime.now().isoformat(),
@@ -106,7 +106,7 @@ class ComplianceManager:
                 self._execute_deletion(record, policy.deletion_routine)
         return valid_records
 
-    def _execute_deletion(self, record: dict, routine: str):
+    def _execute_deletion(self, record: dict, routine: str) -> None:
         """Simulates deletion routines based on classification."""
         logger.info(
             f"Applying deletion routine '{routine}' to record {record.get('id', 'unknown')}"

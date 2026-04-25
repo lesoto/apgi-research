@@ -7,9 +7,9 @@ from typing import Protocol, Dict, Any, runtime_checkable
 import warnings
 
 
-def deprecated(reason: str):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+def deprecated(reason: str) -> Any:
+    def decorator(func: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             warnings.warn(
                 f"{func.__name__} is deprecated: {reason}",
                 category=DeprecationWarning,

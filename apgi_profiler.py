@@ -3,13 +3,18 @@ APGI Profiling and Performance Budget module.
 
 Provides both function-level (cProfile) and line-level (line_profiler) profiling
 for comprehensive hot path optimization.
+
+All profiling decorators are gated behind APGI_ENABLE_PROFILING environment variable
+to prevent performance overhead and noise in production runs.
 """
 
 import cProfile
 import pstats
 import io
 import time
+import os
 from functools import wraps
+from typing import Callable, TypeVar, Any
 
 try:
     from line_profiler import LineProfiler
@@ -19,18 +24,36 @@ except ImportError:
     LINE_PROFILER_AVAILABLE = False
 
 
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _is_profiling_enabled() -> bool:
+    """Check if profiling is enabled via environment variable."""
+    return os.environ.get("APGI_ENABLE_PROFILING", "").lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def _profiling_disabled_message(func_name: str) -> None:
+    """Print message when profiling is called but disabled."""
+    pass  # Silent by default to avoid production noise
+
+
 class PerformanceBudgetExceeded(Exception):
     pass
 
 
-def enforce_budget(max_time_ms: float):
+def enforce_budget(max_time_ms: float) -> Callable:
     """
     Decorator to enforce a strict performance budget (max execution time).
     """
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             start = time.perf_counter()
             result = func(*args, **kwargs)
             end = time.perf_counter()
@@ -48,13 +71,18 @@ def enforce_budget(max_time_ms: float):
     return decorator
 
 
-def profile_hot_path(func):
+def profile_hot_path(func: F) -> F:
     """
     Decorator to profile hot paths using cProfile (function-level profiling).
+
+    Only activates when APGI_ENABLE_PROFILING environment variable is set.
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not _is_profiling_enabled():
+            return func(*args, **kwargs)
+
         pr = cProfile.Profile()
         pr.enable()
         result = func(*args, **kwargs)
@@ -69,15 +97,16 @@ def profile_hot_path(func):
         print(s.getvalue())
         return result
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
 
 
-def profile_hot_path_line(func):
+def profile_hot_path_line(func: F) -> F:
     """
     Decorator to profile hot paths using line_profiler (line-level profiling).
 
     This provides line-by-line execution time analysis for detailed optimization.
     Requires the 'line_profiler' package to be installed.
+    Only activates when APGI_ENABLE_PROFILING environment variable is set.
 
     Usage:
         @profile_hot_path_line
@@ -91,7 +120,10 @@ def profile_hot_path_line(func):
         return profile_hot_path(func)
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not _is_profiling_enabled():
+            return func(*args, **kwargs)
+
         lp = LineProfiler()
         lp_wrapper = lp(func)
         result = lp_wrapper(*args, **kwargs)
@@ -103,19 +135,23 @@ def profile_hot_path_line(func):
         print(s.getvalue())
         return result
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
 
 
-def profile_hot_path_combined(func):
+def profile_hot_path_combined(func: F) -> F:
     """
     Decorator to profile hot paths using both cProfile and line_profiler.
 
     Provides comprehensive profiling with both function-level and line-level analysis.
     Requires the 'line_profiler' package to be installed.
+    Only activates when APGI_ENABLE_PROFILING environment variable is set.
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not _is_profiling_enabled():
+            return func(*args, **kwargs)
+
         # Run cProfile first
         pr = cProfile.Profile()
         pr.enable()
@@ -144,4 +180,4 @@ def profile_hot_path_combined(func):
 
         return result
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]

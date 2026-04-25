@@ -69,7 +69,7 @@ class APGIMetricsSummary:
 class EnhancedAPGIMetrics:
     """Enhanced APGI metrics calculator with comprehensive analysis."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.trial_data: List[Dict] = []
 
     def calculate_ignition_metrics(

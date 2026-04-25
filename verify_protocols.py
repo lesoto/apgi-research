@@ -325,7 +325,7 @@ def verify_experiment(experiment: str, base_dir: Path) -> VerificationResult:
     return VerificationResult(experiment, passed, failed, warnings)
 
 
-def main():
+def main() -> None:
     """Run verification on all experiments."""
     base_dir = Path(__file__).parent
 
@@ -436,8 +436,6 @@ def main():
             f"{status} {result.experiment:35} ({len(result.passed)} passed, {len(result.failed)} failed, {len(result.warnings)} warnings)"
         )
 
-    return results
-
 
 if __name__ == "__main__":
-    results = main()
+    main()

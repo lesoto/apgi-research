@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, Optional, cast, List, Union
+from typing import Dict, Any, Optional, cast, List, Union
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -37,6 +37,9 @@ from prepare_attentional_blink import (
     TIME_BUDGET,
     APGI_PARAMS,  # APGI parameters from prepare file
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
@@ -100,7 +103,7 @@ class SimulatedParticipant:
         self.recovery_time_ms = recovery_time_ms
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset participant state for new experiment."""
         self.t1_processing = False
         self.t1_processed_time = 0.0
@@ -285,6 +288,11 @@ class EnhancedAttentionalBlinkRunner:
         else:
             self.apgi = None  # type: ignore[assignment]
 
+    def reset(self) -> None:
+        """Reset experiment and participant state."""
+        self.experiment.reset()
+        self.participant.reset()
+
     def run_experiment(self) -> Dict:
         """Execute the full Attentional Blink experiment."""
         self.start_time = time.time()
@@ -308,7 +316,7 @@ class EnhancedAttentionalBlinkRunner:
 
         return results
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         """Execute a single trial with APGI tracking."""
         config = self.experiment.get_next_trial()
         if config is None:
@@ -477,7 +485,7 @@ class EnhancedAttentionalBlinkRunner:
 # ---------------------------------------------------------------------------
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     """Print experiment results in a formatted way."""
     print("\n" + "=" * 60)
     print("ATTENTIONAL BLINK EXPERIMENT RESULTS")
@@ -505,15 +513,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Attentional Blink Experiment...")
-    print(f"Configuration: {NUM_TRIALS_CONFIG} trials")
-
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedAttentionalBlinkRunner()
     results = runner.run_experiment()
+    return results
 
-    print_results(results)
 
-    # Output key metric for auto-improvement system
-    print(f"\nblink_magnitude: {results['blink_magnitude']:.4f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Attentional Blink  experiment")
+    cli_entrypoint(main, parser)

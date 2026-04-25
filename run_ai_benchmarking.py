@@ -20,8 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-import sys
-from typing import Dict, Optional, cast
+from typing import Dict, Any, List, Optional, cast
 
 # Import fixed configurations from prepare_ai_benchmarking.py
 from prepare_ai_benchmarking import (
@@ -40,6 +39,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
@@ -109,12 +111,12 @@ class SimulatedAIModel:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset AI model state for new experiment."""
         self.trial_count = 0
         self.total_correct = 0
         self.total_tokens = 0
-        self.response_times = []
+        self.response_times: List[float] = []
 
     def process_task(self, trial: AIBenchmarkTrial) -> Dict:
         """Process a single benchmark task."""
@@ -515,7 +517,7 @@ class EnhancedAIBenchmarkingRunner:
 # ---------------------------------------------------------------------------
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     """Print formatted experiment results."""
     print("\n" + "=" * 60)
     print("AI Benchmarking Experiment Results")
@@ -578,49 +580,13 @@ def print_results(results: Dict):
     print("\n" + "=" * 60)
 
 
-def main():
-    """Main entry point for AI benchmarking experiment."""
-    import gc
-
-    gc.collect()
-
-    # Run experiment
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedAIBenchmarkingRunner()
     results = runner.run_experiment()
-
-    # Print results
-    print_results(results)
-
-    # Final summary output (for automated parsing)
-    print("\n---")
-    print(f"benchmark_accuracy: {results['benchmark_accuracy']:.3f}")
-    print(f"completion_time_s: {results['completion_time_s']:.1f}")
-    print(f"num_trials:        {results['num_trials']}")
-    print(f"correct_responses: {results['correct_responses']}")
-    print(f"incorrect_responses: {results['incorrect_responses']}")
-
-    # Memory tracking (simplified - using placeholder)
-    peak_memory_mb = 0.0
-    print(f"peak_vram_mb:      {peak_memory_mb:.1f}")
-
-    # APGI Metrics Output (if enabled)
-    if results.get("apgi_enabled"):
-        print("\n" + "=" * 40)
-        print("APGI METRICS")
-        print("=" * 40)
-        print(results.get("apgi_formatted", "No APGI metrics available"))
-        print("=" * 40)
-
     return results
 
 
 if __name__ == "__main__":
-    try:
-        results = main()
-        sys.exit(0)
-    except Exception as e:
-        print(f"ERROR: Experiment failed with exception: {e}")
-        import traceback
-
-        traceback.print_exc()
-        sys.exit(1)
+    parser = create_standard_parser("Run Ai Benchmarking  experiment")
+    cli_entrypoint(main, parser)

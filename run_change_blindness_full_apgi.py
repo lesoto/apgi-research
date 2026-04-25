@@ -34,8 +34,8 @@ from prepare_change_blindness import (
 # APGI Integration
 
 # Import full APGI integration
-from standard_apgi_runner import StandardAPGIRunner
-from experiment_apgi_integration import get_experiment_apgi_config
+from standard_apgi_runner import StandardAPGIRunner, get_experiment_apgi_config
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
@@ -72,11 +72,11 @@ class SimulatedParticipantWithAPGI:
     - Somatic marker dynamics
     """
 
-    def __init__(self, apgi_runner: StandardAPGIRunner):
+    def __init__(self, apgi_runner: StandardAPGIRunner) -> None:
         self.reset()
         self.apgi_runner = apgi_runner
 
-    def reset(self):
+    def reset(self) -> None:
         self.detection_baseline = BASE_DETECTION_RATE
         self.attention_level = 1.0
         self.cognitive_load = 0.0
@@ -153,7 +153,7 @@ class SimulatedParticipantWithAPGI:
 
         return detected, rt, apgi_metrics
 
-    def _update_cognitive_state(self, apgi_metrics: Dict[str, float]):
+    def _update_cognitive_state(self, apgi_metrics: Dict[str, float]) -> None:
         """Update cognitive state based on APGI metrics."""
         # Attention level influenced by somatic markers and surprise
         somatic_marker = apgi_metrics.get("M", 0.0)
@@ -174,7 +174,7 @@ class SimulatedParticipantWithAPGI:
 class EnhancedChangeBlindnessRunnerWithAPGI:
     """Enhanced runner with full APGI integration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialize APGI runner
         apgi_params = get_experiment_apgi_config("change_blindness")
         self.apgi_runner = StandardAPGIRunner(
@@ -188,11 +188,11 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
         # Initialize experiment and participant
         self.experiment = ChangeBlindnessExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipantWithAPGI(self.apgi_runner)
-        self.start_time = None
+        self.start_time: float | None = None
 
         # Tracking
         self.trial_metrics: List[Dict[str, Any]] = []
-        self.hierarchical_levels_used = []
+        self.hierarchical_levels_used: list[int] = []
 
     def run_experiment(self) -> Dict[str, Any]:
         """Run experiment with full APGI tracking."""
@@ -239,7 +239,7 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
                 rt_ms=rt,
             )
 
-            if time.time() - self.start_time > TIME_BUDGET:
+            if self.start_time and time.time() - self.start_time > TIME_BUDGET:
                 break
 
         return self._calculate_comprehensive_results()
@@ -319,7 +319,7 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
 
         return results
 
-    def _print_comprehensive_results(self, results: Dict[str, Any]):
+    def _print_comprehensive_results(self, results: Dict[str, Any]) -> None:
         """Print comprehensive results including APGI metrics."""
         print("\n" + "=" * 60)
         print("CHANGE BLINDNESS EXPERIMENT RESULTS (Full APGI Integration)")
@@ -376,6 +376,14 @@ class EnhancedChangeBlindnessRunnerWithAPGI:
 # Main execution
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+
+def main(args: Any) -> Dict[str, Any]:
+    """Main function for running the experiment."""
     runner = EnhancedChangeBlindnessRunnerWithAPGI()
     results = runner.run_experiment()
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Change Blindness Full Apgi  experiment")
+    cli_entrypoint(main, parser)

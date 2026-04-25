@@ -52,8 +52,9 @@ class TestPerformanceBudget:
 class TestCProfileHotPath:
     """Tests for cProfile-based hot path profiling."""
 
-    def test_profile_hot_path_basic(self, capsys):
+    def test_profile_hot_path_basic(self, capsys, monkeypatch):
         """Test basic cProfile profiling."""
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path
         def sample_function():
@@ -69,8 +70,9 @@ class TestCProfileHotPath:
         assert "cProfile for sample_function" in captured.out
         assert "function calls" in captured.out.lower()
 
-    def test_profile_hot_path_with_args(self, capsys):
+    def test_profile_hot_path_with_args(self, capsys, monkeypatch):
         """Test profiling with function arguments."""
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path
         def multiply(a, b):
@@ -89,8 +91,9 @@ class TestLineProfilerHotPath:
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
     )
-    def test_profile_hot_path_line_basic(self, capsys):
+    def test_profile_hot_path_line_basic(self, capsys, monkeypatch):
         """Test basic line profiler profiling."""
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path_line
         def sample_function():
@@ -109,8 +112,9 @@ class TestLineProfilerHotPath:
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
     )
-    def test_profile_hot_path_line_with_args(self, capsys):
+    def test_profile_hot_path_line_with_args(self, capsys, monkeypatch):
         """Test line profiling with function arguments."""
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path_line
         def multiply(a, b):
@@ -145,8 +149,9 @@ class TestCombinedProfiler:
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
     )
-    def test_profile_hot_path_combined_basic(self, capsys):
+    def test_profile_hot_path_combined_basic(self, capsys, monkeypatch):
         """Test combined profiling with both cProfile and line_profiler."""
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path_combined
         def sample_function():
@@ -166,8 +171,9 @@ class TestCombinedProfiler:
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
     )
-    def test_profile_hot_path_combined_with_args(self, capsys):
+    def test_profile_hot_path_combined_with_args(self, capsys, monkeypatch):
         """Test combined profiling with function arguments."""
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path_combined
         def multiply(a, b):
@@ -201,9 +207,11 @@ class TestCombinedProfiler:
 class TestProfilerIntegration:
     """Integration tests for profiler usage in realistic scenarios."""
 
-    def test_profiler_with_numpy_operations(self, capsys):
+    def test_profiler_with_numpy_operations(self, capsys, monkeypatch):
         """Test profiling with NumPy operations."""
         import numpy as np
+
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path
         def numpy_operation():
@@ -219,9 +227,11 @@ class TestProfilerIntegration:
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
     )
-    def test_line_profiler_with_numpy_operations(self, capsys):
+    def test_line_profiler_with_numpy_operations(self, capsys, monkeypatch):
         """Test line profiling with NumPy operations."""
         import numpy as np
+
+        monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
 
         @profile_hot_path_line
         def numpy_operation():

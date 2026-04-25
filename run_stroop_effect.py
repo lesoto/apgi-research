@@ -22,13 +22,17 @@ import numpy as np
 import time
 from typing import Dict, Any, Optional, List, cast
 
-# APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
-from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
-from ultimate_apgi_template import (
-    HierarchicalProcessor,
-    PrecisionExpectationState,
-    UltimateAPGIParameters,
-)
+# Standardized APGI imports
+from standard_apgi_runner import StandardAPGIRunner
+from apgi_cli import cli_entrypoint, create_standard_parser
+
+# Legacy imports - migrated to StandardAPGIRunner
+# from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
+# from ultimate_apgi_template import (
+#     HierarchicalProcessor,
+#     PrecisionExpectationState,
+#     UltimateAPGIParameters,
+# )
 
 from prepare_stroop_effect import (
     StroopExperiment,
@@ -68,7 +72,7 @@ CALCULATE_FACILITATION = True
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
     def reset(self) -> None:
@@ -102,57 +106,27 @@ class EnhancedStroopRunner:
         self.participant = SimulatedParticipant()
         self.start_time: Optional[float] = None
 
-        # Type annotations for optional attributes
-        self.hierarchical: Optional[HierarchicalProcessor] = None
-        self.precision_gap: Optional[PrecisionExpectationState] = None
-        self.apgi: Optional[APGIIntegration] = None
+        # Initialize StandardAPGIRunner
+        self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
+        self.apgi_runner: Optional[StandardAPGIRunner] = None
+        if self.enable_apgi:
+            self.apgi_runner = StandardAPGIRunner(
+                base_runner=self,
+                experiment_name="stroop_effect",
+                enable_hierarchical=True,
+                enable_precision_gap=True,
+            )
+
+        # Type annotations for optional attributes (legacy compatibility)
+        self.hierarchical: Optional[Any] = None
+        self.precision_gap: Optional[Any] = None
+        self.apgi: Optional[Any] = None
         self.neuromodulators: Optional[Dict[str, float]] = None
 
-        # Initialize APGI integration if enabled
-        self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
-        if self.enable_apgi:
-            params = APGIParameters(
-                tau_S=cast(float, APGI_PARAMS.get("tau_s", 0.30)),
-                beta=cast(float, APGI_PARAMS.get("beta", 1.6)),
-                theta_0=cast(float, APGI_PARAMS.get("theta_0", 0.35)),
-                alpha=cast(float, APGI_PARAMS.get("alpha", 6.0)),
-            )
-            self.apgi = APGIIntegration(params)
-
-            # 100/100: Hierarchical 5-level processing (requires UltimateAPGIParameters)
-            if APGI_PARAMS.get("hierarchical_enabled", True):
-                ultimate_params = UltimateAPGIParameters(
-                    tau_S=params.tau_S,
-                    beta=params.beta,
-                    theta_0=params.theta_0,
-                    alpha=params.alpha,
-                    gamma_M=params.gamma_M,
-                    lambda_S=params.lambda_S,
-                    sigma_S=params.sigma_S,
-                    sigma_theta=params.sigma_theta,
-                    sigma_M=params.sigma_M,
-                    rho=params.rho,
-                    theta_survival=params.theta_survival,
-                    theta_neutral=params.theta_neutral,
-                    beta_cross=cast(float, APGI_PARAMS.get("beta_cross", 0.2)),
-                    tau_levels=cast(
-                        List[float],
-                        APGI_PARAMS.get("tau_levels", [0.1, 0.2, 0.4, 1.0, 5.0]),
-                    ),
-                )
-                self.hierarchical = HierarchicalProcessor(ultimate_params)
-
-            # 100/100: Precision expectation gap (Π vs Π̂)
-            if APGI_PARAMS.get("precision_gap_enabled", True):
-                self.precision_gap = PrecisionExpectationState()
-
-            # 100/100: Neuromodulator tracking
-            self.neuromodulators = {
-                "ACh": cast(float, APGI_PARAMS.get("ACh", 1.0)),
-                "NE": cast(float, APGI_PARAMS.get("NE", 1.0)),
-                "DA": cast(float, APGI_PARAMS.get("DA", 1.0)),
-                "HT5": cast(float, APGI_PARAMS.get("HT5", 1.0)),
-            }
+    def reset(self) -> None:
+        """Reset experiment and participant state."""
+        self.experiment.reset()
+        self.participant.reset()
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
@@ -167,7 +141,7 @@ class EnhancedStroopRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -201,10 +175,8 @@ class EnhancedStroopRunner:
             ne_effect = (self.neuromodulators or {}).get("NE", 1.0)
             da_effect = (self.neuromodulators or {}).get("DA", 1.0)
 
-            precision_ext = (
-                1.5 * cast(float, ach_boost) * (1.0 + 0.2 * cast(float, da_effect))
-            )
-            precision_int = 1.5 * (1.0 + 0.2 * cast(float, ne_effect))
+            precision_ext = 1.5 * ach_boost * (1.0 + 0.2 * da_effect)
+            precision_int = 1.5 * (1.0 + 0.2 * ne_effect)
 
             # 100/100: Update precision expectation gap (Π vs Π̂)
             if self.precision_gap:
@@ -267,7 +239,9 @@ class EnhancedStroopRunner:
                 "mean_somatic_marker", 0.0
             )
             results["apgi_mean_threshold"] = apgi_summary.get("mean_threshold", 0.0)
-            results["apgi_formatted"] = format_apgi_output(apgi_summary)
+            results["apgi_formatted"] = (
+                apgi_summary  # StandardAPGIRunner handles formatting
+            )
         else:
             results["apgi_enabled"] = False
 
@@ -276,7 +250,7 @@ class EnhancedStroopRunner:
     # Static methods for test compatibility
     @staticmethod
     def _calculate_interference_effect(
-        runner, trial_results: List[Dict[str, Any]]
+        runner: "EnhancedStroopRunner", trial_results: List[Dict[str, Any]]
     ) -> float:
         """Calculate interference effect from trial results."""
         congruent_rts = [
@@ -293,25 +267,29 @@ class EnhancedStroopRunner:
         if not congruent_rts or not incongruent_rts:
             return 0.0
 
-        congruent_mean = cast(float, sum(congruent_rts) / len(congruent_rts))
-        incongruent_mean = cast(float, sum(incongruent_rts) / len(incongruent_rts))
+        congruent_mean = sum(congruent_rts) / len(congruent_rts)
+        incongruent_mean = sum(incongruent_rts) / len(incongruent_rts)
 
         return incongruent_mean - congruent_mean
 
     @staticmethod
-    def _create_trial_sequence(runner):
+    def _create_trial_sequence(runner: "EnhancedStroopRunner") -> List[TrialType]:
         """Create trial sequence for the experiment."""
-        return runner.experiment.trial_types
+        return [trial.trial_type for trial in runner.experiment.trials]
 
     @staticmethod
-    def _analyze_apgi_dynamics(runner, trial_results):
+    def _analyze_apgi_dynamics(
+        runner: "EnhancedStroopRunner", trial_results: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Analyze APGI dynamics from trial results."""
         if not runner.apgi:
             return {"apgi_state": {"pi": 0.5, "theta": 0.5}}
         return {"apgi_state": runner.apgi.get_current_state()}
 
     @staticmethod
-    def _analyze_hierarchical_processing(runner, trial_results):
+    def _analyze_hierarchical_processing(
+        runner: "EnhancedStroopRunner", trial_results: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, float]]:
         """Analyze hierarchical processing from trial results."""
         return {
             "level_1": {"activation": 0.8, "precision": 0.7},
@@ -320,7 +298,11 @@ class EnhancedStroopRunner:
         }
 
     @staticmethod
-    def save_results(runner, results, filename):
+    def save_results(
+        runner: "EnhancedStroopRunner",
+        results: Dict[str, Any],
+        filename: str,
+    ) -> None:
         """Save results to file."""
         import json
 
@@ -328,7 +310,7 @@ class EnhancedStroopRunner:
             json.dump(results, f, indent=2)
 
     @staticmethod
-    def _validate_experiment_config(runner):
+    def _validate_experiment_config(runner: "EnhancedStroopRunner") -> bool:
         """Validate experiment configuration."""
         return (
             hasattr(runner, "experiment")
@@ -337,7 +319,9 @@ class EnhancedStroopRunner:
         )
 
     @staticmethod
-    def _calculate_additional_metrics(runner, trial_results):
+    def _calculate_additional_metrics(
+        runner: "EnhancedStroopRunner", trial_results: List[Dict[str, Any]]
+    ) -> Dict[str, float]:
         """Calculate additional metrics from trial results."""
         return {
             "enhanced_accuracy": 0.85,
@@ -346,7 +330,9 @@ class EnhancedStroopRunner:
         }
 
     @staticmethod
-    def get_experiment_summary(runner, results):
+    def get_experiment_summary(
+        runner: "EnhancedStroopRunner", results: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Get experiment summary."""
         return {
             "experiment_name": "Stroop Effect",
@@ -381,28 +367,23 @@ def print_results(results: Dict[str, Any]) -> None:
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Stroop Effect Experiment...")
-    runner = EnhancedStroopRunner()
-    results = runner.run_experiment()
-    print_results(results)
-    print(f"\ninterference_effect_ms: {results['interference_effect_ms']:.2f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
-
-
 # Alias for backward compatibility with tests
 StroopExperimentRunner = EnhancedStroopRunner
 
 
-def main():
+def create_experiment() -> EnhancedStroopRunner:
+    """Create an experiment instance."""
+    return EnhancedStroopRunner()
+
+
+def main(args: Any) -> Dict[str, Any]:
     """Main function for running the experiment."""
     runner = EnhancedStroopRunner()
     results = runner.run_experiment()
     print_results(results)
-    format_apgi_output(results.get("apgi_formatted", {}))
     return results
 
 
-def create_experiment():
-    """Create an experiment instance."""
-    return EnhancedStroopRunner()
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Stroop Effect  experiment")
+    cli_entrypoint(main, parser)

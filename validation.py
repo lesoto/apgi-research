@@ -81,7 +81,7 @@ class ValidationResult:
     errors: List[str]
     warnings: List[str]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Ensure lists are initialized
         if not hasattr(self, "errors") or self.errors is None:
             self.errors = []
@@ -747,7 +747,7 @@ class GuardrailEscalation:
     threshold: Optional[float] = None
     timestamp: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             from datetime import datetime
 

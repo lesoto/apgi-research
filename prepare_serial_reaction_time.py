@@ -90,7 +90,7 @@ class SRTGenerator:
         self.sequence = self._generate_sequence()
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
         self.seq_idx = 0
 
@@ -122,7 +122,7 @@ class SRTExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -180,7 +180,7 @@ class SRTExperiment:
             "accuracy": np.mean([t.correct for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -249,7 +249,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Serial Reaction Time - Configuration Verification")
     print(f"Response Keys: {RESPONSE_KEYS}")
     print(f"Sequence Length: {SEQUENCE_LENGTH}")

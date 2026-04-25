@@ -40,7 +40,7 @@ class HierarchicalState:
     level_4: Dict[str, float]  # Semantic processing
     level_5: Dict[str, float]  # Executive control
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # Initialize all levels with default values
         for level in [
             self.level_1,
@@ -66,7 +66,7 @@ class PrecisionExpectationGap:
     anxiety_level: float = 0.0  # Current anxiety level (0-1)
     precision_mismatch: float = 0.0  # Π̂ - Π gap
 
-    def update_gap(self, Pi_e_actual: float, Pi_i_actual: float):
+    def update_gap(self, Pi_e_actual: float, Pi_i_actual: float) -> None:
         """Update precision expectation gap."""
         self.Pi_e_actual = Pi_e_actual
         self.Pi_i_actual = Pi_i_actual
@@ -218,6 +218,69 @@ class StandardAPGIRunner:
         self.apgi_metrics_history.append(basic_metrics)
 
         return basic_metrics
+
+    def process_trials(
+        self,
+        observed_arr: np.ndarray,
+        predicted_arr: np.ndarray,
+        trial_types: Optional[List[str]] = None,
+        precision_ext_arr: Optional[np.ndarray] = None,
+        precision_int_arr: Optional[np.ndarray] = None,
+        hierarchical_levels: Optional[List[int]] = None,
+    ) -> List[Dict[str, float]]:
+        """
+        Process multiple trials with full APGI dynamics in batch mode.
+
+        This is a higher-level wrapper around APGIIntegration.process_trials()
+        that adds hierarchical and precision gap processing for each trial.
+
+        Args:
+            observed_arr: Array of observed values
+            predicted_arr: Array of predicted values
+            trial_types: Optional list of trial types (defaults to "neutral")
+            precision_ext_arr: Optional array of exteroceptive precisions
+            precision_int_arr: Optional array of interoceptive precisions
+            hierarchical_levels: Optional list of hierarchical levels for each trial
+
+        Returns:
+            List of APGI metrics dictionaries for each trial
+        """
+        if not self.apgi:
+            return []
+
+        n_trials = len(observed_arr)
+
+        # Use batch processing at the APGI level
+        batch_metrics = self.apgi.process_trials(
+            observed=observed_arr,
+            predicted=predicted_arr,
+            trial_type=trial_types[0] if trial_types else "neutral",
+            precision_ext_arr=precision_ext_arr,
+            precision_int_arr=precision_int_arr,
+        )
+
+        # Convert batch results to per-trial metrics
+        trial_metrics: List[Dict[str, float]] = []
+        for i in range(n_trials):
+            metrics: Dict[str, float] = {
+                "trial_index": float(i),
+                "S": float(batch_metrics.get("S", np.zeros(n_trials))[i]),
+                "theta": float(batch_metrics.get("theta", np.zeros(n_trials))[i]),
+                "M": float(batch_metrics.get("M", np.zeros(n_trials))[i]),
+                "ignited": float(batch_metrics.get("ignited", np.zeros(n_trials))[i]),
+            }
+
+            # Add hierarchical processing if enabled
+            if self.enable_hierarchical and hierarchical_levels:
+                level = hierarchical_levels[i] if i < len(hierarchical_levels) else 1
+                level_metrics = self._process_hierarchical_level(metrics, level)
+                metrics.update(level_metrics)
+
+            trial_metrics.append(metrics)
+            self.apgi_metrics_history.append(metrics)
+
+        self.trial_count += n_trials
+        return trial_metrics
 
     def _process_hierarchical_level(
         self, basic_metrics: Dict[str, float], level: int
@@ -402,27 +465,28 @@ class StandardAPGIRunner:
 
         return base_results  # type: ignore[no-any-return]
 
-    def _setup_timeout_handler(self):
+    def _setup_timeout_handler(self) -> None:
         """Setup signal handler for timeout."""
 
-        def timeout_handler(signum, frame):
+        def timeout_handler(signum: int, frame: Any) -> None:
             if self.timeout_handler:
                 self.timeout_handler(signum, frame)
 
         self.timeout_handler = timeout_handler
         signal.signal(signal.SIGALRM, self.timeout_handler)
 
-    def _start_timeout_timer(self):
+    def _start_timeout_timer(self) -> None:
         """Start the timeout timer."""
         if self.timeout_seconds > 0:
             self.timeout_start_time = time.time()
             signal.alarm(self.timeout_seconds)
 
-    def _cancel_timeout_timer(self):
+    def _cancel_timeout_timer(self) -> None:
+        """Cancel the timeout timer."""
         if hasattr(self, "timeout_start_time"):
             signal.alarm(0)  # Cancel the alarm
 
-    def _check_timeout(self):
+    def _check_timeout(self) -> bool:
         """Check if experiment has timed out."""
         if (
             self.timeout_seconds > 0
@@ -582,7 +646,7 @@ def create_standard_apgi_runner(
     base_runner: Any,
     experiment_name: str,
     apgi_params: Optional[ExportedAPGIParams] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> StandardAPGIRunner:
     """
     Convenience function to create a standardized APGI runner.

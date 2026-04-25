@@ -20,7 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, Optional, Union, List, cast
+from typing import Any, Dict, Optional, Union, List, cast
 
 from prepare_sternberg_memory import (
     SternbergExperiment,
@@ -36,6 +36,9 @@ from ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -63,7 +66,7 @@ class SimulatedParticipant:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.intercept = INTERCEPT
         self.slope = SLOPE_PER_ITEM
 
@@ -191,6 +194,11 @@ class EnhancedSternbergRunner:
         else:
             pass
 
+    def reset(self) -> None:
+        """Reset experiment and participant state."""
+        self.experiment.reset()
+        self.participant.reset()
+
     def run_experiment(self) -> Dict:
         self.start_time = time.time()
         self.experiment.reset()
@@ -204,7 +212,7 @@ class EnhancedSternbergRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -305,7 +313,7 @@ class EnhancedSternbergRunner:
         }
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("STERNBERG MEMORY EXPERIMENT RESULTS")
     print("=" * 60)
@@ -345,11 +353,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Sternberg Memory Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedSternbergRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nsearch_slope_ms_per_item: {results['search_slope_ms_per_item']:.2f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Sternberg Memory  experiment")
+    cli_entrypoint(main, parser)

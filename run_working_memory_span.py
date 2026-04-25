@@ -20,8 +20,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-import sys
-from typing import Dict, Union, cast, List, Optional
+from typing import Any, Dict, List, Optional, Union, cast
 
 # Import fixed configurations from prepare_working_memory_span.py
 from prepare_working_memory_span import (
@@ -39,6 +38,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization
@@ -89,14 +91,14 @@ class SimulatedWorkingMemorySystem:
     def __init__(self, enable_apgi: bool = True):
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset working memory system state for new experiment."""
         self.trial_count = 0
         self.capacity = BASE_WORKING_MEMORY_CAPACITY + np.random.normal(
             0, CAPACITY_VARIABILITY
         )
         self.capacity = max(2, min(9, self.capacity))  # Clamp between 2 and 9
-        self.response_times = []
+        self.response_times: list[float] = []
 
     def calculate_recall_probability(
         self, span_size: int, span_type: SpanType
@@ -458,7 +460,7 @@ class EnhancedWorkingMemorySpanRunner:
 # ---------------------------------------------------------------------------
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     """Print formatted experiment results."""
     print("\n" + "=" * 60)
     print("Working Memory Span Experiment Results")
@@ -516,8 +518,8 @@ def print_results(results: Dict):
     print("\n" + "=" * 60)
 
 
-def main():
-    """Main entry point for working memory span experiment."""
+def run_standalone() -> Dict:
+    """Standalone entry point for working memory span experiment."""
     import gc
 
     gc.collect()
@@ -553,13 +555,13 @@ def main():
     return results
 
 
-if __name__ == "__main__":
-    try:
-        results = main()
-        sys.exit(0)
-    except Exception as e:
-        print(f"ERROR: Experiment failed with exception: {e}")
-        import traceback
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
+    runner = EnhancedWorkingMemorySpanRunner()
+    results = runner.run_experiment()
+    return results
 
-        traceback.print_exc()
-        sys.exit(1)
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Working Memory Span  experiment")
+    cli_entrypoint(main, parser)

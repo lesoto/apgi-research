@@ -22,7 +22,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, cast
+from typing import Dict, Any, cast
 
 from prepare_artificial_grammar_learning import (
     AGExperiment,
@@ -37,6 +37,9 @@ from ultimate_apgi_template import (
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -60,10 +63,10 @@ RULE_COMPLEXITY_LEVELS = [1, 2, 3]  # 1=simple, 3=complex
 
 
 class SimulatedParticipant:
-    def __init__(self):
+    def __init__(self) -> None:
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.grammar_accuracy = 0.5
         self.learning_rate = BASE_LEARNING_RATE
 
@@ -198,7 +201,7 @@ class EnhancedArtificialGrammarRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial):
+    def _run_single_trial(self, trial: Any) -> None:
         correct, rt = self.participant.process_trial(trial.is_grammatical, True)
 
         self.experiment.record_response(
@@ -330,7 +333,7 @@ class EnhancedArtificialGrammarRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("ARTIFICIAL GRAMMAR LEARNING EXPERIMENT RESULTS")
     print("=" * 60)
@@ -370,11 +373,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print("Starting Artificial Grammar Learning Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedArtificialGrammarRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\ngrammar_accuracy: {results['grammar_accuracy']:.4f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Artificial Grammar Learning  experiment")
+    cli_entrypoint(main, parser)

@@ -22,7 +22,7 @@ Modification Guidelines:
 
 import numpy as np
 import time
-from typing import Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
 # APGI Integration
 from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -37,6 +37,9 @@ from prepare_dual_n_back import (
     TIME_BUDGET,
     APGI_PARAMS,  # APGI parameters from prepare file
 )
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
@@ -60,11 +63,11 @@ N_LEVEL_PENALTY = 0.10  # Accuracy drop per N level
 
 
 class SimulatedParticipant:
-    def __init__(self, n_level: int = N_LEVEL_CONFIG):
+    def __init__(self, n_level: int = N_LEVEL_CONFIG) -> None:
         self.n_level = n_level
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.accuracy = BASE_ACCURACY - (self.n_level - 1) * N_LEVEL_PENALTY
 
     def process_trial(self, is_match: bool) -> tuple:
@@ -208,7 +211,7 @@ class EnhancedDualNBackRunner:
 
         return self._calculate_results()
 
-    def _run_single_trial(self, trial_num: int):
+    def _run_single_trial(self, trial_num: int) -> None:
         trial = self.experiment.get_next_trial()
         if trial is None:
             return
@@ -234,19 +237,16 @@ class EnhancedDualNBackRunner:
 
             # 100/100: Determine precision based on trial type and neuromodulators
             # ACh increases attention precision for working memory
-            ach_boost = cast(
-                float,
-                self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0,
+            ach_boost = (
+                self.neuromodulators.get("ACh", 1.0) if self.neuromodulators else 1.0
             )
             # NE increases arousal during match detection
-            ne_effect = cast(
-                float,
-                self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0,
+            ne_effect = (
+                self.neuromodulators.get("NE", 1.0) if self.neuromodulators else 1.0
             )
             # DA is critical for working memory maintenance
-            da_effect = cast(
-                float,
-                self.neuromodulators.get("DA", 1.0) if self.neuromodulators else 1.0,
+            da_effect = (
+                self.neuromodulators.get("DA", 1.0) if self.neuromodulators else 1.0
             )
 
             precision_ext = (
@@ -359,7 +359,7 @@ class EnhancedDualNBackRunner:
         return results
 
 
-def print_results(results: Dict):
+def print_results(results: Dict) -> None:
     print("\n" + "=" * 60)
     print("DUAL N-BACK EXPERIMENT RESULTS")
     print("=" * 60)
@@ -400,11 +400,13 @@ def print_results(results: Dict):
     print("=" * 60)
 
 
-if __name__ == "__main__":
-    print(f"Starting Dual {N_LEVEL_CONFIG}-Back Experiment...")
-    print("APGI 100/100 Compliance: Enabled")
+def main(args: Any) -> Dict:
+    """Main function for running the experiment."""
     runner = EnhancedDualNBackRunner()
     results = runner.run_experiment()
-    print_results(results)
-    print(f"\nd_prime: {results['d_prime']:.3f}")
-    print(f"completion_time_s: {results['completion_time_s']:.2f}")
+    return results
+
+
+if __name__ == "__main__":
+    parser = create_standard_parser("Run Dual N Back  experiment")
+    cli_entrypoint(main, parser)

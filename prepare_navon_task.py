@@ -104,7 +104,7 @@ class NavonGenerator:
         self.rng = np.random.RandomState(seed)
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trial_count = 0
 
     def create_trial(self, trial_number: int) -> NavonTrial:
@@ -151,7 +151,7 @@ class NavonExperiment:
         self.current_trial_idx = 0
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.trials = []
         self.current_trial_idx = 0
         self.generator.reset()
@@ -207,7 +207,7 @@ class NavonExperiment:
             "accuracy": np.mean([t.correct for t in self.trials]),
         }
 
-    def save_results(self, filepath: str):
+    def save_results(self, filepath: str) -> None:
         data = {
             "trials": [
                 {
@@ -278,7 +278,7 @@ APGI_PARAMS = {
 }
 
 
-def verify():
+def verify() -> None:
     print("Navon Task - Configuration Verification")
     print(f"Letters: {LETTERS}")
     print(f"Target Levels: {[t.value for t in TargetLevel]}")

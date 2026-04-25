@@ -84,7 +84,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Callable, Any, Tuple
+from typing import Dict, List, Optional, Callable, Any, Tuple, Union
 
 import matplotlib
 
@@ -2102,7 +2102,7 @@ class APGIStateLibrary:
         # Initialize psychiatric profiles
         self._initialize_psychiatric_profiles()
 
-    def _add_state(self, **kwargs) -> None:
+    def _add_state(self, **kwargs: Any) -> None:
         """Add a state to the library"""
         state = PsychologicalState(**kwargs)
         self.states[state.name] = state
@@ -2481,7 +2481,7 @@ class NeuromodulatorSystem:
         )  # Alias for test compatibility
         self.history: defaultdict[str, List[float]] = defaultdict(list)
 
-    def set_levels(self, **kwargs) -> None:
+    def set_levels(self, **kwargs: float) -> None:
         """Set neuromodulator levels"""
         for mod, level in kwargs.items():
             if mod in self.BASELINES:
@@ -2503,7 +2503,7 @@ class NeuromodulatorSystem:
 
         return dict(modifications)
 
-    def update_dynamically(self, S_t: float, B_t: int, time: float):
+    def update_dynamically(self, S_t: float, B_t: int, time: float) -> None:
         """Dynamic update of neuromodulators based on system state"""
 
         # NE increases with surprise and decreases with time
@@ -2772,7 +2772,9 @@ class EnhancedSurpriseIgnitionSystem:
         else:
             return self.params.theta_0
 
-    def step(self, inputs, dt: float = 0.01) -> Dict[str, float]:
+    def step(
+        self, inputs: Union[float, Dict[str, Any]], dt: float = 0.01
+    ) -> Dict[str, float]:
         """
         Execute one time step using ALL equations.
 
@@ -3116,7 +3118,7 @@ class CompleteAPGIVisualizer:
 
         return fig
 
-    def _plot_core_dynamics(self, ax, history) -> None:
+    def _plot_core_dynamics(self, ax: Any, history: Dict[str, Any]) -> None:
         """Plot core dynamical variables"""
         time = history["time"]
         S = history["S"]
@@ -3147,7 +3149,7 @@ class CompleteAPGIVisualizer:
             ax.legend()
         ax.grid(True, alpha=0.3)
 
-    def _plot_measurements(self, ax, history) -> None:
+    def _plot_measurements(self, ax: Any, history: Dict[str, Any]) -> None:
         """Plot measurement proxies"""
         time = history["time"]
 
@@ -3176,7 +3178,7 @@ class CompleteAPGIVisualizer:
             ax_twin.legend(loc="upper right")
         ax.grid(True, alpha=0.3)
 
-    def _plot_neuromodulators(self, ax, history) -> None:
+    def _plot_neuromodulators(self, ax: Any, history: Dict[str, Any]) -> None:
         """Plot neuromodulator dynamics"""
         time = history["time"]
 
@@ -3203,7 +3205,7 @@ class CompleteAPGIVisualizer:
             ax.legend()
         ax.grid(True, alpha=0.3)
 
-    def _plot_domain_analysis(self, ax, history) -> None:
+    def _plot_domain_analysis(self, ax: Any, history: Dict[str, Any]) -> None:
         """Plot domain-specific analysis"""
         if "content_domain" in history:
             # Convert domain to numerical for plotting
@@ -3249,7 +3251,7 @@ class CompleteAPGIVisualizer:
         ax.grid(True, alpha=0.3)
         ax.set_ylim(0, 1.1)
 
-    def _plot_psychiatric_profiles(self, ax) -> None:
+    def _plot_psychiatric_profiles(self, ax: Any) -> None:
         """Plot psychiatric profile comparison"""
         profiles = ["GAD", "MDD", "Psychosis"]
         colors = ["red", "blue", "purple"]
@@ -3302,7 +3304,7 @@ class CompleteAPGIVisualizer:
             ax.legend()
         ax.grid(True, alpha=0.3, axis="y")
 
-    def _plot_state_space(self, ax, history) -> None:
+    def _plot_state_space(self, ax: Any, history: Dict[str, Any]) -> None:
         """Plot state space trajectory"""
         S = history["S"]
         theta = history["theta"]
@@ -3336,7 +3338,7 @@ class CompleteAPGIVisualizer:
         # Add colorbar
         plt.colorbar(scatter, ax=ax, label="Ignition Probability")
 
-    def _plot_precision_gap(self, ax, history) -> None:
+    def _plot_precision_gap(self, ax: Any, history: Dict[str, Any]) -> None:
         """Plot precision expectation gap (key for anxiety)"""
         time = history["time"]
 
@@ -3613,7 +3615,7 @@ def run_complete_demo() -> Tuple[Any, Any, Any, Any]:
 # =============================================================================
 
 
-def _check_parameter_ranges(params) -> bool:
+def _check_parameter_ranges(params: APGIParameters) -> bool:
     """Check parameter ranges"""
     print("\n1. PARAMETER RANGES:")
     all_passed = True
@@ -3654,7 +3656,7 @@ def _check_state_library() -> bool:
         return False
 
 
-def _check_precision_distinction(library) -> bool:
+def _check_precision_distinction(library: APGIStateLibrary) -> bool:
     """Check Π vs Π̂ distinction"""
     print("\n3. Π vs Π̂ DISTINCTION:")
     anxiety_state = library.get_state("anxiety")
@@ -3698,7 +3700,7 @@ def _check_neuromodulator_mapping() -> bool:
         return False
 
 
-def _check_domain_thresholds(params) -> bool:
+def _check_domain_thresholds(params: APGIParameters) -> bool:
     """Check domain-specific thresholds"""
     print("\n6. DOMAIN-SPECIFIC THRESHOLDS:")
     if hasattr(params, "theta_survival") and hasattr(params, "theta_neutral"):
@@ -3710,7 +3712,7 @@ def _check_domain_thresholds(params) -> bool:
         return False
 
 
-def _check_psychiatric_profiles(library) -> bool:
+def _check_psychiatric_profiles(library: APGIStateLibrary) -> bool:
     """Check psychiatric profiles"""
     print("\n7. PSYCHIATRIC PROFILES:")
     profiles = ["GAD", "MDD", "Psychosis"]
@@ -3858,7 +3860,7 @@ def _check_dynamical_system() -> bool:
         return False
 
 
-def _check_running_statistics():
+def _check_running_statistics() -> bool:
     """Check running statistics implementation"""
     print("\n11. RUNNING STATISTICS:")
     try:
@@ -3880,7 +3882,7 @@ def _check_running_statistics():
         return False
 
 
-def _check_derived_quantities():
+def _check_derived_quantities() -> bool:
     """Check derived quantities implementation"""
     print("\n12. DERIVED QUANTITIES:")
     try:
@@ -3903,7 +3905,7 @@ def _check_derived_quantities():
         return False
 
 
-def verify_all_equations():
+def verify_all_equations() -> bool:
     print("=" * 80)
     print("EQUATION VERIFICATION")
     print("=" * 80)

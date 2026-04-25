@@ -9,6 +9,7 @@ import math
 import os
 import time
 from dataclasses import dataclass, asdict
+from typing import cast
 
 import torch
 import torch.nn as nn
@@ -26,7 +27,7 @@ from prepare import (
 os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
-from typing import Optional, Tuple, Callable, Any
+from typing import Dict, Optional, Tuple, Callable, Any, List, Union
 
 # Detect available device and set up training context
 cap: Optional[Tuple[int, int]]
@@ -88,16 +89,18 @@ class GPTConfig:
     window_pattern: str = "SSSL"
 
 
-def norm(x):
+def norm(x: torch.Tensor) -> torch.Tensor:
     return F.rms_norm(x, (x.size(-1),))
 
 
-def has_ve(layer_idx, n_layer):
+def has_ve(layer_idx: int, n_layer: int) -> bool:
     """Returns True if layer should have Value Embedding."""
     return layer_idx % 2 == (n_layer - 1) % 2
 
 
-def apply_rotary_emb(x, cos, sin):
+def apply_rotary_emb(
+    x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
+) -> torch.Tensor:
     assert x.ndim == 4
     d = x.shape[3] // 2
     x1, x2 = x[..., :d], x[..., d:]
@@ -107,7 +110,7 @@ def apply_rotary_emb(x, cos, sin):
 
 
 class CausalSelfAttention(nn.Module):
-    def __init__(self, config, layer_idx):
+    def __init__(self, config: GPTConfig, layer_idx: int) -> None:
         super().__init__()
         self.n_head = config.n_head
         self.n_kv_head = config.n_kv_head
@@ -126,7 +129,13 @@ class CausalSelfAttention(nn.Module):
             else None
         )
 
-    def forward(self, x, ve, cos_sin, window_size):
+    def forward(
+        self,
+        x: torch.Tensor,
+        ve: Optional[torch.Tensor],
+        cos_sin: Tuple[torch.Tensor, torch.Tensor],
+        window_size: Tuple[int, int],
+    ) -> torch.Tensor:
         B, T, C = x.size()
         q = self.c_q(x).view(B, T, self.n_head, self.head_dim)
         k = self.c_k(x).view(B, T, self.n_kv_head, self.head_dim)
@@ -165,16 +174,16 @@ class CausalSelfAttention(nn.Module):
             y = y.transpose(1, 2)  # Back to (B, T, H, D)
         y = y.contiguous().view(B, T, -1)
         y = self.c_proj(y)
-        return y
+        return y  # type: ignore[no-any-return]  # type: ignore[no-any-return]
 
 
 class MLP(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: GPTConfig) -> None:
         super().__init__()
         self.c_fc = nn.Linear(config.n_embd, 4 * config.n_embd, bias=False)
         self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd, bias=False)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.c_fc(x)
         x = F.relu(x).square()
         x = self.c_proj(x)
@@ -182,19 +191,27 @@ class MLP(nn.Module):
 
 
 class Block(nn.Module):
-    def __init__(self, config, layer_idx):
+    def __init__(self, config: GPTConfig, layer_idx: int) -> None:
         super().__init__()
         self.attn = CausalSelfAttention(config, layer_idx)
         self.mlp = MLP(config)
 
-    def forward(self, x, ve, cos_sin, window_size):
+    def forward(
+        self,
+        x: torch.Tensor,
+        ve: Optional[torch.Tensor],
+        cos_sin: Tuple[torch.Tensor, torch.Tensor],
+        window_size: Tuple[int, int],
+    ) -> torch.Tensor:
         x = x + self.attn(norm(x), ve, cos_sin, window_size)
         x = x + self.mlp(norm(x))
         return x
 
 
 class GPT(nn.Module):
-    def __init__(self, config, device=None):
+    def __init__(
+        self, config: GPTConfig, device: Optional[torch.device] = None
+    ) -> None:
         super().__init__()
         self.config = config
         self.window_sizes = self._compute_window_sizes(config)
@@ -224,7 +241,7 @@ class GPT(nn.Module):
         self.register_buffer("sin", sin, persistent=False)
 
     @torch.no_grad()
-    def init_weights(self):
+    def init_weights(self) -> None:
         # Embedding and unembedding
         torch.nn.init.normal_(self.transformer.wte.weight, mean=0.0, std=1.0)  # type: ignore[arg-type,union-attr]
         torch.nn.init.normal_(self.lm_head.weight, mean=0.0, std=0.001)
@@ -254,21 +271,31 @@ class GPT(nn.Module):
         cos, sin = self._precompute_rotary_embeddings(self.rotary_seq_len, head_dim)
         self.cos, self.sin = cos, sin
 
-    def _precompute_rotary_embeddings(self, seq_len, head_dim, base=10000, device=None):
+    def _precompute_rotary_embeddings(
+        self,
+        seq_len: int,
+        head_dim: int,
+        base: float = 10000,
+        device: Optional[torch.device] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         if device is None:
-            device = self.transformer.wte.weight.device  # type: ignore[union-attr]
+            wte = self.transformer.wte
+            if isinstance(wte, torch.nn.Module):
+                device = cast(torch.device, wte.weight.device)
+            else:
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         channel_range = torch.arange(0, head_dim, 2, dtype=torch.float32)
         inv_freq = 1.0 / (base ** (channel_range / head_dim))
         t = torch.arange(seq_len, dtype=torch.float32)
         freqs = torch.outer(t, inv_freq)
         cos, sin = freqs.cos(), freqs.sin()
         # Use bfloat16 only for CUDA devices
-        if device.type == "cuda":
+        if device and device.type == "cuda":
             cos, sin = cos.bfloat16(), sin.bfloat16()
         cos, sin = (cos[None, :, None, :], sin[None, :, None, :])
         return cos.to(device), sin.to(device)
 
-    def _compute_window_sizes(self, config):
+    def _compute_window_sizes(self, config: GPTConfig) -> List[Tuple[int, int]]:
         pattern = config.window_pattern.upper()
         assert all(c in "SL" for c in pattern)
         long_window = config.sequence_len
@@ -281,7 +308,7 @@ class GPT(nn.Module):
         window_sizes[-1] = (long_window, 0)
         return window_sizes
 
-    def estimate_flops(self):
+    def estimate_flops(self) -> int:
         """Estimated FLOPs per token (forward + backward)."""
         nparams = sum(p.numel() for p in self.parameters())
         value_embeds_numel = sum(ve.weight.numel() for ve in self.value_embeds.values())  # type: ignore[misc,operator]
@@ -301,7 +328,7 @@ class GPT(nn.Module):
             attn_flops += 12 * h * q * effective_seq
         return 6 * (nparams - nparams_exclude) + attn_flops
 
-    def num_scaling_params(self):
+    def num_scaling_params(self) -> Dict[str, int]:
         wte = sum(p.numel() for p in self.transformer.wte.parameters())  # type: ignore[union-attr,misc]
         value_embeds = sum(p.numel() for p in self.value_embeds.parameters())
         lm_head = sum(p.numel() for p in self.lm_head.parameters())
@@ -319,18 +346,18 @@ class GPT(nn.Module):
 
     def setup_optimizer(
         self,
-        unembedding_lr=0.004,
-        embedding_lr=0.2,
-        matrix_lr=0.02,
-        weight_decay=0.0,
-        adam_betas=(0.8, 0.95),
-        scalar_lr=0.5,
-    ):
+        unembedding_lr: float = 0.004,
+        embedding_lr: float = 0.2,
+        matrix_lr: float = 0.02,
+        weight_decay: float = 0.0,
+        adam_betas: Tuple[float, float] = (0.8, 0.95),
+        scalar_lr: float = 0.5,
+    ) -> torch.optim.Optimizer:
         model_dim = self.config.n_embd
 
         # Filter out parameters that don't have gradients
 
-        def has_grad(p):
+        def has_grad(p: torch.nn.Parameter) -> bool:
             return p.grad is not None or p.requires_grad
 
         matrix_params = [
@@ -418,14 +445,21 @@ class GPT(nn.Module):
             group["initial_lr"] = group["lr"]
         return optimizer
 
-    def forward(self, idx, targets=None, reduction="mean"):
+    def forward(
+        self,
+        idx: torch.Tensor,
+        targets: Optional[torch.Tensor] = None,
+        reduction: str = "mean",
+    ) -> Union[torch.Tensor, torch.Tensor]:
         # Ensure idx is on the correct device
-        idx = idx.to(self.transformer.wte.weight.device)  # type: ignore[union-attr]
-        targets = (
-            targets.to(self.transformer.wte.weight.device)  # type: ignore[union-attr]
-            if targets is not None
-            else None
-        )
+        wte = self.transformer.wte
+        if isinstance(wte, torch.nn.Module):
+            device = cast(torch.device, wte.weight.device)
+        else:
+            device = idx.device
+        idx = idx.to(device)
+        if targets is not None:
+            targets = targets.to(device)
         B, T = idx.size()
         assert T <= self.cos.size(1)
         cos_sin = self.cos[:, :T], self.sin[:, :T]
@@ -470,8 +504,17 @@ polar_express_coeffs = [
 
 @torch.compile(dynamic=False, fullgraph=True)
 def adamw_step_fused(
-    p, grad, exp_avg, exp_avg_sq, step_t, lr_t, beta1_t, beta2_t, eps_t, wd_t
-):
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    exp_avg_sq: torch.Tensor,
+    step_t: torch.Tensor,
+    lr_t: torch.Tensor,
+    beta1_t: torch.Tensor,
+    beta2_t: torch.Tensor,
+    eps_t: torch.Tensor,
+    wd_t: torch.Tensor,
+) -> None:
     p.mul_(1 - lr_t * wd_t)
     exp_avg.lerp_(grad, 1 - beta1_t)
     exp_avg_sq.lerp_(grad.square(), 1 - beta2_t)
@@ -479,23 +522,23 @@ def adamw_step_fused(
     bias2 = 1 - beta2_t**step_t
     denom = (exp_avg_sq / bias2).sqrt() + eps_t
     step_size = lr_t / bias1
-    p.add_(exp_avg / denom, alpha=-step_size)
+    p.add_(exp_avg / denom, alpha=-step_size.item())
 
 
 @torch.compile(dynamic=False, fullgraph=True)
 def muon_step_fused(
-    stacked_grads,
-    stacked_params,
-    momentum_buffer,
-    second_momentum_buffer,
-    momentum_t,
-    lr_t,
-    wd_t,
-    beta2_t,
-    ns_steps,
-    red_dim,
-    device_type="cpu",  # Default to CPU instead of hardcoded CUDA
-):
+    stacked_grads: torch.Tensor,
+    stacked_params: torch.Tensor,
+    momentum_buffer: torch.Tensor,
+    second_momentum_buffer: torch.Tensor,
+    momentum_t: torch.Tensor,
+    lr_t: torch.Tensor,
+    wd_t: torch.Tensor,
+    beta2_t: torch.Tensor,
+    ns_steps: int,
+    red_dim: int,
+    device_type: str = "cpu",  # Default to CPU instead of hardcoded CUDA
+) -> None:
     # Nesterov momentum
     momentum = momentum_t.to(stacked_grads.dtype)
     momentum_buffer.lerp_(stacked_grads, 1 - momentum)
@@ -542,7 +585,7 @@ def muon_step_fused(
 class MuonAdamW(torch.optim.Optimizer):
     """Combined optimizer: Muon for 2D matrix params, AdamW for others."""
 
-    def __init__(self, param_groups):
+    def __init__(self, param_groups: List[Dict[str, Any]]) -> None:
         super().__init__(param_groups, defaults={})
         # Get device from first parameter to ensure device consistency
         device = next(iter(param_groups[0]["params"])).device if param_groups else "cpu"
@@ -558,7 +601,7 @@ class MuonAdamW(torch.optim.Optimizer):
         self._muon_wd_t = torch.tensor(0.0, dtype=torch.float32, device=device)
         self._muon_beta2_t = torch.tensor(0.0, dtype=torch.float32, device=device)
 
-    def _step_adamw(self, group):
+    def _step_adamw(self, group: Dict[str, Any]) -> None:
         for p in group["params"]:
             if p.grad is None:
                 continue
@@ -588,7 +631,7 @@ class MuonAdamW(torch.optim.Optimizer):
                 self._adamw_wd_t,
             )
 
-    def _step_muon(self, group):
+    def _step_muon(self, group: Dict[str, Any]) -> None:
         params = group["params"]
         # Filter out parameters without gradients
         params_with_grad = [p for p in params if p.grad is not None]
@@ -684,7 +727,7 @@ vocab_size = tokenizer.get_vocab_size()
 print(f"Vocab size: {vocab_size:,}")
 
 
-def build_model_config(depth):
+def build_model_config(depth: int) -> GPTConfig:
     base_dim = depth * ASPECT_RATIO
     model_dim = ((base_dim + HEAD_DIM - 1) // HEAD_DIM) * HEAD_DIM
     num_heads = model_dim // HEAD_DIM
@@ -752,7 +795,7 @@ print(f"Gradient accumulation steps: {grad_accum_steps}")
 # Schedules (all based on progress = training_time / TIME_BUDGET)
 
 
-def get_lr_multiplier(progress):
+def get_lr_multiplier(progress: float) -> float:
     if progress < WARMUP_RATIO:
         return progress / WARMUP_RATIO if WARMUP_RATIO > 0 else 1.0
     elif progress < 1.0 - WARMDOWN_RATIO:
@@ -762,12 +805,12 @@ def get_lr_multiplier(progress):
         return cooldown * 1.0 + (1 - cooldown) * FINAL_LR_FRAC
 
 
-def get_muon_momentum(step):
+def get_muon_momentum(step: int) -> float:
     frac = min(step / 300, 1)
     return (1 - frac) * 0.85 + frac * 0.95
 
 
-def get_weight_decay(progress):
+def get_weight_decay(progress: float) -> float:
     return WEIGHT_DECAY * (1 - progress)
 
 
