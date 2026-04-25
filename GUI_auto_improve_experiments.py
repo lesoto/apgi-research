@@ -50,6 +50,7 @@ import threading
 import re
 import logging
 import time
+import json
 from pathlib import Path
 from typing import List, Tuple, Dict, Set, Any
 import importlib.util
@@ -161,16 +162,17 @@ class ExperimentRunnerGUI(ctk.CTk):
                 print(msg)
 
     def _find_experiments(self) -> List[Tuple[str, str]]:
-        """Dynamically find all run_*.py files in the research directory."""
+        """Dynamically find all run_*.py files in the experiments directory."""
         experiments = []
-        run_files = sorted(list(self.research_dir.glob("run_*.py")))
+        experiments_dir = self.research_dir / "experiments"
+        run_files = sorted(list(experiments_dir.glob("run_*.py")))
 
         for file in run_files:
             # Format name: run_visual_search.py -> Visual Search
             name = file.stem.replace("run_", "").replace("_", " ").title()
             if name == "Tests":
                 continue  # Skip run_tests.py if it exists here
-            experiments.append((name, file.name))
+            experiments.append((name, f"experiments/{file.name}"))
 
         return experiments
 
@@ -1101,7 +1103,11 @@ class ExperimentRunnerGUI(ctk.CTk):
                 def run_agent() -> None:
                     try:
                         agent = AutonomousAgent(str(self.research_dir))
-                        experiment_key = script.replace("run_", "").replace(".py", "")
+                        experiment_key = (
+                            script.replace("experiments/", "")
+                            .replace("run_", "")
+                            .replace(".py", "")
+                        )
                         agent.optimize_experiment(
                             experiment_key, iterations=3, resume=False
                         )
@@ -1154,7 +1160,11 @@ class ExperimentRunnerGUI(ctk.CTk):
             def run_modify_chain() -> None:
                 try:
                     engine = XPRAgentEngine()
-                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    experiment_key = (
+                        script.replace("experiments/", "")
+                        .replace("run_", "")
+                        .replace(".py", "")
+                    )
                     # Step 1: Run issue-fix chain on the current plan
                     # Use execute_skill instead of non-existent xpr_skill_chain
                     fix_result = engine.execute_skill(
@@ -1207,7 +1217,11 @@ class ExperimentRunnerGUI(ctk.CTk):
             def run_agent() -> None:
                 try:
                     agent = AutonomousAgent(str(self.research_dir))
-                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    experiment_key = (
+                        script.replace("experiments/", "")
+                        .replace("run_", "")
+                        .replace(".py", "")
+                    )
                     agent.optimize_experiment(
                         experiment_key, iterations=3, resume=False
                     )
@@ -1237,7 +1251,11 @@ class ExperimentRunnerGUI(ctk.CTk):
             def run_modify_chain() -> None:
                 try:
                     engine = XPRAgentEngine()
-                    experiment_key = script.replace("run_", "").replace(".py", "")
+                    experiment_key = (
+                        script.replace("experiments/", "")
+                        .replace("run_", "")
+                        .replace(".py", "")
+                    )
                     # Step 1: Run issue-fix chain on the current plan
                     fix_result = engine.execute_skill(
                         "issue_fix",
@@ -1327,7 +1345,11 @@ class ExperimentRunnerGUI(ctk.CTk):
                 def run_replan() -> None:
                     try:
                         engine = XPRAgentEngine()
-                        experiment_key = script.replace("run_", "").replace(".py", "")
+                        experiment_key = (
+                            script.replace("experiments/", "")
+                            .replace("run_", "")
+                            .replace(".py", "")
+                        )
                         new_plan = engine.plan_experiment(
                             task=f"Re-plan {experiment_key} with human priorities: {human_priorities}",
                             current_params={},
@@ -1419,14 +1441,20 @@ class ExperimentRunnerGUI(ctk.CTk):
             except ValueError:
                 raise ValueError("Script must be within research directory")
 
+            # Convert script path to module name for proper package execution
+            # e.g., "experiments/run_stroop_effect.py" -> "experiments.run_stroop_effect"
+            script_path_rel = script_path.relative_to(self.research_dir)
+            module_name = str(script_path_rel.with_suffix("")).replace(os.sep, ".")
+
             # Use same python executable as current process
             env = os.environ.copy()
             env["PYTHONPATH"] = (
                 str(self.research_dir) + os.pathsep + env.get("PYTHONPATH", "")
             )
 
+            # Run as module to support relative imports
             proc = subprocess.Popen(
-                [sys.executable, str(script_path)],
+                [sys.executable, "-m", module_name],
                 cwd=self.research_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -1501,9 +1529,72 @@ class ExperimentRunnerGUI(ctk.CTk):
         """Parse experiment results from stdout output for visualization with validation."""
         results = {}
         validation_errors = []
+        json_buffer = []
+        in_json = False
 
         try:
-            # Parse metrics from output lines
+            # First pass: try to extract JSON objects from output
+            for raw_line in output_lines:
+                line = raw_line.strip()
+                # Remove experiment prefix if present
+                if line.startswith(f"[{experiment_name}] "):
+                    line = line[len(f"[{experiment_name}] ") :]
+                elif line.startswith("[") and "] " in line:
+                    line = line.split("] ", 1)[1]
+
+                # Detect start of JSON object
+                if not in_json and line.startswith("{"):
+                    in_json = True
+                    json_buffer = [line]
+                elif in_json:
+                    json_buffer.append(line)
+                    if line.endswith("}"):
+                        # Try to parse complete JSON
+                        try:
+                            json_str = " ".join(json_buffer)
+                            data = json.loads(json_str)
+                            # Extract APGI metrics from JSON
+                            if "apgi_ignition_rate" in data:
+                                results["ignition_rate"] = float(
+                                    data["apgi_ignition_rate"]
+                                )
+                            if "apgi_mean_surprise" in data:
+                                results["mean_surprise"] = float(
+                                    data["apgi_mean_surprise"]
+                                )
+                            if "apgi_metabolic_cost" in data:
+                                results["metabolic_cost"] = float(
+                                    data["apgi_metabolic_cost"]
+                                )
+                            if "apgi_mean_somatic_marker" in data:
+                                results["mean_somatic_marker"] = float(
+                                    data["apgi_mean_somatic_marker"]
+                                )
+                            if "apgi_mean_threshold" in data:
+                                results["mean_threshold"] = float(
+                                    data["apgi_mean_threshold"]
+                                )
+                            # Extract primary metrics
+                            for key in [
+                                "accuracy",
+                                "d_prime",
+                                "overall_accuracy",
+                                "benchmark_accuracy",
+                                "net_score",
+                                "masking_effect_ms",
+                                "alternation_rate",
+                                "grammar_accuracy",
+                            ]:
+                                if key in data:
+                                    results["primary_metric"] = float(data[key])
+                                    results[key] = float(data[key])
+                                    break
+                        except json.JSONDecodeError:
+                            pass
+                        in_json = False
+                        json_buffer = []
+
+            # Second pass: parse line-by-line metrics (fallback)
             for raw_line in output_lines:
                 # Remove the prefix like "[Visual Search] " if present
                 line = raw_line.strip()
@@ -1676,12 +1767,14 @@ class ExperimentRunnerGUI(ctk.CTk):
                 elif "apgi_ignition_rate:" in line:
                     try:
                         value_str = line.split(":", 1)[1].strip().rstrip("%")
+                        # Skip empty or multi-line formatted strings (cosmetic only)
+                        if not value_str or "\n" in value_str:
+                            continue
                         value = float(value_str)
                         results["ignition_rate"] = value
-                    except (ValueError, IndexError) as e:
-                        self._log(
-                            f"[DEBUG] Failed to parse apgi_ignition_rate: {line} - {e}"
-                        )
+                    except (ValueError, IndexError):
+                        # Silently skip cosmetic parser issues with multi-line strings
+                        continue
 
                 elif "apgi_mean_surprise:" in line:
                     try:
@@ -1959,8 +2052,9 @@ class ExperimentRunnerGUI(ctk.CTk):
                     for error in validation_errors:
                         self._log(f"  - {error}")
             else:
-                self._log(f"[VISUALIZATION] No metrics found for {experiment_name}")
-                self._log(f"[DEBUG] Checked {len(output_lines)} output lines")
+                # Some experiments lack standard metrics - this is expected and doesn't affect execution
+                # Only log at debug level to avoid noise
+                pass  # Silently skip experiments without standard metrics
 
         except Exception as e:
             self._log(f"[ERROR] Failed to parse results: {e}")

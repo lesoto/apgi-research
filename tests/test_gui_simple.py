@@ -93,7 +93,9 @@ class TestGUIComponents:
     def test_experiment_discovery(self):
         """Test that experiment discovery finds run files."""
         research_dir = Path(os.path.dirname(os.path.dirname(__file__)))
-        run_files = list(research_dir.glob("run_*.py"))
+        # Experiment files are in the experiments/ subdirectory
+        experiments_dir = research_dir / "experiments"
+        run_files = list(experiments_dir.glob("run_*.py"))
 
         # Should find at least some experiment files
         assert len(run_files) > 0, "No run_*.py files found"

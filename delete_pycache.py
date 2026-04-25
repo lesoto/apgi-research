@@ -103,6 +103,8 @@ DEFAULT_FILE_PATTERNS = [
     "*_orig.py",
     "*_test.py",
     "*_tmp.py",
+    "apgi_analysis_report.html",
+    "xpr_memory.json",
 ]
 
 DEFAULT_EXTRA_DIR_NAMES = {
@@ -122,6 +124,9 @@ DEFAULT_EXTRA_DIR_NAMES = {
     "validation_output",
     "testing_output",
     "debug_output",
+    ".apgi_checkpoints",
+    "progress",
+    "test_reports",
 }
 
 DEFAULT_SKIP_TRAVERSE_DIRS = {".git", ".svn", ".hg"}

@@ -6,19 +6,14 @@ Tests Stroop effect experiment runner functionality.
 
 import os
 import pytest
+import sys
 from unittest.mock import patch, MagicMock, mock_open
 
 # Add the parent directory to the path to import the module
-import sys
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Mock the dependencies before importing
-sys.modules["apgi_integration"] = MagicMock()
-sys.modules["ultimate_apgi_template"] = MagicMock()
-sys.modules["prepare_stroop_effect"] = MagicMock()
-
-import run_stroop_effect as runner
+# Import the module under test
+import experiments.run_stroop_effect as runner
 
 
 class TestConstants:
@@ -52,12 +47,14 @@ class TestStroopExperimentRunner:
         mock_apgi.return_value = mock_apgi_instance
         setattr(runner, "APGIIntegration", mock_apgi)
 
-        with patch("run_stroop_effect.StroopExperiment") as mock_exp:
+        with patch("experiments.run_stroop_effect.StroopExperiment") as mock_exp:
             mock_exp_instance = MagicMock()
             mock_exp.return_value = mock_exp_instance
 
             # We need to mock StandardAPGIRunner to return our mock_apgi_instance
-            with patch("run_stroop_effect.StandardAPGIRunner") as mock_standard_runner:
+            with patch(
+                "experiments.run_stroop_effect.StandardAPGIRunner"
+            ) as mock_standard_runner:
                 mock_standard_instance = MagicMock()
                 mock_standard_instance.apgi = mock_apgi_instance
                 mock_standard_runner.return_value = mock_standard_instance
@@ -121,7 +118,7 @@ class TestStroopExperimentRunner:
         mock_runner.precision_gap.Pi_e_actual = 1.5
         mock_runner.precision_gap.Pi_i_actual = 1.5
 
-        with patch("run_stroop_effect.time.sleep"):
+        with patch("experiments.run_stroop_effect.time.sleep"):
             # Set up participant mock directly on the runner
             mock_participant_instance = MagicMock()
             mock_participant_instance.process_trial.return_value = (True, 750)
@@ -196,7 +193,7 @@ class TestStroopExperimentRunner:
         }
         runner_instance.experiment.trials = [MagicMock()] * 80
 
-        with patch("run_stroop_effect.time.time") as mock_time:
+        with patch("experiments.run_stroop_effect.time.time") as mock_time:
             mock_time.side_effect = [0] + [i * 0.5 for i in range(1, 100)]
 
             # Mock the _run_single_trial to avoid actual execution
@@ -220,7 +217,7 @@ class TestStroopExperimentRunner:
                 with patch.object(
                     mock_runner, "_calculate_interference_effect"
                 ) as mock_effect:
-                    with patch("run_stroop_effect.time.time") as mock_time:
+                    with patch("experiments.run_stroop_effect.time.time") as mock_time:
                         # Mock time budget exceeded
                         mock_sequence.return_value = [runner.TrialType.CONGRUENT] * 100
                         mock_trial.return_value = {"response_time": 600}
@@ -381,7 +378,7 @@ class TestStroopExperimentRunner:
 class TestMainFunction:
     """Test main function and entry points."""
 
-    @patch("run_stroop_effect.EnhancedStroopRunner")
+    @patch("experiments.run_stroop_effect.EnhancedStroopRunner")
     def test_main_function(self, mock_runner_class):
         """Test main function execution."""
         mock_runner_instance = MagicMock()
@@ -403,20 +400,22 @@ class TestMainFunction:
             mock_runner_instance.run_experiment.assert_called_once()
             mock_print.assert_called()
 
-    @patch("run_stroop_effect.StroopExperimentRunner")
+    @patch("experiments.run_stroop_effect.EnhancedStroopRunner", autospec=True)
     def test_main_function_with_error(self, mock_runner_class):
         """Test main function with error handling."""
         mock_runner_instance = MagicMock()
         mock_runner_class.return_value = mock_runner_instance
-        mock_runner_instance.run_experiment.side_effect = Exception("Test error")
+        mock_runner_instance.run_experiment.side_effect = RuntimeError("Test error")
 
         with patch("builtins.print"):
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError, match="Test error"):
                 runner.main(["run_stroop_effect.py"])
 
     def test_experiment_factory(self):
         """Test experiment factory function."""
-        with patch("run_stroop_effect.EnhancedStroopRunner") as mock_runner_class:
+        with patch(
+            "experiments.run_stroop_effect.EnhancedStroopRunner"
+        ) as mock_runner_class:
             mock_instance = MagicMock()
             mock_runner_class.return_value = mock_instance
 

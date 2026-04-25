@@ -14,44 +14,20 @@ import os
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
-# Mock the APGI dependencies before importing
-from unittest.mock import MagicMock
-
-mock_apgi_integration = MagicMock()
-sys.modules["apgi_integration"] = mock_apgi_integration
-
-# Configure the mock APGIIntegration to return a proper mock instance
-mock_apgi_instance = MagicMock()
-mock_apgi_instance.process_trial.return_value = {"pi": 0.7, "theta": 0.5}
-mock_apgi_instance.finalize.return_value = {"pi": 0.7, "theta": 0.5, "surprise": 0.3}
-mock_apgi_integration.APGIIntegration.return_value = mock_apgi_instance
-
-import experiment_apgi_integration as eai
+import experiments.experiment_apgi_integration as eai
 
 
 @pytest.fixture(autouse=True, scope="function")
-def cleanup_mocks():
-    """Cleanup mocks after each test."""
-    # Remove all apgi_integration related modules from sys.modules
+def cleanup_apgi_modules():
+    """Cleanup APGI modules after each test to prevent cross-test pollution."""
+    yield
+
+    # Remove all apgi_integration related modules from sys.modules after test
     modules_to_remove = [
-        mod for mod in sys.modules.keys() if mod.startswith("apgi_integration")
+        mod for mod in list(sys.modules.keys()) if "apgi" in mod.lower()
     ]
     for mod in modules_to_remove:
         del sys.modules[mod]
-
-    # Also remove any cached experiment_apgi_integration modules
-    exp_modules_to_remove = [
-        mod
-        for mod in sys.modules.keys()
-        if mod.startswith("experiment_apgi_integration")
-    ]
-    for mod in exp_modules_to_remove:
-        del sys.modules[mod]
-
-    yield
-
-    # Restore the mock after the test
-    sys.modules["apgi_integration"] = mock_apgi_integration
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -135,7 +111,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the real APGI components
 from apgi_integration import APGIParameters
-from experiment_apgi_integration import ExportedAPGIParams
+from experiments.experiment_apgi_integration import ExportedAPGIParams
 
 # Create the test
 params = ExportedAPGIParams(
@@ -281,7 +257,7 @@ for mod in modules_to_remove:
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the real components
-from experiment_apgi_integration import ExperimentAPGIRunner, ExportedAPGIParams
+from experiments.experiment_apgi_integration import ExperimentAPGIRunner, ExportedAPGIParams
 
 # Create test objects
 mock_base_runner = MagicMock()
@@ -300,9 +276,9 @@ mock_params = ExportedAPGIParams(
 runner = ExperimentAPGIRunner(mock_base_runner, mock_params)
 
 # Test with mocking of specific functions
-with patch("experiment_apgi_integration.APGIIntegration") as mock_apgi:
-    with patch("experiment_apgi_integration.compute_apgi_enhanced_metric") as mock_metric:
-        with patch("experiment_apgi_integration.format_apgi_output") as mock_format:
+with patch("experiments.experiment_apgi_integration.APGIIntegration") as mock_apgi:
+    with patch("experiments.experiment_apgi_integration.compute_apgi_enhanced_metric") as mock_metric:
+        with patch("experiments.experiment_apgi_integration.format_apgi_output") as mock_format:
             mock_apgi_instance = MagicMock()
             mock_apgi.return_value = mock_apgi_instance
             mock_apgi_instance.finalize.return_value = {"pi": 0.7, "theta": 0.5}
@@ -471,7 +447,7 @@ for mod in modules_to_remove:
 sys.path.insert(0, "/Users/lesoto/Sites/PYTHON/apgi-research")
 
 # Import the real components
-from experiment_apgi_integration import ExperimentAPGIRunner, ExportedAPGIParams
+from experiments.experiment_apgi_integration import ExperimentAPGIRunner, ExportedAPGIParams
 
 # Create test objects
 mock_base_runner = MagicMock()

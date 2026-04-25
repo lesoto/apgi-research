@@ -286,12 +286,15 @@ class ImmutableAuditSink:
         }
 
 
-# Global audit sink instance
-_audit_sink = ImmutableAuditSink()
+# Global audit sink instance - initialized lazily
+_audit_sink: Optional[ImmutableAuditSink] = None
 
 
 def get_audit_sink() -> ImmutableAuditSink:
     """Get global audit sink."""
+    global _audit_sink
+    if _audit_sink is None:
+        _audit_sink = ImmutableAuditSink()
     return _audit_sink
 
 

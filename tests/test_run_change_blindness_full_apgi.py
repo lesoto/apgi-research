@@ -5,20 +5,31 @@ Tests change blindness experiment runner with full APGI integration.
 """
 
 import os
+import sys
 import pytest
 from unittest.mock import patch, MagicMock
 
 # Add the parent directory to the path to import the module
-import sys
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Mock the dependencies before importing
-sys.modules["standard_apgi_runner"] = MagicMock()
-sys.modules["experiment_apgi_integration"] = MagicMock()
-sys.modules["prepare_change_blindness"] = MagicMock()
+# Create mock modules for isolation
+_mock_standard_apgi_runner = MagicMock()
+_mock_experiment_apgi_integration = MagicMock()
+_mock_prepare_change_blindness = MagicMock()
 
-import run_change_blindness_full_apgi as runner
+# Set up mock TrialType enum
+_mock_TrialType = MagicMock()
+_mock_TrialType.CHANGE = MagicMock()
+_mock_TrialType.NO_CHANGE = MagicMock()
+_mock_prepare_change_blindness.TrialType = _mock_TrialType
+_mock_prepare_change_blindness.TIME_BUDGET = 600
+
+# Patch sys.modules before import
+sys.modules["standard_apgi_runner"] = _mock_standard_apgi_runner
+sys.modules["experiment_apgi_integration"] = _mock_experiment_apgi_integration
+sys.modules["prepare_change_blindness"] = _mock_prepare_change_blindness
+
+import experiments.run_change_blindness_full_apgi as runner
 
 
 class TestConstants:
@@ -42,38 +53,32 @@ class TestChangeBlindnessExperimentRunner:
 
     def test_runner_initialization(self):
         """Test runner initialization."""
-        with patch(
-            "run_change_blindness_full_apgi.StandardAPGIRunner"
-        ) as mock_runner_class:
+        # Patch the StandardAPGIRunner in the runner module directly
+        with patch.object(runner, "StandardAPGIRunner") as mock_runner_class:
             mock_apgi_runner = MagicMock()
             mock_runner_class.return_value = mock_apgi_runner
+            mock_apgi_runner.apgi = None
 
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
-
             assert runner_instance is not None
-            assert runner_instance.apgi_runner is mock_apgi_runner
+            mock_runner_class.assert_called_once()
 
     def test_run_experiment_with_apgi_enabled(self):
         """Test running experiment with APGI enabled."""
-        mock_apgi_params = MagicMock()
-        mock_apgi_params.enabled = True
-
-        # Mock APGI runner
-        mock_apgi_runner = MagicMock()
-        mock_apgi_runner.apgi = MagicMock()
-        mock_apgi_runner.apgi.finalize.return_value = {
-            "ignition_rate": 0.5,
-            "mean_surprise": 0.3,
-        }
-        mock_apgi_runner.process_trial_with_full_apgi.return_value = {
-            "ignition_prob": 0.5,
-            "S": 0.3,
-            "M": 0.4,
-        }
-
-        with patch(
-            "run_change_blindness_full_apgi.StandardAPGIRunner"
-        ) as mock_runner_class:
+        # Mock APGI runner with properly configured apgi attribute
+        with patch.object(runner, "StandardAPGIRunner") as mock_runner_class:
+            mock_apgi_runner = MagicMock()
+            # Create a real dict for finalize return to avoid MagicMock format issues
+            mock_apgi_runner.apgi = MagicMock()
+            mock_apgi_runner.apgi.finalize.return_value = {
+                "ignition_rate": 0.5,
+                "mean_surprise": 0.3,
+            }
+            mock_apgi_runner.process_trial_with_full_apgi.return_value = {
+                "ignition_prob": 0.5,
+                "S": 0.3,
+                "M": 0.4,
+            }
             mock_runner_class.return_value = mock_apgi_runner
 
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
@@ -92,13 +97,10 @@ class TestChangeBlindnessExperimentRunner:
 
     def test_run_experiment_with_apgi_disabled(self):
         """Test running experiment with APGI disabled."""
-        # Mock APGI runner as None
-        mock_apgi_runner = MagicMock()
-        mock_apgi_runner.apgi = None
-
-        with patch(
-            "run_change_blindness_full_apgi.StandardAPGIRunner"
-        ) as mock_runner_class:
+        # Mock APGI runner with apgi=None (disabled)
+        with patch.object(runner, "StandardAPGIRunner") as mock_runner_class:
+            mock_apgi_runner = MagicMock()
+            mock_apgi_runner.apgi = None  # APGI disabled
             mock_runner_class.return_value = mock_apgi_runner
 
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
@@ -115,20 +117,23 @@ class TestChangeBlindnessExperimentRunner:
 
     def test_calculate_detection_rate(self):
         """Test detection rate calculation."""
-        # Setup runner instance
-        with patch(
-            "run_change_blindness_full_apgi.StandardAPGIRunner"
-        ) as mock_runner_class:
+        # Setup runner instance with properly mocked APGI that returns real floats
+        with patch.object(runner, "StandardAPGIRunner") as mock_runner_class:
             mock_runner = MagicMock()
-            mock_apgi = MagicMock()
-            mock_apgi.finalize.return_value = {
+            # Use a real dict instead of MagicMock to avoid format string issues
+            mock_apgi_summary = {
                 "ignition_rate": 0.5,
                 "mean_surprise": 0.3,
                 "mean_threshold": 0.7,
                 "mean_somatic_marker": 0.4,
                 "metabolic_cost": 0.2,
             }
-            mock_runner.apgi = mock_apgi
+            mock_runner.apgi = MagicMock()
+            mock_runner.apgi.finalize.return_value = mock_apgi_summary
+            # Also mock _format_comprehensive_apgi_output to avoid issues
+            mock_runner._format_comprehensive_apgi_output.return_value = (
+                "Mock APGI output"
+            )
             mock_runner_class.return_value = mock_runner
 
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
@@ -171,10 +176,11 @@ class TestChangeBlindnessExperimentRunner:
 
     def test_calculate_detection_rate_no_trials(self):
         """Test detection rate calculation with no trials."""
-        with patch(
-            "run_change_blindness_full_apgi.StandardAPGIRunner"
-        ) as mock_runner_class:
-            mock_runner_class.return_value = MagicMock()
+        with patch.object(runner, "StandardAPGIRunner") as mock_runner_class:
+            mock_runner = MagicMock()
+            mock_runner.apgi = None
+            mock_runner._format_comprehensive_apgi_output.return_value = "Mock output"
+            mock_runner_class.return_value = mock_runner
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
 
             # Set up trial_metrics to test the method
@@ -200,20 +206,22 @@ class TestChangeBlindnessExperimentRunner:
             },
         }
 
-        # Test that _calculate_comprehensive_results returns expected format
-        with patch(
-            "run_change_blindness_full_apgi.StandardAPGIRunner"
-        ) as mock_runner_class:
+        # Setup runner instance with properly mocked APGI
+        with patch.object(runner, "StandardAPGIRunner") as mock_runner_class:
             mock_runner = MagicMock()
-            mock_apgi = MagicMock()
-            mock_apgi.finalize.return_value = {
+            # Use a real dict to avoid MagicMock format string issues
+            mock_runner.apgi = MagicMock()
+            mock_runner.apgi.finalize.return_value = {
                 "ignition_rate": 0.5,
                 "mean_surprise": 0.3,
                 "mean_threshold": 0.7,
                 "mean_somatic_marker": 0.4,
                 "metabolic_cost": 0.2,
             }
-            mock_runner.apgi = mock_apgi
+            # Mock _format_comprehensive_apgi_output to avoid format issues
+            mock_runner._format_comprehensive_apgi_output.return_value = (
+                "Mock APGI output"
+            )
             mock_runner_class.return_value = mock_runner
 
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
@@ -256,17 +264,14 @@ class TestChangeBlindnessExperimentRunner:
         mock_runner_instance = MagicMock()
         mock_runner_instance.run_experiment.return_value = {"detection_rate": 0.5}
 
-        with patch(
-            "run_change_blindness_full_apgi.EnhancedChangeBlindnessRunnerWithAPGI"
+        with patch.object(
+            runner, "EnhancedChangeBlindnessRunnerWithAPGI"
         ) as mock_runner_class:
             mock_runner_class.return_value = mock_runner_instance
 
-            # Import and run main
-            import run_change_blindness_full_apgi as cb_runner
-
             # Just verify the runner can be created and run
-            runner = cb_runner.EnhancedChangeBlindnessRunnerWithAPGI()
-            assert runner is not None
+            test_runner = runner.EnhancedChangeBlindnessRunnerWithAPGI()
+            assert test_runner is not None
 
     def test_main_function_with_error(self):
         """Test main function with error handling - the module has no main() function."""

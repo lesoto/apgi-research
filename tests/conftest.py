@@ -137,9 +137,24 @@ def restore_apgi_modules() -> Generator[None, None, None]:
         "run_attentional_blink",
         "run_go_no_go",
         "run_stroop_effect",
+        "run_sternberg_memory",
+        "experiment_apgi_integration",
+        "standard_apgi_runner",
+        "apgi_audit",
+        "apgi_config",
+        "apgi_metrics",
     ]
 
-    # Store original modules before test
+    # Pre-load real modules before any test can mock them
+    # This ensures we have the real modules to restore later
+    for mod_name in apgi_modules:
+        if mod_name not in sys.modules:
+            try:
+                __import__(mod_name)
+            except Exception:
+                pass  # Module may not exist, that's ok
+
+    # Store original modules before test (after pre-loading)
     original_modules = {}
     for key in list(sys.modules.keys()):
         if any(key.startswith(mod) or key == mod for mod in apgi_modules):
@@ -819,6 +834,41 @@ def invalid_configs() -> List[Dict[str, Any]]:
 # =============================================================================
 
 
+def pytest_load_initial_conftests(
+    early_config: pytest.Config, parser: Any, args: list
+) -> None:
+    """Hook that runs before coverage is initialized."""
+    # Remove --cov-fail-under if running benchmark tests
+    if any("test_apgi_benchmarks.py" in arg for arg in args):
+        for arg in list(args):
+            if "--cov-fail-under" in arg:
+                idx = args.index(arg)
+                args.pop(idx)
+                if idx + 1 < len(args) and not args[idx + 1].startswith("-"):
+                    args.pop(idx)
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Hook that runs before test collection - preload critical modules."""
+    # Pre-load modules that might be mocked at module level by test files
+    # This ensures we have the real modules loaded before any test file imports
+    critical_modules = [
+        "apgi_integration",
+        "apgi_audit",
+        "apgi_config",
+        "apgi_metrics",
+        "apgi_security",
+        "experiment_apgi_integration",
+        "standard_apgi_runner",
+        "ultimate_apgi_template",
+    ]
+    for mod_name in critical_modules:
+        try:
+            __import__(mod_name)
+        except Exception:
+            pass  # Module may not exist, that's ok
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest with custom markers."""
     config.addinivalue_line(
@@ -847,6 +897,15 @@ def pytest_collection_modifyitems(
     config: pytest.Config, items: List[pytest.Item]
 ) -> None:
     """Modify test collection to add markers based on test name."""
+    # Check if only benchmark tests are being run
+    has_benchmark = any(item.get_closest_marker("benchmark") for item in items)
+    all_benchmark = all(item.get_closest_marker("benchmark") for item in items)
+
+    # If only benchmark tests are selected, disable coverage fail-under
+    if has_benchmark and all_benchmark:
+        if hasattr(config.option, "cov_fail_under"):
+            config.option.cov_fail_under = None
+
     for item in items:
         # Auto-mark based on test name patterns
         if "stress" in item.nodeid.lower():

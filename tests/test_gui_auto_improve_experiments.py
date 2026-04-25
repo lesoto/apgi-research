@@ -211,11 +211,12 @@ class TestExperimentRunnerGUI:
             experiments = gui.ExperimentRunnerGUI._find_experiments(mock_gui)
 
             # Should find files starting with 'run_' and ending with '.py'
+            # Implementation prepends 'experiments/' to the filename
             expected = [
-                ("Experiment1", "run_experiment1.py"),
-                ("Experiment2", "run_experiment2.py"),
-                ("Prepare Experiment", "run_prepare_experiment.py"),
-                ("Test Experiment", "run_test_run_experiment.py"),
+                ("Experiment1", "experiments/run_experiment1.py"),
+                ("Experiment2", "experiments/run_experiment2.py"),
+                ("Prepare Experiment", "experiments/run_prepare_experiment.py"),
+                ("Test Experiment", "experiments/run_test_run_experiment.py"),
             ]
             assert experiments == expected
 
