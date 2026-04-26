@@ -5,22 +5,23 @@ This module provides comprehensive testing for the APGI autonomous research syst
 including unit tests, integration tests, and performance tests.
 """
 
-import pytest
-import tempfile
+import os
 import shutil
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
-import sys
-import os
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from autonomous_agent import (
     AutonomousAgent,
-    GitPerformanceTracker,
-    ParameterOptimizer,
     ExperimentResult,
+    GitPerformanceTracker,
     OptimizationStrategy,
+    ParameterOptimizer,
     TimeoutError,
 )
 

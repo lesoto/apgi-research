@@ -6,16 +6,17 @@ experiment loop, including parameter modification, performance tracking,
 and self-healing guardrails.
 """
 
-import pytest
 import shutil
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 import git
+import pytest
 
 from autonomous_agent import AutonomousAgent, ExperimentResult
+from human_layer import ReviewDecision, ReviewResult
 from xpr_agent_engine import SkillResult, SkillType
-from human_layer import ReviewResult, ReviewDecision
 
 
 class TestRLLoopIntegration:

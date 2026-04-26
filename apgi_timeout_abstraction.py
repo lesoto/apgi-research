@@ -10,14 +10,14 @@ Supports:
 - Async/await timeouts
 """
 
+import sys
 import threading
-from typing import Callable, Any, Optional, TypeVar, Generator
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-import sys
+from typing import Any, Callable, Generator, Optional, TypeVar
 
-from apgi_logging import get_logger
 from apgi_errors import APGITimeoutError
+from apgi_logging import get_logger
 
 T = TypeVar("T")
 

@@ -18,13 +18,21 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, Optional, List, cast
+from typing import Any, Dict, List, Optional, cast
+
+import numpy as np
+
+from apgi_cli import cli_entrypoint, create_standard_parser
+from experiments.prepare_stroop_effect import (  # APGI parameters from prepare file
+    APGI_PARAMS,
+    TIME_BUDGET,
+    StroopExperiment,
+    TrialType,
+)
 
 # Standardized APGI imports
 from experiments.standard_apgi_runner import StandardAPGIRunner
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # Legacy imports - migrated to StandardAPGIRunner
 # from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
@@ -34,12 +42,6 @@ from apgi_cli import cli_entrypoint, create_standard_parser
 #     UltimateAPGIParameters,
 # )
 
-from experiments.prepare_stroop_effect import (
-    StroopExperiment,
-    TrialType,
-    TIME_BUDGET,
-    APGI_PARAMS,  # APGI parameters from prepare file
-)
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

@@ -10,17 +10,18 @@ Provides:
 - Package name validation for subprocess operations
 """
 
+import json
+import logging
 import os
 import re
-import json
-import time
 import shutil
-import psutil
-import logging
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable, cast, Iterator
-from dataclasses import dataclass, field
+import time
 from contextlib import contextmanager
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterator, List, Optional, cast
+
+import psutil
 
 logger = logging.getLogger(__name__)
 

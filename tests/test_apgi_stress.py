@@ -1,6 +1,8 @@
-import numpy as np
-from apgi_integration import APGIIntegration
 from types import MethodType
+
+import numpy as np
+
+from apgi_integration import APGIIntegration
 
 
 def test_long_run_memory_and_throughput(benchmark=None):

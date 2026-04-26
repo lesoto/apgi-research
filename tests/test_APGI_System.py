@@ -4,31 +4,33 @@ from __future__ import annotations
 Focused tests for APGI_System module based on actual implementation.
 """
 
-import pytest
-import numpy as np
 from unittest.mock import patch
+
 import matplotlib
+import numpy as np
+import pytest
 
 matplotlib.use("Agg")  # Force Agg backend at module level
 
-import pytest
-import numpy as np
 from unittest.mock import patch
 
+import numpy as np
+import pytest
+
 from APGI_System import (
-    FoundationalEquations,
-    CoreIgnitionSystem,
-    DynamicalSystemEquations,
-    RunningStatistics,
-    DerivedQuantities,
     APGIParameters,
-    PsychologicalState,
-    StateCategory,
     APGIStateLibrary,
+    CompleteAPGIVisualizer,
+    CoreIgnitionSystem,
+    DerivedQuantities,
+    DynamicalSystemEquations,
+    EnhancedSurpriseIgnitionSystem,
+    FoundationalEquations,
     MeasurementEquations,
     NeuromodulatorSystem,
-    EnhancedSurpriseIgnitionSystem,
-    CompleteAPGIVisualizer,
+    PsychologicalState,
+    RunningStatistics,
+    StateCategory,
     verify_all_equations,
 )
 

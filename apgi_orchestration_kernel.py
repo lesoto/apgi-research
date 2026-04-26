@@ -8,19 +8,19 @@ This kernel replaces the need for 29 separate runner implementations with
 a unified, typed adapter pattern.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
 import time
 import uuid
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar
 
-from apgi_integration import APGIIntegration, APGIParameters
-from apgi_config import APGIExperimentConfigSchema
-from apgi_logging import APGIContextLogger, get_logger
-from apgi_errors import APGIIntegrationError, APGITimeoutError, APGIRuntimeError
+from apgi_audit import AuditEventType, get_audit_sink
 from apgi_authz import get_authz_manager
-from apgi_audit import get_audit_sink, AuditEventType
-from apgi_security_adapters import get_security_factory, SecurityLevel
+from apgi_config import APGIExperimentConfigSchema
+from apgi_errors import APGIIntegrationError, APGIRuntimeError, APGITimeoutError
+from apgi_integration import APGIIntegration, APGIParameters
+from apgi_logging import APGIContextLogger, get_logger
+from apgi_security_adapters import SecurityLevel, get_security_factory
 
 T = TypeVar("T")  # Generic trial data type
 

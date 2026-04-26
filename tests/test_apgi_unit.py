@@ -4,13 +4,14 @@ Unit tests for APGI components.
 Comprehensive test suite for APGI integration, validation, and monitoring modules.
 """
 
-import pytest
-import numpy as np
-import tempfile
 import os
-from pathlib import Path
-import time
 import subprocess
+import tempfile
+import time
+from pathlib import Path
+
+import numpy as np
+import pytest
 
 # Import APGI modules
 from apgi_integration import (
@@ -20,14 +21,14 @@ from apgi_integration import (
     DynamicalSystem,
     RunningStatistics,
 )
+from git_operations import GitRollbackManager
+from performance_monitoring import MemorySnapshot, PerformanceMonitor
+from progress_tracking import ProgressTracker, TrialResult
 from validation import (
-    validate_modifications_before_apply,
     validate_code_modification,
+    validate_modifications_before_apply,
     validate_module_name,
 )
-from git_operations import GitRollbackManager
-from progress_tracking import ProgressTracker, TrialResult
-from performance_monitoring import PerformanceMonitor, MemorySnapshot
 
 
 class TestAPGIParameters:

@@ -2,10 +2,10 @@
 Production-grade logging for the APGI system.
 """
 
-import logging
 import json
+import logging
 import uuid
-from typing import Optional, Any
+from typing import Any, Optional
 
 
 class JSONFormatter(logging.Formatter):

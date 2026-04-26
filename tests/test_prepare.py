@@ -4,13 +4,14 @@ Test suite for prepare.py module.
 Tests data preparation functionality including downloading and tokenizer training.
 """
 
-import pytest
 import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock, mock_open
 
 # Add the parent directory to the path to import the module
 import sys
+from pathlib import Path
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

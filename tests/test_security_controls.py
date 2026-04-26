@@ -100,8 +100,8 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_cli_entrypoint_requires_auth(self):
         """Test that CLI entry points require authorization."""
-        from apgi_cli import require_auth, AuthorizationError
         from apgi_authz import Permission
+        from apgi_cli import AuthorizationError, require_auth
 
         # Mock function that requires RUN_EXPERIMENT permission
         @require_auth(Permission.RUN_EXPERIMENT, resource_type="experiment")
@@ -116,12 +116,7 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_authz_denies_guest_for_run_experiment(self):
         """Test that guest role cannot run experiments."""
-        from apgi_authz import (
-            get_authz_manager,
-            AuthorizationContext,
-            Role,
-            Permission,
-        )
+        from apgi_authz import AuthorizationContext, Permission, Role, get_authz_manager
 
         authz = get_authz_manager()
 
@@ -143,12 +138,7 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_authz_allows_operator_for_run_experiment(self):
         """Test that operator role can run experiments."""
-        from apgi_authz import (
-            get_authz_manager,
-            AuthorizationContext,
-            Role,
-            Permission,
-        )
+        from apgi_authz import AuthorizationContext, Permission, Role, get_authz_manager
 
         authz = get_authz_manager()
 
@@ -170,12 +160,7 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_authz_logs_denied_actions(self):
         """Test that denied actions are logged."""
-        from apgi_authz import (
-            get_authz_manager,
-            AuthorizationContext,
-            Role,
-            Permission,
-        )
+        from apgi_authz import AuthorizationContext, Permission, Role, get_authz_manager
 
         authz = get_authz_manager()
 
@@ -299,7 +284,7 @@ class TestSubprocessSecurity:
     @pytest.mark.security
     def test_secure_popen_validates_command(self):
         """Test that secure_popen validates commands."""
-        from apgi_security import secure_popen, SecureSubprocessError
+        from apgi_security import SecureSubprocessError, secure_popen
 
         with pytest.raises(SecureSubprocessError):
             secure_popen(["rm", "-rf", "/"])
@@ -307,7 +292,7 @@ class TestSubprocessSecurity:
     @pytest.mark.security
     def test_secure_popen_allows_whitelisted_commands(self):
         """Test that whitelisted commands are allowed."""
-        from apgi_security import secure_popen, SecureSubprocessError
+        from apgi_security import SecureSubprocessError, secure_popen
 
         # Should not raise for allowed commands
         # Using 'echo' which is typically allowed in tests
@@ -340,10 +325,10 @@ class TestPickleSecurity:
     @pytest.mark.security
     def test_secure_loads_defaults_to_json(self):
         """Test that secure_loads defaults to JSON only."""
-        from apgi_security import secure_loads, PickleSecurityError
-
         # Try to load pickle data without explicit opt-in
         import pickle
+
+        from apgi_security import PickleSecurityError, secure_loads
 
         pickled = pickle.dumps({"test": "data"})
 
@@ -354,6 +339,7 @@ class TestPickleSecurity:
     def test_secure_loads_accepts_json(self):
         """Test that secure_loads accepts JSON data."""
         import json
+
         from apgi_security import secure_loads
 
         data = {"test": "data", "number": 42}
@@ -374,7 +360,7 @@ class TestCLIEntryPointSecurity:
     @pytest.mark.security
     def test_cli_entrypoint_handles_auth_error(self):
         """Test that CLI entry point handles authorization errors."""
-        from apgi_cli import cli_entrypoint, AuthorizationError
+        from apgi_cli import AuthorizationError, cli_entrypoint
 
         def failing_main():
             raise AuthorizationError("Test authorization failure")
@@ -439,7 +425,7 @@ class TestSecurityIntegration:
         ):
             # 2. Import security components
             from apgi_audit import get_audit_sink
-            from apgi_authz import get_authz_manager, Permission, AuthorizationContext
+            from apgi_authz import AuthorizationContext, Permission, get_authz_manager
             from apgi_security import secure_loads_json
 
             # 3. Verify audit sink works

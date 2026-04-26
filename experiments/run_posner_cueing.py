@@ -18,28 +18,24 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, Optional, cast
+from typing import Any, Dict, Optional, cast
 
-from .prepare_posner_cueing import (
-    PosnerExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    CueType,
-)
-from .experiment_apgi_integration import APGIParameters
-
-# APGI Integration
-from apgi_integration import APGIIntegration, APGIParameters
-from .ultimate_apgi_template import (
-    UltimateAPGIParameters,
-    HierarchicalProcessor,
-    PrecisionExpectationState,
-)
+import numpy as np
 
 # Standardized APGI imports
 from apgi_cli import cli_entrypoint, create_standard_parser
+
+# APGI Integration
+from apgi_integration import APGIIntegration, APGIParameters
+
+from .experiment_apgi_integration import APGIParameters
+from .prepare_posner_cueing import APGI_PARAMS, TIME_BUDGET, CueType, PosnerExperiment
+from .ultimate_apgi_template import (
+    HierarchicalProcessor,
+    PrecisionExpectationState,
+    UltimateAPGIParameters,
+)
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

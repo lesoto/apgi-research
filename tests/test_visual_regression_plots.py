@@ -13,10 +13,10 @@ import io
 import sys
 from pathlib import Path
 from typing import Optional, Tuple
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from unittest.mock import MagicMock
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -35,8 +35,8 @@ except ImportError:
     HAS_MATPLOTLIB = False
 
 try:
-    from PIL import Image
     import pixelmatch
+    from PIL import Image
 
     HAS_PIXELMATCH = True
 except ImportError:

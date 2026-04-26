@@ -15,32 +15,29 @@ Output:
     Prints summary with net_score (primary metric) and full APGI metrics
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, cast
+from typing import Any, Dict, cast
 
-# APGI Integration with hierarchical processing and precision gap
-from apgi_integration import (
-    APGIIntegration,
-)
-from .ultimate_apgi_template import (
-    UltimateAPGIParameters,
-    HierarchicalProcessor,
-    PrecisionExpectationState,
-)
-
-from .prepare_iowa_gambling_task import (
-    IowaGamblingTaskExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    DECK_LABELS,
-)
-from .experiment_apgi_integration import (
-    APGIParameters,
-)
+import numpy as np
 
 # Standardized APGI imports
 from apgi_cli import cli_entrypoint, create_standard_parser
+
+# APGI Integration with hierarchical processing and precision gap
+from apgi_integration import APGIIntegration
+
+from .experiment_apgi_integration import APGIParameters
+from .prepare_iowa_gambling_task import (
+    APGI_PARAMS,
+    DECK_LABELS,
+    TIME_BUDGET,
+    IowaGamblingTaskExperiment,
+)
+from .ultimate_apgi_template import (
+    HierarchicalProcessor,
+    PrecisionExpectationState,
+    UltimateAPGIParameters,
+)
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

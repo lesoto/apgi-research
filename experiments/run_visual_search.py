@@ -18,27 +18,24 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Any, Dict, cast, Optional, List
+from typing import Any, Dict, List, Optional, cast
+
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
-from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+
+from .prepare_visual_search import APGI_PARAMS  # APGI parameters from prepare file
+from .prepare_visual_search import TIME_BUDGET, SearchType, VSExperiment
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-from .prepare_visual_search import (
-    VSExperiment,
-    SearchType,
-    TIME_BUDGET,
-    APGI_PARAMS,  # APGI parameters from prepare file
-)
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

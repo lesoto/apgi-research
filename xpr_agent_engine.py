@@ -5,13 +5,14 @@ This module provides the XPRAgentEngine and SkillResult classes
 that form the foundation of the autonomous agent system.
 """
 
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Callable
-from enum import Enum
-import logging
-import time
 import json
+import logging
 import os
+import time
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
+
 from apgi_compliance import ComplianceManager, DataClassification
 
 logger = logging.getLogger(__name__)
@@ -574,13 +575,13 @@ Key enhancements over XPR Agent Engine:
 - Multi-objective optimization strategies
 """
 
-from dataclasses import dataclass
-from typing import Dict, List, Any
-from enum import Enum
-import logging
-import time
-import re
 import datetime
+import logging
+import re
+import time
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List
 
 # XPRAgentEngine is already defined above in this same file
 

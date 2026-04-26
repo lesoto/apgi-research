@@ -18,27 +18,28 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Any, Dict, Optional, cast, List
+from typing import Any, Dict, List, Optional, cast
 
-from .prepare_time_estimation import (
-    TimeEstExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    EstimationMethod,
-)
-
-# APGI Integration
-from apgi_integration import APGIIntegration, APGIParameters
-from .ultimate_apgi_template import (
-    UltimateAPGIParameters,
-    HierarchicalProcessor,
-    PrecisionExpectationState,
-)
+import numpy as np
 
 # Standardized APGI imports
 from apgi_cli import cli_entrypoint, create_standard_parser
+
+# APGI Integration
+from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_time_estimation import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    EstimationMethod,
+    TimeEstExperiment,
+)
+from .ultimate_apgi_template import (
+    HierarchicalProcessor,
+    PrecisionExpectationState,
+    UltimateAPGIParameters,
+)
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

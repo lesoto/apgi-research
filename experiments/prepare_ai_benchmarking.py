@@ -15,11 +15,12 @@ AI Benchmarking paradigms:
 - Learning tasks: Pattern recognition and adaptation
 """
 
-import numpy as np
 import json
 from dataclasses import dataclass
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import Dict, List, Optional
+
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)

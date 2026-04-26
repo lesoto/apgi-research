@@ -2,10 +2,11 @@
 Modernized for apgi-research directory with CustomTkinter.
 """
 
+import os
+
 # CRITICAL: Must set multiprocessing start method BEFORE any other imports on macOS
 # to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
 import sys
-import os
 
 if sys.platform == "darwin":
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
@@ -18,6 +19,7 @@ if sys.platform == "darwin":
 
 from tkinter import messagebox
 from typing import Any, cast
+
 import customtkinter as ctk
 
 
@@ -45,26 +47,26 @@ ctk.windows.widgets.core_widget_classes.dropdown_menu.DropdownMenu._add_menu_com
     _patched_add_menu_commands
 )
 
+import importlib.util
+import json
+import logging
+import re
 import subprocess
 import threading
-import re
-import logging
 import time
-import json
 from pathlib import Path
-from typing import List, Tuple, Dict, Set, Any
-import importlib.util
+from typing import Any, Dict, List, Set, Tuple
+
+# Matplotlib imports for embedded visualization
+import matplotlib
 import numpy as np
 
 # Import hypothesis approval board
 from hypothesis_approval_board import ApprovalBoard, Hypothesis, HypothesisStatus
 
-# Matplotlib imports for embedded visualization
-import matplotlib
-
 matplotlib.use("TkAgg")
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("Dark")

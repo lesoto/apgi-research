@@ -6,17 +6,18 @@ and optimization convergence detection.
 """
 
 import gc
-import psutil
+import json
 import threading
 import time
-import json
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
-import numpy as np
-import matplotlib.pyplot as plt
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import psutil
 
 matplotlib.use("Agg")  # Use non-interactive backend
 

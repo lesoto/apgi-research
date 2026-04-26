@@ -9,12 +9,12 @@ to prevent performance overhead and noise in production runs.
 """
 
 import cProfile
-import pstats
 import io
-import time
 import os
+import pstats
+import time
 from functools import wraps
-from typing import Callable, TypeVar, Any
+from typing import Any, Callable, TypeVar
 
 try:
     from line_profiler import LineProfiler

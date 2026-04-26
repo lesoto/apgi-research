@@ -22,14 +22,14 @@ Usage Examples:
 """
 
 import argparse
+import errno
 import fnmatch
 import os
 import shutil
 import sys
 import time
-import errno
-from typing import Any, Dict, Iterable, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 DEFAULT_DIR_NAMES = {
     "__pycache__",

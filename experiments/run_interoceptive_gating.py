@@ -18,26 +18,27 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Any, Dict, Optional, List, cast
+from typing import Any, Dict, List, Optional, cast
 
-from .prepare_interoceptive_gating import (
-    InteroGatingExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_interoceptive_gating import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    InteroGatingExperiment,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

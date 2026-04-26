@@ -5,14 +5,14 @@ Implements deny-by-default audit allowlists, secure subprocess/pickle wrappers,
 and config validation. All security controls are explicit opt-in (no monkey-patching).
 """
 
-import subprocess
-import pickle
 import hashlib
 import json
 import os
-from typing import Any, List, Optional, Union, Sequence
-from functools import wraps
+import pickle
+import subprocess
 from dataclasses import dataclass
+from functools import wraps
+from typing import Any, List, Optional, Sequence, Union
 
 # ---------------------------------------------------------------------------
 # Subprocess Security (Explicit Wrapper - No Monkey Patching)

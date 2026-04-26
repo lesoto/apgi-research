@@ -16,7 +16,8 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pytest
-from hypothesis import given, settings, strategies as st, assume, Phase, HealthCheck
+from hypothesis import HealthCheck, Phase, assume, given, settings
+from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
 # Add project root to path

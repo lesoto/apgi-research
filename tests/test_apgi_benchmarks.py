@@ -34,8 +34,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # APGI imports
 from apgi_integration import APGIIntegration, APGIParameters
-from experiments.standard_apgi_runner import StandardAPGIRunner
 from experiments.experiment_apgi_integration import ExportedAPGIParams
+from experiments.standard_apgi_runner import StandardAPGIRunner
 
 # Import experiment runners for end-to-end benchmarks
 EXPERIMENT_RUNNERS: Dict[str, Tuple[str, str]] = {
@@ -116,8 +116,9 @@ def benchmark_runner() -> Callable[..., BenchmarkResult]:
 def _get_memory_usage() -> float:
     """Get current memory usage in MB."""
     try:
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         return process.memory_info().rss / (1024 * 1024)

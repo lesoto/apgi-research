@@ -18,27 +18,23 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Any, Dict, Optional, cast, Union
+from typing import Any, Dict, Optional, Union, cast
 
-from .prepare_simon_effect import (
-    SimonExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    TrialType,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_simon_effect import APGI_PARAMS, TIME_BUDGET, SimonExperiment, TrialType
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

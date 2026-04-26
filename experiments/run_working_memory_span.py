@@ -18,29 +18,30 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
 from typing import Any, Dict, List, Optional, Union, cast
 
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
+
+# APGI Integration
+from apgi_integration import APGIIntegration, APGIParameters
+
 # Import fixed configurations from prepare_working_memory_span.py
 from .prepare_working_memory_span import (
-    TIME_BUDGET,
     APGI_PARAMS,
+    TIME_BUDGET,
     SpanType,
     WMSpanTrial,
     WorkingMemorySpanGenerator,
 )
-
-# APGI Integration
-from apgi_integration import APGIIntegration, APGIParameters
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization

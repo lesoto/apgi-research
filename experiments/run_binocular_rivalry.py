@@ -18,28 +18,29 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, List, cast
+from typing import Any, Dict, List, cast
 
-# Import fixed configurations from prepare_binocular_rivalry.py
-from .prepare_binocular_rivalry import (
-    TIME_BUDGET,
-    APGI_PARAMS,
-    BinocularRivalryGenerator,
-    StimulusType,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+# Import fixed configurations from prepare_binocular_rivalry.py
+from .prepare_binocular_rivalry import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    BinocularRivalryGenerator,
+    StimulusType,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization

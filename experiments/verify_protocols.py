@@ -12,9 +12,9 @@ Verifies all experiment protocols against the 6 verification criteria:
 """
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
-from dataclasses import dataclass
 
 # Experiment list from run_experiments.py and USAGE.md
 EXPERIMENTS = [

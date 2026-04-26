@@ -4,13 +4,13 @@ Git operations with rollback capabilities for APGI experiments.
 Provides safe git operations with automatic rollback on failures.
 """
 
+import shutil
 import subprocess
 import tempfile
-import shutil
-from pathlib import Path
-from typing import List, Optional, Dict, Any
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from validation import ValidationResult, validate_git_operations
 

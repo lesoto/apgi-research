@@ -18,31 +18,31 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Optional, List, Any, cast
 from enum import Enum
+from typing import Any, Dict, List, Optional, cast
 
-# Import fixed configurations from prepare_drm_false_memory.py
-from .prepare_drm_false_memory import (
-    DRMExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    DRMExperiment,
-    DRMTrial,
-    DRM_LISTS,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+# Import fixed configurations from prepare_drm_false_memory.py
+from .prepare_drm_false_memory import (
+    APGI_PARAMS,
+    DRM_LISTS,
+    TIME_BUDGET,
+    DRMExperiment,
+    DRMTrial,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 
 # Type aliases for compatibility

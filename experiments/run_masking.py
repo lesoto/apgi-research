@@ -20,30 +20,31 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Any, Dict, Optional, List, cast
+from typing import Any, Dict, List, Optional, cast
 
-# APGI Integration with hierarchical processing and precision gap
-from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
-from .ultimate_apgi_template import (
-    UltimateAPGIParameters,
-    HierarchicalProcessor,
-    PrecisionExpectationState,
-)
-
-# Import fixed configurations from prepare_masking.py
-from .prepare_masking import (
-    TIME_BUDGET,
-    APGI_PARAMS,
-    MaskingTrial,
-    TrialType,
-    MaskType,
-    MaskingGenerator,
-)
+import numpy as np
 
 # Standardized APGI imports
 from apgi_cli import cli_entrypoint, create_standard_parser
+
+# APGI Integration with hierarchical processing and precision gap
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+
+# Import fixed configurations from prepare_masking.py
+from .prepare_masking import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    MaskingGenerator,
+    MaskingTrial,
+    MaskType,
+    TrialType,
+)
+from .ultimate_apgi_template import (
+    HierarchicalProcessor,
+    PrecisionExpectationState,
+    UltimateAPGIParameters,
+)
 
 # Local variables for reference
 _TIME_BUDGET_VAL = APGI_PARAMS.get("time_budget", 600)

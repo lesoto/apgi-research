@@ -297,6 +297,7 @@ class TestStressTests:
     def test_concurrent_simulations(self) -> None:
         """Test running multiple concurrent simulations."""
         import threading
+
         from APGI_System import APGIParameters, CoreIgnitionSystem
 
         results = []

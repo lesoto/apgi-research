@@ -5,9 +5,10 @@ Tests Stroop effect experiment runner functionality.
 """
 
 import os
-import pytest
 import sys
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 # Add the parent directory to the path to import the module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

@@ -75,7 +75,8 @@ All experiments should implement these components for full compliance.
 # =============================================================================
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 
 from apgi_integration import APGIParameters

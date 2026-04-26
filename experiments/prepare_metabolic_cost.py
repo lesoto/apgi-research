@@ -4,12 +4,13 @@ This file is READ-ONLY. Do not modify.
 It defines the fixed task configurations and evaluation metrics.
 """
 
-import numpy as np
-import random
 import json
+import random
 from dataclasses import dataclass
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import Dict, List, Optional
+
+import numpy as np
 
 TIME_BUDGET = 600
 NUM_TRIALS = 80

@@ -12,11 +12,11 @@ Key Functions:
 
 import json
 import logging
-from typing import Dict, List, Optional, Any, cast
 from dataclasses import dataclass
-from pathlib import Path
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, cast
 
 from hypothesis_approval_board import ApprovalBoard, HypothesisStatus
 

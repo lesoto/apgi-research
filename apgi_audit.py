@@ -5,14 +5,14 @@ Provides append-only audit logging for all critical operations.
 Implements signed action logs and audit trail integrity.
 """
 
-from typing import Dict, Any, List, Optional
+import hashlib
+import hmac
+import json
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import json
-import hashlib
-import hmac
-import uuid
+from typing import Any, Dict, List, Optional
 
 from apgi_logging import get_logger
 

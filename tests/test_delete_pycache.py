@@ -5,14 +5,15 @@ Tests file and directory cleanup functionality with comprehensive coverage.
 """
 
 import errno
-import pytest
 import os
+
+# Add the parent directory to the path to import the module
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-# Add the parent directory to the path to import the module
-import sys
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

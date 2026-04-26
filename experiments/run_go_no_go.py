@@ -20,27 +20,24 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, cast, Any, Optional
+from typing import Any, Dict, Optional, cast
+
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
-from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+
+from .prepare_go_no_go import APGI_PARAMS  # APGI parameters from prepare file
+from .prepare_go_no_go import TIME_BUDGET, GoNoGoExperiment, TrialType
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-from .prepare_go_no_go import (
-    GoNoGoExperiment,
-    TrialType,
-    TIME_BUDGET,
-    APGI_PARAMS,  # APGI parameters from prepare file
-)
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

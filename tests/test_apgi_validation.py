@@ -2,30 +2,31 @@
 Comprehensive tests for apgi_validation module.
 """
 
-import pytest
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from apgi_validation import (
-    ValidationReport,
-    ProgressSnapshot,
-    PerformanceMetrics,
-    ModificationBackup,
-    ModificationValidator,
-    ImportValidator,
-    SubprocessValidator,
-    ModificationBackupManager,
+    SAFE_IMPORT_MODULES,
+    SAFE_PACKAGE_PATTERNS,
     ExperimentProgressTracker,
+    ImportValidator,
+    ModificationBackup,
+    ModificationBackupManager,
+    ModificationValidator,
+    PerformanceMetrics,
     PerformanceMonitor,
+    ProgressSnapshot,
     RollbackManager,
-    validated_modifications,
+    SubprocessValidator,
+    ValidationReport,
     git_operation_guard,
     validate_file_modifications,
     validate_import_safety,
     validate_subprocess_safety,
-    SAFE_IMPORT_MODULES,
-    SAFE_PACKAGE_PATTERNS,
+    validated_modifications,
 )
 
 

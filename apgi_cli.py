@@ -17,20 +17,20 @@ Usage:
 
 import argparse
 import logging
-import sys
 import os
-from typing import Callable, Optional, Any, List
+import sys
 from functools import wraps
+from typing import Any, Callable, List, Optional
 
-from apgi_logging import get_logger, APGIContextLogger
+from apgi_audit import AuditEventType, get_audit_sink
 from apgi_authz import (
-    get_authz_manager,
     AuthorizationContext,
     OperatorIdentity,
     Permission,
     Role,
+    get_authz_manager,
 )
-from apgi_audit import get_audit_sink, AuditEventType
+from apgi_logging import APGIContextLogger, get_logger
 
 
 class CLIError(Exception):

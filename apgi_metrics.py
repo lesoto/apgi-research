@@ -7,10 +7,11 @@ This module provides comprehensive APGI metrics calculation including:
 - Metabolic cost analysis
 """
 
-import numpy as np
 import logging
-from typing import Dict, List, Optional
 from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+import numpy as np
 from scipy import stats
 
 logger = logging.getLogger(__name__)

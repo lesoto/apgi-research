@@ -20,9 +20,10 @@ Usage:
         out = model.step(x)
 """
 
-import numpy as np
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 
 CONFIG = {
     "dt": 0.01,

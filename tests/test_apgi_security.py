@@ -1,10 +1,11 @@
 import pytest
+
 from apgi_security import (
-    validate_config_checksum,
-    secure_popen,
-    secure_loads,
-    SecureSubprocessError,
     PickleSecurityError,
+    SecureSubprocessError,
+    secure_loads,
+    secure_popen,
+    validate_config_checksum,
 )
 
 
@@ -28,8 +29,8 @@ def test_config_signing_validation():
     config = {"alpha": 5.0, "beta": 1.0}
     secret = "test_key"
 
-    import json
     import hashlib
+    import json
 
     string_data = json.dumps(config, sort_keys=True) + secret
     valid_hash = hashlib.sha256(string_data.encode("utf-8")).hexdigest()

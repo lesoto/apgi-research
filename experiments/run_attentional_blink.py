@@ -18,28 +18,25 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, Optional, cast, List, Union
+from typing import Any, Dict, List, Optional, Union, cast
+
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration - imports the dynamical system for tracking ignition, surprise, somatic markers
-from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+
+# Import fixed configurations from prepare_attentional_blink.py
+from .prepare_attentional_blink import APGI_PARAMS  # APGI parameters from prepare file
+from .prepare_attentional_blink import TIME_BUDGET, ABExperiment, TrialType
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Import fixed configurations from prepare_attentional_blink.py
-from .prepare_attentional_blink import (
-    ABExperiment,
-    TrialType,
-    TIME_BUDGET,
-    APGI_PARAMS,  # APGI parameters from prepare file
-)
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization

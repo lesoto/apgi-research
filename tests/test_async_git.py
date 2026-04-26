@@ -13,8 +13,8 @@ import asyncio
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 from collections.abc import AsyncGenerator, Callable, Coroutine
+from pathlib import Path
 from typing import Any, List
 
 import pytest
@@ -346,8 +346,9 @@ class TestAsyncGitPerformance:
 
     async def test_async_memory_usage(self, temp_git_repo: Path) -> None:
         """Test memory usage during async operations."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         manager = GitRollbackManager(str(temp_git_repo))

@@ -20,26 +20,27 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, cast
+from typing import Any, Dict, cast
 
-from .prepare_artificial_grammar_learning import (
-    AGExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,  # APGI parameters from prepare file
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
-from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+
+from .prepare_artificial_grammar_learning import (  # APGI parameters from prepare file
+    APGI_PARAMS,
+    TIME_BUDGET,
+    AGExperiment,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

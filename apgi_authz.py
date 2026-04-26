@@ -5,11 +5,11 @@ Implements role-based access control (RBAC) and operator identity tracking.
 Provides fine-grained permission checks for GUI and autonomous agent actions.
 """
 
-from typing import Dict, Set, Optional, List
-from enum import Enum
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-import uuid
+from enum import Enum
+from typing import Dict, List, Optional, Set
 
 from apgi_logging import get_logger
 

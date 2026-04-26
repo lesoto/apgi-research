@@ -3,13 +3,14 @@ Tests for APGI Profiling module including cProfile and line_profiler integration
 """
 
 import pytest
+
 from apgi_profiler import (
+    LINE_PROFILER_AVAILABLE,
+    PerformanceBudgetExceeded,
     enforce_budget,
     profile_hot_path,
-    profile_hot_path_line,
     profile_hot_path_combined,
-    PerformanceBudgetExceeded,
-    LINE_PROFILER_AVAILABLE,
+    profile_hot_path_line,
 )
 
 

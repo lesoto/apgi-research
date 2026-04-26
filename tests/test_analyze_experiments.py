@@ -2,17 +2,18 @@
 Comprehensive tests for analyze_experiments module.
 """
 
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, patch
+
 import pytest
-from typing import Dict, Any, List
-from unittest.mock import patch, MagicMock
 
 from analyze_experiments import (
     EXPERIMENT_RESULTS,
-    get_apgi_experiments,
     analyze_apgi_metrics,
-    identify_issues,
     generate_fixes,
     generate_html_report,
+    get_apgi_experiments,
+    identify_issues,
     main,
 )
 

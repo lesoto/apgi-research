@@ -20,22 +20,23 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
 from typing import Any, Dict, Optional, cast
 
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # APGI Integration
-from apgi_integration import APGIIntegration, format_apgi_output, APGIParameters
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+
+from .prepare_navon_task import APGI_PARAMS, NavonExperiment, TargetLevel
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-from .prepare_navon_task import NavonExperiment, TargetLevel, APGI_PARAMS
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # Local TIME_BUDGET for reference (must match prepare file)
 TIME_BUDGET = float(

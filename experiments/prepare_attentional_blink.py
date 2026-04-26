@@ -14,11 +14,12 @@ The Attentional Blink paradigm uses Rapid Serial Visual Presentation (RSVP) wher
 - The "blink": Impaired T2 detection at lags 2-3 (200-300ms)
 """
 
-import numpy as np
 import json
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import Dict, List, Optional
+
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)

@@ -14,12 +14,13 @@ Artificial Grammar Learning paradigms:
 - Implicit learning: Unconscious pattern recognition
 """
 
-import numpy as np
 import json
 import random
 from dataclasses import dataclass
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import Dict, List, Optional
+
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)

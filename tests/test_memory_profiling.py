@@ -292,8 +292,8 @@ class TestMemoryStress:
 
     def test_concurrent_memory_pressure(self, memory_tracker: MemoryTracker) -> None:
         """Test memory handling under concurrent pressure."""
-        import threading
         import queue
+        import threading
 
         memory_tracker.snapshot("start")
         results_queue: queue.Queue[Any] = queue.Queue()
@@ -454,8 +454,8 @@ class TestMemoryWithAPGI:
 
     def test_checkpoint_memory(self, memory_tracker: MemoryTracker) -> None:
         """Test memory usage when creating checkpoints."""
-        import tempfile
         import json
+        import tempfile
 
         memory_tracker.snapshot("start")
 

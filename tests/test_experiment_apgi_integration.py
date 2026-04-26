@@ -4,13 +4,14 @@ Test suite for experiment_apgi_integration.py module.
 Tests APGI integration functionality for experiments.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+import os
+import pathlib
 
 # Add the parent directory to the path to import the module
 import sys
-import pathlib
-import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 

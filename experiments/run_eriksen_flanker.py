@@ -18,25 +18,26 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, cast, Any, Optional
+from typing import Any, Dict, Optional, cast
+
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
+from apgi_integration import APGIIntegration, APGIParameters
 
 from .prepare_eriksen_flanker import (
-    FlankerExperiment,
-    TIME_BUDGET,
     APGI_PARAMS,
+    TIME_BUDGET,
+    FlankerExperiment,
     TrialType,
 )
-from apgi_integration import APGIIntegration, APGIParameters
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

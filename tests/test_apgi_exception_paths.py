@@ -18,6 +18,8 @@ Addresses critical gap: "Exception Handlers (APGI_System.py)"
 from __future__ import annotations
 
 import math
+
+# Ensure imports work
 import sys
 import threading
 from pathlib import Path
@@ -25,20 +27,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-# Ensure imports work
-import sys
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from APGI_System import (
-    FoundationalEquations,
-    CoreIgnitionSystem,
-    DynamicalSystemEquations,
-    RunningStatistics,
-    MeasurementEquations,
     APGIParameters,
     APGIStateLibrary,
+    CoreIgnitionSystem,
+    DynamicalSystemEquations,
+    FoundationalEquations,
+    MeasurementEquations,
     NeuromodulatorSystem,
+    RunningStatistics,
 )
 
 # =============================================================================

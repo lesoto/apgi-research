@@ -8,26 +8,20 @@ import gc
 import math
 import os
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import cast
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from kernels import get_kernel
-from prepare import (
-    MAX_SEQ_LEN,
-    TIME_BUDGET,
-    Tokenizer,
-    make_dataloader,
-    evaluate_bpb,
-)
+
+from prepare import MAX_SEQ_LEN, TIME_BUDGET, Tokenizer, evaluate_bpb, make_dataloader
 
 os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 
-from typing import Dict, Optional, Tuple, Callable, Any, List, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # Detect available device and set up training context
 cap: Optional[Tuple[int, int]]

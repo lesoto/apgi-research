@@ -19,22 +19,22 @@ Modification Guidelines:
 """
 
 import time
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
+from apgi_integration import APGIIntegration, APGIParameters
 
 from .prepare_virtual_navigation import (
-    VirtualNavigationExperiment,
-    TIME_BUDGET,
     APGI_PARAMS,
+    TIME_BUDGET,
+    VirtualNavigationExperiment,
 )
-from apgi_integration import APGIIntegration, APGIParameters
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

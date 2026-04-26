@@ -18,9 +18,10 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
 from typing import Any, Dict, List, Optional
+
+import numpy as np
 
 
 def safe_float(value: Any, default: float = 0.0) -> float:
@@ -42,23 +43,23 @@ def safe_float_list(value: Any, default: Optional[List[float]] = None) -> List[f
         return default or []
 
 
-from .prepare_multisensory_integration import (
-    MultisensoryExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    Modality,
-)
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_multisensory_integration import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    Modality,
+    MultisensoryExperiment,
+)
 from .ultimate_apgi_template import (
-    UltimateAPGIParameters,
     HierarchicalProcessor,
     PrecisionExpectationState,
+    UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

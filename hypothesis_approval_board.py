@@ -7,11 +7,11 @@ hypotheses for experiments before execution.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, asdict
-from pathlib import Path
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

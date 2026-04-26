@@ -9,19 +9,19 @@ Usage:
 Data and tokenizer are stored in ~/.cache/autoresearch/.
 """
 
-import os
-import time
-import shutil
-from pathlib import Path
-import tempfile
-import math
 import argparse
+import math
+import os
 import pickle
+import shutil
+import tempfile
+import time
 from multiprocessing import Pool
-from typing import Iterator, List, Optional, Any, Tuple, cast
+from pathlib import Path
+from typing import Any, Iterator, List, Optional, Tuple, cast
 
-import requests
 import pyarrow.parquet as pq
+import requests
 import rustbpe
 import torch
 from tqdm import tqdm

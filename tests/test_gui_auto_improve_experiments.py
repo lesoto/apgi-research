@@ -4,14 +4,15 @@ Test suite for GUI-auto_improve_experiments.py module.
 Tests GUI functionality for APGI experiment management.
 """
 
-import os
-import pytest
 import importlib
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+import os
 
 # Add the parent directory to the path to import the module
 import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

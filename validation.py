@@ -5,14 +5,14 @@ Provides validation functions for experiment parameters,
 file modifications, and git operations to prevent security issues.
 """
 
-import os
-import re
 import math
+import os
 import platform
+import re
 import tempfile
-from pathlib import Path
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 def get_dangerous_system_paths() -> List[str]:
@@ -777,8 +777,8 @@ def check_guardrails(
     Returns:
         List of GuardrailEscalation objects (empty = all clear)
     """
-    import math as _math
     import logging as _logging
+    import math as _math
 
     _logger = _logging.getLogger(__name__)
     escalations: List[GuardrailEscalation] = []

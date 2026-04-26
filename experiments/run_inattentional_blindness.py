@@ -18,31 +18,32 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Any, Dict, Optional, cast, Union, List
+from typing import Any, Dict, List, Optional, Union, cast
 
-# Import fixed configurations from prepare_inattentional_blindness.py
-from .prepare_inattentional_blindness import (
-    InattentionalBlindnessGenerator,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    TrialType,
-    IBTrial,
-    TASK_TYPES,
-    UNEXPECTED_OBJECTS,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+# Import fixed configurations from prepare_inattentional_blindness.py
+from .prepare_inattentional_blindness import (
+    APGI_PARAMS,
+    TASK_TYPES,
+    TIME_BUDGET,
+    UNEXPECTED_OBJECTS,
+    IBTrial,
+    InattentionalBlindnessGenerator,
+    TrialType,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # Type aliases for compatibility
 InattentionalBlindnessTrial = IBTrial

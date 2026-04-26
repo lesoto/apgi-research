@@ -16,17 +16,15 @@ Usage:
     results = apgi_runner.run_experiment()
 """
 
-import time
 import signal
-import numpy as np
-from typing import Dict, List, Optional, Any, Callable
+import time
 from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional
+
+import numpy as np
 
 # Import APGI components
-from apgi_integration import (
-    APGIIntegration,
-)
-from apgi_integration import compute_apgi_enhanced_metric
+from apgi_integration import APGIIntegration, compute_apgi_enhanced_metric
 from experiments.experiment_apgi_integration import (
     ExportedAPGIParams,
     get_experiment_apgi_config,

@@ -29,10 +29,11 @@ Usage in Experiments:
     apgi_metrics = apgi.get_trial_metrics()
 """
 
-import numpy as np
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Any
 from collections import deque
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 from apgi_profiler import enforce_budget, profile_hot_path
 

@@ -19,23 +19,26 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
 from typing import Any, Dict, List, Tuple
 
+import numpy as np
+
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # Import fixed configurations from prepare_change_blindness.py
 from .prepare_change_blindness import (
-    ChangeBlindnessExperiment,
     TIME_BUDGET,
-    TrialType,
     CBTrial,
+    ChangeBlindnessExperiment,
+    TrialType,
 )
-
-# APGI Integration
 
 # Import full APGI integration
 from .standard_apgi_runner import StandardAPGIRunner, get_experiment_apgi_config
-from apgi_cli import cli_entrypoint, create_standard_parser
+
+# APGI Integration
+
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization

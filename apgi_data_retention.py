@@ -5,15 +5,15 @@ Implements enforceable retention policies, real deletion executors,
 and key-destruction workflows for GDPR/CCPA/HIPAA compliance.
 """
 
-from typing import Dict, List, Optional, Any, Callable
+import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import json
-import os
+from typing import Any, Callable, Dict, List, Optional
 
+from apgi_audit import AuditEventType, get_audit_sink
 from apgi_logging import get_logger
-from apgi_audit import get_audit_sink, AuditEventType
 
 
 class RetentionPolicy(Enum):
@@ -98,10 +98,14 @@ class DeletionExecutor:
     ) -> bool:
         """Delete experiment data for a subject."""
         try:
-            if data_path and os.path.exists(data_path):
-                # Real deletion: remove file
-                os.remove(data_path)
-                self.logger.info(f"Deleted experiment data: {data_path}")
+            if data_path:
+                if os.path.exists(data_path):
+                    # Real deletion: remove file
+                    os.remove(data_path)
+                    self.logger.info(f"Deleted experiment data: {data_path}")
+                else:
+                    # File doesn't exist - this is a failure
+                    raise FileNotFoundError(f"Data path does not exist: {data_path}")
 
             # Audit deletion
             self.audit_sink.record_event(
@@ -265,27 +269,39 @@ class RetentionJobScheduler:
         """Execute deletion for a data subject."""
         try:
             # Delete each data category
+            all_success = True
             for category in record.data_categories:
                 if category == "experiment":
                     # Delete experiment data (would need actual data path)
-                    self.deletion_executor.delete_experiment_data(
+                    success = self.deletion_executor.delete_experiment_data(
                         record.subject_id,
                         f"experiment_{record.subject_id}",
                     )
+                    if not success:
+                        all_success = False
                 elif category == "config":
-                    self.deletion_executor.delete_config_data(
+                    success = self.deletion_executor.delete_config_data(
                         record.subject_id,
                         f"config_{record.subject_id}",
                     )
+                    if not success:
+                        all_success = False
                 elif category == "kms_key":
-                    self.deletion_executor.destroy_kms_key(
+                    success = self.deletion_executor.destroy_kms_key(
                         record.subject_id,
                         f"key_{record.subject_id}",
                     )
+                    if not success:
+                        all_success = False
 
-            record.mark_deletion_complete()
-            self.logger.info(f"Deletion completed for subject {record.subject_id}")
-            return True
+            if all_success:
+                record.mark_deletion_complete()
+                self.logger.info(f"Deletion completed for subject {record.subject_id}")
+            else:
+                self.logger.warning(
+                    f"Partial deletion failure for subject {record.subject_id}"
+                )
+            return all_success
         except Exception as e:
             self.logger.error(f"Deletion failed for subject {record.subject_id}: {e}")
             return False

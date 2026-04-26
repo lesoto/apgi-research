@@ -1,6 +1,8 @@
+from typing import Any, Dict
+
 import pytest
-from apgi_protocols import ExperimentRunnerProtocol, BaseAPGIRunner
-from typing import Dict, Any
+
+from apgi_protocols import BaseAPGIRunner, ExperimentRunnerProtocol
 
 
 class ValidRunner:

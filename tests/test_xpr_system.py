@@ -1,7 +1,8 @@
 import unittest
+
+from autonomous_agent import ExecutionReport, ExperimentPlan
 from memory_store import MemoryStore
 from xpr_agent_engine import XPRAgentEngine
-from autonomous_agent import ExperimentPlan, ExecutionReport
 
 
 class TestXPRSystem(unittest.TestCase):

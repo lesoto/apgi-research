@@ -18,26 +18,27 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, Optional, List, cast
+from typing import Any, Dict, List, Optional, cast
 
-from .prepare_change_blindness import (
-    ChangeBlindnessExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_change_blindness import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    ChangeBlindnessExperiment,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

@@ -21,8 +21,8 @@ from typing import Any, Generator, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pytest import MonkeyPatch
 from playwright.sync_api import Page
+from pytest import MonkeyPatch
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -163,6 +163,7 @@ class TestGUIBasic:
 
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -182,6 +183,7 @@ class TestGUIBasic:
         """Test that experiments are discovered correctly."""
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -211,6 +213,7 @@ class TestGUIInteraction:
         """Test menu bar is created with all menu items."""
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -228,6 +231,7 @@ class TestGUIInteraction:
         """Test experiment buttons are created."""
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -250,6 +254,7 @@ class TestGUIInteraction:
         """Test status indicators are tracked."""
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -285,8 +290,9 @@ class TestGUIVisualRegression:
         """Test GUI rendering against baseline."""
         try:
             import customtkinter as ctk
-            from GUI_auto_improve_experiments import ExperimentRunnerGUI
             from PIL import Image
+
+            from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
 
@@ -363,6 +369,7 @@ class TestGUIE2E:
         """Test complete experiment workflow from selection to completion."""
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -420,6 +427,7 @@ class TestGUIPerformance:
         """Benchmark GUI startup time."""
         try:
             import customtkinter as ctk
+
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
@@ -448,10 +456,12 @@ class TestGUIPerformance:
     ) -> None:
         """Test GUI memory usage stays within bounds."""
         try:
-            import customtkinter as ctk
-            from GUI_auto_improve_experiments import ExperimentRunnerGUI
-            import psutil
             import os
+
+            import customtkinter as ctk
+            import psutil
+
+            from GUI_auto_improve_experiments import ExperimentRunnerGUI
         except ImportError:
             pytest.skip("Required dependencies not installed")
 

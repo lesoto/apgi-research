@@ -21,10 +21,11 @@ APGI Framework Integration:
 - Precision expectation gap for anticipatory anxiety
 """
 
-import numpy as np
 import json
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional, cast
+from typing import Dict, List, Optional, Tuple, cast
+
+import numpy as np
 
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)

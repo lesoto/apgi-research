@@ -18,30 +18,31 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
-# Import fixed configurations from prepare_ai_benchmarking.py
-from .prepare_ai_benchmarking import (
-    TIME_BUDGET,
-    APGI_PARAMS,
-    AIBenchmarkTrial,
-    AIBenchmarkGenerator,
-    BenchmarkType,
-    Difficulty,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+# Import fixed configurations from prepare_ai_benchmarking.py
+from .prepare_ai_benchmarking import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    AIBenchmarkGenerator,
+    AIBenchmarkTrial,
+    BenchmarkType,
+    Difficulty,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS - Edit these to experiment with task optimization

@@ -17,9 +17,10 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
 from typing import Any, Dict, List, Optional, Union, cast
+
+import numpy as np
 
 
 def safe_float(value: Any, default: float = 0.0) -> float:
@@ -40,21 +41,20 @@ def safe_float_list(
         return default
 
 
-from .prepare_probabilistic_category_learning import (
-    PCLExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-)
-
-from apgi_integration import APGIIntegration, APGIParameters
-from .ultimate_apgi_template import (
-    UltimateAPGIParameters,
-    HierarchicalProcessor,
-    PrecisionExpectationState,
-)
-
 # Standardized APGI imports
 from apgi_cli import cli_entrypoint, create_standard_parser
+from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_probabilistic_category_learning import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    PCLExperiment,
+)
+from .ultimate_apgi_template import (
+    HierarchicalProcessor,
+    PrecisionExpectationState,
+    UltimateAPGIParameters,
+)
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS

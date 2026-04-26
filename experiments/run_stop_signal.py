@@ -18,28 +18,28 @@ Modification Guidelines:
     - Time budget: 10 minutes max per run
 """
 
-import numpy as np
 import time
-from typing import Dict, Any, cast, Optional
+from typing import Any, Dict, Optional, cast
 
-from .prepare_stop_signal import (
-    StopSignalExperiment,
-    TIME_BUDGET,
-    APGI_PARAMS,
-    StopSignalExperiment,
-    TrialType,
-)
+import numpy as np
+
+# Standardized APGI imports
+from apgi_cli import cli_entrypoint, create_standard_parser
 
 # APGI Integration
 from apgi_integration import APGIIntegration, APGIParameters
+
+from .prepare_stop_signal import (
+    APGI_PARAMS,
+    TIME_BUDGET,
+    StopSignalExperiment,
+    TrialType,
+)
 from .ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
 )
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
 
 # ---------------------------------------------------------------------------
 # MODIFIABLE PARAMETERS
