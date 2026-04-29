@@ -62,7 +62,7 @@ class CoverageConfig:
             "source = " + ", ".join(self.source_dirs),
             "branch = True",
             "parallel = True",
-            "concurrency = threading, multiprocessing",
+            "concurrency = thread, multiprocessing",
             "omit = " + "\n    ".join(self.exclude_patterns),
             "",
             "[report]",

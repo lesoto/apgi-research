@@ -29,6 +29,7 @@ Usage in Experiments:
     apgi_metrics = apgi.get_trial_metrics()
 """
 
+import math
 from collections import deque
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -949,8 +950,17 @@ class APGIIntegration:
         theta = self.dynamics.theta
         M = self.dynamics.M
         rng = self.dynamics.rng
+        sqrt_dt = math.sqrt(dt)
 
-        sqrt_dt = np.sqrt(dt)
+        # Pre-generate noise for the entire batch to avoid RNG overhead in the loop
+        noise_S_vec = rng.normal(0, 1, n_trials)
+        noise_theta_vec = rng.normal(0, 1, n_trials)
+        noise_M_vec = rng.normal(0, 1, n_trials)
+        prob_rng_vec = rng.random(n_trials)
+
+        # Localize math functions for faster access
+        exp = math.exp
+        tanh = math.tanh
 
         for i in range(n_trials):
             e_ext = error_ext[i]
@@ -959,40 +969,53 @@ class APGIIntegration:
             Pi_i_base = precision_int_arr[i]
 
             # Effective interoceptive precision
-            sigmoid = 1.0 / (1.0 + np.exp(np.clip(-(M - M_0), -500, 500)))
+            clip_val = -(M - M_0)
+            if clip_val > 500:
+                clip_val = 500
+            elif clip_val < -500:
+                clip_val = -500
+            sigmoid = 1.0 / (1.0 + exp(clip_val))
             Pi_i_eff = Pi_i_base * (1.0 + beta * sigmoid)
 
             # Signal dynamics
             input_S = 0.5 * Pi_e * (e_ext**2) + 0.5 * Pi_i_eff * (e_int**2)
-            noise_S = sigma_S * rng.normal() / sqrt_dt
+            noise_S = sigma_S * noise_S_vec[i] / sqrt_dt
             dS_dt = -S / tau_S + input_S + noise_S
-            S = max(0.0, S + dS_dt * dt)
+            S = S + dS_dt * dt
+            if S < 0:
+                S = 0.0
 
             # Threshold dynamics
-            noise_theta = sigma_theta * rng.normal() / sqrt_dt
+            noise_theta = sigma_theta * noise_theta_vec[i] / sqrt_dt
             dtheta_dt = (
                 ((theta_0 - theta) / tau_theta)
                 + gamma_M * M
                 + lambda_S * S
                 + noise_theta
             )
-            theta = max(0.01, theta + dtheta_dt * dt)
+            theta = theta + dtheta_dt * dt
+            if theta < 0.01:
+                theta = 0.01
 
             # Somatic marker
-            M_star = np.tanh(beta * e_int)
-            noise_M = sigma_M * rng.normal() / sqrt_dt
+            M_star = tanh(beta * e_int)
+            noise_M = sigma_M * noise_M_vec[i] / sqrt_dt
             dM_dt = (M_star - M) / tau_M + noise_M
-            M = np.clip(M + dM_dt * dt, -2.0, 2.0)
+            M = M + dM_dt * dt
+            if M > 2.0:
+                M = 2.0
+            elif M < -2.0:
+                M = -2.0
 
             # Ignition
             z = alpha * (S - theta)
             if z >= 0:
-                prob = 1.0 / (1.0 + np.exp(-z))
+                prob = 1.0 / (1.0 + exp(-z))
             else:
-                z_exp = np.exp(z)
+                z_exp = exp(z)
                 prob = z_exp / (1.0 + z_exp)
 
-            ignited = rng.random() < prob or prob > 0.8
+            ignited = prob_rng_vec[i] < prob or prob > 0.8
             if ignited:
                 S *= 1.0 - rho
 

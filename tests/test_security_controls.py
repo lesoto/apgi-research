@@ -292,7 +292,11 @@ class TestSubprocessSecurity:
     @pytest.mark.security
     def test_secure_popen_allows_whitelisted_commands(self):
         """Test that whitelisted commands are allowed."""
+        import apgi_security
         from apgi_security import SecureSubprocessError, secure_popen
+
+        # Clear the global singleton to force re-creation with new env
+        apgi_security._default_subprocess_wrapper = None
 
         # Should not raise for allowed commands
         # Using 'echo' which is typically allowed in tests
@@ -301,8 +305,8 @@ class TestSubprocessSecurity:
                 proc = secure_popen(["echo", "test"], stdout=-1)  # -1 = PIPE
                 proc.communicate()
                 proc.wait()
-            except SecureSubprocessError:
-                pytest.skip("Echo not in default allowlist")
+            except SecureSubprocessError as e:
+                pytest.fail(f"Echo should be allowed: {e}")
 
 
 # =============================================================================

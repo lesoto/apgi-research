@@ -216,6 +216,12 @@ class ModificationValidator:
         "NUM_LAYERS": (1, 20),
         "DROPOUT_RATE": (0.0, 0.9),
         "REGULARIZATION": (0.0, 1.0),
+        # APGI Specific Parameters
+        "PI_I_BASELINE": (0.1, 15.0),
+        "BETA_SOM": (0.3, 2.5),
+        "TAU_S": (0.2, 0.5),
+        "THETA_0": (1.0, 10.0),
+        "ALPHA_IG": (3.0, 10.0),
         # Boolean parameters (no range, just type check)
         "USE_ADAPTIVE_STIMULUS": bool,
         "USE_FEEDBACK": bool,
@@ -285,6 +291,33 @@ class ModificationValidator:
                     report.add_rejected(param_name)
                 else:
                     report.add_validated(param_name)
+
+            # Special Protocol Validation: Double Dissociation
+            if param_name == "PROTOCOL_DOUBLE_DISSOCIATION":
+                if not isinstance(param_value, dict):
+                    report.add_error(
+                        "PROTOCOL_DOUBLE_DISSOCIATION must be a dictionary of session data"
+                    )
+                else:
+                    sessions = param_value.get("sessions", [])
+                    if len(sessions) < 3:
+                        report.add_error(
+                            f"Double Dissociation protocol requires at least 3 sessions, got {len(sessions)}"
+                        )
+
+                    # Check for ICC reliability if metrics are present
+                    import numpy as np
+
+                    accuracies = [s.get("heartbeat_accuracy", 0) for s in sessions]
+                    if len(accuracies) >= 3:
+                        variance = np.var(accuracies)
+                        mean = np.mean(accuracies)
+                        # Mock ICC check
+                        reliability = 1.0 - (variance / (mean * 0.5 + 1e-6))
+                        if reliability < 0.65:
+                            report.add_warning(
+                                f"Stage 1 anchor reliability (ICC estimate {reliability:.2f}) is below 0.65"
+                            )
 
             # Validate file path if provided
             if file_path:

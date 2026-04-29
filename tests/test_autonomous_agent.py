@@ -329,13 +329,17 @@ class TestAutonomousAgent:
 
     def create_mock_experiment_files(self):
         """Create mock experiment files for testing."""
+        # Create experiments subdirectory
+        experiments_dir = self.repo_path / "experiments"
+        experiments_dir.mkdir(exist_ok=True)
+
         # Create prepare file
         prepare_content = """
 "Mock experiment preparation."
 NUM_TRIALS_CONFIG = 50
 BASE_DETECTION_RATE = 0.5
 """
-        (self.repo_path / "prepare_test_experiment.py").write_text(prepare_content)
+        (experiments_dir / "prepare_test_experiment.py").write_text(prepare_content)
 
         # Create run file
         run_content = """
@@ -347,15 +351,14 @@ BASE_DETECTION_RATE = 0.5
 
 class MockRunner:
     def run_experiment(self):
-        "Mock experiment execution."
-        time.sleep(0.1)  # Simulate processing time
+        time.sleep(0.01)  # Simulate some work
         return {
             "accuracy": BASE_DETECTION_RATE,
             "primary_metric": BASE_DETECTION_RATE,
             "completion_time": 1.0
         }
 """
-        (self.repo_path / "run_test_experiment.py").write_text(run_content)
+        (experiments_dir / "run_test_experiment.py").write_text(run_content)
 
     def test_initialization(self):
         """Test agent initialization."""
@@ -365,35 +368,14 @@ class MockRunner:
         assert agent.experiment_modules is not None
         assert agent.running is False
 
-    @patch("importlib.import_module")
-    def test_load_experiment_modules(self, mock_import):
+    def test_load_experiment_modules(self):
         """Test loading experiment modules."""
-        # Mock the importlib.import_module calls
-        mock_prepare = Mock()
-        mock_run = Mock()
-        mock_import.side_effect = [mock_prepare, mock_run]
+        # Initialize agent with actual repository path to load real experiment modules
+        actual_repo_path = Path(__file__).parent.parent
+        agent = AutonomousAgent(str(actual_repo_path))
 
-        # Create a temporary directory with our test files
-        temp_exp_dir = self.repo_path / "temp_experiments"
-        temp_exp_dir.mkdir()
-
-        # Change to the temp directory temporarily
-        original_cwd = os.getcwd()
-        os.chdir(temp_exp_dir)
-
-        try:
-            # Create mock experiment files in temp directory
-            (temp_exp_dir / "prepare_test_experiment.py").write_text("# test")
-            (temp_exp_dir / "run_test_experiment.py").write_text("# test")
-
-            agent = AutonomousAgent(str(self.repo_path))
-
-            # Check that some modules were loaded (actual experiment files from repo)
-            assert len(agent.experiment_modules) > 0
-
-        finally:
-            os.chdir(original_cwd)
-            shutil.rmtree(temp_exp_dir, ignore_errors=True)
+        # Check that some modules were loaded (actual experiment files from repo)
+        assert len(agent.experiment_modules) > 0
 
     def test_get_current_parameters(self):
         """Test extracting current parameters from run file."""
@@ -402,7 +384,9 @@ class MockRunner:
         # Mock the experiment modules
         agent.experiment_modules = {
             "test_experiment": {
-                "run_file": str(self.repo_path / "run_test_experiment.py")
+                "run_file": str(
+                    self.repo_path / "experiments" / "run_test_experiment.py"
+                )
             }
         }
 
@@ -417,7 +401,7 @@ class MockRunner:
         """Test applying parameter modifications."""
         agent = AutonomousAgent(str(self.repo_path))
 
-        run_file = self.repo_path / "run_test_experiment.py"
+        run_file = self.repo_path / "experiments" / "run_test_experiment.py"
         modifications = {"BASE_DETECTION_RATE": 0.75}
 
         # Apply modifications

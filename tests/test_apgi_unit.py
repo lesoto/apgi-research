@@ -754,23 +754,24 @@ class TestPerformanceMonitoring:
         monitor = PerformanceMonitor()
 
         # Add baseline operations (consistent duration)
-        for i in range(10):
+        for i in range(15):
             metrics = monitor.start_operation(f"baseline_{i}")
-            time.sleep(0.01)  # 10ms baseline
+            time.sleep(0.005)  # 5ms baseline
             monitor.end_operation(metrics, success=True)
 
-        # Add recent operations (much slower - 200ms vs 10ms = 20x slower)
-        for i in range(5):
+        # Add recent operations (significantly slower)
+        for i in range(10):
             metrics = monitor.start_operation(f"recent_{i}")
-            time.sleep(0.2)  # 200ms - significantly slower than 10ms baseline
+            time.sleep(0.1)  # 100ms - much slower than 5ms
             monitor.end_operation(metrics, success=True)
 
-        regression = monitor.detect_performance_regression()
+        # Use windows that match our data: 15 baselines and 10 recents
+        regression = monitor.detect_performance_regression(
+            baseline_window=15, current_window=10
+        )
 
         assert regression["status"] == "detected"
-        # Recent operations are slower than baseline -> positive regression
-        assert regression["regression_percent"] != 0  # Should detect some change
-        assert abs(regression["regression_percent"]) > 10  # Significant change detected
+        assert regression["regression_percent"] > 50
         assert regression["significance"] in [
             "moderate_regression",
             "significant_regression",

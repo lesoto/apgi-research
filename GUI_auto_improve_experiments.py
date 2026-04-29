@@ -4,7 +4,7 @@ Modernized for apgi-research directory with CustomTkinter.
 
 import os
 
-# CRITICAL: Must set multiprocessing start method BEFORE any other imports on macOS
+# CRITICAL: Must set multiprocessing start method BEFORE ANY OTHER IMPORTS on macOS
 # to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
 import sys
 
@@ -1453,6 +1453,9 @@ class ExperimentRunnerGUI(ctk.CTk):
             env["PYTHONPATH"] = (
                 str(self.research_dir) + os.pathsep + env.get("PYTHONPATH", "")
             )
+            # Prevent CoreFoundation fork warnings in subprocesses on macOS
+            if sys.platform == "darwin":
+                env["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
             # Run as module to support relative imports
             proc = subprocess.Popen(
@@ -2240,11 +2243,15 @@ class ExperimentRunnerGUI(ctk.CTk):
 
         def install() -> None:
             try:
+                env = os.environ.copy()
+                if sys.platform == "darwin":
+                    env["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
                 proc = subprocess.Popen(
                     [sys.executable, "-m", "pip", "install"] + packages,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
+                    env=env,
                 )
 
                 stdout, stderr = proc.communicate()

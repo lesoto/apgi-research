@@ -8,7 +8,7 @@ This module provides comprehensive APGI metrics calculation including:
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -26,7 +26,9 @@ class IgnitionMetrics:
     ignition_threshold: float  # Current threshold for ignition
     ignition_volatility: float  # Variability in ignition timing
     cumulative_ignition_prob: float  # Cumulative ignition probability
-    ignition_events: List[float] = []  # Raw ignition events for statistical testing
+    ignition_events: List[float] = field(
+        default_factory=list
+    )  # Raw ignition events for statistical testing
 
 
 @dataclass

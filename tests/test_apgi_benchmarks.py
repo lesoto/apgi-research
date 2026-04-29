@@ -388,6 +388,13 @@ class TestEndToEndThroughput:
 
         runner = StroopRunner()
 
+        # Get actual trial count from the experiment
+        actual_trials = (
+            getattr(runner.experiment, "num_trials", 100)
+            if hasattr(runner, "experiment")
+            else 100
+        )
+
         def run() -> None:
             runner.reset()
             runner.run_experiment()
@@ -395,7 +402,7 @@ class TestEndToEndThroughput:
         result = benchmark_runner(
             "Stroop",
             run,
-            trials_count=1,
+            trials_count=actual_trials,
         )
 
         print(f"\n{result}")

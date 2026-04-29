@@ -289,6 +289,19 @@ class ParameterOptimizer:
                 exploration_rate=0.05,
                 learning_rate=0.05,
             ),
+            "double_dissociation": OptimizationStrategy(
+                name="precision_gain_optimization",
+                description="Optimize interoceptive precision and somatic gain decoupling",
+                parameter_ranges={
+                    "PI_I_BASELINE": (0.1, 15.0, "float"),
+                    "BETA_SOM": (0.3, 2.5, "float"),
+                    "ALPHA_IG": (3.0, 10.0, "float"),
+                    "TAU_S": (0.2, 0.5, "float"),
+                },
+                mutation_strength=0.1,
+                exploration_rate=0.1,
+                learning_rate=0.05,
+            ),
             "default": OptimizationStrategy(
                 name="general_optimization",
                 description="General purpose optimization strategy",
@@ -817,8 +830,8 @@ class AutonomousAgent:
         """Dynamically load experiment modules."""
         modules = {}
 
-        # Find all prepare_*.py files in the repository directory
-        prepare_files = list(self.repo_path.glob("prepare_*.py"))
+        # Find all prepare_*.py files in the experiments subdirectory
+        prepare_files = list((self.repo_path / "experiments").glob("prepare_*.py"))
 
         for prepare_file in prepare_files:
             experiment_name = prepare_file.stem.replace("prepare_", "")
@@ -849,10 +862,13 @@ class AutonomousAgent:
                     )
 
                 # Use importlib.import_module for secure loading
+                # Modules are in the experiments package, so prefix with "experiments."
                 importlib.invalidate_caches()  # Clear stale module cache
-                prepare_module = importlib.import_module(prepare_module_name)
+                prepare_module = importlib.import_module(
+                    f"experiments.{prepare_module_name}"
+                )
                 importlib.invalidate_caches()  # Clear stale module cache
-                run_module = importlib.import_module(run_module_name)
+                run_module = importlib.import_module(f"experiments.{run_module_name}")
 
                 modules[experiment_name] = {
                     "prepare": prepare_module,

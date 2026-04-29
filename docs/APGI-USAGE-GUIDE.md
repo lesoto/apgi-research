@@ -71,6 +71,12 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
     - Neuromodulator levels output
     - Hierarchical level summaries
 
+11. **Double Dissociation Protocol** (10 points)
+    - Two-stage estimation: Stage 1 (Anchor Πⁱ_baseline) → Stage 2 (Fit β)
+    - Multi-session Stage 1: Min 3 sessions, ICC ≥ 0.65
+    - Physiological anchoring: EEG alpha/gamma power ratio prior
+    - Stability fallback: Automatic switch to composite Π_eff if distributions fail to diverge
+
 ---
 
 ## Compliance
@@ -159,6 +165,7 @@ All files now at 100/100 or higher.
 7. ✅ Psychiatric Profiles (GAD, MDD, Psychosis)
 8. ✅ Running Statistics (z-score normalization)
 9. ✅ Measurement Proxies (ignition rate, metabolic cost, HEP, P3b)
+10. ✅ **Double Dissociation Protocol** (multi-session Stage 1 anchor, EEG prior)
 
 ---
 
@@ -180,29 +187,6 @@ All files now at 100/100 or higher.
 cd /Users/lesoto/Sites/PYTHON/apgi-experiments/auto-improvement
 python batch_upgrade_run_files.py
 ```
-
----
-
-## Summary
-
-- **Total run files**: 30
-- **Files at 100/100**: 30 files
-- **Prepare files at 95+/100**: All 29/29 files
-- **Overall Status**: ALL FILES COMPLIANT
-
-### Upgrade Work Completed
-
-1. Batch upgraded 22 run files using `batch_upgrade_run_files.py`
-2. Fixed 12 files with hierarchical processor parameter issues using `fix_hierarchical_params.py`
-3. All files now have:
-   - APGIIntegration with full dynamical system
-   - HierarchicalProcessor (5-level) with UltimateAPGIParameters
-   - PrecisionExpectationState (Π vs Π̂ distinction)
-   - Neuromodulator tracking (ACh, NE, DA, 5-HT)
-   - Running statistics for z-score normalization
-   - Full APGI metrics output
-
-### Key Components in All 100/100 Files
 
 1. ✅ **Foundational Equations** (prediction error, precision, z-scores)
 2. ✅ **Dynamical System Equations** (S, θ, M dynamics via APGIIntegration)

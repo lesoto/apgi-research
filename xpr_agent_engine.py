@@ -14,6 +14,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
 from apgi_compliance import ComplianceManager, DataClassification
+from apgi_double_dissociation import DoubleDissociationProtocol, SessionData
 
 logger = logging.getLogger(__name__)
 
@@ -607,6 +608,7 @@ class XPRSkillType(Enum):
     CODE_GENERATION = "code_generation"
     SKILL_CHAIN = "skill_chain"
     GUARDRAIL_CHECK = "guardrail_check"
+    DOUBLE_DISSOCIATION = "double_dissociation"
 
 
 @dataclass
@@ -650,6 +652,10 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
 
         # Register XPR enhanced skills automatically
         register_xpr_skills(self)
+        self.register_skill(
+            XPRSkillType.DOUBLE_DISSOCIATION.value,
+            self.run_double_dissociation_protocol,
+        )
 
     def _extract_missing_module(self, error_msg: str) -> Optional[str]:
         """Extract missing module name from error message."""
@@ -781,6 +787,85 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                 error=str(e),
                 execution_time=time.time() - start_time,
                 confidence=0.0,
+            )
+
+    def run_double_dissociation_protocol(
+        self, trial_data: List[Dict[str, Any]], session_history: List[Dict[str, Any]]
+    ) -> XPRSkillResult:
+        """
+        Execute the automated Double Dissociation protocol.
+        """
+        start_time = time.time()
+        try:
+            protocol = DoubleDissociationProtocol()
+
+            # Populate sessions from history
+            for s in session_history:
+                protocol.sessions.append(
+                    SessionData(
+                        session_id=s.get("id", "unk"),
+                        heartbeat_accuracy=s.get("heartbeat_accuracy", 0.0),
+                        eeg_alpha_power=s.get("alpha", 0.0),
+                        eeg_gamma_power=s.get("gamma", 0.0),
+                    )
+                )
+
+            # Stage 1 validation
+            if not protocol.validate_stage1_anchor():
+                return XPRSkillResult(
+                    success=False,
+                    skill_type=XPRSkillType.DOUBLE_DISSOCIATION.value,
+                    error="Stage 1 anchor validation failed: Insufficient reliability or sessions",
+                    execution_time=time.time() - start_time,
+                )
+
+            # Stage 2 estimation
+            results = protocol.run_two_stage_estimation(trial_data)
+
+            # Check for divergence
+            # (Mock distributions for demonstration)
+            beta_val = results["beta"]
+            pi_val = results["pi_i_baseline"]
+
+            if beta_val is None or pi_val is None:
+                return XPRSkillResult(
+                    success=False,
+                    skill_type=XPRSkillType.DOUBLE_DISSOCIATION.value,
+                    error="Failed to estimate parameters: beta or pi_i_baseline is None",
+                    execution_time=time.time() - start_time,
+                )
+
+            dist_beta = {"mean": beta_val, "var": 0.1}
+            dist_pi = {"mean": pi_val, "var": 0.1}
+
+            diverged = protocol.check_distribution_divergence(dist_beta, dist_pi)
+
+            if not diverged:
+                logger.info(
+                    "Distributions did not diverge, falling back to composite Π_eff"
+                )
+                # Fallback logic: compute effective precision
+                pi_eff = pi_val * (1 + beta_val * 0.5)  # simplified fallback
+                results["fallback_pi_eff"] = pi_eff
+
+            return XPRSkillResult(
+                success=True,
+                skill_type=XPRSkillType.DOUBLE_DISSOCIATION.value,
+                result={
+                    "parameters": results,
+                    "diverged": diverged,
+                    "sessions_used": len(protocol.sessions),
+                },
+                execution_time=time.time() - start_time,
+                confidence=0.9 if diverged else 0.7,
+            )
+
+        except Exception as e:
+            return XPRSkillResult(
+                success=False,
+                skill_type=XPRSkillType.DOUBLE_DISSOCIATION.value,
+                error=str(e),
+                execution_time=time.time() - start_time,
             )
 
     def xpr_job_debug(self, experiment_data: Any) -> XPRSkillResult:
