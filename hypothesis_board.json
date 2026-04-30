@@ -1,0 +1,17 @@
+[
+  {
+    "id": "de7e8285-8034-4dc8-bd76-3be47c1bfd5d",
+    "title": "test1 ",
+    "description": "\n",
+    "predicted_outcome": "test1 test1 ",
+    "confidence_score": 0.7,
+    "success_criteria": [],
+    "risk_assessment": "low",
+    "reviewer_comments": "Approved via GUI review",
+    "status": "approved",
+    "created_at": "2026-04-30T17:47:36.160195",
+    "reviewed_at": "2026-04-30T17:47:59.451715",
+    "reviewed_by": "GUI Reviewer",
+    "tags": []
+  }
+]
