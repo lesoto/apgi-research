@@ -11,6 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 80
 
@@ -162,11 +164,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Simon Effect - Configuration Verification")
     print(f"Colors: {COLORS}")
     print(f"Positions: {POSITIONS}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Simon Effect preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Simon Effect experiment")
+    cli_entrypoint(main, parser)

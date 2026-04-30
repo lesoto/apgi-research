@@ -304,6 +304,7 @@ All prepare_*.py and run_*.py files need targeted tests to reach 90% coverage.
 **Goal:** Achieve 100% coverage on all remaining gaps
 
 Focus on:
+
 - Numeric edge cases (NaN, inf, boundary values)
 - Input validation (None, empty collections, type coercion)
 - Exception handling paths
@@ -420,6 +421,7 @@ All files at 90%+ coverage
 ### 6.1 Test Categories for 100% Coverage
 
 #### 1. Unit Tests (40% of new tests)
+
 ```python
 # Example: FoundationalEquations edge case test
 @pytest.mark.unit
@@ -434,6 +436,7 @@ def test_prediction_error_with_infinity():
 ```
 
 #### 2. Integration Tests (20% of new tests)
+
 ```python
 # Example: Experiment with APGI integration
 @pytest.mark.integration
@@ -452,6 +455,7 @@ def test_change_blindness_with_apgi_metrics():
 ```
 
 #### 3. Adversarial Tests (15% of new tests)
+
 ```python
 # Example: Security and edge case testing
 @pytest.mark.adversarial
@@ -472,6 +476,7 @@ def test_xpr_agent_with_malicious_input():
 ```
 
 #### 4. Property-Based Tests (10% of new tests)
+
 ```python
 # Example: Hypothesis-based testing
 from hypothesis import given, strategies as st
@@ -486,6 +491,7 @@ def test_precision_is_positive(a, b):
 ```
 
 #### 5. Performance Tests (10% of new tests)
+
 ```python
 # Example: Performance regression test
 @pytest.mark.performance
@@ -505,6 +511,7 @@ def test_apgi_simulation_performance():
 ```
 
 #### 6. Mutation-Resistant Tests (5% of new tests)
+
 ```python
 # Example: Tests that catch code mutations
 @pytest.mark.mutation_resistant
@@ -520,7 +527,7 @@ def test_z_score_with_known_values():
 
 ### 6.2 Test Naming Convention
 
-```
+```text
 test_<module>_<function>_<scenario>_<condition>
 
 test_apgi_system_precision_with_infinity_returns_capped_value
@@ -531,7 +538,7 @@ test_security_adapter_encrypt_with_unicode_handles_utf8_correctly
 
 ### 6.3 Test Organization
 
-```
+```text
 tests/
 ├── unit/                    # Unit tests (mirrors src structure)
 │   ├── test_apgi_system_unit.py
@@ -719,7 +726,7 @@ class CoverageDashboard:
 
 ---
 
-## Appendix A: Current Coverage Detailed Breakdown
+## Current Coverage Detailed Breakdown
 
 ### Core Module Line Counts
 

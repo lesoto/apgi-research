@@ -11,6 +11,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 20
 
@@ -265,11 +267,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Virtual Navigation - Configuration Verification")
     print(f"Environment Types: {[e.value for e in EnvironmentType]}")
     print(f"Maze Sizes: {MAZE_SIZES}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Virtual Navigation preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Virtual Navigation experiment")
+    cli_entrypoint(main, parser)

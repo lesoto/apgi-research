@@ -11,6 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 200
 
@@ -262,11 +264,21 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Probabilistic Category Learning - Configuration Verification")
     print(f"Rule Types: {[r.value for r in RuleType]}")
     print(f"Trials: {NUM_TRIALS}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Probabilistic Category Learning preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser(
+        "Prepare Probabilistic Category Learning experiment"
+    )
+    cli_entrypoint(main, parser)

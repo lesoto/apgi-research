@@ -10,7 +10,7 @@ Tests robustness against malformed inputs and edge cases.
 from __future__ import annotations
 
 import json
-import os
+import random
 import struct
 import sys
 from pathlib import Path
@@ -59,15 +59,16 @@ def generate_malformed_json() -> List[Union[str, bytes]]:
 
 def generate_malformed_numpy() -> List[bytes]:
     """Generate malformed numpy file inputs."""
+    rng = random.Random(42)  # Seeded for reproducibility
     return [
         b"",  # Empty
         b"\x93NUMPY",  # Invalid magic
         b"\x93NUMPY\x01\x00",  # Wrong version
         b"\x93NUMPY\x01\x00v\x00" + b"{" * 100,  # Invalid header
         struct.pack("<I", 0xFFFFFFFF),  # Max size
-        os.urandom(100),  # Random bytes
-        os.urandom(1000),
-        os.urandom(10000),
+        bytes(rng.randint(0, 255) for _ in range(100)),  # Random bytes
+        bytes(rng.randint(0, 255) for _ in range(1000)),
+        bytes(rng.randint(0, 255) for _ in range(10000)),
         b"\x00" * 100,  # Null bytes
         b"\xff" * 100,  # All high bytes
     ]

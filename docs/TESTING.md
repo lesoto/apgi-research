@@ -24,15 +24,39 @@ python tests/test_orchestrator.py
 
 ## Framework Structure
 
-### Test Files
+### Test Files (30+ comprehensive test files)
 
 | File | Description | Coverage |
 | ------ | ------------- | ---------- |
 | `conftest.py` | Test infrastructure, fixtures, and utilities | 100% |
 | `test_adversarial_apgi_core.py` | Adversarial unit tests for core APGI | Line, Branch, Path |
-| `test_integration_experiments.py` | Integration tests for workflows | E2E, I/O, Config |
-| `test_security.py` | Security tests (XSS, SQL injection, etc.) | Security |
+| `test_apgi_audit.py` | Audit system tests (logging, integrity, export) | Audit, Security |
+| `test_apgi_authz.py` | Authorization tests (RBAC, permissions, roles) | Security |
+| `test_apgi_benchmarks.py` | Performance benchmarks and regression tests | Performance |
+| `test_apgi_cli.py` | CLI framework tests (entry point, auth, parsing) | CLI, Integration |
+| `test_apgi_compliance.py` | Compliance control tests (GDPR, CCPA, HIPAA) | Compliance |
+| `test_apgi_config.py` | Configuration management tests (Pydantic, env vars) | Config |
+| `test_apgi_data_retention.py` | Data retention lifecycle tests | Compliance |
+| `test_apgi_exception_paths.py` | Error handling and recovery tests | Robustness |
+| `test_apgi_integration.py` | APGI integration tests | Integration |
+| `test_apgi_orchestration_kernel.py` | Orchestration kernel tests | Integration |
+| `test_apgi_security_adapters.py` | Security adapter tests | Security |
+| `test_apgi_timeout_abstraction.py` | Cross-platform timeout tests | Platform |
+| `test_apgi_unit.py` | Core unit tests for APGI functions | Unit |
+| `test_apgi_validation.py` | Parameter validation tests | Validation |
+| `test_autonomous_agent.py` | Autonomous agent controller tests | Core |
+| `test_experiment_apgi_integration.py` | Experiment integration tests | Integration |
+| `test_gui_playwright.py` | GUI automation tests with Playwright | UI, E2E |
+| `test_gui_simple.py` | Simple GUI component tests | UI |
+| `test_human_layer.py` | Human control layer tests | Core |
+| `test_integration_experiments.py` | Full experiment integration tests | E2E |
+| `test_memory_profiling.py` | Memory usage profiling tests | Performance |
+| `test_memory_store.py` | Memory system tests (TF-IDF, embeddings) | Core |
 | `test_performance_stress.py` | Performance and stress tests | Load, Scalability |
+| `test_rl_loop.py` | Reinforcement learning loop tests | Core |
+| `test_security.py` | Security tests (XSS, SQL injection, etc.) | Security |
+| `test_security_controls.py` | Security control mechanism tests | Security |
+| `test_xpr_agent_engine_comprehensive.py` | XPR agent engine tests | Core, LLM |
 | `coverage_config.py` | Coverage analysis and gap detection | Reporting |
 | `mutation_testing.py` | Mutation testing and weak assertion detection | Quality |
 | `test_orchestrator.py` | Test orchestration and reporting | Orchestration |

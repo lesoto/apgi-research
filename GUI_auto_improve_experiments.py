@@ -298,53 +298,6 @@ class ExperimentRunnerGUI(ctk.CTk):
         ctk.CTkLabel(
             self.guardrail_frame,
             text="⚡ Guardrails",
-            font=ctk.CTkFont(size=13, weight="bold"),
-            text_color="#e2e2e2",
-        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 4), sticky="w")
-
-        # Status indicator
-        ctk.CTkLabel(
-            self.guardrail_frame,
-            text="Status:",
-            font=ctk.CTkFont(size=11),
-            text_color="#aaaaaa",
-        ).grid(row=1, column=0, padx=(10, 2), pady=2, sticky="w")
-        self.guardrail_status_label = ctk.CTkLabel(
-            self.guardrail_frame,
-            text="IDLE",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#2ecc71",
-        )
-        self.guardrail_status_label.grid(
-            row=1, column=1, padx=(2, 10), pady=2, sticky="w"
-        )
-
-        # Confidence indicator
-        ctk.CTkLabel(
-            self.guardrail_frame,
-            text="Confidence:",
-            font=ctk.CTkFont(size=11),
-            text_color="#aaaaaa",
-        ).grid(row=2, column=0, padx=(10, 2), pady=2, sticky="w")
-        self.guardrail_confidence_label = ctk.CTkLabel(
-            self.guardrail_frame,
-            text="—",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#2ecc71",
-        )
-        self.guardrail_confidence_label.grid(
-            row=2, column=1, padx=(2, 10), pady=2, sticky="w"
-        )
-
-        # Regression indicator
-        ctk.CTkLabel(
-            self.guardrail_frame,
-            text="Regression:",
-            font=ctk.CTkFont(size=11),
-            text_color="#aaaaaa",
-        ).grid(row=3, column=0, padx=(10, 2), pady=2, sticky="w")
-        self.guardrail_regression_label = ctk.CTkLabel(
-            self.guardrail_frame,
             text="0.0%",
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#2ecc71",
@@ -358,7 +311,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             self.guardrail_frame,
             text="Escalations:",
             font=ctk.CTkFont(size=11),
-            text_color="#aaaaaa",
+            text_color="#333333",
         ).grid(row=4, column=0, padx=(10, 2), pady=(2, 8), sticky="w")
         self.guardrail_escalation_label = ctk.CTkLabel(
             self.guardrail_frame,
@@ -610,7 +563,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             header_frame,
             text=hypothesis.status.value.upper(),
             font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=status_colors.get(hypothesis.status, "#aaaaaa"),
+            text_color=status_colors.get(hypothesis.status, "#666666"),
         )
         status_label.pack(side="right", padx=5)
 
@@ -619,7 +572,10 @@ class ExperimentRunnerGUI(ctk.CTk):
         desc_frame.pack(fill="x", pady=(0, 5), padx=10)
 
         desc_label = ctk.CTkLabel(
-            desc_frame, text="Description:", font=ctk.CTkFont(size=11, weight="bold")
+            desc_frame,
+            text="Description:",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#333333",
         )
         desc_label.pack(anchor="w", padx=(0, 2))
 
@@ -714,7 +670,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                 self.hypothesis_scrollable,
                 text="No pending hypotheses to review",
                 font=ctk.CTkFont(size=12, slant="italic"),
-                text_color="#aaaaaa",
+                text_color="#333333",
             )
             no_hypotheses_label.pack(pady=20)
         else:
@@ -761,7 +717,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         name_label.grid(row=0, column=0, padx=15, pady=(15, 5), sticky="w")
 
         script_label = ctk.CTkLabel(
-            card, text=f"📄 {script}", font=ctk.CTkFont(size=12), text_color="gray"
+            card, text=f"📄 {script}", font=ctk.CTkFont(size=12), text_color="#444444"
         )
         script_label.grid(row=1, column=0, padx=15, pady=(0, 10), sticky="w")
 
@@ -931,7 +887,7 @@ class ExperimentRunnerGUI(ctk.CTk):
             config_dialog,
             text="Set bounds and constraints before XPR AUTO execution.",
             font=ctk.CTkFont(size=11),
-            text_color="#aaaaaa",
+            text_color="#333333",
         ).pack(pady=(0, 10))
 
         fields_frame = ctk.CTkFrame(config_dialog, fg_color="transparent")
@@ -1245,10 +1201,10 @@ class ExperimentRunnerGUI(ctk.CTk):
         def modify() -> None:
             """Modify: Run issue-fix chain and re-plan."""
             self._log("[XPR AGENT] Plan modification requested.", "#f39c12")
-            dialog.destroy()
 
-            # Get current plan text
+            # Get current plan text BEFORE destroying dialog
             current_plan_text = plan_text.get("0.0", "end").strip()
+            dialog.destroy()
 
             def run_modify_chain() -> None:
                 try:
@@ -1326,7 +1282,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                 priority_dialog,
                 text="Describe your priorities, constraints, or a new direction:",
                 font=ctk.CTkFont(size=11),
-                text_color="#aaaaaa",
+                text_color="#333333",
             ).pack(pady=(0, 5))
 
             priority_input = ctk.CTkTextbox(priority_dialog, height=120, width=450)

@@ -1354,13 +1354,22 @@ class AutonomousAgent:
 
                 # Extract JSON from LLM output
                 try:
-                    plan_data = json.loads(
-                        str(plan_result.result) if plan_result.result else "{}"
-                    )
+                    if plan_result.result and isinstance(plan_result.result, dict):
+                        # Result is already a dict, use it directly
+                        plan_data = plan_result.result
+                    elif plan_result.result:
+                        # Try to parse as JSON string
+                        result_str = str(plan_result.result).strip()
+                        # Handle single quotes (common Python dict representation)
+                        result_str = result_str.replace("'", '"')
+                        plan_data = json.loads(result_str)
+                    else:
+                        plan_data = {}
                     modifications = plan_data.get("modifications", {})
                 except Exception as e:
                     logger.warning(
-                        f"[APGI AGENT] Failed to parse Agent Engine JSON output: {e}. Fallback to empty."
+                        f"[APGI AGENT] Failed to parse Agent Engine JSON output: {e}. "
+                        f"Result type: {type(plan_result.result)}. Fallback to empty."
                     )
                     modifications = {}
 

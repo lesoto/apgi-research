@@ -11,6 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 20  # Fewer trials due to complex stimuli
 
@@ -246,11 +248,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Inattentional Blindness - Configuration Verification")
     print(f"Task Types: {TASK_TYPES}")
     print(f"Unexpected Objects: {UNEXPECTED_OBJECTS}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Inattentional Blindness preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Inattentional Blindness experiment")
+    cli_entrypoint(main, parser)

@@ -11,6 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 20
 
@@ -299,11 +301,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Working Memory Span - Configuration Verification")
     print(f"Span Levels: {SPAN_LEVELS}")
     print(f"Word Pool Size: {len(WORDS)}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Working Memory Span preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Working Memory Span experiment")
+    cli_entrypoint(main, parser)

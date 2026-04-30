@@ -2,53 +2,204 @@
 
 ## Introduction
 
-The APGI Research Application is an autonomous research system designed to optimize psychological experiments through AI-driven parameter tuning and continuous learning.
+The APGI Research Application is an autonomous research system designed to optimize psychological experiments through AI-driven parameter tuning and continuous learning. The system implements a complete Autonomous Learning Algorithm (ALGORITH) with human-in-the-loop oversight and production-grade security, compliance, and observability.
+
+**Last Updated:** April 2026
 
 ## Architecture
 
-The APGI Research Application implements a complete autonomous learning algorithm (ALGORITH) with human-in-the-loop oversight:
+The APGI Research Application implements a comprehensive autonomous learning algorithm with multiple integrated layers:
 
-### Core Components
+### Core System Components
 
-1. **Human Control Layer** (`human_layer.py`)
-   - `HumanControlLayer` - Interactive configuration and approval workflow
-   - Task prioritization with `TaskPriority` enum (CRITICAL, HIGH, MEDIUM, LOW)
-   - Review & Decision system with `ReviewDecision` enum (APPROVE, MODIFY, REJECT)
-   - Three interaction modes: interactive, batch, autonomous
-   - Integration with `hypothesis_approval_board.py` for hypothesis management
+#### 1. Human Control Layer (`human_layer.py`)
 
-2. **Agent Harness** (`autonomous_agent.py`)
-   - `AutonomousAgent` - Main controller orchestrating optimization loops
-   - `GitPerformanceTracker` - Version control-based performance tracking with async operations
-   - `ParameterOptimizer` - AI-driven parameter modification with experiment-specific strategies
-   - `AsyncGitOperations` - Non-blocking git commits for continuous optimization
-   - Checkpoint system for crash recovery
+- `HumanControlLayer` - Interactive configuration and approval workflow
+- Task prioritization with `TaskPriority` enum (CRITICAL, HIGH, MEDIUM, LOW)
+- Review & Decision system with `ReviewDecision` enum (APPROVE, MODIFY, REJECT)
+- Three interaction modes: interactive, batch, autonomous
+- Integration with `hypothesis_approval_board.py` for hypothesis management
 
-3. **Agent Execution Engine** (`xpr_agent_engine.py`)
-   - `XPRAgentEngine` - Core engine with skill registration and execution
-   - `XPRAgentEngineEnhanced` - Advanced engine with LLM integration via litellm
-   - `LLMIntegration` - Multi-provider LLM support (OpenAI, Anthropic, local models)
-   - Self-healing skill chain: `xpr_job_debug` → `xpr_issue_fix` → `xpr_issue_report`
-   - LLM-generated code patches with syntax validation
+#### 2. Agent Harness (`autonomous_agent.py`)
 
-4. **Memory System** (`memory_store.py`)
-   - `MemoryStore` - Indexed knowledge base with TF-IDF semantic search
-   - `MemoryEntry` - Structured storage for patterns, strategies, and failures
-   - `VectorEmbedding` - Neural-style embeddings for semantic similarity
-   - Hybrid search combining TF-IDF and vector similarity
-   - `update_memory_from_report()` - Automatic extraction of lessons learned
+- `AutonomousAgent` - Main controller orchestrating optimization loops
+- `GitPerformanceTracker` - Version control-based performance tracking with async operations
+- `ParameterOptimizer` - AI-driven parameter modification with experiment-specific strategies
+- `AsyncGitOperations` - Non-blocking git commits for continuous optimization
+- Checkpoint system for crash recovery
 
-5. **Experiment GUI** (`GUI-auto_improve_experiments.py`)
-   - `ExperimentRunnerGUI` - Modern CustomTkinter interface
-   - Real-time experiment execution and visualization
-   - Hypothesis approval board integration
-   - Results visualization with matplotlib
+#### 3. Agent Execution Engine (`xpr_agent_engine.py`)
 
-6. **APGI Core** (`APGI_System.py`)
-   - Complete dynamical system implementation
-   - 51 psychological states with Π vs Π̂ distinction
-   - Neuromodulator mapping (ACh, NE, DA, 5-HT)
-   - Measurement equations (HEP, P3b, detection thresholds)
+- `XPRAgentEngine` - Core engine with skill registration and execution
+- `XPRAgentEngineEnhanced` - Advanced engine with LLM integration via litellm
+- `LLMIntegration` - Multi-provider LLM support (OpenAI, Anthropic, local models)
+- Self-healing skill chain: `xpr_job_debug` → `xpr_issue_fix` → `xpr_issue_report`
+- LLM-generated code patches with syntax validation
+
+#### 4. Memory System (`memory_store.py`)
+
+- `MemoryStore` - Indexed knowledge base with TF-IDF semantic search
+- `MemoryEntry` - Structured storage for patterns, strategies, and failures
+- `VectorEmbedding` - Neural-style embeddings for semantic similarity
+- Hybrid search combining TF-IDF and vector similarity
+- `update_memory_from_report()` - Automatic extraction of lessons learned
+
+#### 5. Experiment GUI (`GUI_auto_improve_experiments.py`)
+
+- `ExperimentRunnerGUI` - Modern CustomTkinter interface
+- Real-time experiment execution and visualization
+- Hypothesis approval board integration
+- Results visualization with matplotlib
+- Guardrail dashboard with live metrics
+- 1400×900 pixel default window, responsive layout
+
+#### 6. APGI Core (`APGI_System.py`)
+
+- Complete dynamical system implementation
+- 51 psychological states with Π vs Π̂ distinction
+- Neuromodulator mapping (ACh, NE, DA, 5-HT)
+- Measurement equations (HEP, P3b, detection thresholds)
+- Hierarchical 5-level processing
+- Psychiatric profile modeling (GAD, MDD, Psychosis)
+
+### Production Infrastructure Modules
+
+#### 7. Config Management (`apgi_config.py`)
+
+- `APGIExperimentConfigSchema` - Pydantic schema for experiment config
+- `APGISecurityConfigSchema` - Security configuration validation
+- `APGIMetricsConfigSchema` - Metrics and monitoring config
+- `ConfigManager` - Singleton configuration manager with:
+  - Environment variable loading (APGI_* prefix)
+  - JSON/YAML config file support
+  - LRU caching for performance
+  - Source tracking for debugging
+
+#### 8. CLI Framework (`apgi_cli.py`)
+
+- Standardized CLI entry point with `cli_entrypoint()`
+- `@require_auth` decorator for authorization enforcement
+- `create_standard_parser()` for consistent argument handling
+- Exit codes: 0 (success), 77 (auth denied), 78 (config error), 130 (interrupted)
+- Legacy compatibility via `standardized_main()`
+
+#### 9. Security Adapters (`apgi_security_adapters.py`)
+
+- `SecurityContext` - Per-context security configuration
+- `SecurityLevel` enum: PERMISSIVE, STANDARD, STRICT
+- Deny-by-default subprocess allowlist
+- Explicit pickle/serialization controls (JSON, msgpack, protobuf)
+- Security metrics and telemetry
+- KMS-backed secret support
+
+#### 10. Orchestration Kernel (`apgi_orchestration_kernel.py`)
+
+- `APGIOrchestrationKernel` - Central runner framework
+- `TrialTransformer` - Abstract base for experiment-specific transformations
+- `ExperimentRunConfig` - Typed configuration for runs
+- `TrialMetrics` - Standardized metrics across all experiments
+- Unified trial processing pipeline
+
+#### 11. Authorization (`apgi_authz.py`)
+
+- Role-based access control (RBAC)
+- `Role` enum: ADMIN, OPERATOR, RESEARCHER, REVIEWER, AUDITOR
+- `Permission` enum for granular access control
+- `AuthorizationContext` for permission checks
+- `OperatorIdentity` for user tracking
+- Consent tracking for GDPR compliance
+
+#### 12. Audit System (`apgi_audit.py`)
+
+- `AuditSink` - Immutable audit logging with HMAC signatures
+- `AuditEventType` enum covering all system events
+- Chain verification for integrity
+- Export to JSON for compliance reviews
+- Event filtering and querying
+- Tamper-evident hash chain
+
+#### 13. Data Retention (`apgi_data_retention.py`)
+
+- `RetentionScheduler` - Automated data lifecycle management
+- `RetentionPolicy` enum: GDPR_DEFAULT, HIPAA_MINIMUM, RESEARCH_EXTENDED
+- Right to erasure (GDPR Article 17) implementation
+- Right to data portability export
+- Real deletion executors (not simulated)
+- Deletion verification with audit trail
+
+#### 14. Timeout Abstraction (`apgi_timeout_abstraction.py`)
+
+- Cross-platform timeout management (Windows, macOS, Linux)
+- `TimeoutManager` with context manager and decorator support
+- `CancellableOperation` for cooperative cancellation
+- `SignalTimeout` for Unix signal-based timeouts
+- `ThreadTimeout` for cross-platform thread-based timeouts
+
+#### 15. Profiling (`apgi_profiler.py`)
+
+- `APGILoggingProfiler` - Structured logging profiler
+- `@profiled` decorator for automatic profiling
+- Function, method, and line-level profiling
+- `ProfilingLevel` enum: NONE, FUNCTION, METHOD, LINE
+- Metrics export to JSON/CSV
+
+#### 16. Error Handling (`apgi_errors.py`)
+
+- Comprehensive error taxonomy with `APGIBaseError`
+- `APGIValidationError` - Parameter validation failures
+- `APGITimeoutError` - Timeout violations
+- `APGIAuthorizationError` - Permission denied
+- `APGIAuditError` - Audit system failures
+- `APGIComplianceError` - Compliance violations
+- `APGIIntegrationError` - Integration failures
+- Exception chaining with `__cause__`
+
+#### 17. Structured Logging (`apgi_logging.py`)
+
+- `APGIContextLogger` - Contextual logging with operator tracking
+- `APGIFormatter` - JSON/formatted output
+- Context variables: operator_id, experiment_id, trial_id
+- Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- Integration with audit sink
+
+#### 18. Metrics (`apgi_metrics.py`)
+
+- `MetricsCollector` - Centralized metrics collection
+- Prometheus-compatible export format
+- Custom metric types: Counter, Gauge, Histogram
+- Metric tagging with labels
+- Time-series data export
+
+#### 19. Integration (`apgi_integration.py`)
+
+- `APGIIntegration` - Main integration class for experiments
+- `APGIParameters` - Parameter validation and storage
+- `PrecisionExpectationState` - Π vs Π̂ distinction
+- `HierarchicalProcessor` - 5-level hierarchical processing
+- Neuromodulator mappings to precision parameters
+
+#### 20. Validation (`apgi_validation.py`)
+
+- `APGIParameterValidator` - Parameter range validation
+- `ExperimentValidator` - Experiment structure validation
+- Input sanitization for security
+- Schema validation with Pydantic
+
+#### 21. Double Dissociation (`apgi_double_dissociation.py`)
+
+- Two-stage estimation protocol
+- Stage 1: Anchor Πⁱ_baseline (min 3 sessions, ICC ≥ 0.65)
+- Stage 2: Fit β parameter
+- Physiological anchoring with EEG alpha/gamma power
+- Stability fallback to composite Π_eff
+
+#### 22. Compliance (`apgi_compliance.py`)
+
+- `ComplianceManager` - Central compliance checking
+- GDPR, CCPA, HIPAA control mapping
+- Data classification (PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED)
+- Policy enforcement validation
+- Compliance report generation
 
 ### Key Features
 
@@ -59,67 +210,127 @@ The APGI Research Application implements a complete autonomous learning algorith
 - **Infinite Autonomous Optimization**: Continuous parameter optimization with async git operations
 - **Comprehensive Guardrails**: Confidence thresholds, metric regression detection, safety violations
 - **Git-Based Learning**: Version control tracking with automatic rollback on failures
-- **Multi-Experiment Support**: 30+ psychological experiments with experiment-specific strategies
+- **Multi-Experiment Support**: 29+ psychological experiments with 100/100 APGI compliance
 - **LLM Integration**: Multi-provider support (OpenAI, Anthropic, local) via litellm
 - **Real-Time Monitoring**: GUI with live experiment execution and embedded matplotlib visualization
 - **Crash Recovery**: Checkpoint system for resuming after interruptions
-- **Security Hardened**: Parameter whitelist, module validation, and sandboxed execution
+
+### Security & Compliance Features
+
+- **Deny-by-Default Security**: Subprocess allowlist, pickle/serialization controls
+- **Role-Based Access Control**: 5 roles (ADMIN, OPERATOR, RESEARCHER, REVIEWER, AUDITOR)
+- **Immutable Audit Logging**: HMAC-signed audit trail with chain verification
+- **GDPR/CCPA/HIPAA Compliance**: Data retention, right to erasure, data portability
+- **Cross-Platform Timeouts**: Windows, macOS, Linux timeout abstraction
+- **Structured Logging**: JSON logging with operator/experiment context
+- **Security Metrics**: Real-time security telemetry and deny metrics
 
 ## Supported Experiments
 
-The application supports a comprehensive suite of psychological experiments:
+The application supports 29 psychological experiments, all achieving **100/100 APGI compliance**:
 
-- **Attentional Blink** - Temporal attention dynamics
-- **Iowa Gambling Task** - Decision making under uncertainty
-- **Stroop Effect** - Cognitive interference and control
-- **Visual Search** - Feature-based and conjunction search
-- **Change Blindness** - Visual perception and attention
-- **Masking** - Visual temporal processing
-- **Binocular Rivalry** - Visual perception competition
-- **Posner Cueing** - Spatial attention orienting
-- **Simon Effect** - Stimulus-response compatibility
-- **Flanker Task** - Selective attention and inhibition
-- **Stop Signal** - Response inhibition and control
-- **Dual N-Back** - Working memory capacity
-- **Working Memory Span** - Short-term memory limits
-- **Time Estimation** - Temporal perception accuracy
-- **Probabilistic Category Learning** - Learning under uncertainty
-- **Artificial Grammar Learning** - Implicit learning patterns
+| Category | Experiment | Primary Metric |
+| -------- | ---------- | ------------- |
+| **Decision-Making** | Iowa Gambling Task | `net_score` |
+| | Go/No-Go | `d_prime` |
+| | Stop Signal | `ssrt_ms` |
+| | Simon Effect | `simon_effect_ms` |
+| **Attention** | Attentional Blink | `blink_magnitude` |
+| | Posner Cueing | `cueing_effect_ms` |
+| | Visual Search | `conjunction_slope` |
+| | Change Blindness | `change_detection_rate` |
+| | Inattentional Blindness | `detection_rate` |
+| | Navon Task | `global_local_bias` |
+| **Memory** | Dual N-Back | `d_prime` |
+| | Sternberg Memory | `memory_scan_rate` |
+| | Working Memory Span | `span_size` |
+| | DRM False Memory | `false_alarm_rate` |
+| | Serial Reaction Time | `sequence_learning` |
+| | Artificial Grammar Learning | `grammar_accuracy` |
+| **Interference** | Stroop Effect | `interference_effect_ms` |
+| | Eriksen Flanker | `flanker_effect_ms` |
+| | Masking | `backward_masking_effect` |
+| **Perception** | Binocular Rivalry | `dominance_duration` |
+| | Multisensory Integration | `integration_index` |
+| | Time Estimation | `temporal_precision` |
+| **Specialized** | Somatic Marker Priming | `priming_effect` |
+| | Interoceptive Gating | `gating_ratio` |
+| | Metabolic Cost | `metabolic_efficiency` |
+| | Virtual Navigation | `navigation_accuracy` |
+| | Probabilistic Category Learning | `category_accuracy` |
+| | AI Benchmarking | `benchmark_score` |
 
 ## Usage
 
-### Command Line Interface
+### Environment Setup
 
 ```bash
-# Optimize a single experiment
+# Set required environment variables
+export APGI_OPERATOR_ID="user123"
+export APGI_OPERATOR_NAME="Researcher Name"
+export APGI_OPERATOR_ROLE="operator"  # admin, operator, researcher, reviewer, auditor
+
+# Optional security settings
+export APGI_ENABLE_PROFILING=false
+export APGI_KMS_KEY="your-kms-key"
+export APGI_AUDIT_KEY="your-audit-key"
+
+# Load from config file
+export APGI_CONFIG_FILE="config/apgi.json"
+```
+
+### Command Line Interface
+
+#### Standard CLI Entry Point (Recommended)
+
+```bash
+# Run experiment with standardized CLI
+python run_iowa_gambling_task.py --trials 100 --verbose
+python run_stroop_effect.py --operator user123 --role operator
+
+# Run autonomous optimization
 python autonomous_agent.py --experiment masking --iterations 100
-
-# Optimize all experiments
 python autonomous_agent.py --all-experiments --iterations 50
-
-# Run overnight optimization (8 hours)
 python autonomous_agent.py --overnight
+```
 
-# Run with specific timeout
-python autonomous_agent.py --experiment stroop_effect --timeout 3600
+#### Legacy Entry Points
+
+```bash
+# Direct experiment execution (for backward compatibility)
+python run_attentional_blink.py
+python run_visual_search.py
+python run_change_blindness.py
+
+# Data preparation
+python prepare.py
+
+# Training script
+python train.py
 ```
 
 ### GUI Interface
 
 ```bash
 # Launch the graphical interface
-python GUI-auto_improve_experiments.py
+python GUI_auto_improve_experiments.py
+
+# With debug mode
+python GUI_auto_improve_experiments.py --debug
 ```
 
 The GUI provides:
 
-- Real-time experiment execution
-- Visual performance monitoring
+- Real-time experiment execution with CustomTkinter interface
+- Guardrail dashboard with live metrics (confidence, regression, escalation count)
+- Hypothesis approval board integration
 - Sequential and parallel run modes
-- Dependency management
-- Results visualization
+- Results visualization with embedded matplotlib
+- 1400×900 pixel default window, responsive layout
 
 ### API Integration
+
+#### Core Components
 
 ```python
 from autonomous_agent import AutonomousAgent
@@ -134,10 +345,7 @@ memory = MemoryStore()
 engine = XPRAgentEngineEnhanced()
 
 # Configure human interaction layer
-human.configure_if_needed()  # Interactive setup wizard
-
-# Select and prioritize tasks
-task = human.select_task()
+human.configure_if_needed()
 
 # Run optimization with human oversight
 results = agent.optimize_experiment("attentional_blink", iterations=100)
@@ -147,17 +355,10 @@ result = agent.run_experiment(
     "masking",
     modifications={"BASE_DETECTION_RATE": 0.5},
     timeout_seconds=1800,
-    max_retries=1  # Self-healing retry on failure
+    max_retries=1
 )
 
-# Review results with human decision
-review_result = human.review({
-    "experiment_id": result.experiment_name,
-    "metrics": {"accuracy": result.primary_metric},
-    "confidence": 0.85
-})
-
-# Update memory with lessons learned
+# Review and update memory
 if review_result.decision == ReviewDecision.APPROVE:
     memory.add_memory_with_embedding(
         experiment_name="masking",
@@ -167,80 +368,141 @@ if review_result.decision == ReviewDecision.APPROVE:
     )
 ```
 
-## Configuration
+#### Security & Authorization
 
-### Environment Setup
+```python
+from apgi_security_adapters import get_security_factory, SecurityLevel
+from apgi_authz import get_authz_manager, Role, Permission, AuthorizationContext
+from apgi_audit import get_audit_sink, AuditEventType
+from apgi_config import get_config
 
-1. **Python Requirements** (Python 3.8+)
+# Security context
+factory = get_security_factory()
+context = factory.create_context(
+    operator_id="user123",
+    security_level=SecurityLevel.STANDARD,
+)
+secure_popen = factory.get_secure_popen(context)
+
+# Authorization
+authz = get_authz_manager()
+operator = authz.register_operator("john", Role.OPERATOR)
+auth_context = AuthorizationContext(
+    operator=operator,
+    resource_type="experiment",
+    resource_id="iowa_gambling",
+    action=Permission.RUN_EXPERIMENT,
+)
+if authz.authorize_action(auth_context):
+    print("Permission granted")
+
+# Audit logging
+audit = get_audit_sink()
+audit.record_event(
+    event_type=AuditEventType.EXPERIMENT_STARTED,
+    operator_id="user123",
+    operator_name="John Doe",
+    resource_type="experiment",
+    resource_id="iowa_gambling",
+    action="start",
+)
+
+# Configuration
+config = get_config()
+experiment_config = config.get_experiment_config("stroop_effect")
+security_config = config.get_security_config()
+```
+
+#### Orchestration Kernel
+
+```python
+from apgi_orchestration_kernel import (
+    get_orchestration_kernel,
+    ExperimentRunConfig,
+    TrialTransformer,
+)
+from apgi_config import get_config
+
+class MyTrialTransformer(TrialTransformer):
+    def transform_trial(self, trial_data):
+        return trial_data
+    
+    def extract_prediction_error(self, trial_data):
+        return trial_data["error"]
+    
+    def extract_precision(self, trial_data):
+        return trial_data["precision"]
+
+# Run experiment through kernel
+kernel = get_orchestration_kernel()
+config = get_config()
+apgi_config = config.get_experiment_config("iowa_gambling")
+
+run_config = ExperimentRunConfig(
+    experiment_name="iowa_gambling",
+    operator_id="user123",
+    operator_name="John Doe",
+    apgi_config=apgi_config,
+)
+
+run_context = kernel.create_run_context(run_config)
+for trial_data in trials:
+    metrics = kernel.process_trial(run_context, trial_data, MyTrialTransformer())
+results = kernel.finalize_run(run_context)
+```
+
+## System Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `APGI_OPERATOR_ID` | Unique operator identifier | auto-generated |
+| `APGI_OPERATOR_NAME` | Human-readable operator name | "cli_user" |
+| `APGI_OPERATOR_ROLE` | Role (admin, operator, researcher, reviewer, auditor) | "operator" |
+| `APGI_CONFIG_FILE` | Path to config file | auto-search |
+| `APGI_ENABLE_PROFILING` | Enable performance profiling | false |
+| `APGI_PROFILING_LEVEL` | Profiling detail level | "function" |
+| `APGI_KMS_KEY` | KMS key for encryption | none |
+| `APGI_AUDIT_KEY` | Audit signing key | none |
+
+### Dependencies
+
+1. **Core Requirements** (Python 3.10+)
 
    ```bash
+   # Using uv (recommended)
+   uv sync
+   
+   # Using pip
    pip install -r requirements.txt
    ```
 
-2. **Optional Dependencies**
-
-   ```bash
-   pip install -r requirements-optional.txt
-   ```
-
-3. **Development Dependencies**
+2. **Development Dependencies**
 
    ```bash
    pip install -r requirements-test.txt
    ```
 
-### Experiment Configuration
+### Config File Format
 
-Each experiment is configured through Python files:
-
-- `prepare_<experiment>.py` - Setup and parameter definitions
-- `run_<experiment>.py` - Main experiment execution
+```json
+{
+  "experiment_iowa_gambling_tau_s": 0.35,
+  "experiment_iowa_gambling_beta": 1.5,
+  "security_audit_enabled": true,
+  "security_authz_enabled": true,
+  "metrics_profiling_enabled": false
+}
+```
 
 ### Performance Tuning
 
 - **GPU Acceleration**: Automatic CUDA detection and utilization
-- **Memory Optimization**: Efficient data structures and caching
+- **Memory Optimization**: Ring-buffered deques for bounded history
 - **Parallel Processing**: Multi-threaded experiment execution
-- **Timeout Management**: Configurable experiment timeouts
-
-## Security Features
-
-### Input Validation
-
-- Parameter whitelist enforcement
-- Module name validation
-- File path sanitization
-- Package name validation
-
-### Execution Security
-
-- Sandboxed subprocess execution
-- Git staging restrictions
-- Module cache invalidation
-- Secure import validation
-
-### Data Protection
-
-- No sensitive data in git commits
-- Encrypted parameter storage
-- Audit logging
-- Error boundary enforcement
-
-## Performance Metrics
-
-### Optimization Algorithms
-
-- **Genetic Algorithms**: Population-based optimization
-- **Bayesian Optimization**: Model-based search
-- **Random Search**: Baseline comparison
-- **Gradient Methods**: When applicable
-
-### Evaluation Metrics
-
-- **Primary Metrics**: Experiment-specific performance measures
-- **Secondary Metrics**: Computational efficiency, convergence rate
-- **Cross-Validation**: Generalization performance
-- **Statistical Significance**: Proper hypothesis testing
+- **Timeout Management**: Cross-platform configurable timeouts
+- **Caching**: LRU cache for config access, TTL for static assets
 
 ## Development
 
@@ -314,21 +576,25 @@ pytest --cov=tests --cov-report=html
 ### Common Issues
 
 1. **Module Import Errors**
+
    - Clear Python cache: `python -B -m pytest`
    - Check PYTHONPATH configuration
    - Verify experiment file structure
 
 2. **Git Repository Issues**
+
    - Initialize git repo: `git init`
    - Check permissions on .git directory
    - Verify remote repository configuration
 
 3. **Performance Issues**
+
    - Monitor memory usage with `htop`
    - Check GPU availability: `nvidia-smi`
    - Optimize experiment parameters
 
 4. **GUI Issues**
+
    - Check CustomTkinter installation
    - Verify display server configuration
    - Test with minimal example
@@ -367,20 +633,48 @@ This project is licensed under the MIT License. See LICENSE file for details.
 
 ## Acknowledgments
 
-- **ALGORITHM Framework** - Autonomous learning algorithm with human-in-the-loop
-- **APGI Framework** - Psychological experiment modeling
-- **Human Control Layer** - Interactive approval workflow
-- **XPR Agent Engine** - LLM-integrated skill execution
-- **Memory Store** - Cognitive memory with vector embeddings
-- **Hypothesis Approval Board** - Scientific hypothesis management
-- **CustomTkinter** - Modern GUI framework
-- **GitPython** - Git integration
-- **litellm** - Multi-provider LLM API
-- **sentence-transformers** - Semantic embeddings
+### Core Frameworks
+
+- **ALGORITHM** - Autonomous learning algorithm with human-in-the-loop
+- **APGI** - Autonomous Psychological General Intelligence framework
+- **CustomTkinter** - Modern GUI framework (5.0+)
+- **Pydantic** - Data validation and settings management
+- **litellm** - Multi-provider LLM API integration
+
+### Infrastructure & Security
+
+- **GitPython** - Git integration for version control learning
+- **sentence-transformers** - Semantic embeddings for memory system
 - **PyTorch** - Deep learning backend
-- **NumPy** - Numerical computing
-- **Matplotlib** - Visualization
-- **Playwright** - Browser automation for testing
+- **NumPy** - Numerical computing foundation
+- **Matplotlib** - Visualization and plotting
+
+### Production Infrastructure
+
+- **apgi_config** - Typed configuration management
+- **apgi_cli** - Standardized CLI framework
+- **apgi_security_adapters** - Injectable security controls
+- **apgi_orchestration_kernel** - Central experiment runner
+- **apgi_authz** - Role-based access control
+- **apgi_audit** - Immutable audit logging
+- **apgi_data_retention** - Data lifecycle management
+- **apgi_timeout_abstraction** - Cross-platform timeouts
+
+### Testing & Quality
+
+- **pytest** - Testing framework
+- **Playwright** - Browser automation for GUI testing
+- **flake8** - Code linting
+- **mypy** - Static type checking
+- **black** - Code formatting
+- **mutation_testing** - Test effectiveness verification
+
+## Version
+
+**Current Version:** See `apgi_version.py`
+**Last Updated:** April 2026
+**Python:** 3.10+
+**License:** MIT
 
 ## Support
 

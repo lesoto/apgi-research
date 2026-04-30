@@ -21,6 +21,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)
 # ---------------------------------------------------------------------------
@@ -279,11 +281,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Masking - Configuration Verification")
     print(f"Mask Types: {[t.value for t in MaskType]}")
     print(f"Mask Durations: {MASK_DURATIONS}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Masking preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Masking experiment")
+    cli_entrypoint(main, parser)

@@ -22,6 +22,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)
 # ---------------------------------------------------------------------------
@@ -222,11 +224,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("AI Benchmarking - Configuration Verification")
     print(f"Benchmark Types: {[b.value for b in BenchmarkType]}")
     print(f"Difficulty Levels: {[d.value for d in Difficulty]}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Ai Benchmarking preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Ai Benchmarking experiment")
+    cli_entrypoint(main, parser)

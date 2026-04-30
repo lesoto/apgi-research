@@ -9,6 +9,18 @@ Usage:
 Data and tokenizer are stored in ~/.cache/autoresearch/.
 """
 
+import sys
+
+# CRITICAL: Must set multiprocessing start method BEFORE ANY OTHER IMPORTS on macOS
+# to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
+if sys.platform == "darwin":
+    import multiprocessing
+
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass  # Already set
+
 import argparse
 import math
 import os

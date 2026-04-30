@@ -12,6 +12,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 80
 
@@ -261,11 +263,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Metabolic Cost - Configuration Verification")
     print(f"Effort Levels: {[e.value for e in EffortLevel]}")
     print(f"Reward Values: {REWARD_VALUES}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Metabolic Cost preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Metabolic Cost experiment")
+    cli_entrypoint(main, parser)

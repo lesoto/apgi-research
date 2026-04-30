@@ -11,6 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 100
 
@@ -238,11 +240,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Go/No-Go - Configuration Verification")
     print(f"Stimuli: {STIMULI}")
     print(f"Go Probability: {GO_PROBABILITY}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Go No Go preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Go No Go experiment")
+    cli_entrypoint(main, parser)

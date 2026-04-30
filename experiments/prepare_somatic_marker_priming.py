@@ -11,6 +11,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 100
 
@@ -280,11 +282,19 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Somatic Marker Priming - Configuration Verification")
     print(f"Emotion Types: {[e.value for e in EmotionType]}")
     print(f"Task Types: {[t.value for t in TaskType]}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Somatic Marker Priming preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Somatic Marker Priming experiment")
+    cli_entrypoint(main, parser)

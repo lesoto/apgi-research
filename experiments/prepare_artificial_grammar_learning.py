@@ -22,6 +22,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 # ---------------------------------------------------------------------------
 # Fixed Constants (DO NOT MODIFY)
 # ---------------------------------------------------------------------------
@@ -309,12 +311,20 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Artificial Grammar Learning - Configuration Verification")
     print(f"Grammar Strings: {len(GRAMMAR_STRINGS)}")
     print(f"Non-Grammar Strings: {len(NON_GRAMMAR_STRINGS)}")
     print(f"Study Items: {STUDY_ITEMS}, Test Items: {TEST_ITEMS}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Artificial Grammar Learning preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Artificial Grammar Learning experiment")
+    cli_entrypoint(main, parser)

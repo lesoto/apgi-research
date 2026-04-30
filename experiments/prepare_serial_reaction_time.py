@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from apgi_cli import cli_entrypoint, create_standard_parser
+
 TIME_BUDGET = 600
 NUM_TRIALS = 120
 
@@ -250,12 +252,20 @@ APGI_PARAMS = {
 }
 
 
-def verify() -> None:
+def verify() -> int:
+    """Verify configuration and return status."""
     print("Serial Reaction Time - Configuration Verification")
     print(f"Response Keys: {RESPONSE_KEYS}")
     print(f"Sequence Length: {SEQUENCE_LENGTH}")
     print(f"Random Probability: {RANDOM_PROB}")
+    return 0
+
+
+def main() -> int:
+    """Entry point for Serial Reaction Time preparation."""
+    return verify()
 
 
 if __name__ == "__main__":
-    verify()
+    parser = create_standard_parser("Prepare Serial Reaction Time experiment")
+    cli_entrypoint(main, parser)
