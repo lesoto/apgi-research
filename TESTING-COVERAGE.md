@@ -1,23 +1,14 @@
-# APGI API Test Coverage Analysis & 100% Coverage Roadmap
+# APGI Research Test Coverage Analysis & 100% Coverage Roadmap
+
+**Last Updated:** April 30, 2026
 
 **Current Status:**
 
+- **Total Coverage:** **69.58%** (20,838/28,268 lines)
+- **Missing Lines:** 7,430 lines remaining
 - **Total Test Files:** 45+ comprehensive test files
-- **Core Module Coverage:** 65-95% (varies by module)
-- **Experiment Files Coverage:** 0-90% (many at 0%)
+- **Test Status:** 1,308 passed, 1 failed
 - **Overall Coverage Target:** 100%
-
----
-
-## Table of Contents
-
-1. [Current Coverage Analysis](#1-current-coverage-analysis)
-2. [Core Module Breakdown](#2-core-module-breakdown)
-3. [Experiment Coverage Gap](#3-experiment-coverage-gap)
-4. [100% Coverage Roadmap](#4-100-coverage-roadmap)
-5. [Implementation Plan](#5-implementation-plan)
-6. [Testing Strategy](#6-testing-strategy)
-7. [Tools & Infrastructure](#7-tools--infrastructure)
 
 ---
 
@@ -28,7 +19,7 @@
 The APGI testing framework comprises:
 
 | Category | Count | Description |
-|----------|-------|-------------|
+| :--- | :--- | :--- |
 | Unit Tests | 1039+ | Individual function/class tests |
 | Integration Tests | 200+ | Cross-module interaction tests |
 | Security Tests | 150+ | Vulnerability and security tests |
@@ -76,20 +67,41 @@ The APGI testing framework comprises:
 
 ## 2. Core Module Breakdown
 
-### 2.1 High-Priority Core Modules
+### 2.1 High-Priority Core Modules (Current Actual Coverage)
 
 | Module | Lines | Current Coverage | Missing Lines | Priority |
-|--------|-------|------------------|---------------|----------|
-| APGI_System.py | 4026 | 85-90% | ~400 | Critical |
-| apgi_integration.py | 1375 | 90% | ~135 | High |
-| apgi_security.py | ~1500 | 80% | ~300 | Critical |
-| apgi_validation.py | ~2000 | 85% | ~300 | High |
-| apgi_config.py | ~1500 | 90% | ~150 | Medium |
-| apgi_cli.py | ~800 | 70% | ~240 | Medium |
-| autonomous_agent.py | ~1200 | 85% | ~180 | High |
-| xpr_agent_engine.py | ~5000 | 75% | ~1250 | Critical |
-| apgi_orchestration_kernel.py | ~2000 | 80% | ~400 | High |
-| human_layer.py | ~1000 | 90% | ~100 | Medium |
+| :--- | :--- | :--- | :--- | :--- |
+| APGI_System.py | 1197 | **66.9%** | 358 | Critical |
+| apgi_integration.py | 489 | **88%** | 40 | High |
+| apgi_security.py | 118 | **62.9%** | 44 | Critical |
+| apgi_validation.py | 100+ | **71.2%** | 81 | High |
+| apgi_config.py | 161 | **29.4%** | 103 | Critical |
+| apgi_cli.py | 110 | **58.6%** | 41 | High |
+| autonomous_agent.py | 620 | **56%** | 272 | Critical |
+| xpr_agent_engine.py | 387 | **75.7%** | 94 | Critical |
+| apgi_orchestration_kernel.py | 122 | **97%** | 3 | Low |
+| human_layer.py | 322 | **12.2%** | 280 | Critical |
+| apgi_authz.py | 98 | **70.9%** | 23 | High |
+| apgi_data_retention.py | 169 | **97%** | 3 | Low |
+| apgi_timeout_abstraction.py | 100+ | **90%** | ~10 | Medium |
+| apgi_profiler.py | 90 | **90%** | 6 | Medium |
+| apgi_audit.py | 127 | **59.6%** | 42 | High |
+| apgi_compliance.py | 53 | **42.9%** | 26 | High |
+| apgi_metrics.py | 143 | **15.9%** | 113 | Critical |
+| apgi_double_dissociation.py | 66 | **18.2%** | 50 | High |
+| apgi_implementation_template.py | 207 | **23.3%** | 157 | High |
+| apgi_config_schema.py | 108 | **0%** | 108 | Critical |
+| apgi_version.py | 3 | **0%** | 3 | Low |
+| memory_store.py | 257 | **44.5%** | 143 | Critical |
+| performance_monitoring.py | 232 | **44.3%** | 130 | Critical |
+| progress_tracking.py | 168 | **57.3%** | 72 | High |
+| hypothesis_approval_board.py | 106 | **44.9%** | 48 | High |
+| git_operations.py | 218 | **56%** | 96 | High |
+| prepare.py | 312 | **20.8%** | 258 | Critical |
+| train.py | 515 | **1.3%** | 506 | Critical |
+| validation.py | 285 | **71.2%** | 81 | High |
+| GUI_auto_improve_experiments.py | 1287 | **17.5%** | 1033 | Critical |
+| delete_pycache.py | 271 | **74.9%** | 68 | Medium |
 
 ### 2.2 APGI_System.py Coverage Details
 
@@ -137,39 +149,84 @@ The APGI testing framework comprises:
 
 ## 3. Experiment Coverage Gap
 
-### 3.1 Critical Finding: 40+ Experiment Files at 0% Coverage
+### 3.1 Current Experiment Coverage Status
 
-The experiments directory contains 68 files with the following coverage distribution:
+The experiments directory contains 62+ files with the following coverage distribution:
 
 | Coverage Range | File Count | Description |
-|----------------|------------|-------------|
-| 0% | 40+ | No test coverage at all |
-| 1-50% | 10 | Minimal coverage |
-| 50-85% | 12 | Partial coverage |
-| 85%+ | 6 | Good coverage |
+| :--- | :--- | :--- |
+| 0% | 3 | No test coverage at all |
+| 1-50% | 8 | Minimal coverage |
+| 50-80% | 51 | Partial coverage |
+| 80%+ | 0 | Good coverage |
 
-### 3.2 Experiment Categories
+### 3.2 Files with 0% Coverage (Critical Priority)
 
-#### Preparation Scripts (prepare_*.py) - 0% Coverage
+- `apgi_config_schema.py` - 108 lines (0%)
+- `apgi_version.py` - 3 lines (0%)
+- `experiments/migrate_prepare_files.py` - 49 lines (0%)
+- `experiments/migrate_runners.py` - 93 lines (0%)
+- `experiments/migrate_runners_v2.py` - 64 lines (0%)
+- `experiments/verify_protocols.py` - 196 lines (0%)
+- `tests/coverage_config.py` - 116 lines (0%)
+- `tests/mutation_testing.py` - 194 lines (0%)
+- `train.py` - 506 lines (1.3%)
 
-- `prepare_change_blindness.py` - Change blindness paradigm setup
-- `prepare_stroop_effect.py` - Stroop effect experiment setup
-- `prepare_visual_search.py` - Visual search task setup
-- `prepare_attentional_blink.py` - Attentional blink setup
-- `prepare_dual_n_back.py` - Working memory task setup
-- `prepare_go_no_go.py` - Inhibitory control setup
-- `prepare_stop_signal.py` - Stop signal task setup
-- `prepare_iowa_gambling_task.py` - Decision making setup
-- `prepare_drm_false_memory.py` - False memory paradigm
-- ... (25 more)
+### 3.3 Low Coverage Files (<30% - High Priority)
 
-#### Runner Scripts (run_*.py) - 0-20% Coverage
+- `apgi_config.py` - 103 missing (29.4%)
+- `apgi_implementation_template.py` - 157 missing (23.3%)
+- `apgi_double_dissociation.py` - 50 missing (18.2%)
+- `apgi_metrics.py` - 113 missing (15.9%)
+- `human_layer.py` - 280 missing (12.2%)
+- `GUI_auto_improve_experiments.py` - 1033 missing (17.5%)
+- `prepare.py` - 258 missing (20.8%)
 
-- `run_change_blindness.py` - Execute change blindness
-- `run_stroop_effect.py` - Execute Stroop task
-- `run_visual_search.py` - Execute visual search
-- `run_attentional_blink.py` - Execute attentional blink
-- ... (30+ more)
+### 3.4 Medium Coverage Files (50-80% - Medium Priority)
+
+#### Preparation Scripts (prepare_*.py)
+
+- `prepare_ai_benchmarking.py` - 42 missing (54.5%)
+- `prepare_attentional_blink.py` - 48 missing (73.0%)
+- `prepare_binocular_rivalry.py` - 39 missing (60.7%)
+- `prepare_drm_false_memory.py` - 40 missing (58.2%)
+- `prepare_inattentional_blindness.py` - 39 missing (63.2%)
+- `prepare_iowa_gambling_task.py` - 44 missing (73.3%)
+- `prepare_masking.py` - 40 missing (61.7%)
+- `prepare_multisensory_integration.py` - 22 missing (79.1%)
+- `prepare_visual_search.py` - 39 missing (76.5%)
+- `prepare_working_memory_span.py` - 37 missing (67.4%)
+
+#### Runner Scripts (run_*.py)
+
+- `run_ai_benchmarking.py` - 55 missing (67.4%)
+- `run_artificial_grammar_learning.py` - 42 missing (67.9%)
+- `run_attentional_blink.py` - 32 missing (78.4%)
+- `run_binocular_rivalry.py` - 49 missing (68.1%)
+- `run_change_blindness.py` - 27 missing (73.9%)
+- `run_drm_false_memory.py` - 60 missing (68.8%)
+- `run_dual_n_back.py` - 42 missing (67.9%)
+- `run_eriksen_flanker.py` - 42 missing (67.9%)
+- `run_go_no_go.py` - 38 missing (71.6%)
+- `run_inattentional_blindness.py` - 76 missing (61.6%)
+- `run_interoceptive_gating.py` - 40 missing (66.7%)
+- `run_iowa_gambling_task.py` - 43 missing (71.2%)
+- `run_masking.py` - 57 missing (74.8%)
+- `run_metabolic_cost.py` - 20 missing (79.0%)
+- `run_multisensory_integration.py` - 44 missing (67.4%)
+- `run_navon_task.py` - 41 missing (68.3%)
+- `run_posner_cueing.py` - 42 missing (67.0%)
+- `run_probabilistic_category_learning.py` - 50 missing (66.2%)
+- `run_serial_reaction_time.py` - 36 missing (69.5%)
+- `run_simon_effect.py` - 43 missing (65.5%)
+- `run_somatic_marker_priming.py` - 43 missing (66.5%)
+- `run_sternberg_memory.py` - 37 missing (68.5%)
+- `run_stop_signal.py` - 25 missing (74.6%)
+- `run_time_estimation.py` - 40 missing (68.3%)
+- `run_visual_search.py` - 32 missing (72.5%)
+- `run_working_memory_span.py` - 71 missing (65.8%)
+- `standard_apgi_runner.py` - 41 missing (72.4%)
+- `ultimate_apgi_template.py` - 61 missing (54.2%)
 
 ### 3.3 Why Experiment Coverage Matters
 
@@ -182,145 +239,76 @@ The experiments directory contains 68 files with the following coverage distribu
 
 ## 4. 100% Coverage Roadmap
 
-### 4.1 Phase 1: Core Module Hardening (Week 1-2)
+### 4.1 Phase 1: Zero Coverage Files (Week 1)
 
-**Goal:** Achieve 95%+ coverage on all core modules
+**Goal:** Address all files with 0% coverage
 
-#### APGI_System.py (Target: 95%)
+#### Critical 0% Coverage Files
 
-```python
-# Required Tests:
-- [ ] All FoundationalEquations edge cases (NaN, inf, zero)
-- [ ] SomaticMarkerSystem boundary conditions
-- [ ] DynamicalSystem simulation edge cases
-- [ ] All exception handling paths
-- [ ] ParameterValidation with extreme values
-- [ ] MeasurementEquations with invalid inputs
-- [ ] NeuromodulatorMapper boundary conditions
-- [ ] PsychiatricProfiles validation
-- [ ] VisualizationEngine error handling
-- [ ] All static method combinations
-```
+| File | Lines | Priority | Action |
+| :--- | :--- | :--- | :--- |
+| `apgi_config_schema.py` | 108 | Critical | Add schema validation tests |
+| `apgi_version.py` | 3 | Low | Add version string tests |
+| `experiments/migrate_prepare_files.py` | 49 | High | Add migration tests |
+| `experiments/migrate_runners.py` | 93 | High | Add migration tests |
+| `experiments/migrate_runners_v2.py` | 64 | High | Add migration tests |
+| `experiments/verify_protocols.py` | 196 | High | Add protocol verification tests |
+| `tests/coverage_config.py` | 116 | Medium | Add coverage tool tests |
+| `tests/mutation_testing.py` | 194 | Medium | Add mutation testing framework tests |
+| `train.py` | 506 | Critical | Add training pipeline tests |
 
-#### xpr_agent_engine.py (Target: 95%)
+### 4.2 Phase 2: Low Coverage Files (<30%) (Week 2)
 
-```python
-# Required Tests:
-- [ ] Agent initialization edge cases
-- [ ] Memory store failure modes
-- [ ] LLM API error handling (all providers)
-- [ ] Token budget exhaustion paths
-- [ ] Concurrent access scenarios
-- [ ] State persistence edge cases
-- [ ] Action execution failures
-- [ ] Embedding computation errors
-- [ ] TF-IDF calculation edge cases
-- [ ] All retry logic paths
-```
+**Goal:** Bring all files to at least 70% coverage
 
-#### apgi_security.py (Target: 95%)
+| File | Current | Target | Missing Lines |
+| :--- | :--- | :--- | :--- |
+| `apgi_config.py` | 29.4% | 90% | 103 |
+| `apgi_implementation_template.py` | 23.3% | 80% | 157 |
+| `apgi_double_dissociation.py` | 18.2% | 80% | 50 |
+| `apgi_metrics.py` | 15.9% | 80% | 113 |
+| `human_layer.py` | 12.2% | 80% | 280 |
+| `GUI_auto_improve_experiments.py` | 17.5% | 50% | 1033 |
+| `prepare.py` | 20.8% | 80% | 258 |
 
-```python
-# Required Tests:
-- [ ] All security adapter combinations
-- [ ] Encryption/decryption edge cases
-- [ ] Key rotation scenarios
-- [ ] Audit log failure modes
-- [ ] Permission validation paths
-- [ ] All sanitization functions
-```
+### 4.3 Phase 3: Medium Coverage Files (50-80%) (Week 3-4)
 
-### 4.2 Phase 2: Experiment Test Infrastructure (Week 2-3)
+**Goal:** Bring all files to 90%+ coverage
 
-**Goal:** Create reusable experiment testing framework
+#### Core Modules
 
-#### Experiment Test Framework Components
+| File | Current | Target | Missing Lines |
+| :--- | :--- | :--- | :--- |
+| `APGI_System.py` | 66.9% | 95% | 358 |
+| `apgi_security.py` | 62.9% | 90% | 44 |
+| `apgi_validation.py` | 71.2% | 90% | 81 |
+| `apgi_cli.py` | 58.6% | 90% | 41 |
+| `autonomous_agent.py` | 56% | 90% | 272 |
+| `xpr_agent_engine.py` | 75.7% | 90% | 94 |
+| `apgi_authz.py` | 70.9% | 90% | 23 |
+| `apgi_audit.py` | 59.6% | 90% | 42 |
+| `apgi_compliance.py` | 42.9% | 90% | 26 |
+| `memory_store.py` | 44.5% | 90% | 143 |
+| `performance_monitoring.py` | 44.3% | 90% | 130 |
+| `progress_tracking.py` | 57.3% | 90% | 72 |
+| `hypothesis_approval_board.py` | 44.9% | 90% | 48 |
+| `git_operations.py` | 56% | 90% | 96 |
+| `validation.py` | 71.2% | 90% | 81 |
 
-```python
-# experiments/test_framework.py
-class ExperimentTestHarness:
-    """Reusable test harness for all experiments."""
-    
-    def test_prepare_script_structure(self, prepare_module):
-        """Verify all prepare scripts have required functions."""
-        # Check for: generate_trials(), get_experiment_config()
-        
-    def test_runner_script_structure(self, runner_module):
-        """Verify all runner scripts have required functions."""
-        # Check for: run_experiment(), save_results()
-        
-    def test_json_output_validity(self, results):
-        """Verify experiment output matches schema."""
-        
-    def test_apgi_metrics_integration(self, results):
-        """Verify APGI metrics are properly computed."""
-        
-    def test_visualization_generation(self, module):
-        """Verify plots can be generated without errors."""
-```
+#### Experiment Files (30+ files at 50-80%)
 
-#### Per-Experiment Test Requirements
+All prepare_*.py and run_*.py files need targeted tests to reach 90% coverage.
 
-Each experiment needs tests for:
-
-1. **Configuration Validation** - All config parameters are valid
-2. **Trial Generation** - Trials are generated correctly
-3. **APGI Integration** - APGI metrics are computed
-4. **Output Schema** - Results match expected format
-5. **Visualization** - Plots can be generated
-6. **Edge Cases** - Empty inputs, boundary values
-7. **Error Handling** - Graceful failure modes
-
-### 4.3 Phase 3: Experiment Coverage Implementation (Week 3-5)
-
-**Goal:** Achieve 90%+ coverage on all experiment files
-
-#### Priority 1: High-Impact Experiments (10 files)
-1. `prepare_change_blindness.py` + `run_change_blindness.py`
-2. `prepare_stroop_effect.py` + `run_stroop_effect.py`
-3. `prepare_visual_search.py` + `run_visual_search.py`
-4. `prepare_attentional_blink.py` + `run_attentional_blink.py`
-5. `prepare_go_no_go.py` + `run_go_no_go.py`
-
-#### Priority 2: Medium-Impact Experiments (20 files)
-- Working memory experiments (dual_n_back, sternberg_memory)
-- Decision making (iowa_gambling_task, probabilistic_category_learning)
-- Attention experiments (posner_cueing, flanker)
-- Memory experiments (drm_false_memory)
-- Motor control (simon_effect, serial_reaction_time)
-
-#### Priority 3: Remaining Experiments (38 files)
-- All other prepare/run scripts
-- Utility scripts (verify_protocols, migrate_runners)
-
-### 4.4 Phase 4: Edge Case & Integration Coverage (Week 5-6)
+### 4.4 Phase 4: Final Edge Cases (Week 5)
 
 **Goal:** Achieve 100% coverage on all remaining gaps
 
-#### Edge Case Categories:
-1. **Numeric Edge Cases**
-   - NaN, inf, -inf handling
-   - Very large/small values
-   - Floating point precision limits
-   - Division by zero scenarios
-
-2. **Input Validation Edge Cases**
-   - Empty collections
-   - None/null handling
-   - Type coercion edge cases
-   - Unicode/string edge cases
-
-3. **Concurrency Edge Cases**
-   - Race conditions
-   - Deadlock scenarios
-   - Resource exhaustion
-   - Timeout scenarios
-
-4. **Security Edge Cases**
-   - Injection attempts
-   - Path traversal
-   - Buffer overflow patterns
-   - Cryptographic edge cases
+Focus on:
+- Numeric edge cases (NaN, inf, boundary values)
+- Input validation (None, empty collections, type coercion)
+- Exception handling paths
+- Security edge cases
+- Performance regression tests
 
 ---
 
@@ -328,118 +316,85 @@ Each experiment needs tests for:
 
 ### 5.1 Week-by-Week Breakdown
 
-#### Week 1: Core Module Hardening - Part 1
+#### Week 1: Zero Coverage Files
 
 ##### Week 1 Tasks
 
-- [ ] Complete APGI_System.py coverage gaps (400 lines)
-  - [ ] Add 50 tests for FoundationalEquations edge cases
-  - [ ] Add 40 tests for exception handling paths
-  - [ ] Add 30 tests for visualization edge cases
-  - [ ] Add 30 tests for psychiatric profile boundaries
-  - [ ] Add 25 tests for measurement validation
-  - [ ] Add 25 tests for neuromodulator boundaries
-  
+- [ ] `apgi_config_schema.py` - Add schema validation tests (108 lines)
+- [ ] `train.py` - Add training pipeline tests (506 lines)
+- [ ] `experiments/migrate_prepare_files.py` - Add migration tests (49 lines)
+- [ ] `experiments/migrate_runners.py` - Add migration tests (93 lines)
+- [ ] `experiments/migrate_runners_v2.py` - Add migration tests (64 lines)
+- [ ] `experiments/verify_protocols.py` - Add protocol verification tests (196 lines)
+- [ ] `tests/coverage_config.py` - Add coverage tool tests (116 lines)
+- [ ] `tests/mutation_testing.py` - Add mutation testing framework tests (194 lines)
+- [ ] `apgi_version.py` - Add version string tests (3 lines)
+
 ##### Week 1 Deliverable
 
-APGI_System.py at 95% coverage
+All 0% coverage files addressed
 
-#### Week 2: Core Module Hardening - Part 2
+#### Week 2: Low Coverage Files (<30%)
 
 ##### Week 2 Tasks
 
-- [ ] Complete xpr_agent_engine.py coverage (1250 lines)
-  - [ ] Add 80 tests for error recovery paths
-  - [ ] Add 60 tests for LLM fallback scenarios
-  - [ ] Add 50 tests for memory store edge cases
-  - [ ] Add 30 tests for concurrent access
-  - [ ] Add 30 tests for token budget exhaustion
-  
-- [ ] Complete apgi_security.py coverage (300 lines)
-  - [ ] Add 40 tests for security adapters
-  - [ ] Add 30 tests for encryption edge cases
-  - [ ] Add 20 tests for audit log failures
-  - [ ] Add 10 tests for permission validation
-  
-- [ ] Complete remaining core modules
-  - [ ] apgi_validation.py: 50 tests
-  - [ ] apgi_orchestration_kernel.py: 40 tests
-  - [ ] autonomous_agent.py: 30 tests
-  - [ ] apgi_cli.py: 48 tests
+- [ ] `human_layer.py` - Add human layer tests (280 missing)
+- [ ] `apgi_config.py` - Add config tests (103 missing)
+- [ ] `prepare.py` - Add prepare script tests (258 missing)
+- [ ] `apgi_implementation_template.py` - Add template tests (157 missing)
+- [ ] `apgi_metrics.py` - Add metrics tests (113 missing)
+- [ ] `apgi_double_dissociation.py` - Add dissociation tests (50 missing)
+- [ ] `GUI_auto_improve_experiments.py` - Add GUI tests (1033 missing - target 50%)
 
 ##### Week 2 Deliverable
 
-All core modules at 95%+ coverage
+All files at 70%+ coverage
 
-#### Week 3: Experiment Framework & Priority 1
+#### Week 3: Core Modules (50-80%)
 
 ##### Week 3 Tasks
 
-- [ ] Create `experiments/test_framework.py`
-  - [ ] Base test harness class
-  - [ ] Mock APGI integration
-  - [ ] Output validation utilities
-  - [ ] Visualization test helpers
-  
-- [ ] Implement tests for Priority 1 experiments
-  - [ ] change_blindness: 30 tests
-  - [ ] stroop_effect: 30 tests
-  - [ ] visual_search: 30 tests
-  - [ ] attentional_blink: 30 tests
-  - [ ] go_no_go: 30 tests
+- [ ] `APGI_System.py` - Add core system tests (358 missing)
+- [ ] `autonomous_agent.py` - Add agent tests (272 missing)
+- [ ] `memory_store.py` - Add memory tests (143 missing)
+- [ ] `performance_monitoring.py` - Add monitoring tests (130 missing)
+- [ ] `git_operations.py` - Add git tests (96 missing)
+- [ ] `apgi_validation.py` - Add validation tests (81 missing)
+- [ ] `validation.py` - Add validation tests (81 missing)
+- [ ] `progress_tracking.py` - Add progress tests (72 missing)
+- [ ] `hypothesis_approval_board.py` - Add approval tests (48 missing)
 
 ##### Week 3 Deliverable
 
-Experiment framework + 5 fully tested experiments
+Core modules at 90%+ coverage
 
-#### Week 4: Priority 2 Experiments
+#### Week 4: Remaining Core Modules & Experiments
 
 ##### Week 4 Tasks
 
-- [ ] Working memory experiments
-  - [ ] dual_n_back: 25 tests
-  - [ ] sternberg_memory: 25 tests
-  - [ ] working_memory_span: 25 tests
-  
-- [ ] Decision making experiments
-  - [ ] iowa_gambling_task: 25 tests
-  - [ ] probabilistic_category_learning: 25 tests
-  
-- [ ] Attention experiments
-  - [ ] posner_cueing: 25 tests
-  - [ ] eriksen_flanker: 25 tests
-  - [ ] binocular_rivalry: 25 tests
+- [ ] `apgi_security.py` - Add security tests (44 missing)
+- [ ] `apgi_cli.py` - Add CLI tests (41 missing)
+- [ ] `apgi_authz.py` - Add auth tests (23 missing)
+- [ ] `apgi_audit.py` - Add audit tests (42 missing)
+- [ ] `apgi_compliance.py` - Add compliance tests (26 missing)
+- [ ] Experiment files (30+ files) - Targeted tests to reach 90%
 
 ##### Week 4 Deliverable
 
-10 additional experiments at 90% coverage
+All files at 90%+ coverage
 
-#### Week 5: Priority 3 Experiments
+#### Week 5: Final Edge Cases
 
 ##### Week 5 Tasks
 
-- [ ] Memory experiments (3 files)
-- [ ] Motor control experiments (3 files)
-- [ ] Interoception experiments (3 files)
-- [ ] Learning experiments (4 files)
-- [ ] Remaining experiments (25 files)
+- [ ] Numeric edge cases (NaN, inf, boundary values)
+- [ ] Input validation (None, empty collections, type coercion)
+- [ ] Exception handling paths
+- [ ] Security edge cases
+- [ ] Performance regression tests
+- [ ] Fix failing test (test_performance_regression_detection)
 
 ##### Week 5 Deliverable
-
-All 68 experiment files at 90%+ coverage
-
-#### Week 6: Final Coverage Push
-
-##### Week 6 Tasks
-
-- [ ] Identify all remaining uncovered lines
-- [ ] Add edge case tests for numeric boundaries
-- [ ] Add security-focused adversarial tests
-- [ ] Add performance/stress tests for critical paths
-- [ ] Run full mutation testing
-- [ ] Validate 100% coverage
-
-##### Week 6 Deliverable
 
 100% test coverage achieved
 
@@ -448,16 +403,15 @@ All 68 experiment files at 90%+ coverage
 #### Estimated Test Counts by Phase
 
 | Phase | New Tests | Cumulative Tests |
-|-------|-----------|------------------|
-| Week 1 | 200 | 1239 |
-| Week 2 | 358 | 1597 |
-| Week 3 | 180 | 1777 |
-| Week 4 | 225 | 2002 |
-| Week 5 | 400 | 2402 |
-| Week 6 | 150 | 2552 |
+| :--- | :--- | :--- |
+| Week 1 | ~150 | 1,458 |
+| Week 2 | ~200 | 1,658 |
+| Week 3 | ~250 | 1,908 |
+| Week 4 | ~300 | 2,208 |
+| Week 5 | ~100 | 2,308 |
 
-**Total New Tests:** ~1,500 tests
-**Total Tests After Completion:** ~2,500 tests
+**Total New Tests:** ~1,000 tests
+**Total Tests After Completion:** ~2,308 tests
 
 ---
 
@@ -770,29 +724,48 @@ class CoverageDashboard:
 ### Core Module Line Counts
 
 | Module | Total Lines | Covered | Missing | Coverage % |
-|--------|-------------|---------|---------|------------|
-| APGI_System.py | 4026 | ~3400 | ~626 | ~84% |
-| xpr_agent_engine.py | ~5000 | ~3750 | ~1250 | ~75% |
-| apgi_integration.py | 1375 | ~1238 | ~137 | ~90% |
-| apgi_security.py | ~1500 | ~1200 | ~300 | ~80% |
-| apgi_validation.py | ~2000 | ~1700 | ~300 | ~85% |
-| apgi_config.py | ~1500 | ~1350 | ~150 | ~90% |
-| apgi_cli.py | ~800 | ~560 | ~240 | ~70% |
-| autonomous_agent.py | ~1200 | ~1020 | ~180 | ~85% |
-| apgi_orchestration_kernel.py | ~2000 | ~1600 | ~400 | ~80% |
-| apgi_profiler.py | ~1000 | ~850 | ~150 | ~85% |
-| apgi_authz.py | ~800 | ~680 | ~120 | ~85% |
-| apgi_data_retention.py | ~1500 | ~1350 | ~150 | ~90% |
-| apgi_timeout_abstraction.py | ~500 | ~450 | ~50 | ~90% |
-| human_layer.py | ~1000 | ~900 | ~100 | ~90% |
+| :--- | :--- | :--- | :--- | :--- |
+| APGI_System.py | 1197 | 839 | 358 | 66.9% |
+| xpr_agent_engine.py | 387 | 293 | 94 | 75.7% |
+| apgi_integration.py | 489 | 449 | 40 | 88% |
+| apgi_security.py | 118 | 74 | 44 | 62.9% |
+| apgi_validation.py | 285 | 204 | 81 | 71.2% |
+| apgi_config.py | 161 | 58 | 103 | 29.4% |
+| apgi_cli.py | 110 | 69 | 41 | 58.6% |
+| autonomous_agent.py | 620 | 348 | 272 | 56% |
+| apgi_orchestration_kernel.py | 122 | 119 | 3 | 97% |
+| apgi_profiler.py | 90 | 84 | 6 | 90% |
+| apgi_authz.py | 98 | 75 | 23 | 70.9% |
+| apgi_data_retention.py | 169 | 166 | 3 | 97% |
+| apgi_timeout_abstraction.py | 100+ | ~90 | ~10 | ~90% |
+| human_layer.py | 322 | 42 | 280 | 12.2% |
+| apgi_audit.py | 127 | 85 | 42 | 59.6% |
+| apgi_compliance.py | 53 | 27 | 26 | 42.9% |
+| apgi_metrics.py | 143 | 30 | 113 | 15.9% |
+| apgi_double_dissociation.py | 66 | 16 | 50 | 18.2% |
+| apgi_implementation_template.py | 207 | 50 | 157 | 23.3% |
+| apgi_config_schema.py | 108 | 0 | 108 | 0% |
+| apgi_version.py | 3 | 0 | 3 | 0% |
+| memory_store.py | 257 | 114 | 143 | 44.5% |
+| performance_monitoring.py | 232 | 102 | 130 | 44.3% |
+| progress_tracking.py | 168 | 96 | 72 | 57.3% |
+| hypothesis_approval_board.py | 106 | 58 | 48 | 44.9% |
+| git_operations.py | 218 | 122 | 96 | 56% |
+| prepare.py | 312 | 54 | 258 | 20.8% |
+| train.py | 515 | 9 | 506 | 1.3% |
+| validation.py | 285 | 204 | 81 | 71.2% |
+| GUI_auto_improve_experiments.py | 1287 | 254 | 1033 | 17.5% |
+| delete_pycache.py | 271 | 203 | 68 | 74.9% |
 
 ### Experiment Files Coverage
 
 | Category | Files | Total Lines | Coverage % |
-|----------|-------|-------------|------------|
-| prepare_*.py | 34 | ~8,000 | 0-15% |
-| run_*.py | 34 | ~12,000 | 0-20% |
-| Total | 68 | ~20,000 | ~5% |
+| :--- | :--- | :--- | :--- |
+| prepare_*.py | 10 | ~800 | 54-79% |
+| run_*.py | 28 | ~1200 | 61-79% |
+| migrate_*.py | 3 | ~200 | 0% |
+| verify_protocols.py | 1 | 196 | 0% |
+| Total | 42+ | ~2,400 | ~67% |
 
 ---
 
@@ -921,11 +894,15 @@ class Test[ClassName]Coverage:
 
 ## Summary
 
-This document establishes the roadmap for achieving 100% test coverage on the APGI API codebase:
+This document establishes the roadmap for achieving 100% test coverage on the APGI Research codebase:
 
-1. **Current State:** ~85% core coverage, ~5% experiment coverage
-2. **Gap Analysis:** ~2,626 uncovered lines across 68 experiment files and core modules
-3. **Solution:** 6-week implementation plan adding ~1,500 targeted tests
-4. **Outcome:** 100% line and branch coverage across all modules
+1. **Current State:** 69.58% overall coverage (20,838/28,268 lines)
+2. **Gap Analysis:** 7,430 uncovered lines across 62+ files
+3. **Critical Issues:**
+   - 9 files at 0% coverage (apgi_config_schema.py, train.py, migration scripts)
+   - 7 files below 30% coverage (human_layer.py, apgi_config.py, GUI_auto_improve_experiments.py)
+   - 30+ experiment files at 50-80% coverage
+4. **Solution:** 5-week implementation plan adding ~1,000 targeted tests
+5. **Outcome:** 100% line and branch coverage across all modules
 
-**Next Action:** Begin Week 1 implementation focusing on APGI_System.py coverage gaps.
+**Next Action:** Begin Week 1 implementation focusing on 0% coverage files.

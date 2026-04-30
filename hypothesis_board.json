@@ -13,5 +13,39 @@
     "reviewed_at": "2026-04-30T17:47:59.451715",
     "reviewed_by": "GUI Reviewer",
     "tags": []
+  },
+  {
+    "id": "b470addb-6462-4f83-8eba-ec71587b3c7a",
+    "title": "test1 ",
+    "description": "\n",
+    "predicted_outcome": "sasd",
+    "confidence_score": 0.7,
+    "success_criteria": [
+      "test1"
+    ],
+    "risk_assessment": "low",
+    "reviewer_comments": "Approved via GUI review",
+    "status": "approved",
+    "created_at": "2026-04-30T17:49:07.609598",
+    "reviewed_at": "2026-04-30T18:19:06.963959",
+    "reviewed_by": "GUI Reviewer",
+    "tags": []
+  },
+  {
+    "id": "2ab0703f-c714-43f6-a54c-93887becb8f0",
+    "title": "test3",
+    "description": "\n",
+    "predicted_outcome": "a wins",
+    "confidence_score": 0.7,
+    "success_criteria": [
+      "test3"
+    ],
+    "risk_assessment": "low",
+    "reviewer_comments": "Rejected via GUI review",
+    "status": "rejected",
+    "created_at": "2026-04-30T18:17:32.967485",
+    "reviewed_at": "2026-04-30T18:19:29.132503",
+    "reviewed_by": "GUI Reviewer",
+    "tags": []
   }
 ]
