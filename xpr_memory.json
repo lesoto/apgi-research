@@ -44,14 +44,14 @@
     "memory_id": "705f2825fbfc"
   },
   {
-    "timestamp": "2026-04-30T17:15:19.626576",
-    "experiment_name": "masked_task",
+    "timestamp": "2026-04-30T17:16:20.016158",
+    "experiment_name": "working_memory_span",
     "pattern_type": "strategy",
     "content": "Valid parameters found",
     "context": {
       "source": "auto_update_from_report"
     },
     "embedding": null,
-    "memory_id": "7c6435189baa"
+    "memory_id": "e9f546e3d1c6"
   }
 ]
