@@ -96,15 +96,11 @@ class EnhancedAPGIMetrics:
             return IgnitionMetrics(0.0, 0.0, 0.0, 0.0, 0.0, [])
 
         # Basic ignition rate calculation
-        if threshold is not None:
+        if threshold is None:
             # Dynamic threshold based on reaction time distribution
             threshold = float(np.mean(reaction_times) + np.std(reaction_times))
 
-        ignition_events = (
-            [1.0 if rt <= threshold else 0.0 for rt in reaction_times]
-            if threshold is not None
-            else []
-        )
+        ignition_events = [1.0 if rt <= threshold else 0.0 for rt in reaction_times]
         ignition_rate = float(np.mean(ignition_events))
 
         # Advanced ignition dynamics
@@ -325,7 +321,7 @@ class EnhancedAPGIMetrics:
             trial_count=trial_count,
             experiment_duration=sum(reaction_times) if reaction_times else 0.0,
             overall_performance_score=performance_score,
-            statistical_significance=significance_tests,
+            statistical_significance=significance_tests if significance_tests else None,
         )
 
     def _calculate_entropy(self, values: List[float]) -> float:
@@ -333,15 +329,16 @@ class EnhancedAPGIMetrics:
         if not values:
             return 0.0
 
-        # Create histogram of values
-        hist, bin_edges = np.histogram(values, bins=20, density=True)
+        # Create histogram of values (counts, not density)
+        hist, _ = np.histogram(values, bins=20)
 
-        # Calculate entropy
+        # Calculate entropy using Shannon formula
         entropy = 0.0
-        for i, count in enumerate(hist):
+        total = len(values)
+        for count in hist:
             if count > 0:
-                p = count / len(values)
-                entropy -= p * np.log2(p + 1e-10)
+                p = count / total
+                entropy -= p * np.log2(p)
 
         return entropy
 

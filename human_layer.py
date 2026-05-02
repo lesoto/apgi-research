@@ -106,16 +106,7 @@ class HumanControlLayer:
 
     def _load_config(self) -> Dict[str, Any]:
         """Load human configuration from file."""
-        if self.config_path.exists():
-            try:
-                with open(self.config_path, "r") as f:
-                    return cast(Dict[str, Any], json.load(f))
-            except Exception as e:
-                logger.error(f"Failed to load human config: {e}")
-                return {}
-
-        # Default configuration
-        return {
+        default_config = {
             "interaction_mode": "interactive",  # interactive, batch, autonomous
             "review_threshold": 0.7,  # confidence threshold for auto-approval
             "task_filters": {
@@ -129,6 +120,18 @@ class HumanControlLayer:
                 "critical_only": False,
             },
         }
+
+        if self.config_path.exists():
+            try:
+                with open(self.config_path, "r") as f:
+                    loaded_config = cast(Dict[str, Any], json.load(f))
+                    # Merge with defaults to ensure all keys exist
+                    return {**default_config, **loaded_config}
+            except Exception as e:
+                logger.error(f"Failed to load human config: {e}")
+                return default_config
+
+        return default_config
 
     def _save_config(self) -> None:
         """Save human configuration to file."""

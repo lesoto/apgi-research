@@ -298,6 +298,53 @@ class ExperimentRunnerGUI(ctk.CTk):
         ctk.CTkLabel(
             self.guardrail_frame,
             text="⚡ Guardrails",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 5), sticky="w")
+
+        # Status
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Status:",
+            font=ctk.CTkFont(size=11),
+            text_color="#333333",
+        ).grid(row=1, column=0, padx=(10, 2), pady=2, sticky="w")
+        self.guardrail_status_label = ctk.CTkLabel(
+            self.guardrail_frame,
+            text="IDLE",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.guardrail_status_label.grid(
+            row=1, column=1, padx=(2, 10), pady=2, sticky="w"
+        )
+
+        # Confidence
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Confidence:",
+            font=ctk.CTkFont(size=11),
+            text_color="#333333",
+        ).grid(row=2, column=0, padx=(10, 2), pady=2, sticky="w")
+        self.guardrail_confidence_label = ctk.CTkLabel(
+            self.guardrail_frame,
+            text="100%",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.guardrail_confidence_label.grid(
+            row=2, column=1, padx=(2, 10), pady=2, sticky="w"
+        )
+
+        # Regression
+        ctk.CTkLabel(
+            self.guardrail_frame,
+            text="Regression:",
+            font=ctk.CTkFont(size=11),
+            text_color="#333333",
+        ).grid(row=3, column=0, padx=(10, 2), pady=2, sticky="w")
+        self.guardrail_regression_label = ctk.CTkLabel(
+            self.guardrail_frame,
             text="0.0%",
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#2ecc71",

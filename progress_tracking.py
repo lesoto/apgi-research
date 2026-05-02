@@ -10,10 +10,97 @@ import threading
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from apgi_integration import APGIIntegration
+
+
+class ProgressStatus(Enum):
+    """Status for task progress tracking."""
+
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+@dataclass
+class TaskProgress:
+    """Progress for a single task."""
+
+    task_id: str
+    status: ProgressStatus = ProgressStatus.PENDING
+    progress_percent: float = 0.0
+    message: str = ""
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Set start time when task becomes in progress."""
+        if self.status == ProgressStatus.IN_PROGRESS and self.start_time is None:
+            self.start_time = time.time()
+
+    @property
+    def duration_seconds(self) -> Optional[float]:
+        """Calculate task duration."""
+        if self.start_time is None:
+            return None
+        end = self.end_time or time.time()
+        return end - self.start_time
+
+
+@dataclass
+class Checkpoint:
+    """A checkpoint for saving progress state."""
+
+    checkpoint_id: str
+    timestamp: float = field(default_factory=time.time)
+    task_states: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ProgressReport:
+    """Report summarizing progress across tasks."""
+
+    total_tasks: int = 0
+    completed_tasks: int = 0
+    failed_tasks: int = 0
+    in_progress_tasks: int = 0
+    pending_tasks: int = 0
+    overall_progress: float = 0.0
+
+    @classmethod
+    def calculate(cls, tasks: List[TaskProgress]) -> "ProgressReport":
+        """Calculate a progress report from a list of tasks."""
+        if not tasks:
+            return cls()
+
+        total = len(tasks)
+        completed = sum(1 for t in tasks if t.status == ProgressStatus.COMPLETED)
+        failed = sum(1 for t in tasks if t.status == ProgressStatus.FAILED)
+        in_progress = sum(1 for t in tasks if t.status == ProgressStatus.IN_PROGRESS)
+        pending = sum(1 for t in tasks if t.status == ProgressStatus.PENDING)
+
+        # Calculate overall progress as average of all task progress
+        overall = sum(t.progress_percent for t in tasks) / total if total > 0 else 0.0
+
+        return cls(
+            total_tasks=total,
+            completed_tasks=completed,
+            failed_tasks=failed,
+            in_progress_tasks=in_progress,
+            pending_tasks=pending,
+            overall_progress=overall,
+        )
+
+
+# Default checkpoint directory
+CHECKPOINT_DIR = Path("checkpoints")
 
 
 @dataclass
@@ -54,9 +141,9 @@ class ProgressTracker:
 
     def __init__(
         self,
-        experiment_name: str,
-        participant_id: str,
-        total_trials: int,
+        experiment_name: str = "",
+        participant_id: str = "",
+        total_trials: int = 0,
         output_dir: str = "progress",
         load_existing: bool = False,
     ):
@@ -78,6 +165,10 @@ class ProgressTracker:
             status="running",
         )
 
+        # Task-based tracking (new API)
+        self.tasks: Dict[str, TaskProgress] = {}
+        self.checkpoints: List[Checkpoint] = []
+
         # Progress callbacks
         self.progress_callbacks: List[Callable[[ExperimentProgress], None]] = []
         self.trial_callbacks: List[Callable[[TrialResult], None]] = []
@@ -93,6 +184,133 @@ class ProgressTracker:
         self._save_interval = 30  # seconds
         self._last_save = time.time()
         self._auto_save_enabled = True
+
+    def add_task(
+        self, task_id: str, message: str = "", progress_percent: float = 0.0
+    ) -> TaskProgress:
+        """Add a new task to track."""
+        with self._lock:
+            task = TaskProgress(
+                task_id=task_id,
+                message=message,
+                progress_percent=progress_percent,
+            )
+            self.tasks[task_id] = task
+            return task
+
+    def update_task(
+        self,
+        task_id: str,
+        progress_percent: Optional[float] = None,
+        message: Optional[str] = None,
+        status: Optional[ProgressStatus] = None,
+    ) -> Optional[TaskProgress]:
+        """Update a task's progress."""
+        with self._lock:
+            if task_id not in self.tasks:
+                # Create new task if it doesn't exist
+                self.add_task(task_id, message or "", progress_percent or 0.0)
+
+            task = self.tasks[task_id]
+
+            if progress_percent is not None:
+                task.progress_percent = progress_percent
+            if message is not None:
+                task.message = message
+            if status is not None:
+                task.status = status
+                if status == ProgressStatus.IN_PROGRESS and task.start_time is None:
+                    task.start_time = time.time()
+
+            return task
+
+    def complete_task(self, task_id: str, message: str = "") -> Optional[TaskProgress]:
+        """Mark a task as completed."""
+        with self._lock:
+            task = self.update_task(
+                task_id,
+                status=ProgressStatus.COMPLETED,
+                progress_percent=100.0,
+                message=message,
+            )
+            if task:
+                task.end_time = time.time()
+            return task
+
+    def fail_task(self, task_id: str, message: str = "") -> Optional[TaskProgress]:
+        """Mark a task as failed."""
+        with self._lock:
+            task = self.update_task(
+                task_id,
+                status=ProgressStatus.FAILED,
+                message=message,
+            )
+            if task:
+                task.end_time = time.time()
+            return task
+
+    def get_report(self) -> ProgressReport:
+        """Get a progress report for all tasks."""
+        with self._lock:
+            return ProgressReport.calculate(list(self.tasks.values()))
+
+    def create_checkpoint(self, checkpoint_id: str) -> Checkpoint:
+        """Create a checkpoint from current task states."""
+        with self._lock:
+            checkpoint = Checkpoint(
+                checkpoint_id=checkpoint_id,
+                task_states={
+                    tid: {
+                        "status": t.status.value,
+                        "progress_percent": t.progress_percent,
+                        "message": t.message,
+                    }
+                    for tid, t in self.tasks.items()
+                },
+            )
+            self.checkpoints.append(checkpoint)
+            return checkpoint
+
+    def save_checkpoint(self, checkpoint_id: str, path: Optional[Path] = None) -> bool:
+        """Save a checkpoint to file."""
+        try:
+            checkpoint = self.create_checkpoint(checkpoint_id)
+            save_path = path or (CHECKPOINT_DIR / f"{checkpoint_id}.json")
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(save_path, "w") as f:
+                json.dump(
+                    {
+                        "checkpoint_id": checkpoint.checkpoint_id,
+                        "timestamp": checkpoint.timestamp,
+                        "task_states": checkpoint.task_states,
+                        "metadata": checkpoint.metadata,
+                    },
+                    f,
+                    indent=2,
+                )
+            return True
+        except Exception:
+            return False
+
+    def load_checkpoint(self, path: Path) -> bool:
+        """Load a checkpoint from file."""
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+
+            # Restore task states
+            for task_id, state in data.get("task_states", {}).items():
+                self.tasks[task_id] = TaskProgress(
+                    task_id=task_id,
+                    status=ProgressStatus(state.get("status", "pending")),
+                    progress_percent=state.get("progress_percent", 0.0),
+                    message=state.get("message", ""),
+                )
+
+            return True
+        except Exception:
+            return False
 
     def add_progress_callback(
         self, callback: Callable[[ExperimentProgress], None]
@@ -403,6 +621,131 @@ class ProgressMonitor:
         """Get a specific experiment tracker."""
         key = f"{experiment_name}_{participant_id}"
         return self.active_experiments.get(key)
+
+
+# Convenience functions for checkpoint management
+def create_checkpoint(
+    checkpoint_id: str,
+    tasks: Optional[List[TaskProgress]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Checkpoint:
+    """Create a checkpoint."""
+    task_states = {}
+    if tasks:
+        for task in tasks:
+            task_states[task.task_id] = {
+                "status": task.status.value,
+                "progress_percent": task.progress_percent,
+                "message": task.message,
+            }
+
+    return Checkpoint(
+        checkpoint_id=checkpoint_id,
+        task_states=task_states,
+        metadata=metadata or {},
+    )
+
+
+def save_checkpoint(checkpoint: Checkpoint, path: Optional[Path] = None) -> bool:
+    """Save a checkpoint to file."""
+    try:
+        save_path = path or (CHECKPOINT_DIR / f"{checkpoint.checkpoint_id}.json")
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(save_path, "w") as f:
+            json.dump(
+                {
+                    "checkpoint_id": checkpoint.checkpoint_id,
+                    "timestamp": checkpoint.timestamp,
+                    "task_states": checkpoint.task_states,
+                    "metadata": checkpoint.metadata,
+                },
+                f,
+                indent=2,
+            )
+        return True
+    except Exception:
+        return False
+
+
+def load_checkpoint(path: Path) -> Optional[Checkpoint]:
+    """Load a checkpoint from file."""
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        return Checkpoint(
+            checkpoint_id=data["checkpoint_id"],
+            timestamp=data.get("timestamp", time.time()),
+            task_states=data.get("task_states", {}),
+            metadata=data.get("metadata", {}),
+        )
+    except Exception:
+        return None
+
+
+def resume_from_checkpoint(
+    path: Path,
+) -> tuple[Optional[Checkpoint], List[TaskProgress]]:
+    """Resume from a checkpoint, returning the checkpoint and restored tasks."""
+    checkpoint = load_checkpoint(path)
+    if not checkpoint:
+        return None, []
+
+    tasks = []
+    for task_id, state in checkpoint.task_states.items():
+        tasks.append(
+            TaskProgress(
+                task_id=task_id,
+                status=ProgressStatus(state.get("status", "pending")),
+                progress_percent=state.get("progress_percent", 0.0),
+                message=state.get("message", ""),
+            )
+        )
+
+    return checkpoint, tasks
+
+
+def get_progress_summary(tasks: List[TaskProgress]) -> Dict[str, Any]:
+    """Get a summary of progress for a list of tasks."""
+    report = ProgressReport.calculate(tasks)
+    return {
+        "total": report.total_tasks,
+        "completed": report.completed_tasks,
+        "failed": report.failed_tasks,
+        "in_progress": report.in_progress_tasks,
+        "pending": report.pending_tasks,
+        "progress_percent": report.overall_progress,
+    }
+
+
+class ProgressManager:
+    """Manages multiple progress trackers."""
+
+    def __init__(self) -> None:
+        self.trackers: Dict[str, ProgressTracker] = {}
+
+    def get_tracker(self, session_id: str) -> ProgressTracker:
+        """Get or create a tracker for a session."""
+        if session_id not in self.trackers:
+            self.trackers[session_id] = ProgressTracker()
+        return self.trackers[session_id]
+
+    def remove_tracker(self, session_id: str) -> None:
+        """Remove a tracker."""
+        if session_id in self.trackers:
+            del self.trackers[session_id]
+
+    def get_all_reports(self) -> Dict[str, ProgressReport]:
+        """Get progress reports for all trackers."""
+        return {sid: tracker.get_report() for sid, tracker in self.trackers.items()}
+
+    def get_overall_report(self) -> ProgressReport:
+        """Get a combined report for all trackers."""
+        all_tasks: List[TaskProgress] = []
+        for tracker in self.trackers.values():
+            all_tasks.extend(tracker.tasks.values())
+        return ProgressReport.calculate(all_tasks)
 
 
 # Convenience functions

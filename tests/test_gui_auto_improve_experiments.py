@@ -178,15 +178,19 @@ class TestExperimentRunnerGUI:
         # Store the original import_module function
         original_import_module = importlib.import_module
 
-        # Mock importlib.import_module to raise ImportError for numpy
+        # Create mock importlib that raises ImportError for numpy
+        mock_importlib = MagicMock()
+
         def mock_import_module(module_name):
             if module_name == "numpy":
                 raise ImportError("No module named 'numpy'")
             # For other modules, use the original function
-            print(f"DEBUG: Importing {module_name} with original function")
             return original_import_module(module_name)
 
-        with patch("importlib.import_module", side_effect=mock_import_module):
+        mock_importlib.import_module = mock_import_module
+
+        # Patch sys.modules so local 'import importlib' finds our mock
+        with patch.dict("sys.modules", {"importlib": mock_importlib}):
             with patch("tkinter.messagebox.showerror") as mock_msgbox:
                 with patch("sys.exit") as mock_exit:
                     gui.ExperimentRunnerGUI._check_dependencies(None)
@@ -320,6 +324,212 @@ class TestExperimentRunnerGUI:
         params = list(sig.parameters.keys())
         # self, parent_frame
         assert len(params) >= 2
+
+
+class TestPatchedAddMenuCommands:
+    """Test the patched _add_menu_commands function."""
+
+    def test_patched_function_exists(self):
+        """Test that the patched function exists."""
+        assert hasattr(gui, "_patched_add_menu_commands")
+        assert callable(gui._patched_add_menu_commands)
+
+    def test_patched_function_handles_empty_menu(self):
+        """Test that patched function handles empty menu gracefully."""
+        mock_menu = MagicMock()
+        mock_menu.index.return_value = None
+        mock_menu._values = []
+        mock_menu._command = None
+
+        # Should not raise exception
+        gui._patched_add_menu_commands(mock_menu)
+        mock_menu.delete.assert_not_called()
+
+
+class TestGUIMethods:
+    """Test various GUI methods."""
+
+    def test_log_method_exists(self):
+        """Test _log method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_log")
+        assert callable(gui.ExperimentRunnerGUI._log)
+
+    def test_clear_console_method_exists(self):
+        """Test _clear_console method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_clear_console")
+        assert callable(gui.ExperimentRunnerGUI._clear_console)
+
+    def test_update_guardrail_dashboard_exists(self):
+        """Test _update_guardrail_dashboard method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_update_guardrail_dashboard")
+        assert callable(gui.ExperimentRunnerGUI._update_guardrail_dashboard)
+
+    def test_notify_guardrail_escalation_exists(self):
+        """Test _notify_guardrail_escalation method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_notify_guardrail_escalation")
+        assert callable(gui.ExperimentRunnerGUI._notify_guardrail_escalation)
+
+    def test_run_auto_improve_exists(self):
+        """Test _run_auto_improve method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_run_auto_improve")
+        assert callable(gui.ExperimentRunnerGUI._run_auto_improve)
+
+    def test_execute_script_exists(self):
+        """Test _execute_script method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_execute_script")
+        assert callable(gui.ExperimentRunnerGUI._execute_script)
+
+    def test_parse_experiment_results_exists(self):
+        """Test _parse_experiment_results method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_parse_experiment_results")
+        assert callable(gui.ExperimentRunnerGUI._parse_experiment_results)
+
+    def test_finish_experiment_exists(self):
+        """Test _finish_experiment method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_finish_experiment")
+        assert callable(gui.ExperimentRunnerGUI._finish_experiment)
+
+    def test_run_all_exists(self):
+        """Test _run_all method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_run_all")
+        assert callable(gui.ExperimentRunnerGUI._run_all)
+
+    def test_run_all_sequential_exists(self):
+        """Test _run_all_sequential method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_run_all_sequential")
+        assert callable(gui.ExperimentRunnerGUI._run_all_sequential)
+
+    def test_stop_all_exists(self):
+        """Test _stop_all method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_stop_all")
+        assert callable(gui.ExperimentRunnerGUI._stop_all)
+
+    def test_display_dependencies_status_exists(self):
+        """Test _display_dependencies_status method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_display_dependencies_status")
+        assert callable(gui.ExperimentRunnerGUI._display_dependencies_status)
+
+    def test_repair_dependencies_exists(self):
+        """Test _repair_dependencies method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_repair_dependencies")
+        assert callable(gui.ExperimentRunnerGUI._repair_dependencies)
+
+    def test_change_appearance_mode_exists(self):
+        """Test change_appearance_mode method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "change_appearance_mode")
+        assert callable(gui.ExperimentRunnerGUI.change_appearance_mode)
+
+    def test_plot_experiment_results_exists(self):
+        """Test _plot_experiment_results method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_plot_experiment_results")
+        assert callable(gui.ExperimentRunnerGUI._plot_experiment_results)
+
+    def test_show_results_visualization_exists(self):
+        """Test _show_results_visualization method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_results_visualization")
+        assert callable(gui.ExperimentRunnerGUI._show_results_visualization)
+
+    def test_show_file_menu_exists(self):
+        """Test _show_file_menu method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_file_menu")
+        assert callable(gui.ExperimentRunnerGUI._show_file_menu)
+
+    def test_show_edit_menu_exists(self):
+        """Test _show_edit_menu method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_edit_menu")
+        assert callable(gui.ExperimentRunnerGUI._show_edit_menu)
+
+    def test_show_view_menu_exists(self):
+        """Test _show_view_menu method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_view_menu")
+        assert callable(gui.ExperimentRunnerGUI._show_view_menu)
+
+    def test_show_help_menu_exists(self):
+        """Test _show_help_menu method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_help_menu")
+        assert callable(gui.ExperimentRunnerGUI._show_help_menu)
+
+    def test_show_create_hypothesis_dialog_exists(self):
+        """Test _show_create_hypothesis_dialog method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_create_hypothesis_dialog")
+        assert callable(gui.ExperimentRunnerGUI._show_create_hypothesis_dialog)
+
+    def test_show_hypothesis_review_exists(self):
+        """Test _show_hypothesis_review method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_hypothesis_review")
+        assert callable(gui.ExperimentRunnerGUI._show_hypothesis_review)
+
+    def test_refresh_hypothesis_display_exists(self):
+        """Test _refresh_hypothesis_display method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_refresh_hypothesis_display")
+        assert callable(gui.ExperimentRunnerGUI._refresh_hypothesis_display)
+
+    def test_launch_plan_generation_exists(self):
+        """Test _launch_plan_generation method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_launch_plan_generation")
+        assert callable(gui.ExperimentRunnerGUI._launch_plan_generation)
+
+
+class TestGUIMethodBehavior:
+    """Test behavior of key GUI methods."""
+
+    def test_log_with_color(self):
+        """Test _log method with color parameter."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+
+        gui.ExperimentRunnerGUI._log(mock_gui, "test message", "blue")
+        mock_gui.console_text.insert.assert_called()
+
+    def test_log_without_color(self):
+        """Test _log method without color parameter."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+
+        gui.ExperimentRunnerGUI._log(mock_gui, "test message")
+        mock_gui.console_text.insert.assert_called()
+
+    def test_clear_console(self):
+        """Test _clear_console clears the console."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+
+        gui.ExperimentRunnerGUI._clear_console(mock_gui)
+        mock_gui.console_text.delete.assert_called()
+
+    def test_finish_experiment_updates_state(self):
+        """Test _finish_experiment updates experiment state."""
+        mock_gui = MagicMock()
+        mock_gui.running_experiments = {"test_exp"}
+        mock_gui.experiment_buttons = {"test_exp": MagicMock()}
+        mock_gui.status_indicators = {"test_exp": MagicMock()}
+
+        gui.ExperimentRunnerGUI._finish_experiment(
+            mock_gui, "test_exp", "completed", "green"
+        )
+
+        assert "test_exp" not in mock_gui.running_experiments
+        mock_gui.experiment_buttons["test_exp"].configure.assert_called()
+        mock_gui.status_indicators["test_exp"].configure.assert_called()
+
+    def test_stop_all_sets_flag(self):
+        """Test _stop_all sets the stop flag."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+        mock_gui.active_processes = {"test": MagicMock()}
+
+        gui.ExperimentRunnerGUI._stop_all(mock_gui)
+
+        assert mock_gui.stop_all is True
+        # Should also terminate processes
+        for process in mock_gui.active_processes.values():
+            process.terminate.assert_called()
+
+    def test_change_appearance_mode(self):
+        """Test change_appearance_mode changes theme."""
+        with patch.object(gui.ctk, "set_appearance_mode") as mock_set:
+            gui.ExperimentRunnerGUI.change_appearance_mode(None, "Light")
+            mock_set.assert_called_once_with("Light")
 
 
 if __name__ == "__main__":

@@ -8,11 +8,50 @@ import shutil
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from validation import ValidationResult, validate_git_operations
+
+
+class GitError(Exception):
+    """Exception for git operation errors."""
+
+    def __init__(self, message: str, command: Optional[str] = None):
+        super().__init__(message)
+        self.command = command
+
+
+@dataclass
+class GitConfig:
+    """Git configuration settings."""
+
+    user_name: str = ""
+    user_email: str = ""
+    default_branch: str = "main"
+    auto_commit: bool = False
+
+
+@dataclass
+class GitStatus:
+    """Git repository status."""
+
+    branch: str = ""
+    modified_files: List[str] = field(default_factory=list)
+    untracked_files: List[str] = field(default_factory=list)
+    staged_files: List[str] = field(default_factory=list)
+    is_clean: bool = True
+
+
+@dataclass
+class RepositoryInfo:
+    """Information about a git repository."""
+
+    root_path: Path = field(default_factory=Path)
+    current_branch: str = ""
+    remote_url: Optional[str] = None
+    last_commit_hash: Optional[str] = None
 
 
 @dataclass
@@ -404,6 +443,168 @@ class GitRollbackManager:
             return {"error": str(e)}
 
 
+class GitOperations:
+    """Git operations interface for common git commands."""
+
+    def __init__(self, repo_path: Union[str, Path] = "."):
+        self.repo_path = Path(repo_path).resolve()
+
+    def _run_git_command(
+        self, cmd: List[str], check: bool = True
+    ) -> subprocess.CompletedProcess:
+        """Run a git command and return the result."""
+        try:
+            result = subprocess.run(
+                ["git"] + cmd,
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                check=check,
+            )
+            return result
+        except subprocess.CalledProcessError as e:
+            raise GitError(
+                f"Git command failed: {' '.join(cmd)}\nError: {e.stderr}",
+                command=" ".join(cmd),
+            )
+
+    def status(self) -> GitStatus:
+        """Get git status."""
+        try:
+            result = self._run_git_command(["status", "--porcelain", "-b"])
+            lines = result.stdout.strip().split("\n")
+
+            branch = ""
+            modified = []
+            untracked = []
+            staged = []
+
+            for line in lines:
+                if line.startswith("##"):
+                    branch = line[3:].split("...")[0].strip()
+                elif line.startswith(" M") or line.startswith("M "):
+                    modified.append(line[3:])
+                elif line.startswith("A "):
+                    staged.append(line[3:])
+                elif line.startswith("??"):
+                    untracked.append(line[3:])
+
+            is_clean = not (modified or untracked or staged)
+
+            return GitStatus(
+                branch=branch,
+                modified_files=modified,
+                untracked_files=untracked,
+                staged_files=staged,
+                is_clean=is_clean,
+            )
+        except Exception:
+            return GitStatus()
+
+    def add(self, files: Union[str, List[str]]) -> bool:
+        """Add files to staging area."""
+        if isinstance(files, str):
+            files = [files]
+        try:
+            for f in files:
+                self._run_git_command(["add", f])
+            return True
+        except GitError:
+            return False
+
+    def commit(self, message: str) -> bool:
+        """Commit staged changes."""
+        try:
+            self._run_git_command(["commit", "-m", message])
+            return True
+        except GitError:
+            return False
+
+    def push(self, remote: str = "origin", branch: Optional[str] = None) -> bool:
+        """Push changes to remote."""
+        try:
+            if branch:
+                self._run_git_command(["push", remote, branch])
+            else:
+                self._run_git_command(["push"])
+            return True
+        except GitError:
+            return False
+
+    def pull(self, remote: str = "origin", branch: Optional[str] = None) -> bool:
+        """Pull changes from remote."""
+        try:
+            if branch:
+                self._run_git_command(["pull", remote, branch])
+            else:
+                self._run_git_command(["pull"])
+            return True
+        except GitError:
+            return False
+
+    def fetch(self, remote: str = "origin") -> bool:
+        """Fetch changes from remote."""
+        try:
+            self._run_git_command(["fetch", remote])
+            return True
+        except GitError:
+            return False
+
+    def checkout(self, branch: str, create: bool = False) -> bool:
+        """Checkout a branch."""
+        try:
+            if create:
+                self._run_git_command(["checkout", "-b", branch])
+            else:
+                self._run_git_command(["checkout", branch])
+            return True
+        except GitError:
+            return False
+
+    def create_branch(self, branch_name: str) -> bool:
+        """Create and checkout a new branch."""
+        return self.checkout(branch_name, create=True)
+
+    def get_log(self, max_entries: int = 10) -> List[str]:
+        """Get commit log."""
+        try:
+            result = self._run_git_command(["log", f"-{max_entries}", "--oneline"])
+            output = result.stdout.strip()
+            if not output:
+                return []
+            return [line for line in output.split("\n") if line]
+        except GitError:
+            return []
+
+    def get_remotes(self) -> Dict[str, str]:
+        """Get configured remotes."""
+        try:
+            result = self._run_git_command(["remote", "-v"])
+            remotes = {}
+            for line in result.stdout.strip().split("\n"):
+                if line:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        remotes[parts[0]] = parts[1]
+            return remotes
+        except GitError:
+            return {}
+
+    def is_clean(self) -> bool:
+        """Check if working tree is clean."""
+        status = self.status()
+        return status.is_clean
+
+    def get_current_branch(self) -> str:
+        """Get current branch name."""
+        try:
+            result = self._run_git_command(["rev-parse", "--abbrev-ref", "HEAD"])
+            branch: str = result.stdout.strip()
+            return branch
+        except GitError:
+            return ""
+
+
 # Convenience functions for common operations
 def safe_git_add(files: List[str], repo_path: str = ".") -> ValidationResult:
     """Safely add files to git with rollback capability."""
@@ -435,3 +636,75 @@ def safe_git_rollback(repo_path: str = ".") -> ValidationResult:
         return result
     finally:
         manager.cleanup_backups()
+
+
+def is_git_repository(path: Union[str, Path]) -> bool:
+    """Check if a path is a git repository."""
+    path_obj = Path(path)
+    git_dir = path_obj / ".git"
+    return git_dir.exists() and git_dir.is_dir()
+
+
+def get_repository_info(path: Union[str, Path]) -> RepositoryInfo:
+    """Get information about a git repository."""
+    if not is_git_repository(path):
+        raise GitError(f"Not a git repository: {path}")
+
+    ops = GitOperations(path)
+    info = RepositoryInfo(root_path=Path(path).resolve())
+
+    try:
+        info.current_branch = ops.get_current_branch()
+    except Exception:
+        pass
+
+    try:
+        result = ops._run_git_command(["rev-parse", "HEAD"])
+        info.last_commit_hash = result.stdout.strip()
+    except Exception:
+        pass
+
+    try:
+        remotes = ops.get_remotes()
+        if "origin" in remotes:
+            info.remote_url = remotes["origin"]
+    except Exception:
+        pass
+
+    return info
+
+
+def get_current_branch(repo_path: Union[str, Path] = ".") -> str:
+    """Get the current branch name."""
+    ops = GitOperations(repo_path)
+    return ops.get_current_branch()
+
+
+def create_branch(branch_name: str, repo_path: Union[str, Path] = ".") -> bool:
+    """Create and checkout a new branch."""
+    ops = GitOperations(repo_path)
+    return ops.create_branch(branch_name)
+
+
+def stage_files(
+    files: Union[str, List[str]], repo_path: Union[str, Path] = "."
+) -> bool:
+    """Stage files for commit."""
+    ops = GitOperations(repo_path)
+    return ops.add(files)
+
+
+def commit_changes(message: str, repo_path: Union[str, Path] = ".") -> bool:
+    """Commit staged changes."""
+    ops = GitOperations(repo_path)
+    return ops.commit(message)
+
+
+def push_changes(
+    remote: str = "origin",
+    branch: Optional[str] = None,
+    repo_path: Union[str, Path] = ".",
+) -> bool:
+    """Push changes to remote."""
+    ops = GitOperations(repo_path)
+    return ops.push(remote, branch)

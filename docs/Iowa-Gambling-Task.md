@@ -19,11 +19,90 @@ To set up a new IGT experiment:
 
 ## Experimentation
 
-Each IGT experiment runs for a fixed time budget of 10 minutes (wall clock time, excluding setup). Launch it as:
+Each IGT experiment runs for a fixed time budget of 10 minutes (wall clock time, excluding setup).
+
+### Prerequisites
+
+Before running the experiment, ensure:
+
+1. **Dependencies are installed**: Run `uv sync` to install all required packages.
+2. **Stimuli data is ready**: Verify `data/stimuli/` contains deck configurations. If missing, run:
+
+   ```bash
+   uv run prepare.py
+   ```
+
+3. **You are on the correct branch**: Confirm you're on `igt/<tag>` branch.
+4. **results.tsv exists**: Create it if it doesn't exist:
+
+   ```bash
+   echo -e "commit\tnet_score\ttime_min\tmemory_gb\tstatus\tdescription" > results.tsv
+   ```
+
+### Running the Experiment
+
+#### Quick Start
+
+Launch the experiment with:
 
 ```bash
 uv run run_igt.py
 ```
+
+#### With Logging (Recommended)
+
+Capture full output for later analysis:
+
+```bash
+uv run run_igt.py > run.log 2>&1
+```
+
+Then extract key metrics:
+
+```bash
+grep "^net_score:\|^completion_time_s:\|^peak_vram_mb:" run.log
+```
+
+#### With Progress Monitoring
+
+To watch progress in real-time while logging:
+
+```bash
+uv run run_igt.py 2>&1 | tee run.log
+```
+
+### What Happens During a Run
+
+1. **Initialization**: The script loads deck configurations and initializes the trial state.
+2. **Trial Loop**: For each trial:
+   - Presents deck selection prompt
+   - Records participant choice
+   - Calculates reward/penalty based on deck probabilities
+   - Updates running totals
+   - Logs reaction time and outcome
+3. **Completion**: After all trials or time limit reached:
+   - Calculates net score (advantageous - disadvantageous choices in last 20 trials)
+   - Outputs summary statistics
+   - Saves detailed trial data to `data/trials/<timestamp>.csv`
+
+### Monitoring Progress
+
+During a run, watch for:
+
+- **Trial counter**: Shows current trial number and total planned
+- **Running net score**: Live calculation of the primary metric
+- **Warnings**: Alerts for slow responses or invalid inputs
+- **Completion percentage**: Progress toward the 10-minute time budget
+
+### Troubleshooting Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError` | Run `uv sync` to install dependencies |
+| `FileNotFoundError: data/stimuli/` | Run `uv run prepare.py` to generate stimuli |
+| Slow startup | First run compiles dependencies; subsequent runs are faster |
+| Run hangs | Check for infinite loops in modified `run_igt.py`; kill with Ctrl+C |
+| Memory error | Reduce `NUM_TRIALS` or optimize data logging in `run_igt.py` |
 
 ### What You CAN Do
 

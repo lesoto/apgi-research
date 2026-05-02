@@ -124,9 +124,7 @@ class APGIPhychiatricProfiles(BaseModel):
 class SecurityConfig(BaseModel):
     """Security and audit configuration."""
 
-    audit_key: str = Field(
-        default="", min_length=64, description="APGI_AUDIT_KEY value"
-    )
+    audit_key: str = Field(default="", description="APGI_AUDIT_KEY value")
     operator_role: Literal["guest", "operator", "admin"] = Field(default="guest")
     config_secret_key: str = Field(default="", description="Config validation key")
     enable_profiling: bool = Field(default=False)

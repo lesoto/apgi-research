@@ -15,6 +15,9 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Save the real torch module if it exists
+_real_torch = sys.modules.get("torch")
+
 # Mock the external dependencies before importing
 sys.modules["requests"] = MagicMock()
 sys.modules["pyarrow.parquet"] = MagicMock()
@@ -23,6 +26,12 @@ sys.modules["tiktoken"] = MagicMock()
 sys.modules["torch"] = MagicMock()
 
 import prepare as prep
+
+# Restore the real torch module to prevent interference with other tests
+if _real_torch is not None:
+    sys.modules["torch"] = _real_torch
+else:
+    sys.modules.pop("torch", None)
 
 
 class TestConstants:
@@ -523,6 +532,347 @@ class TestUtilityFunctions:
 
             result = prep.cleanup_cache()
             assert result is True
+
+
+class TestDownloadSingleShard:
+    """Test download_single_shard function."""
+
+    @patch("prepare.requests.get")
+    @patch("prepare.Path.exists")
+    @patch("prepare.Path.mkdir")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_download_single_shard_success(
+        self, mock_temp, mock_mkdir, mock_exists, mock_get
+    ):
+        """Test successful single shard download."""
+        mock_exists.return_value = False
+        mock_mkdir.return_value = None
+
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.iter_content.return_value = [b"data"]
+        mock_get.return_value = mock_response
+
+        # Mock temp file
+        mock_temp.return_value.__enter__.return_value.name = "temp.tmp"
+        mock_temp.return_value.__enter__.return_value.write.return_value = None
+        mock_temp.return_value.__exit__.return_value = None
+
+        with patch("os.replace"):
+            with patch("builtins.print"):
+                result = prep.download_single_shard(1)
+                assert result is True
+
+    @patch("prepare.Path.exists")
+    def test_download_single_shard_already_exists(self, mock_exists):
+        """Test download when shard already exists."""
+        mock_exists.return_value = True
+        result = prep.download_single_shard(1)
+        assert result is True
+
+    @patch("prepare.requests.get")
+    @patch("prepare.Path.exists")
+    @patch("prepare.Path.mkdir")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_download_single_shard_retry(
+        self, mock_temp, mock_mkdir, mock_exists, mock_get
+    ):
+        """Test download with retry on failure."""
+        mock_exists.return_value = False
+        mock_mkdir.return_value = None
+
+        # First attempt fails, second succeeds
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = [Exception("Error"), None]
+        mock_response.iter_content.return_value = [b"data"]
+        mock_get.return_value = mock_response
+
+        mock_temp.return_value.__enter__.return_value.name = "temp.tmp"
+        mock_temp.return_value.__enter__.return_value.write.return_value = None
+        mock_temp.return_value.__exit__.return_value = None
+
+        with patch("os.replace"):
+            with patch("os.remove"):
+                with patch("builtins.print"):
+                    with patch("time.sleep"):
+                        result = prep.download_single_shard(1)
+                        assert result is True
+
+    @patch("prepare.requests.get")
+    @patch("prepare.Path.exists")
+    @patch("prepare.Path.mkdir")
+    def test_download_single_shard_all_fail(self, mock_mkdir, mock_exists, mock_get):
+        """Test download when all attempts fail."""
+        mock_exists.return_value = False
+        mock_mkdir.return_value = None
+
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Error")
+        mock_get.return_value = mock_response
+
+        with patch("builtins.print"):
+            result = prep.download_single_shard(1)
+            assert result is False
+
+
+class TestDownloadData:
+    """Test download_data function."""
+
+    @patch("prepare.Pool")
+    @patch("prepare.Path.exists")
+    @patch("prepare.Path.mkdir")
+    def test_download_data_all_exist(self, mock_mkdir, mock_exists, mock_pool):
+        """Test download when all shards already exist."""
+        mock_exists.return_value = True
+        mock_mkdir.return_value = None
+
+        with patch("builtins.print"):
+            prep.download_data(5, 8)
+            # Should not call pool if all exist
+
+    @patch("prepare.Pool")
+    @patch("prepare.Path.exists")
+    @patch("prepare.Path.mkdir")
+    def test_download_data_partial(self, mock_mkdir, mock_exists, mock_pool):
+        """Test download with some shards already existing."""
+
+        # Mock that shard 0 exists, but shard 1 doesn't
+        def exists_side_effect(path):
+            return "shard_00000" in str(path)
+
+        mock_exists.side_effect = exists_side_effect
+        mock_mkdir.return_value = None
+
+        mock_pool_instance = MagicMock()
+        mock_pool.return_value.__enter__.return_value = mock_pool_instance
+        mock_pool_instance.map.return_value = [True, True]
+
+        with patch("builtins.print"):
+            prep.download_data(2, 8)
+
+
+class TestListParquetFiles:
+    """Test list_parquet_files function."""
+
+    @patch("prepare.DATA_DIR")
+    def test_list_parquet_files(self, mock_data_dir):
+        """Test listing parquet files."""
+        # Mock directory with parquet files
+        mock_data_dir.iterdir.return_value = [
+            Path("shard_00001.parquet"),
+            Path("shard_00002.parquet"),
+            Path("shard_00002.parquet.tmp"),  # Should be excluded
+            Path("readme.txt"),  # Should be excluded
+        ]
+
+        files = prep.list_parquet_files()
+        assert len(files) == 2
+        assert all(f.suffix == ".parquet" for f in files)
+        assert not any(f.name.endswith(".tmp") for f in files)
+
+    @patch("prepare.DATA_DIR")
+    def test_list_parquet_files_empty(self, mock_data_dir):
+        """Test listing when no parquet files."""
+        mock_data_dir.iterdir.return_value = []
+        files = prep.list_parquet_files()
+        assert files == []
+
+
+class TestTextIterator:
+    """Test text_iterator function."""
+
+    @patch("prepare.list_parquet_files")
+    def test_text_iterator(self, mock_list):
+        """Test text iterator."""
+        # Mock parquet files
+        mock_list.return_value = [Path("shard_00001.parquet")]
+
+        # Mock parquet file
+        mock_pf = MagicMock()
+        mock_pf.num_row_groups = 1
+        mock_rg = MagicMock()
+        mock_rg.column.return_value.to_pylist.return_value = ["text1", "text2"]
+        mock_pf.read_row_group.return_value = mock_rg
+
+        with patch("pyarrow.parquet.ParquetFile", return_value=mock_pf):
+            texts = list(prep.text_iterator(max_chars=100))
+            assert len(texts) > 0
+
+
+class TestDocumentBatches:
+    """Test _document_batches function."""
+
+    @patch("prepare.list_parquet_files")
+    def test_document_batches_train(self, mock_list):
+        """Test document batches for train split."""
+        mock_list.return_value = [Path("shard_00001.parquet")]
+
+        # Mock parquet file
+        mock_pf = MagicMock()
+        mock_pf.num_row_groups = 1
+        mock_rg = MagicMock()
+        mock_rg.column.return_value.to_pylist.return_value = ["text1", "text2"]
+        mock_pf.read_row_group.return_value = mock_rg
+
+        with patch("pyarrow.parquet.ParquetFile", return_value=mock_pf):
+            batches = list(prep._document_batches("train", tokenizer_batch_size=2))
+            assert len(batches) > 0
+
+    @patch("prepare.list_parquet_files")
+    def test_document_batches_val(self, mock_list):
+        """Test document batches for val split."""
+        mock_list.return_value = [Path("shard_00001.parquet")]
+
+        # Mock parquet file
+        mock_pf = MagicMock()
+        mock_pf.num_row_groups = 1
+        mock_rg = MagicMock()
+        mock_rg.column.return_value.to_pylist.return_value = ["text1", "text2"]
+        mock_pf.read_row_group.return_value = mock_rg
+
+        with patch("pyarrow.parquet.ParquetFile", return_value=mock_pf):
+            batches = list(prep._document_batches("val", tokenizer_batch_size=2))
+            assert len(batches) > 0
+
+
+class TestGetTokenBytes:
+    """Test get_token_bytes function."""
+
+    @patch("prepare.TOKENIZER_DIR")
+    @patch("torch.load")
+    def test_get_token_bytes(self, mock_load, mock_token_dir):
+        """Test getting token bytes."""
+        mock_token_dir.__truediv__ = Path("token_bytes.pt")
+        mock_load.return_value = MagicMock()
+
+        result = prep.get_token_bytes("cpu")
+        assert result is not None
+        mock_load.assert_called_once()
+
+
+class TestTokenizerClass:
+    """Test Tokenizer class."""
+
+    @patch("pickle.load")
+    @patch("prepare.TOKENIZER_DIR")
+    def test_tokenizer_from_directory(self, mock_token_dir, mock_pickle):
+        """Test Tokenizer.from_directory class method."""
+        mock_token_dir.__truediv__ = Path("tokenizer.pkl")
+        mock_enc = MagicMock()
+        mock_enc.n_vocab = 8192
+        mock_enc.encode_single_token.return_value = 0
+        mock_pickle.return_value = mock_enc
+
+        tokenizer = prep.Tokenizer.from_directory()
+        assert tokenizer.get_vocab_size() == 8192
+        assert tokenizer.get_bos_token_id() == 0
+
+    def test_tokenizer_encode_string(self):
+        """Test Tokenizer.encode with string."""
+        mock_enc = MagicMock()
+        mock_enc.encode_ordinary.return_value = [1, 2, 3]
+        mock_enc.encode_single_token.return_value = 0
+        tokenizer = prep.Tokenizer(mock_enc)
+
+        result = tokenizer.encode("test")
+        assert result == [1, 2, 3]
+
+    def test_tokenizer_encode_with_prepend(self):
+        """Test Tokenizer.encode with prepend."""
+        mock_enc = MagicMock()
+        mock_enc.encode_ordinary.return_value = [1, 2, 3]
+        mock_enc.encode_single_token.return_value = 0
+        tokenizer = prep.Tokenizer(mock_enc)
+
+        result = tokenizer.encode("test", prepend="bos")
+        assert result == [0, 1, 2, 3]
+
+    def test_tokenizer_encode_list(self):
+        """Test Tokenizer.encode with list."""
+        mock_enc = MagicMock()
+        mock_enc.encode_ordinary_batch.return_value = [[1, 2], [3, 4]]
+        mock_enc.encode_single_token.return_value = 0
+        tokenizer = prep.Tokenizer(mock_enc)
+
+        result = tokenizer.encode(["text1", "text2"])
+        assert len(result) == 2
+
+    def test_tokenizer_encode_invalid_type(self):
+        """Test Tokenizer.encode with invalid type."""
+        mock_enc = MagicMock()
+        tokenizer = prep.Tokenizer(mock_enc)
+
+        with pytest.raises(ValueError):
+            tokenizer.encode(123)
+
+    def test_tokenizer_decode(self):
+        """Test Tokenizer.decode."""
+        mock_enc = MagicMock()
+        mock_enc.decode.return_value = "decoded text"
+        tokenizer = prep.Tokenizer(mock_enc)
+
+        result = tokenizer.decode([1, 2, 3])
+        assert result == "decoded text"
+
+
+class TestEvaluateBpb:
+    """Test evaluate_bpb function."""
+
+    @patch("prepare.get_token_bytes")
+    @patch("prepare.make_dataloader")
+    @patch("torch.no_grad")
+    def test_evaluate_bpb(self, mock_nograd, mock_loader, mock_token_bytes):
+        """Test BPB evaluation."""
+        mock_token_bytes.return_value = MagicMock()
+        mock_nograd.return_value.__enter__ = MagicMock()
+        mock_nograd.return_value.__exit__ = MagicMock()
+
+        # Mock model
+        mock_model = MagicMock()
+        mock_model.return_value = MagicMock()
+        mock_model.return_value.view.return_value = MagicMock()
+        mock_model.return_value.view.return_value.sum.return_value.item.return_value = (
+            1.0
+        )
+        mock_model.return_value.view.return_value.sum.return_value.item.return_value = (
+            1000
+        )
+
+        # Mock dataloader
+        mock_loader_instance = MagicMock()
+        mock_loader.return_value = mock_loader_instance
+        mock_loader_instance.__iter__ = MagicMock(
+            return_value=iter(
+                [(MagicMock(), MagicMock(), 1), (MagicMock(), MagicMock(), 1)]
+            )
+        )
+
+        result = prep.evaluate_bpb(mock_model, MagicMock(), 8, "cpu")
+        assert isinstance(result, float)
+
+
+class TestMakeDataloader:
+    """Test make_dataloader function."""
+
+    @patch("prepare._document_batches")
+    @patch("torch.cuda.is_available")
+    def test_make_dataloader_cpu(self, mock_cuda, mock_batches):
+        """Test dataloader on CPU."""
+        mock_cuda.return_value = False
+
+        # Mock tokenizer
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.get_bos_token_id.return_value = 0
+        mock_tokenizer.encode.return_value = [[1, 2], [3, 4]]
+
+        # Mock batches
+        mock_batches.return_value = iter([(["text1", "text2"], 1)])
+
+        with patch("torch.empty"):
+            result = prep.make_dataloader(mock_tokenizer, 2, 10, "train")
+            # Should return an iterator
+            assert result is not None
 
 
 if __name__ == "__main__":

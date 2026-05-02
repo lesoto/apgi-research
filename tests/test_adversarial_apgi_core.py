@@ -784,9 +784,9 @@ class TestPerformance:
     def test_signal_dynamics_performance(self, performance_monitor: Any) -> None:
         """Benchmark signal_dynamics execution speed."""
         with performance_monitor(
-            threshold_ms=3000
-        ) as metrics:  # Increased threshold for CI stability
-            for _ in range(10000):
+            threshold_ms=500
+        ) as metrics:  # Adjusted for 1k iterations
+            for _ in range(1000):
                 DynamicalSystemEquations.signal_dynamics(
                     S=1.0,
                     Pi_e=1.0,

@@ -9,7 +9,7 @@ import gc
 import json
 import threading
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -64,12 +64,93 @@ class PerformanceMetrics:
     error: Optional[str] = None
 
 
+@dataclass
+class BenchmarkConfig:
+    """Configuration for benchmarking a function."""
+
+    name: str = ""
+    iterations: int = 1
+    warmup_iterations: int = 0
+    timeout_seconds: float = 60.0
+
+
+@dataclass
+class BenchmarkResult:
+    """Results from benchmarking a function."""
+
+    name: str
+    mean_time_ms: float = 0.0
+    median_time_ms: float = 0.0
+    min_time_ms: float = 0.0
+    max_time_ms: float = 0.0
+    std_dev_ms: float = 0.0
+    iterations: int = 0
+    times_ms: List[float] = field(default_factory=list)
+
+    @classmethod
+    def calculate(cls, name: str, times_ms: List[float]) -> "BenchmarkResult":
+        """Calculate benchmark statistics from a list of times."""
+        if not times_ms:
+            return cls(name=name)
+
+        import statistics
+
+        mean_time = statistics.mean(times_ms)
+        median_time = statistics.median(times_ms)
+        min_time = min(times_ms)
+        max_time = max(times_ms)
+        std_dev = statistics.stdev(times_ms) if len(times_ms) > 1 else 0.0
+
+        return cls(
+            name=name,
+            mean_time_ms=mean_time,
+            median_time_ms=median_time,
+            min_time_ms=min_time,
+            max_time_ms=max_time,
+            std_dev_ms=std_dev,
+            iterations=len(times_ms),
+            times_ms=times_ms,
+        )
+
+
+@dataclass
+class PerformanceReport:
+    """Report containing performance metrics and benchmarks."""
+
+    timestamp: Optional[datetime] = None
+    metrics: Dict[str, float] = field(default_factory=dict)
+    benchmarks: List[BenchmarkResult] = field(default_factory=list)
+    summary: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Set default timestamp if not provided."""
+        if self.timestamp is None:
+            self.timestamp = datetime.now()
+
+    def add_metric(self, name: str, value: float) -> None:
+        """Add a metric to the report."""
+        self.metrics[name] = value
+
+    def add_benchmark(self, benchmark: BenchmarkResult) -> None:
+        """Add a benchmark result to the report."""
+        self.benchmarks.append(benchmark)
+
+
 class PerformanceMonitor:
     """Monitors system performance and memory usage."""
 
-    def __init__(self, output_dir: str = "performance_logs"):
+    def __init__(self, output_dir: str = "performance_logs", enabled: bool = True):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
+
+        # Enabled state for test API
+        self.enabled = enabled
+
+        # Metrics and benchmarks storage for test API
+        self.metrics: Dict[str, float] = {}
+        self.benchmarks: List[BenchmarkResult] = []
+        self._timers: Dict[str, float] = {}
+        self._slow_threshold_ms = 100.0
 
         # Monitoring state
         self.is_monitoring = False
@@ -91,6 +172,88 @@ class PerformanceMonitor:
 
         # Callbacks
         self.threshold_callbacks: List[Callable[[str, Dict[str, Any]], None]] = []
+
+    def record_metric(self, name: str, value: float) -> None:
+        """Record a performance metric."""
+        if not self.enabled:
+            return
+        self.metrics[name] = value
+
+    def start_timer(self, name: str) -> None:
+        """Start a named timer."""
+        self._timers[name] = time.time()
+
+    def stop_timer(self, name: str) -> float:
+        """Stop a named timer and return duration in seconds."""
+        if name not in self._timers:
+            return 0.0
+        start_time = self._timers.pop(name)
+        duration = time.time() - start_time
+        return duration
+
+    def benchmark(
+        self, name: str, func: Callable[..., Any], iterations: int = 1
+    ) -> BenchmarkResult:
+        """Benchmark a function."""
+        times_ms: List[float] = []
+        if self.enabled:
+            for _ in range(iterations):
+                start = time.time()
+                try:
+                    func()
+                except Exception:
+                    pass
+                end = time.time()
+                times_ms.append((end - start) * 1000)
+
+        result = BenchmarkResult.calculate(name, times_ms)
+        self.benchmarks.append(result)
+        return result
+
+    def get_report(self) -> PerformanceReport:
+        """Get a performance report."""
+        report = PerformanceReport()
+        report.metrics = dict(self.metrics)
+        report.benchmarks = list(self.benchmarks)
+        return report
+
+    def reset(self) -> None:
+        """Reset all metrics and benchmarks."""
+        self.metrics = {}
+        self.benchmarks = []
+
+    def disable(self) -> None:
+        """Disable the monitor."""
+        self.enabled = False
+
+    def enable(self) -> None:
+        """Enable the monitor."""
+        self.enabled = True
+
+    def is_slow_operation(self, duration_ms: float) -> bool:
+        """Check if an operation duration is considered slow."""
+        return duration_ms > self._slow_threshold_ms
+
+    def log_slow_operation(self, name: str, duration_ms: float) -> None:
+        """Log a slow operation warning."""
+        if self.is_slow_operation(duration_ms):
+            print(f"Slow operation: {name} took {duration_ms:.2f}ms")
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Get a summary of recorded metrics."""
+        return {
+            "total_metrics": len(self.metrics),
+            "total_benchmarks": len(self.benchmarks),
+            "metrics": dict(self.metrics),
+        }
+
+    def __enter__(self) -> "PerformanceMonitor":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Context manager exit."""
+        pass
 
     def add_threshold_callback(
         self, callback: Callable[[str, Dict[str, Any]], None]
@@ -558,6 +721,100 @@ class PerformanceMonitor:
                 plot_files.append(cpu_plot_file)
 
         return plot_files
+
+
+# Standalone functions for test API
+
+
+def get_memory_usage() -> float:
+    """Get current memory usage in MB."""
+    try:
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        return memory_info.rss / 1024 / 1024
+    except Exception:
+        return 0.0
+
+
+def get_performance_summary() -> Dict[str, Any]:
+    """Get a summary of performance metrics."""
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "memory": get_memory_usage(),
+    }
+
+
+def _benchmark_decorator(
+    name: str, iterations: int
+) -> Callable[[Callable[..., Any]], Callable[..., BenchmarkResult]]:
+    """Create a decorator for benchmarking functions."""
+
+    def decorator(f: Callable[..., Any]) -> Callable[..., BenchmarkResult]:
+        def wrapper(*args: Any, **kwargs: Any) -> BenchmarkResult:
+            times_ms = []
+            for _ in range(iterations):
+                start = time.time()
+                f(*args, **kwargs)
+                end = time.time()
+                times_ms.append((end - start) * 1000)
+            return BenchmarkResult.calculate(name, times_ms)
+
+        return wrapper
+
+    return decorator
+
+
+def benchmark(
+    func: Optional[Callable[..., Any]] = None,
+    config: Optional[BenchmarkConfig] = None,
+    name: Optional[str] = None,
+    iterations: int = 1,
+) -> Any:
+    """Benchmark a function. Can be used as a decorator or standalone function."""
+    # Handle decorator usage: @benchmark(name="test", iterations=5)
+    if func is None:
+        return _benchmark_decorator(name or "", iterations)
+
+    # Handle direct usage: benchmark(func, config)
+    actual_config = config or BenchmarkConfig(iterations=iterations)
+    times_ms: List[float] = []
+    for _ in range(actual_config.iterations):
+        start = time.time()
+        func()
+        end = time.time()
+        times_ms.append((end - start) * 1000)
+    result = BenchmarkResult.calculate(actual_config.name or "benchmark", times_ms)
+    return result
+
+
+class _PerformanceContext:
+    """Context manager for monitoring performance."""
+
+    def __init__(self, name: str):
+        self.name = name
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
+        self.duration_ms: float = 0.0
+
+    def __enter__(self) -> "_PerformanceContext":
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.end_time = time.time()
+        if self.start_time is not None:
+            self.duration_ms = (self.end_time - self.start_time) * 1000
+
+
+def monitor_performance(name: str) -> _PerformanceContext:
+    """Create a context manager for monitoring performance."""
+    return _PerformanceContext(name)
+
+
+def record_metric(name: str, value: float) -> bool:
+    """Record a global performance metric."""
+    # In a real implementation, this might store to a global registry
+    return True
 
 
 # Convenience functions

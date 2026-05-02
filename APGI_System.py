@@ -991,11 +991,9 @@ class PsychologicalState:
     Pi_i_expected: Optional[float] = None  # Expected/needed interoceptive precision
 
     # ========== DERIVED PARAMETERS ==========
-    Pi_i_eff_actual: Optional[float] = None  # Actual effective interoceptive precision
-    Pi_i_eff_expected: Optional[float] = (
-        None  # Expected effective interoceptive precision
-    )
-    S_t: Optional[float] = None  # Accumulated surprise
+    Pi_i_eff_actual: float = 0.0  # Actual effective interoceptive precision
+    Pi_i_eff_expected: float = 0.0  # Expected effective interoceptive precision
+    S_t: float = 0.0  # Accumulated surprise
 
     # ========== ADDITIONAL METADATA ==========
     arousal_level: float = 0.5
@@ -1058,16 +1056,10 @@ class PsychologicalState:
             # Use lower threshold for survival-relevant content
             effective_theta = self.theta_t * 0.7
 
-        if self.S_t is not None and effective_theta is not None:
-            return float(
-                1.0
-                / (
-                    1.0
-                    + np.exp(np.clip(-5.5 * (self.S_t - effective_theta), -500, 500))
-                )
-            )
-        else:
-            return 0.0
+        return float(
+            1.0
+            / (1.0 + np.exp(np.clip(-5.5 * (self.S_t - effective_theta), -500, 500)))
+        )
 
     def get_anxiety_index(self) -> float:
         """Compute anxiety index based on precision expectation gap"""
@@ -2685,6 +2677,8 @@ class EnhancedSurpriseIgnitionSystem:
         # History tracking (must be before reset)
         self.history: Dict[str, List] = defaultdict(list)
         self.state_history: List[Dict] = []  # Alias for test compatibility
+        self.S_history: List[float] = []  # Accumulated surprise history
+        self.ignition_history: List[float] = []  # Ignition events history
 
         # Initialize state
         self.reset()
@@ -2735,10 +2729,39 @@ class EnhancedSurpriseIgnitionSystem:
         # History for interoceptive errors (for arousal computation)
         self.eps_i_history: List[float] = []
 
-        # Clear history
-        for key in self.history:
-            self.history[key].clear()
-        self.state_history.clear()  # Clear state_history for test compatibility
+        # Clear and reinitialize history with all required keys
+        required_history_keys = [
+            "time",
+            "S",
+            "theta",
+            "B",
+            "P_ignition",
+            "M",
+            "A",
+            "Pi_e",
+            "Pi_i",
+            "eps_e",
+            "eps_i",
+            "content_domain",
+            "HEP_amplitude",
+            "P3b_latency",
+            "detection_threshold",
+            "ignition_probability",
+            "ignition_duration",
+            "anxiety_index",
+            "precision_expectation_gap",
+            "confidence_rating",
+            "reaction_time",
+            "neuro_ACh",
+            "neuro_NE",
+            "neuro_DA",
+            "neuro_5-HT",
+            "neuro_CRF",
+        ]
+        self.history = {key: [] for key in required_history_keys}
+        self.state_history.clear()
+        self.S_history.clear()
+        self.ignition_history.clear()
 
     def get_system_state(self) -> Dict[str, float]:
         """Get current system state (for test compatibility)."""

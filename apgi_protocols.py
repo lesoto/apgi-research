@@ -4,11 +4,13 @@ Defines runner interfaces using Protocol and ABC classes.
 """
 
 import warnings
+from functools import wraps
 from typing import Any, Dict, Protocol, runtime_checkable
 
 
 def deprecated(reason: str) -> Any:
     def decorator(func: Any) -> Any:
+        @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             warnings.warn(
                 f"{func.__name__} is deprecated: {reason}",
