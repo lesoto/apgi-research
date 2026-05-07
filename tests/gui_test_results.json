@@ -1,0 +1,591 @@
+{
+  "passed": 86,
+  "failed": 31,
+  "tests": [
+    {
+      "name": "Import customtkinter",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Import numpy",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Import matplotlib",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Import matplotlib tk backend",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Import hypothesis_approval_board",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Import GUI_auto_improve_experiments module",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Core dependency: numpy",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Core dependency: pandas",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Core dependency: matplotlib",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Core dependency: customtkinter",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Core dependency: scipy",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Optional dependency: torch",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Optional dependency: sklearn",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Optional dependency: requests",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Optional dependency: tqdm",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Optional dependency: PIL",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Experiment discovery",
+      "passed": false,
+      "message": "No run_*.py files found"
+    },
+    {
+      "name": "CORE_DEPENDENCIES constant",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "OPTIONAL_DEPENDENCIES constant",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "ExperimentRunnerGUI class exists",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "ApprovalBoard instantiation",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Create hypothesis",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Hypothesis properties",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Get pending hypotheses",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Update hypothesis status",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Verify status change",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 1",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 2",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 3",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 4",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 5",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 6",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 7",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 8",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 9",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Parse metric format 10",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "All metric parsing formats",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Create 7-panel visualization grid",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Apply dark theme to panels",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Plot sample data",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Visualization preparation complete",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail state structure",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail status: IDLE",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail status: RUNNING",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail status: OK",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail status: WARNING",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail status: ESCALATED",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail status: HALTED",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Confidence color logic",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Regression color logic",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Menu method: _show_file_menu",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Menu method: _show_edit_menu",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Menu method: _show_view_menu",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Menu method: _show_help_menu",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Menu method: change_appearance_mode",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Appearance mode option: Dark",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Appearance mode option: Light",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Appearance mode option: System",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Sidebar action: _run_all",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Sidebar action: _stop_all",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Sidebar action: _clear_console",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Experiment execution pipeline",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Hypothesis UI methods",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "XPR method: _run_auto_improve",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "XPR method: _launch_plan_generation",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail escalation notification",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Guardrail dashboard update",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "XPRAgentEngine import",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "AutonomousAgent import",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Experiment card creation method",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Results visualization method",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Experiment result parsing method",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Plot experiment results method",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Visualization panel creation method",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Display dependencies status",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Repair dependencies method",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: numpy -> numpy",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: pandas -> pandas",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: matplotlib -> matplotlib",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: customtkinter -> customtkinter",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: scipy -> scipy",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: torch -> torch",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: sklearn -> scikit-learn",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Package mapping: PIL -> Pillow",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Dropdown patch applied",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Dropdown patch is callable",
+      "passed": true,
+      "message": ""
+    },
+    {
+      "name": "Test script exists",
+      "passed": false,
+      "message": "/Users/lesoto/Sites/PYTHON/apgi-research/.claude/worktrees/silly-dijkstra-120a30/tests/experiments/run_stroop_effect.py not found"
+    },
+    {
+      "name": "Experiment found: run_ai_benchmarking.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_artificial_grammar_learning.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_attentional_blink.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_binocular_rivalry.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_change_blindness.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_change_blindness_full_apgi.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_drm_false_memory.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_dual_n_back.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_eriksen_flanker.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_go_no_go.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_inattentional_blindness.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_interoceptive_gating.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_iowa_gambling_task.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_masking.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_metabolic_cost.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_multisensory_integration.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_navon_task.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_posner_cueing.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_probabilistic_category_learning.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_serial_reaction_time.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_simon_effect.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_somatic_marker_priming.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_sternberg_memory.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_stop_signal.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_stroop_effect.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_time_estimation.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_virtual_navigation.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_visual_search.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Experiment found: run_working_memory_span.py",
+      "passed": false,
+      "message": "Not found"
+    },
+    {
+      "name": "Total experiments discoverable: 0",
+      "passed": true,
+      "message": ""
+    }
+  ]
+}

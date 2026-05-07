@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/ -x --co -q)",
+      "Bash(python -m pytest tests/test_APGI_System.py tests/test_apgi_errors.py tests/test_apgi_logging.py tests/test_apgi_security.py -x -q --no-header)",
+      "Bash(python -m pytest tests/ -m \"not slow and not gui and not integration and not stress and not memory and not visual and not mutation\" --co -q)",
+      "Bash(python -m pytest tests/ -m \"not slow and not gui and not integration and not stress and not memory and not visual and not mutation\" -q --no-header)",
+      "Bash(python -m pytest tests/ --ignore=tests/test_gui_all_options.py --ignore=tests/test_gui_playwright.py -m \"not slow and not gui and not integration and not stress and not memory and not visual and not mutation\" -q --no-header)",
+      "Bash(python -m pytest tests/ --ignore=tests/test_gui_all_options.py --ignore=tests/test_gui_playwright.py --ignore=tests/test_apgi_data_retention.py --ignore=tests/test_apgi_orchestration_kernel.py -m \"not slow and not gui and not integration and not stress and not memory and not visual and not mutation and not plots\" -q --no-header)",
+      "Bash(python3 -c ' *)",
+      "Bash(openssl rand *)",
+      "Bash(python -m pytest tests/ --ignore=tests/test_gui_all_options.py --ignore=tests/test_gui_playwright.py -m 'not slow and not gui and not integration and not stress and not memory and not visual and not mutation and not plots' -q --no-header --tb=no)"
+    ]
+  }
+}

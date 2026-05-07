@@ -1,0 +1,13 @@
+{
+  "experiment_name": "test_exp",
+  "participant_id": "test_participant",
+  "start_time": 1778185401.192469,
+  "current_trial": 0,
+  "total_trials": 10,
+  "completed_trials": 0,
+  "trials": [],
+  "apgi_summary": null,
+  "status": "completed",
+  "end_time": 1778185401.192607,
+  "error_log": []
+}
