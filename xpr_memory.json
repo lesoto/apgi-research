@@ -53,5 +53,27 @@
     },
     "embedding": null,
     "memory_id": "1794ed8d765d"
+  },
+  {
+    "timestamp": "2026-05-10T02:18:36.366634",
+    "experiment_name": "artificial_grammar_learning",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "e407eb55c112"
+  },
+  {
+    "timestamp": "2026-05-10T02:18:36.366916",
+    "experiment_name": "artificial_grammar_learning",
+    "pattern_type": "success_pattern",
+    "content": "Successful execution: Iteration 1: Metric 0.6000 (Delta: +0.1250)",
+    "context": {
+      "metric_deltas": "{'artificial_grammar_learning': 0.125}"
+    },
+    "embedding": null,
+    "memory_id": "72d94a5f5770"
   }
 ]
