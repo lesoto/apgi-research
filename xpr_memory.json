@@ -1,79 +1,35 @@
 [
   {
-    "timestamp": "2026-05-10T02:18:25.848812",
-    "experiment_name": "artificial_grammar_learning",
+    "timestamp": "2026-05-10T14:22:51.540925",
+    "experiment_name": "change_blindness",
     "pattern_type": "strategy",
     "content": "Valid parameters found",
     "context": {
       "source": "auto_update_from_report"
     },
     "embedding": null,
-    "memory_id": "eab0d46853fe"
+    "memory_id": "90fc8c080dff"
   },
   {
-    "timestamp": "2026-05-10T02:18:26.093638",
-    "experiment_name": "artificial_grammar_learning",
+    "timestamp": "2026-05-10T14:22:51.551066",
+    "experiment_name": "change_blindness",
     "pattern_type": "strategy",
     "content": "Valid parameters found",
     "context": {
       "source": "auto_update_from_report"
     },
     "embedding": null,
-    "memory_id": "5e7440778763"
+    "memory_id": "7614a5768a4e"
   },
   {
-    "timestamp": "2026-05-10T02:18:26.094135",
-    "experiment_name": "artificial_grammar_learning",
+    "timestamp": "2026-05-10T14:22:51.551529",
+    "experiment_name": "change_blindness",
     "pattern_type": "success_pattern",
-    "content": "Successful execution: Iteration 1: Metric 0.6500 (Delta: +0.1000)",
+    "content": "Successful execution: Iteration 1: Metric 0.2286 (Delta: +0.1214)",
     "context": {
-      "metric_deltas": "{'artificial_grammar_learning': 0.09999999999999998}"
+      "metric_deltas": "{'change_blindness': 0.12142857142857143}"
     },
     "embedding": null,
-    "memory_id": "4dd9fdf6b937"
-  },
-  {
-    "timestamp": "2026-05-10T02:18:26.368795",
-    "experiment_name": "artificial_grammar_learning",
-    "pattern_type": "strategy",
-    "content": "Valid parameters found",
-    "context": {
-      "source": "auto_update_from_report"
-    },
-    "embedding": null,
-    "memory_id": "f34bb64c7e80"
-  },
-  {
-    "timestamp": "2026-05-10T02:18:36.192489",
-    "experiment_name": "artificial_grammar_learning",
-    "pattern_type": "strategy",
-    "content": "Valid parameters found",
-    "context": {
-      "source": "auto_update_from_report"
-    },
-    "embedding": null,
-    "memory_id": "1794ed8d765d"
-  },
-  {
-    "timestamp": "2026-05-10T02:18:36.366634",
-    "experiment_name": "artificial_grammar_learning",
-    "pattern_type": "strategy",
-    "content": "Valid parameters found",
-    "context": {
-      "source": "auto_update_from_report"
-    },
-    "embedding": null,
-    "memory_id": "e407eb55c112"
-  },
-  {
-    "timestamp": "2026-05-10T02:18:36.366916",
-    "experiment_name": "artificial_grammar_learning",
-    "pattern_type": "success_pattern",
-    "content": "Successful execution: Iteration 1: Metric 0.6000 (Delta: +0.1250)",
-    "context": {
-      "metric_deltas": "{'artificial_grammar_learning': 0.125}"
-    },
-    "embedding": null,
-    "memory_id": "72d94a5f5770"
+    "memory_id": "e7ab8735788c"
   }
 ]
