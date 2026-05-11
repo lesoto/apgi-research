@@ -324,6 +324,7 @@ class MutationTester:
                 ["python", "-m", "pytest", "tests/", "-x", "--tb=no"],
                 capture_output=True,
                 timeout=MutationConfig.TIMEOUT_SECONDS,
+                shell=False,
             )
 
             # Clean up

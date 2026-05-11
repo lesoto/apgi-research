@@ -28,9 +28,10 @@ except ImportError:
     print("litellm not available, using mock LLM integration")
 
 from tkinter import messagebox
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import customtkinter as ctk
+from xpr_agent_engine import XPRAgentEngine
 
 
 # Fix for customtkinter DropdownMenu bug: _add_menu_commands fails on empty menu
@@ -68,7 +69,6 @@ from pathlib import Path
 
 # Matplotlib imports for embedded visualization
 import matplotlib
-import numpy as np
 
 from utils.apgi_security import secure_popen, secure_run
 
@@ -146,7 +146,7 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.experiment_results: Dict[str, dict] = {}
 
         # Agent engine (lazy init on first use to avoid startup latency)
-        self._agent_engine: Optional["XPRAgentEngine"] = None
+        self._agent_engine: Optional[XPRAgentEngine] = None
 
         # Hypothesis approval board
         self.approval_board: ApprovalBoard = ApprovalBoard()
@@ -208,7 +208,7 @@ class ExperimentRunnerGUI(ctk.CTk):
     # ------------------------------------------------------------------
 
     @property
-    def agent_engine(self) -> "XPRAgentEngine":
+    def agent_engine(self) -> XPRAgentEngine:
         """Lazy-initialise XPRAgentEngine on first access."""
         if self._agent_engine is None:
             from xpr_agent_engine import XPRAgentEngine
@@ -1345,8 +1345,8 @@ class ExperimentRunnerGUI(ctk.CTk):
             )
             # Capture current agent plan string (if any) to use in the modify chain.
             _plan_result = self.agent_engine.get_current_plan()
-            if _plan_result and _plan_result.result:
-                plan_content = _plan_result.result.get("plan", plan_str)
+            if _plan_result:
+                plan_content = _plan_result.get("plan", plan_str)
             else:
                 plan_content = plan_str
             dialog.destroy()
@@ -2526,7 +2526,6 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.current_figure.clear()
 
         import matplotlib.gridspec as gridspec
-        import numpy as np
 
         gs = gridspec.GridSpec(3, 3, figure=self.current_figure, hspace=0.8, wspace=0.4)
 
@@ -2559,9 +2558,14 @@ class ExperimentRunnerGUI(ctk.CTk):
         def _no_data(ax: Any, title: str) -> None:
             """Render a 'No data' placeholder on an axis."""
             ax.text(
-                0.5, 0.5, "No data\n(run experiment first)",
-                ha="center", va="center", transform=ax.transAxes,
-                color="#7f8c8d", fontsize=9,
+                0.5,
+                0.5,
+                "No data\n(run experiment first)",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                color="#7f8c8d",
+                fontsize=9,
             )
             ax.set_title(title)
             ax.set_xticks([])
@@ -2681,9 +2685,17 @@ class ExperimentRunnerGUI(ctk.CTk):
         time_steps = results.get("time_steps")
         expected_prec = results.get("expected_precision")
         actual_prec = results.get("actual_precision")
-        if time_steps is not None and expected_prec is not None and actual_prec is not None:
+        if (
+            time_steps is not None
+            and expected_prec is not None
+            and actual_prec is not None
+        ):
             ax7.plot(
-                time_steps, expected_prec, label="Expected Precision", color="#3498db", lw=2
+                time_steps,
+                expected_prec,
+                label="Expected Precision",
+                color="#3498db",
+                lw=2,
             )
             ax7.plot(
                 time_steps, actual_prec, label="Actual Precision", color="#e74c3c", lw=2
@@ -2772,9 +2784,14 @@ class ExperimentRunnerGUI(ctk.CTk):
 
             def _no_data2(ax: Any, title: str) -> None:
                 ax.text(
-                    0.5, 0.5, "No data\n(run experiment first)",
-                    ha="center", va="center", transform=ax.transAxes,
-                    color="#7f8c8d", fontsize=9,
+                    0.5,
+                    0.5,
+                    "No data\n(run experiment first)",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    color="#7f8c8d",
+                    fontsize=9,
                 )
                 ax.set_title(title)
                 ax.set_xticks([])
@@ -2801,7 +2818,12 @@ class ExperimentRunnerGUI(ctk.CTk):
                 _no_data2(ax1, "1. Core Dynamics")
 
             # Panel 2: Measurement Proxies
-            proxy_keys = ["proxy_efficiency", "proxy_stability", "primary_metric", "secondary_metric"]
+            proxy_keys = [
+                "proxy_efficiency",
+                "proxy_stability",
+                "primary_metric",
+                "secondary_metric",
+            ]
             proxy_vals2 = [get_val2(k) for k in proxy_keys]
             if any(v is not None for v in proxy_vals2):
                 ax2.bar(
@@ -2816,7 +2838,12 @@ class ExperimentRunnerGUI(ctk.CTk):
                 _no_data2(ax2, "2. Measurement Proxies")
 
             # Panel 3: Neuromodulators
-            neuro_keys = ["dopamine_level", "serotonin_level", "noradrenaline", "acetylcholine"]
+            neuro_keys = [
+                "dopamine_level",
+                "serotonin_level",
+                "noradrenaline",
+                "acetylcholine",
+            ]
             neuro_vals2 = [get_val2(k) for k in neuro_keys]
             if any(v is not None for v in neuro_vals2):
                 ax3.bar(
@@ -2830,7 +2857,12 @@ class ExperimentRunnerGUI(ctk.CTk):
                 _no_data2(ax3, "3. Neuromodulators")
 
             # Panel 4: Domain-specific
-            domain_keys = ["foraging_efficiency", "economic_value", "social_score", "learning_rate"]
+            domain_keys = [
+                "foraging_efficiency",
+                "economic_value",
+                "social_score",
+                "learning_rate",
+            ]
             domain_vals2 = [get_val2(k) for k in domain_keys]
             if any(v is not None for v in domain_vals2):
                 ax4.bar(
@@ -2845,7 +2877,12 @@ class ExperimentRunnerGUI(ctk.CTk):
                 _no_data2(ax4, "4. Domain-Specific")
 
             # Panel 5: Psychiatric
-            psych_keys = ["anxiety_index", "depression_index", "mania_index", "psychosis_risk"]
+            psych_keys = [
+                "anxiety_index",
+                "depression_index",
+                "mania_index",
+                "psychosis_risk",
+            ]
             psych_vals2 = [get_val2(k) for k in psych_keys]
             if any(v is not None for v in psych_vals2):
                 ax5.bar(
@@ -2874,10 +2911,33 @@ class ExperimentRunnerGUI(ctk.CTk):
             time_steps2 = results.get("time_steps")
             expected_prec2 = results.get("expected_precision")
             actual_prec2 = results.get("actual_precision")
-            if time_steps2 is not None and expected_prec2 is not None and actual_prec2 is not None:
-                ax7.plot(time_steps2, expected_prec2, label="Expected Precision", color="#3498db", lw=2)
-                ax7.plot(time_steps2, actual_prec2, label="Actual Precision", color="#e74c3c", lw=2)
-                ax7.fill_between(time_steps2, expected_prec2, actual_prec2, color="#9b59b6", alpha=0.3, label="Precision Gap")
+            if (
+                time_steps2 is not None
+                and expected_prec2 is not None
+                and actual_prec2 is not None
+            ):
+                ax7.plot(
+                    time_steps2,
+                    expected_prec2,
+                    label="Expected Precision",
+                    color="#3498db",
+                    lw=2,
+                )
+                ax7.plot(
+                    time_steps2,
+                    actual_prec2,
+                    label="Actual Precision",
+                    color="#e74c3c",
+                    lw=2,
+                )
+                ax7.fill_between(
+                    time_steps2,
+                    expected_prec2,
+                    actual_prec2,
+                    color="#9b59b6",
+                    alpha=0.3,
+                    label="Precision Gap",
+                )
                 ax7.set_title("7. Precision Gap over Time")
                 ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
             else:
@@ -3203,12 +3263,13 @@ if __name__ == "__main__":
     def _open_experiment_directory(self) -> None:
         """Open the experiments directory in file explorer."""
         import platform
-        import subprocess
+        import subprocess  # subprocess is used in _open_experiment_directory method
 
         experiments_dir = self.research_dir / "experiments"
 
         try:
             if platform.system() == "Windows":
+                subprocess.run(["explorer", str(experiments_dir)], check=True)
                 secure_run(["explorer", str(experiments_dir)], check=True)
             elif platform.system() == "Darwin":  # macOS
                 secure_run(["open", str(experiments_dir)], check=True)

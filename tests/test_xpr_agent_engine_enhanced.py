@@ -3,6 +3,7 @@ Enhanced comprehensive tests for xpr_agent_engine.py module.
 """
 
 import time
+import unittest
 from unittest.mock import patch
 
 import pytest
@@ -13,7 +14,7 @@ except ImportError as e:
     pytest.skip(f"Cannot import from xpr_agent_engine: {e}", allow_module_level=True)
 
 
-class TestSkillResult:
+class TestSkillResult(unittest.TestCase):
     """Tests for SkillResult dataclass."""
 
     def test_skill_result_success(self):
@@ -26,12 +27,12 @@ class TestSkillResult:
             confidence=0.8,
             metadata={"key": "value"},
         )
-        assert result.success is True
-        assert result.skill_type == "test"
-        assert result.result == "test_result"
-        assert result.execution_time == 1.5
-        assert result.confidence == 0.8
-        assert result.metadata == {"key": "value"}
+        self.assertTrue(result.success)
+        self.assertEqual(result.skill_type, "test")
+        self.assertEqual(result.result, 20)
+        self.assertEqual(result.execution_time, 1.5)
+        self.assertEqual(result.confidence, 0.8)
+        self.assertEqual(result.metadata, {"key": "value"})
 
     def test_skill_result_failure(self):
         """Test SkillResult with failure."""
@@ -42,22 +43,22 @@ class TestSkillResult:
             execution_time=0.5,
             confidence=0.0,
         )
-        assert result.success is False
-        assert result.error == "test_error"
-        assert result.execution_time == 0.5
-        assert result.confidence == 0.0
+        self.assertFalse(result.success)
+        self.assertEqual(result.error, "test_error")
+        self.assertEqual(result.execution_time, 0.5)
+        self.assertEqual(result.confidence, 0.0)
 
     def test_skill_result_defaults(self):
         """Test SkillResult with default values."""
         result = SkillResult(success=True, skill_type="test")
-        assert result.result is None
-        assert result.error is None
-        assert result.execution_time == 0.0
-        assert result.confidence == 0.0
-        assert result.metadata is None
+        self.assertIsNone(result.result)
+        self.assertIsNone(result.error)
+        self.assertEqual(result.execution_time, 0.0)
+        self.assertEqual(result.confidence, 0.0)
+        self.assertIsNone(result.metadata)
 
 
-class TestExecutionReport:
+class TestExecutionReport(unittest.TestCase):
     """Tests for ExecutionReport dataclass."""
 
     def test_execution_report_full(self):
@@ -70,12 +71,12 @@ class TestExecutionReport:
             confidence=0.9,
             metadata={"iterations": 5},
         )
-        assert report.experiment_name == "test_exp"
-        assert report.success is True
-        assert report.execution_time == 10.5
-        assert report.result == "success"
-        assert report.confidence == 0.9
-        assert report.metadata == {"iterations": 5}
+        self.assertEqual(report.experiment_name, "test_exp")
+        self.assertTrue(report.success)
+        self.assertEqual(report.execution_time, 10.5)
+        self.assertEqual(report.result, "success")
+        self.assertEqual(report.confidence, 0.9)
+        self.assertEqual(report.metadata, {"iterations": 5})
 
     def test_execution_report_post_init(self):
         """Test ExecutionReport post_init metadata initialization."""
@@ -92,36 +93,36 @@ class TestExecutionReport:
         assert report.metadata == {}
 
 
-class TestSkillType:
+class TestSkillType(unittest.TestCase):
     """Tests for SkillType enum."""
 
     def test_skill_type_values(self):
         """Test SkillType enum values."""
-        assert SkillType.PLAN_GENERATION.value == "plan_generation"
-        assert SkillType.EXECUTION.value == "execution"
-        assert SkillType.ANALYSIS.value == "analysis"
-        assert SkillType.MEMORY_UPDATE.value == "memory_update"
-        assert SkillType.MODIFICATION.value == "modification"
+        self.assertEqual(SkillType.PLAN_GENERATION.value, "plan_generation")
+        self.assertEqual(SkillType.EXECUTION.value, "execution")
+        self.assertEqual(SkillType.ANALYSIS.value, "analysis")
+        self.assertEqual(SkillType.MEMORY_UPDATE.value, "memory_update")
+        self.assertEqual(SkillType.MODIFICATION.value, "modification")
 
     def test_skill_type_comparison(self):
         """Test SkillType enum comparison."""
-        assert SkillType.PLAN_GENERATION == SkillType.PLAN_GENERATION
+        self.assertEqual(SkillType.PLAN_GENERATION, SkillType.PLAN_GENERATION)
         # Test that different enum values are not equal
         plan_gen_value = SkillType.PLAN_GENERATION.value
         exec_value = SkillType.EXECUTION.value
-        assert plan_gen_value != exec_value
+        self.assertNotEqual(plan_gen_value, exec_value)
 
 
-class TestXPRAgentEngine:
+class TestXPRAgentEngine(unittest.TestCase):
     """Tests for XPRAgentEngine class."""
 
     def test_engine_initialization(self):
         """Test XPRAgentEngine initialization."""
         engine = XPRAgentEngine()
-        assert isinstance(engine.skills, dict)
-        assert isinstance(engine.execution_history, list)
-        assert engine.current_plan is None
-        assert engine.compliance_manager is not None
+        self.assertIsInstance(engine.skills, dict)
+        self.assertIsInstance(engine.execution_history, list)
+        self.assertIsNone(engine.current_plan)
+        self.assertIsNotNone(engine.compliance_manager)
 
     def test_register_skill(self):
         """Test skill registration."""
@@ -131,8 +132,8 @@ class TestXPRAgentEngine:
             return f"{arg1}-{arg2}-{kwarg1}"
 
         engine.register_skill("test_skill", test_skill)
-        assert "test_skill" in engine.skills
-        assert engine.skills["test_skill"] == test_skill
+        self.assertIn("test_skill", engine.skills)
+        self.assertEqual(engine.skills["test_skill"], test_skill)
 
     def test_execute_skill_success(self):
         """Test successful skill execution."""
@@ -144,24 +145,25 @@ class TestXPRAgentEngine:
         engine.register_skill("double", test_skill)
         result = engine.execute_skill("double", 5)
 
-        assert result.success is True
-        assert result.skill_type == "double"
-        assert result.result == 10
-        assert result.error is None
-        assert result.execution_time >= 0
-        assert result.confidence > 0
+        self.assertTrue(result.success)
+        self.assertEqual(result.skill_type, "double")
+        self.assertEqual(result.result, 10)
+        self.assertIsNone(result.error)
+        self.assertGreaterEqual(result.execution_time, 0)
+        self.assertGreater(result.confidence, 0)
 
     def test_execute_skill_not_found(self):
         """Test executing non-existent skill."""
         engine = XPRAgentEngine()
         result = engine.execute_skill("nonexistent")
 
-        assert result.success is False
-        assert result.skill_type == "nonexistent"
-        assert result.result is None
-        assert result.error is not None and "not found" in result.error
-        assert result.execution_time == 0.0
-        assert result.confidence == 0.0
+        self.assertFalse(result.success)
+        self.assertEqual(result.skill_type, "nonexistent")
+        self.assertIsNone(result.result)
+        self.assertIsNotNone(result.error)
+        self.assertIn("not found", result.error)  # type: ignore[arg-type]
+        self.assertEqual(result.execution_time, 0.0)
+        self.assertEqual(result.confidence, 0.0)
 
     def test_execute_skill_with_exception(self):
         """Test skill execution with exception."""
@@ -173,12 +175,13 @@ class TestXPRAgentEngine:
         engine.register_skill("failing", failing_skill)
         result = engine.execute_skill("failing")
 
-        assert result.success is False
-        assert result.skill_type == "failing"
-        assert result.result is None
-        assert result.error is not None and "Test error" in result.error
-        assert result.execution_time >= 0
-        assert result.confidence == 0.0
+        self.assertFalse(result.success)
+        self.assertEqual(result.skill_type, "failing")
+        self.assertIsNone(result.result)
+        self.assertIsNotNone(result.error)
+        self.assertIn("Test error", result.error)  # type: ignore[arg-type]
+        self.assertGreaterEqual(result.execution_time, 0)
+        self.assertEqual(result.confidence, 0.0)
 
     def test_execute_skill_with_kwargs(self):
         """Test skill execution with keyword arguments."""
@@ -190,8 +193,8 @@ class TestXPRAgentEngine:
         engine.register_skill("add", test_skill)
         result = engine.execute_skill("add", 5, y=15)
 
-        assert result.success is True
-        assert result.result == 20
+        self.assertTrue(result.success)
+        self.assertEqual(result.result, 20)
 
     def test_execute_plan_generation(self):
         """Test plan generation execution."""
@@ -203,9 +206,11 @@ class TestXPRAgentEngine:
         engine.register_skill("plan_generation", plan_skill)
         result = engine.execute_skill("plan_generation", "test_goal")
 
-        assert result.success is True
-        assert result.skill_type == "plan_generation"
-        assert result.result is not None and "steps" in result.result
+        self.assertTrue(result.success)
+        self.assertEqual(result.skill_type, "plan_generation")
+        self.assertIsNotNone(result.result)
+        self.assertIsInstance(result.result, dict)
+        self.assertIn("steps", result.result)  # type: ignore[arg-type]
 
     def test_execute_analysis_skill(self):
         """Test analysis skill execution."""
@@ -217,9 +222,11 @@ class TestXPRAgentEngine:
         engine.register_skill("analysis", analysis_skill)
         result = engine.execute_skill("analysis", "test_data")
 
-        assert result.success is True
-        assert result.skill_type == "analysis"
-        assert result.result is not None and "analysis" in result.result
+        self.assertTrue(result.success)
+        self.assertEqual(result.skill_type, "analysis")
+        self.assertIsNotNone(result.result)
+        self.assertIsInstance(result.result, dict)
+        self.assertIn("analysis", result.result)  # type: ignore[arg-type]
 
     def test_execute_memory_update(self):
         """Test memory update skill execution."""
@@ -231,9 +238,11 @@ class TestXPRAgentEngine:
         engine.register_skill("memory_update", memory_skill)
         result = engine.execute_skill("memory_update", "test_key", "test_value")
 
-        assert result.success is True
-        assert result.skill_type == "memory_update"
-        assert result.result is not None and "stored" in result.result
+        self.assertTrue(result.success)
+        self.assertEqual(result.skill_type, "memory_update")
+        self.assertIsNotNone(result.result)
+        self.assertIsInstance(result.result, dict)
+        self.assertIn("stored", result.result)  # type: ignore[arg-type]
 
     def test_execute_modification(self):
         """Test modification skill execution."""
@@ -245,9 +254,11 @@ class TestXPRAgentEngine:
         engine.register_skill("modification", modification_skill)
         result = engine.execute_skill("modification", "test.py", "add_function")
 
-        assert result.success is True
-        assert result.skill_type == "modification"
-        assert result.result is not None and "modified" in result.result
+        self.assertTrue(result.success)
+        self.assertEqual(result.skill_type, "modification")
+        self.assertIsNotNone(result.result)
+        self.assertIsInstance(result.result, dict)
+        self.assertIn("modified", result.result)  # type: ignore[arg-type]
 
     def test_multiple_skill_registrations(self):
         """Test registering multiple skills."""
@@ -262,9 +273,9 @@ class TestXPRAgentEngine:
         for name, func in skills.items():
             engine.register_skill(name, func)
 
-        assert len(engine.skills) == 3
+        self.assertEqual(len(engine.skills), 3)
         for name in skills:
-            assert name in engine.skills
+            self.assertIn(name, engine.skills)
 
     def test_skill_execution_timing(self):
         """Test skill execution timing accuracy."""
@@ -280,8 +291,8 @@ class TestXPRAgentEngine:
         end_time = time.time()
 
         assert result.success is True
-        assert result.execution_time >= 0.1
-        assert end_time - start_time >= 0.1
+        self.assertGreaterEqual(result.execution_time, 0.1)
+        self.assertGreaterEqual(end_time - start_time, 0.1)
 
     def test_skill_confidence_calculation(self):
         """Test confidence calculation in skill results."""
@@ -293,8 +304,9 @@ class TestXPRAgentEngine:
         engine.register_skill("confident", confident_skill)
         result = engine.execute_skill("confident")
 
-        assert result.success is True
-        assert 0 <= result.confidence <= 1
+        self.assertTrue(result.success)
+        self.assertGreaterEqual(0, result.confidence)
+        self.assertLessEqual(result.confidence, 1)
 
     def test_skill_result_metadata_preservation(self):
         """Test metadata preservation in skill results."""
@@ -306,12 +318,12 @@ class TestXPRAgentEngine:
         engine.register_skill("metadata", metadata_skill)
         result = engine.execute_skill("metadata")
 
-        assert result.success is True
-        assert result.metadata is not None
-        assert isinstance(result.metadata, dict)
+        self.assertTrue(result.success)
+        self.assertIsNotNone(result.metadata)
+        self.assertIsInstance(result.metadata, dict)
 
 
-class TestXPRAgentEngineIntegration:
+class TestXPRAgentEngineIntegration(unittest.TestCase):
     """Integration tests for XPRAgentEngine."""
 
     def test_full_workflow_simulation(self):
@@ -334,17 +346,17 @@ class TestXPRAgentEngineIntegration:
 
         # Execute workflow
         plan_result = engine.execute_skill("plan", "test_goal")
-        assert plan_result.success is True
+        self.assertTrue(plan_result.success)
 
         exec_result = engine.execute_skill(
             "execute", plan_result.result["plan"] if plan_result.result else ""
         )
-        assert exec_result.success is True
+        self.assertTrue(exec_result.success)
 
         analysis_result = engine.execute_skill(
             "analyze", exec_result.result["execution"] if exec_result.result else ""
         )
-        assert analysis_result.success is True
+        self.assertTrue(analysis_result.success)
 
     def test_error_handling_workflow(self):
         """Test error handling in workflow."""
@@ -361,14 +373,13 @@ class TestXPRAgentEngineIntegration:
 
         # First skill fails
         fail_result = engine.execute_skill("failing")
-        assert fail_result.success is False
-        assert (
-            fail_result.error is not None and "Simulated failure" in fail_result.error
-        )
+        self.assertFalse(fail_result.success)
+        self.assertIsNotNone(fail_result.error)
+        self.assertIn("Simulated failure", fail_result.error)  # type: ignore[arg-type]
 
         # Recovery succeeds
         recovery_result = engine.execute_skill("recovery")
-        assert recovery_result.success is True
+        self.assertTrue(recovery_result.success)
 
     @patch("xpr_agent_engine.litellm", None)
     def test_without_litellm(self):
@@ -381,18 +392,18 @@ class TestXPRAgentEngineIntegration:
         engine.register_skill("simple", simple_skill)
         result = engine.execute_skill("simple", 21)
 
-        assert result.success is True
-        assert result.result == 42
+        self.assertTrue(result.success)
+        self.assertEqual(result.result, 42)
 
 
-class TestComplianceIntegration:
+class TestComplianceIntegration(unittest.TestCase):
     """Tests for compliance manager integration."""
 
     def test_compliance_manager_initialization(self):
         """Test compliance manager is properly initialized."""
         engine = XPRAgentEngine()
-        assert hasattr(engine, "compliance_manager")
-        assert engine.compliance_manager is not None
+        self.assertTrue(hasattr(engine, "compliance_manager"))
+        self.assertIsNotNone(engine.compliance_manager)
 
     def test_compliant_skill_execution(self):
         """Test skill execution with compliance checks."""
@@ -404,11 +415,12 @@ class TestComplianceIntegration:
         engine.register_skill("compliant", compliant_skill)
         result = engine.execute_skill("compliant", {"test": "data"})
 
-        assert result.success is True
-        assert result.result is not None and result.result["compliant"] is True
+        self.assertTrue(result.success)
+        self.assertIsNotNone(result.result)
+        self.assertTrue(result.result["compliant"])  # type: ignore[index]
 
 
-class TestLoggingAndDebugging:
+class TestLoggingAndDebugging(unittest.TestCase):
     """Tests for logging and debugging features."""
 
     def test_logging_setup(self):
@@ -416,8 +428,8 @@ class TestLoggingAndDebugging:
         engine = XPRAgentEngine()
 
         # Check that logger exists
-        assert hasattr(engine, "skills")
-        assert isinstance(engine.skills, dict)
+        self.assertTrue(hasattr(engine, "skills"))
+        self.assertIsInstance(engine.skills, dict)
 
     def test_skill_execution_logging(self):
         """Test that skill execution is logged."""
@@ -430,5 +442,5 @@ class TestLoggingAndDebugging:
 
         # Capture logs (would need log capture in real test setup)
         result = engine.execute_skill("logged", 5)
-        assert result.success is True
-        assert result.result == 6
+        self.assertTrue(result.success)
+        self.assertEqual(result.result, 6)

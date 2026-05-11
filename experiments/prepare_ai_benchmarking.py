@@ -135,6 +135,7 @@ class AIBenchmarkExperiment:
         if self.current_trial_idx >= self.num_trials:
             return None
         trial = self.generator.create_trial(self.current_trial_idx + 1)
+        self.current_trial_idx += 1
         return trial
 
     def run_trial(

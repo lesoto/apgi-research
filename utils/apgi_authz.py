@@ -241,7 +241,7 @@ class AuthorizationManager:
 
         # Create access token
         access_token = AuthenticationToken(
-            operator_id=operator_id,
+            operator_id=os.getenv("APGI_OPERATOR_ID", "default_operator"),
             token_type="access",
             expires_at=datetime.now(timezone.utc) + access_token_ttl,
             scopes=scopes,
@@ -249,7 +249,7 @@ class AuthorizationManager:
 
         # Create refresh token
         refresh_token = AuthenticationToken(
-            operator_id=operator_id,
+            operator_id=os.getenv("APGI_OPERATOR_ID", "default_operator"),
             token_type="refresh",
             expires_at=datetime.now(timezone.utc) + refresh_token_ttl,
             scopes=["refresh"],

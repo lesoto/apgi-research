@@ -921,7 +921,7 @@ def pseudonymize_participant(participant_id: str, salt: Optional[str] = None) ->
             raise ValueError(
                 "APGI_PSEUDONYM_SALT environment variable must be set before "
                 "pseudonymizing participant identifiers.  "
-                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                'Generate with: python -c "import secrets; print(secrets.token_hex(32))"'
             )
         salt = env_salt
 

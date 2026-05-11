@@ -193,19 +193,18 @@ class SecurePickleWrapper:
     def loads(self, data: Union[bytes, str], **kwargs: Any) -> Any:
         """Secure deserialization - defaults to JSON only."""
         if self.allow_pickle and kwargs.get("use_pickle", False):
-            # Only allow pickle if explicitly enabled AND requested
             return pickle.loads(data)  # type: ignore
-
         # Default: JSON-only deserialization
         try:
-            if isinstance(data, bytes):
-                data = data.decode("utf-8")
-            return json.loads(data)
+            parsed = json.loads(data)
+            # Validate structure
+            if not isinstance(parsed, dict):
+                raise ValueError("Expected JSON object")
+            return parsed
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON data")
         except Exception as e:
-            raise PickleSecurityError(
-                f"Deserialization failed. Pickle is disabled by default for security. "
-                f"Use secure_loads_json() for JSON data. Error: {e}"
-            )
+            raise ValueError(f"Deserialization failed: {str(e)}")
 
     def dumps(self, obj: Any, **kwargs: Any) -> bytes:
         """Secure serialization - defaults to JSON only."""

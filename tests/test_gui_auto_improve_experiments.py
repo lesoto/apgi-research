@@ -527,9 +527,18 @@ class TestGUIMethodBehavior:
 
     def test_change_appearance_mode(self):
         """Test change_appearance_mode changes theme."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        # Configure mock to have insert method
+        mock_gui.console_text.insert = MagicMock()
+
         with patch.object(gui.ctk, "set_appearance_mode") as mock_set:
-            gui.ExperimentRunnerGUI.change_appearance_mode(None, "Light")
+            gui.ExperimentRunnerGUI.change_appearance_mode(mock_gui, "Light")
             mock_set.assert_called_once_with("Light")
+            # Verify _log was called with the theme change message
+            mock_gui.console_text.insert.assert_called_with(
+                "end", "Theme changed to: Light\n"
+            )
 
     def test_check_dependencies_missing_optional(self):
         """Test dependency check with missing optional dependencies."""

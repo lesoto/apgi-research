@@ -2,7 +2,8 @@
 Comprehensive tests for apgi_compliance.py - Compliance and data retention module.
 """
 
-from datetime import datetime, timedelta
+import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from utils.apgi_compliance import (
@@ -77,7 +78,7 @@ class TestRetentionPolicy:
         assert policy.deletion_routine == "crypto_shred"
 
 
-class TestComplianceManager:
+class TestComplianceManager(unittest.TestCase):
     """Tests for ComplianceManager class."""
 
     def test_init(self):
@@ -120,19 +121,22 @@ class TestComplianceManager:
 
         assert len(manager.audit_trail) == 3
 
-    @patch("utils.apgi_logging.get_logger")
+    @patch("utils.apgi_compliance.get_logger")
     def test_log_parameter_change_logs_to_logger(self, mock_get_logger):
         """Test that parameter changes are logged."""
         mock_logger = mock_get_logger.return_value
         manager = ComplianceManager()
         manager.log_parameter_change("user1", "tau_s", 0.3, 0.4)
 
+        # Verify that get_logger was called with the correct name
+        mock_get_logger.assert_called_once_with("apgi.compliance.manager")
+        # Verify that the logger's info method was called once
         mock_logger.info.assert_called_once()
         log_message = mock_logger.info.call_args[0][0]
         assert "Compliance Audit" in log_message
         assert "parameter_change" in log_message
 
-    @patch("utils.apgi_logging.get_logger")
+    @patch("utils.apgi_compliance.get_logger")
     def test_log_experiment_run_logs_to_logger(self, mock_get_logger):
         """Test that experiment runs are logged."""
         mock_logger = mock_get_logger.return_value
@@ -157,7 +161,7 @@ class TestComplianceManagerEnforceRetention:
     def test_enforce_retention_valid_records(self):
         """Test enforce_retention with valid records."""
         manager = ComplianceManager()
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         records = [
             {
                 "id": "rec1",
@@ -178,7 +182,7 @@ class TestComplianceManagerEnforceRetention:
     def test_enforce_retention_expired_records_internal(self):
         """Test enforce_retention removes expired internal records."""
         manager = ComplianceManager()
-        old_time = datetime.now() - timedelta(days=400)
+        old_time = datetime.now(timezone.utc) - timedelta(days=400)
         records = [
             {
                 "id": "rec1",
