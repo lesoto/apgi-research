@@ -4,7 +4,7 @@ Comprehensive tests for apgi_errors.py - Error taxonomy module.
 
 import pytest
 
-from apgi_errors import (
+from utils.apgi_errors import (
     APGIConfigurationError,
     APGIDataValidationError,
     APGIError,

@@ -5,7 +5,7 @@ Comprehensive tests for performance_monitoring.py - Performance monitoring modul
 import time
 from unittest.mock import MagicMock, patch
 
-from performance_monitoring import (
+from utils.performance_monitoring import (
     BenchmarkConfig,
     BenchmarkResult,
     PerformanceMonitor,

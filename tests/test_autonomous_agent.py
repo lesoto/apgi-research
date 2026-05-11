@@ -22,7 +22,6 @@ from autonomous_agent import (
     GitPerformanceTracker,
     OptimizationStrategy,
     ParameterOptimizer,
-    TimeoutError,
 )
 
 

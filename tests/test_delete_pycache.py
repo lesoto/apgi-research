@@ -17,7 +17,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import delete_pycache as dp
+import utils.delete_pycache as dp
 
 
 class TestUtilityFunctions:

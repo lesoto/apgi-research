@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from apgi_logging import APGIContextLogger, JSONFormatter, get_logger
+from utils.apgi_logging import APGIContextLogger, JSONFormatter, get_logger
 
 
 class TestJSONFormatter:

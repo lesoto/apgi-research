@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from apgi_timeout_abstraction import (
+from utils.apgi_timeout_abstraction import (
     APGITimeoutError,
     CancellableOperation,
     CancellationToken,

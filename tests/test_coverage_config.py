@@ -4,7 +4,7 @@ Tests for coverage_config.py - coverage configuration module.
 
 import json
 
-from tests.coverage_config import (
+from utils.coverage_config import (
     CoverageAnalyzer,
     CoverageConfig,
     CoverageGap,

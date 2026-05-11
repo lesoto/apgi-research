@@ -14,11 +14,13 @@ from apgi_orchestration_kernel import (
     ExperimentRunConfig,
     TrialMetrics,
     TrialTransformer,
-    _kernel,
     get_orchestration_kernel,
     set_orchestration_kernel,
 )
 from apgi_security_adapters import SecurityLevel
+
+# Store original kernel for cleanup
+_kernel = get_orchestration_kernel()
 
 
 class ConcreteTrialTransformer(TrialTransformer):
@@ -279,7 +281,7 @@ class TestAPGIOrchestrationKernel:
         trial_data = {"error": 0.5}
         transformer = ConcreteTrialTransformer()
 
-        from apgi_errors import APGITimeoutError
+        from utils.apgi_errors import APGITimeoutError
 
         with pytest.raises(APGITimeoutError) as exc_info:
             kernel.process_trial(run_context, trial_data, transformer)
@@ -313,7 +315,7 @@ class TestAPGIOrchestrationKernel:
             "apgi"
         ].compute_ignition_probability.side_effect = Exception("APGI error")
 
-        from apgi_errors import APGIRuntimeError
+        from utils.apgi_errors import APGIRuntimeError
 
         with pytest.raises(APGIRuntimeError) as exc_info:
             kernel.process_trial(run_context, trial_data, transformer)
@@ -451,4 +453,4 @@ class TestTrialTransformerABC:
     def test_cannot_instantiate_abc(self):
         """Test that TrialTransformer cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            TrialTransformer()  # type: ignore
+            TrialTransformer()  # type: ignore[abstract]

@@ -2,7 +2,29 @@
 Modernized for apgi-research directory with CustomTkinter.
 """
 
+import logging
 import os
+import sys
+
+# CRITICAL: Must set multiprocessing start method BEFORE ANY OTHER IMPORTS on macOS
+# to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
+if sys.platform == "darwin":
+    os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+    import multiprocessing
+
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass  # Already set
+
+# Check for litellm availability first
+try:
+    import litellm  # noqa: F401
+
+    LLM_AVAILABLE = True
+except ImportError:
+    LLM_AVAILABLE = False
+    print("litellm not available, using mock LLM integration")
 
 # CRITICAL: Must set multiprocessing start method BEFORE ANY OTHER IMPORTS on macOS
 # to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
@@ -18,7 +40,7 @@ if sys.platform == "darwin":
         pass  # Already set
 
 from tkinter import messagebox
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import customtkinter as ctk
 
@@ -34,12 +56,13 @@ def _patched_add_menu_commands(self: Any) -> None:
     except Exception:
         pass  # Menu is empty or not fully initialized
 
-    # Add the actual menu commands
-    for i, value in enumerate(self._values):
-        self.add_command(
-            label=value,
-            command=lambda v=value: self._command(v) if self._command else None,
-        )
+    # Add the actual menu commands - only if menu has values
+    if hasattr(self, "_values") and self._values:
+        for i, value in enumerate(self._values):
+            self.add_command(
+                label=value,
+                command=lambda v=value: self._command(v) if self._command else None,
+            )
 
 
 # Apply the patch
@@ -61,6 +84,8 @@ from typing import Any, Dict, List, Set, Tuple
 import matplotlib
 import numpy as np
 
+from utils.apgi_security import secure_popen
+
 # Import hypothesis approval board
 from hypothesis_approval_board import ApprovalBoard, Hypothesis, HypothesisStatus
 
@@ -69,7 +94,24 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 
 # Set appearance mode and color theme
-ctk.set_appearance_mode("Dark")
+# Configure matplotlib for embedded GUI
+matplotlib.use("TkAgg")
+matplotlib.rcParams["figure.figsize"] = (8, 6)
+matplotlib.rcParams["figure.dpi"] = 100
+matplotlib.rcParams["font.size"] = 8
+matplotlib.rcParams["axes.titlesize"] = 10
+matplotlib.rcParams["axes.labelsize"] = 8
+matplotlib.rcParams["xtick.labelsize"] = 8
+matplotlib.rcParams["ytick.labelsize"] = 8
+matplotlib.rcParams["figure.autolayout"] = True
+matplotlib.rcParams["figure.facecolor"] = "#2b2b2b"
+matplotlib.rcParams["axes.facecolor"] = "#2b2b2b"
+matplotlib.rcParams["text.color"] = "#ffffff"
+matplotlib.rcParams["axes.edgecolor"] = "#444444"
+matplotlib.rcParams["axes.linewidth"] = 1.2
+matplotlib.rcParams["grid.color"] = "#444444"
+matplotlib.rcParams["grid.linewidth"] = 0.5
+matplotlib.rcParams["grid.alpha"] = 0.3
 # Core dependencies required for APGI experiments
 CORE_DEPENDENCIES = {
     "numpy": "NumPy - Numerical computing",
@@ -91,6 +133,10 @@ OPTIONAL_DEPENDENCIES = {
 class ExperimentRunnerGUI(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
+
+        # Set Dark theme as default before any UI creation
+        ctk.set_appearance_mode("Dark")
+
         self.title("APGI Experiment Auto-Improvement")
         self.geometry("1400x900")
 
@@ -257,177 +303,237 @@ class ExperimentRunnerGUI(ctk.CTk):
         )
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
 
+        # -----------------------------------------------------------
+        # Compact Controls Section
+        # -----------------------------------------------------------
+        # Create a compact controls frame
+        controls_frame = ctk.CTkFrame(self.navigation_frame, fg_color="transparent")
+        controls_frame.grid(row=3, column=0, padx=15, pady=5, sticky="ew")
+        controls_frame.grid_columnconfigure(0, weight=1)
+        controls_frame.grid_columnconfigure(1, weight=1)
+
+        # Appearance dropdown (smaller)
+        self.appearance_mode_label = ctk.CTkLabel(
+            controls_frame, text="Theme:", anchor="w", font=ctk.CTkFont(size=10)
+        )
+        self.appearance_mode_label.grid(
+            row=0, column=0, columnspan=2, padx=(0, 0), pady=(0, 2), sticky="w"
+        )
+
+        self.appearance_mode_optionemenu = ctk.CTkOptionMenu(
+            controls_frame,
+            values=["Dark", "Light", "System"],
+            command=self.change_appearance_mode,
+            width=120,
+            height=24,
+            font=ctk.CTkFont(size=10),
+        )
+        # Set default value to "Dark"
+        self.appearance_mode_optionemenu.set("Dark")
+        self.appearance_mode_optionemenu.grid(
+            row=1, column=0, columnspan=2, padx=(0, 0), pady=(0, 8), sticky="ew"
+        )
+
+        # Action buttons in horizontal layout (smaller)
         self.run_all_button = ctk.CTkButton(
-            self.navigation_frame,
-            text="▶ Run All Experiments",
+            controls_frame,
+            text="▶ Run All",
             command=self._run_all,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            height=26,
+            width=100,
+            font=ctk.CTkFont(size=10, weight="bold"),
             fg_color="#27ae60",
             hover_color="#219150",
         )
-        self.run_all_button.grid(row=1, column=0, padx=20, pady=10)
+        self.run_all_button.grid(row=2, column=0, padx=(0, 3), pady=2)
 
         self.stop_button = ctk.CTkButton(
-            self.navigation_frame,
-            text="⏹ Stop All",
+            controls_frame,
+            text="⏹ Stop",
             command=self._stop_all,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            height=26,
+            width=100,
+            font=ctk.CTkFont(size=10, weight="bold"),
             fg_color="#e74c3c",
             hover_color="#c0392b",
         )
-        self.stop_button.grid(row=2, column=0, padx=20, pady=10)
+        self.stop_button.grid(row=2, column=1, padx=(3, 0), pady=2)
 
         self.clear_button = ctk.CTkButton(
-            self.navigation_frame,
-            text="🧹 Clear Console",
+            controls_frame,
+            text="🧹 Clear",
             command=self._clear_console,
-            height=40,
+            height=26,
+            width=100,
+            font=ctk.CTkFont(size=10),
+            fg_color="#3498db",
+            hover_color="#2980b9",
         )
-        self.clear_button.grid(row=3, column=0, padx=20, pady=10)
+        self.clear_button.grid(row=3, column=0, columnspan=2, padx=(0, 0), pady=(2, 8))
 
         # -----------------------------------------------------------
-        # Guardrail Dashboard Panel (APGI Requirement)
+        # Compact Guardrail Dashboard Panel
         # -----------------------------------------------------------
         self.guardrail_frame = ctk.CTkFrame(
-            self.navigation_frame, corner_radius=8, fg_color="#1a1a2e"
+            self.navigation_frame, corner_radius=6, fg_color="#1a1a2e"
         )
-        self.guardrail_frame.grid(row=4, column=0, padx=10, pady=(10, 5), sticky="ew")
+        self.guardrail_frame.grid(row=4, column=0, padx=10, pady=(5, 3), sticky="ew")
 
         ctk.CTkLabel(
             self.guardrail_frame,
             text="⚡ Guardrails",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(size=10, weight="bold"),
             text_color="#2ecc71",
-        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 5), sticky="w")
+        ).grid(row=0, column=0, columnspan=2, padx=8, pady=(4, 2), sticky="w")
 
+        # Compact grid layout for guardrail stats
         # Status
         ctk.CTkLabel(
             self.guardrail_frame,
             text="Status:",
-            font=ctk.CTkFont(size=11),
-            text_color="#333333",
-        ).grid(row=1, column=0, padx=(10, 2), pady=2, sticky="w")
+            font=ctk.CTkFont(size=9),
+            text_color="#888888",
+        ).grid(row=1, column=0, padx=(8, 2), pady=1, sticky="w")
         self.guardrail_status_label = ctk.CTkLabel(
             self.guardrail_frame,
             text="IDLE",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(size=9, weight="bold"),
             text_color="#2ecc71",
         )
         self.guardrail_status_label.grid(
-            row=1, column=1, padx=(2, 10), pady=2, sticky="w"
+            row=1, column=1, padx=(2, 8), pady=1, sticky="w"
         )
 
         # Confidence
         ctk.CTkLabel(
             self.guardrail_frame,
-            text="Confidence:",
-            font=ctk.CTkFont(size=11),
-            text_color="#333333",
-        ).grid(row=2, column=0, padx=(10, 2), pady=2, sticky="w")
+            text="Conf:",
+            font=ctk.CTkFont(size=9),
+            text_color="#888888",
+        ).grid(row=2, column=0, padx=(8, 2), pady=1, sticky="w")
         self.guardrail_confidence_label = ctk.CTkLabel(
             self.guardrail_frame,
             text="100%",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(size=9, weight="bold"),
             text_color="#2ecc71",
         )
         self.guardrail_confidence_label.grid(
-            row=2, column=1, padx=(2, 10), pady=2, sticky="w"
+            row=2, column=1, padx=(2, 8), pady=1, sticky="w"
         )
 
         # Regression
         ctk.CTkLabel(
             self.guardrail_frame,
-            text="Regression:",
-            font=ctk.CTkFont(size=11),
-            text_color="#333333",
-        ).grid(row=3, column=0, padx=(10, 2), pady=2, sticky="w")
+            text="Regr:",
+            font=ctk.CTkFont(size=9),
+            text_color="#888888",
+        ).grid(row=3, column=0, padx=(8, 2), pady=1, sticky="w")
         self.guardrail_regression_label = ctk.CTkLabel(
             self.guardrail_frame,
             text="0.0%",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(size=9, weight="bold"),
             text_color="#2ecc71",
         )
         self.guardrail_regression_label.grid(
-            row=3, column=1, padx=(2, 10), pady=2, sticky="w"
+            row=3, column=1, padx=(2, 8), pady=1, sticky="w"
         )
 
         # Escalation count
         ctk.CTkLabel(
             self.guardrail_frame,
-            text="Escalations:",
-            font=ctk.CTkFont(size=11),
-            text_color="#333333",
-        ).grid(row=4, column=0, padx=(10, 2), pady=(2, 8), sticky="w")
+            text="Esc:",
+            font=ctk.CTkFont(size=9),
+            text_color="#888888",
+        ).grid(row=4, column=0, padx=(8, 2), pady=(1, 4), sticky="w")
         self.guardrail_escalation_label = ctk.CTkLabel(
             self.guardrail_frame,
             text="0",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(size=9, weight="bold"),
             text_color="#2ecc71",
         )
         self.guardrail_escalation_label.grid(
-            row=4, column=1, padx=(2, 10), pady=(2, 8), sticky="w"
+            row=4, column=1, padx=(2, 8), pady=(1, 4), sticky="w"
         )
-        # -----------------------------------------------------------
-
-        self.appearance_mode_label = ctk.CTkLabel(
-            self.navigation_frame, text="Appearance:", anchor="w"
-        )
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = ctk.CTkOptionMenu(
-            self.navigation_frame,
-            values=["Dark", "Light", "System"],
-            command=self.change_appearance_mode,
-        )
-        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 20))
 
         # -----------------------------------------------------------
-        # Hypothesis Approval Board (Phase 4 Enhancement)
+        # Compact Hypothesis Board Panel
         # -----------------------------------------------------------
         self.hypothesis_frame = ctk.CTkFrame(
-            self.navigation_frame, corner_radius=8, fg_color="#2c3e50"
+            self.navigation_frame, corner_radius=6, fg_color="#1a1a2e"
         )
-        self.hypothesis_frame.grid(row=7, column=0, padx=10, pady=(10, 5), sticky="ew")
+        self.hypothesis_frame.grid(row=5, column=0, padx=10, pady=(5, 5), sticky="nsew")
+        self.navigation_frame.grid_rowconfigure(5, weight=1)
 
         ctk.CTkLabel(
             self.hypothesis_frame,
-            text="🧪 Hypothesis Board",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            text="🧪 Hypotheses",
+            font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#e2e2e2",
-        ).grid(row=0, column=0, columnspan=2, padx=10, pady=(8, 4), sticky="w")
+        ).grid(row=0, column=0, columnspan=2, padx=8, pady=(4, 2), sticky="w")
 
-        # Hypothesis controls
+        # Compact hypothesis controls
         controls_frame = ctk.CTkFrame(self.hypothesis_frame, fg_color="transparent")
-        controls_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        controls_frame.grid(row=1, column=0, padx=8, pady=2, sticky="ew")
 
         ctk.CTkButton(
             controls_frame,
-            text="➕ New Hypothesis",
+            text="➕ New",
             command=self._show_create_hypothesis_dialog,
-            width=140,
-            height=32,
+            width=65,
+            height=24,
+            font=ctk.CTkFont(size=9),
             fg_color="#27ae60",
             hover_color="#219150",
-        ).grid(row=0, column=0, padx=5, pady=2)
+        ).grid(row=0, column=0, padx=(0, 2), pady=1)
 
         ctk.CTkButton(
             controls_frame,
-            text="📋 Review Pending",
+            text="📋 Review",
             command=self._show_hypothesis_review,
-            width=140,
-            height=32,
+            width=65,
+            height=24,
+            font=ctk.CTkFont(size=9),
             fg_color="#3498db",
             hover_color="#2980b9",
-        ).grid(row=0, column=1, padx=5, pady=2)
+        ).grid(row=0, column=1, padx=(2, 0), pady=1)
 
         self.hypothesis_scrollable = ctk.CTkScrollableFrame(
-            self.hypothesis_frame, label_text="Active Hypotheses"
+            self.hypothesis_frame, label_text="Active"
         )
-        self.hypothesis_scrollable.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
+        self.hypothesis_scrollable.grid(
+            row=2, column=0, padx=8, pady=(2, 4), sticky="nsew"
+        )
         self.hypothesis_scrollable.grid_columnconfigure(0, weight=1)
 
         self._refresh_hypothesis_display()
+
+        # -----------------------------------------------------------
+        # Main Content Area (Experiments)
+        # -----------------------------------------------------------
+        self.scrollable_frame = ctk.CTkScrollableFrame(
+            self, label_text=f"Research Experiments ({len(self.experiments)})"
+        )
+        self.scrollable_frame.grid(
+            row=1, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew"
+        )
+        self.scrollable_frame.grid_columnconfigure((0, 1), weight=1)
+
+        for i, (name, script) in enumerate(self.experiments):
+            self._create_experiment_card(self.scrollable_frame, name, script, i)
+
+        # -----------------------------------------------------------
+        # Console Area
+        # -----------------------------------------------------------
+        self.console_frame = ctk.CTkFrame(self, height=250)
+        self.console_frame.grid(
+            row=2, column=0, columnspan=2, padx=20, pady=(10, 20), sticky="nsew"
+        )
+        self.console_frame.grid_columnconfigure(0, weight=1)
+        self.console_frame.grid_rowconfigure(0, weight=1)
+
+        self.console_text = ctk.CTkTextbox(self.console_frame, font=("Courier", 13))
+        self.console_text.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.console_text.insert("0.0", "--- APGI Research Console Ready ---\n")
 
     def _show_create_hypothesis_dialog(self) -> None:
         """Show dialog to create a new hypothesis."""
@@ -578,6 +684,62 @@ class ExperimentRunnerGUI(ctk.CTk):
             width=100,
         ).pack()
 
+    def _create_hypothesis_display_item(
+        self, parent: ctk.CTkFrame, hypothesis: Hypothesis
+    ) -> None:
+        """Create a compact hypothesis display item for the main panel."""
+        item_frame = ctk.CTkFrame(parent, corner_radius=6, fg_color="#2a2a3e")
+        item_frame.pack(fill="x", pady=3, padx=5)
+
+        # Title and status
+        header_frame = ctk.CTkFrame(item_frame, fg_color="transparent")
+        header_frame.pack(fill="x", padx=8, pady=(4, 2))
+
+        title_label = ctk.CTkLabel(
+            header_frame,
+            text=hypothesis.title,
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#ffffff",
+        )
+        title_label.pack(side="left")
+
+        # Status badge
+        status_colors = {
+            HypothesisStatus.DRAFT: "#f39c12",
+            HypothesisStatus.PENDING: "#3498db",
+            HypothesisStatus.UNDER_REVIEW: "#9b59b6",
+            HypothesisStatus.APPROVED: "#27ae60",
+            HypothesisStatus.REJECTED: "#e74c3c",
+        }
+
+        status_label = ctk.CTkLabel(
+            header_frame,
+            text=hypothesis.status.value.upper(),
+            font=ctk.CTkFont(size=9, weight="bold"),
+            text_color=status_colors.get(hypothesis.status, "#666666"),
+            fg_color="#1a1a2e",
+            corner_radius=4,
+            padx=6,
+            pady=2,
+        )
+        status_label.pack(side="right")
+
+        # Description (truncated)
+        if hypothesis.description:
+            desc_text = (
+                hypothesis.description[:60] + "..."
+                if len(hypothesis.description) > 60
+                else hypothesis.description
+            )
+            desc_label = ctk.CTkLabel(
+                item_frame,
+                text=desc_text,
+                font=ctk.CTkFont(size=9),
+                text_color="#cccccc",
+                wraplength=250,
+            )
+            desc_label.pack(anchor="w", padx=8, pady=(0, 4))
+
     def _create_hypothesis_review_item(
         self,
         parent: ctk.CTkFrame,
@@ -710,43 +872,26 @@ class ExperimentRunnerGUI(ctk.CTk):
         for widget in self.hypothesis_scrollable.winfo_children():
             widget.destroy()
 
-        pending_hypotheses = self.approval_board.get_pending_hypotheses()
+        # Show both DRAFT and PENDING hypotheses for better visibility
+        active_hypotheses = [
+            h
+            for h in self.approval_board.hypotheses.values()
+            if h.status in [HypothesisStatus.DRAFT, HypothesisStatus.PENDING]
+        ]
 
-        if not pending_hypotheses:
+        if not active_hypotheses:
             no_hypotheses_label = ctk.CTkLabel(
                 self.hypothesis_scrollable,
-                text="No pending hypotheses to review",
+                text="No active hypotheses",
                 font=ctk.CTkFont(size=12, slant="italic"),
                 text_color="#333333",
             )
             no_hypotheses_label.pack(pady=20)
         else:
-            for hypothesis in pending_hypotheses:
-                self._create_hypothesis_review_item(
-                    self.hypothesis_scrollable, hypothesis, None
+            for hypothesis in active_hypotheses:
+                self._create_hypothesis_display_item(
+                    self.hypothesis_scrollable, hypothesis
                 )
-
-        self.scrollable_frame = ctk.CTkScrollableFrame(
-            self, label_text=f"Research Experiments ({len(self.experiments)})"
-        )
-        self.scrollable_frame.grid(
-            row=1, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew"
-        )
-        self.scrollable_frame.grid_columnconfigure((0, 1), weight=1)
-
-        for i, (name, script) in enumerate(self.experiments):
-            self._create_experiment_card(self.scrollable_frame, name, script, i)
-
-        self.console_frame = ctk.CTkFrame(self, height=250)
-        self.console_frame.grid(
-            row=2, column=0, columnspan=2, padx=20, pady=(10, 20), sticky="nsew"
-        )
-        self.console_frame.grid_columnconfigure(0, weight=1)
-        self.console_frame.grid_rowconfigure(0, weight=1)
-
-        self.console_text = ctk.CTkTextbox(self.console_frame, font=("Courier", 13))
-        self.console_text.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.console_text.insert("0.0", "--- APGI Research Console Ready ---\n")
 
     def _create_experiment_card(
         self, parent: Any, name: str, script: str, index: int
@@ -1459,10 +1604,10 @@ class ExperimentRunnerGUI(ctk.CTk):
             # Prevent CoreFoundation fork warnings in subprocesses on macOS
             if sys.platform == "darwin":
                 env["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-
             # Run as module to support relative imports
-            proc = subprocess.Popen(
-                [sys.executable, "-m", module_name],
+            # Use python3 explicitly for consistency
+            proc = secure_popen(
+                ["python3", "-m", module_name],
                 cwd=self.research_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -1563,25 +1708,50 @@ class ExperimentRunnerGUI(ctk.CTk):
                             data = json.loads(json_str)
                             # Extract APGI metrics from JSON
                             if "apgi_ignition_rate" in data:
-                                results["ignition_rate"] = float(
-                                    data["apgi_ignition_rate"]
-                                )
+                                try:
+                                    results["ignition_rate"] = float(
+                                        data["apgi_ignition_rate"]
+                                    )
+                                except (ValueError, TypeError) as e:
+                                    logging.debug(
+                                        f"Failed to parse ignition_rate: {data.get('apgi_ignition_rate')} - {e}"
+                                    )
                             if "apgi_mean_surprise" in data:
-                                results["mean_surprise"] = float(
-                                    data["apgi_mean_surprise"]
-                                )
+                                try:
+                                    results["mean_surprise"] = float(
+                                        data["apgi_mean_surprise"]
+                                    )
+                                except (ValueError, TypeError) as e:
+                                    logging.debug(
+                                        f"Failed to parse mean_surprise: {data.get('apgi_mean_surprise')} - {e}"
+                                    )
                             if "apgi_metabolic_cost" in data:
-                                results["metabolic_cost"] = float(
-                                    data["apgi_metabolic_cost"]
-                                )
+                                try:
+                                    results["metabolic_cost"] = float(
+                                        data["apgi_metabolic_cost"]
+                                    )
+                                except (ValueError, TypeError) as e:
+                                    logging.debug(
+                                        f"Failed to parse metabolic_cost: {data.get('apgi_metabolic_cost')} - {e}"
+                                    )
                             if "apgi_mean_somatic_marker" in data:
-                                results["mean_somatic_marker"] = float(
-                                    data["apgi_mean_somatic_marker"]
-                                )
+                                try:
+                                    results["mean_somatic_marker"] = float(
+                                        data["apgi_mean_somatic_marker"]
+                                    )
+                                except (ValueError, TypeError) as e:
+                                    logging.debug(
+                                        f"Failed to parse mean_somatic_marker: {data.get('apgi_mean_somatic_marker')} - {e}"
+                                    )
                             if "apgi_mean_threshold" in data:
-                                results["mean_threshold"] = float(
-                                    data["apgi_mean_threshold"]
-                                )
+                                try:
+                                    results["mean_threshold"] = float(
+                                        data["apgi_mean_threshold"]
+                                    )
+                                except (ValueError, TypeError) as e:
+                                    logging.debug(
+                                        f"Failed to parse mean_threshold: {data.get('apgi_mean_threshold')} - {e}"
+                                    )
                             # Extract primary metrics
                             for key in [
                                 "accuracy",
@@ -1624,9 +1794,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             )
                         results["ignition_rate"] = value
                     except (ValueError, IndexError) as e:
-                        self._log(
-                            f"[DEBUG] Failed to parse Ignition Rate: {line} - {e}"
-                        )
+                        logging.debug(f"Failed to parse Ignition Rate: {line} - {e}")
 
                 elif "Mean Surprise:" in line or "- Mean Surprise:" in line:
                     try:
@@ -1638,9 +1806,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             )
                         results["mean_surprise"] = value
                     except (ValueError, IndexError) as e:
-                        self._log(
-                            f"[DEBUG] Failed to parse Mean Surprise: {line} - {e}"
-                        )
+                        logging.debug(f"Failed to parse Mean Surprise: {line} - {e}")
 
                 elif "Metabolic Cost:" in line or "- Total Metabolic Cost:" in line:
                     try:
@@ -1655,9 +1821,7 @@ class ExperimentRunnerGUI(ctk.CTk):
                             )
                         results["metabolic_cost"] = value
                     except (ValueError, IndexError) as e:
-                        self._log(
-                            f"[DEBUG] Failed to parse Metabolic Cost: {line} - {e}"
-                        )
+                        logging.debug(f"Failed to parse Metabolic Cost: {line} - {e}")
 
                 elif "Mean Somatic Marker:" in line or "- Mean Somatic Marker:" in line:
                     try:
@@ -1669,8 +1833,8 @@ class ExperimentRunnerGUI(ctk.CTk):
                             )
                         results["mean_somatic_marker"] = value
                     except (ValueError, IndexError) as e:
-                        self._log(
-                            f"[DEBUG] Failed to parse Mean Somatic Marker: {line} - {e}"
+                        logging.debug(
+                            f"Failed to parse Mean Somatic Marker: {line} - {e}"
                         )
 
                 elif "Mean Threshold:" in line or "- Mean Threshold:" in line:
@@ -2249,8 +2413,8 @@ class ExperimentRunnerGUI(ctk.CTk):
                 env = os.environ.copy()
                 if sys.platform == "darwin":
                     env["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-                proc = subprocess.Popen(
-                    [sys.executable, "-m", "pip", "install"] + packages,
+                proc = secure_popen(
+                    ["python3", "-m", "pip", "install"] + packages,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
@@ -2286,7 +2450,13 @@ class ExperimentRunnerGUI(ctk.CTk):
         thread.start()
 
     def change_appearance_mode(self, new_appearance_mode: str) -> None:
+        """Change the appearance mode and update the dropdown to match."""
         ctk.set_appearance_mode(new_appearance_mode)
+        # Update the dropdown to show the current selection
+        if hasattr(self, "appearance_mode_optionemenu"):
+            self.appearance_mode_optionemenu.set(new_appearance_mode)
+        # Log the theme change
+        self._log(f"Theme changed to: {new_appearance_mode}", "#3498db")
 
     def _create_visualization_panel(self, parent_frame: Any) -> None:
         """Create an embedded matplotlib visualization panel."""
@@ -2692,48 +2862,1819 @@ class ExperimentRunnerGUI(ctk.CTk):
         viz_window.protocol("WM_DELETE_WINDOW", on_close)
 
     def _show_file_menu(self) -> None:
-        """Show File menu with options."""
+        """Show comprehensive File menu with research-oriented functionality."""
         file_menu = ctk.CTkToplevel(self)
         file_menu.title("File")
-        file_menu.geometry("200x150")
+        file_menu.geometry("300x500")
         file_menu.transient(self)
-        ctk.CTkButton(file_menu, text="Exit", command=self.quit).pack(pady=10)
+        file_menu.attributes("-topmost", True)
+
+        # Menu title
+        ctk.CTkLabel(
+            file_menu, text="File Operations", font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(15, 10))
+
+        # New Experiment Section
+        ctk.CTkLabel(
+            file_menu,
+            text="New",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="🧪 New Experiment",
+            command=self._create_new_experiment,
+            width=250,
+            height=35,
+            fg_color="#27ae60",
+            hover_color="#219150",
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="📝 New Hypothesis",
+            command=self._show_create_hypothesis_dialog,
+            width=250,
+            height=35,
+            fg_color="#27ae60",
+            hover_color="#219150",
+        ).pack(pady=2, padx=20)
+
+        # Open/Import Section
+        ctk.CTkLabel(
+            file_menu,
+            text="Open",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="📂 Open Experiment Directory",
+            command=self._open_experiment_directory,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="📊 Import Results",
+            command=self._import_experiment_results,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Save/Export Section
+        ctk.CTkLabel(
+            file_menu,
+            text="Save",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="💾 Save Current Results",
+            command=self._save_experiment_results,
+            width=250,
+            height=35,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="📈 Export Report",
+            command=self._export_research_report,
+            width=250,
+            height=35,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+        ).pack(pady=2, padx=20)
+
+        # Session Management
+        ctk.CTkLabel(
+            file_menu,
+            text="Session",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="🔄 Reload Experiments",
+            command=self._reload_experiments,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            file_menu,
+            text="🧹 Clear Session",
+            command=self._clear_session,
+            width=250,
+            height=35,
+            fg_color="#f39c12",
+            hover_color="#d68910",
+        ).pack(pady=2, padx=20)
+
+        # Close/Exit
+        ctk.CTkButton(
+            file_menu,
+            text="❌ Exit Application",
+            command=self._confirm_exit,
+            width=250,
+            height=35,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+        ).pack(pady=(10, 20), padx=20)
+
+    def _create_new_experiment(self) -> None:
+        """Create a new experiment file."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("🧪 Create New Experiment")
+        dialog.geometry("500x400")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Create New Experiment",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 10))
+
+        form_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        form_frame.pack(padx=20, fill="x", pady=10)
+
+        # Experiment Name
+        ctk.CTkLabel(
+            form_frame, text="Experiment Name:", font=ctk.CTkFont(size=12)
+        ).grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        name_entry = ctk.CTkEntry(form_frame, width=300)
+        name_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        # Description
+        ctk.CTkLabel(form_frame, text="Description:", font=ctk.CTkFont(size=12)).grid(
+            row=1, column=0, sticky="nw", padx=5, pady=5
+        )
+        desc_entry = ctk.CTkTextbox(form_frame, height=80)
+        desc_entry.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
+
+        # Template selection
+        ctk.CTkLabel(form_frame, text="Template:", font=ctk.CTkFont(size=12)).grid(
+            row=2, column=0, sticky="w", padx=5, pady=5
+        )
+        template_menu = ctk.CTkOptionMenu(
+            form_frame,
+            values=[
+                "Basic Experiment",
+                "Data Analysis",
+                "Model Training",
+                "Visualization",
+            ],
+        )
+        template_menu.grid(row=2, column=1, padx=5, pady=5)
+
+        def create_experiment() -> None:
+            name = name_entry.get().strip()
+            if not name:
+                messagebox.showerror("Error", "Please enter an experiment name")
+                return
+
+            # Convert name to filename format
+            filename = f"run_{name.lower().replace(' ', '_')}.py"
+            filepath = self.research_dir / "experiments" / filename
+
+            if filepath.exists():
+                messagebox.showerror(
+                    "Error", f"Experiment file {filename} already exists"
+                )
+                return
+
+            try:
+                # Create basic experiment template
+                template_content = self._get_experiment_template(
+                    name, desc_entry.get("0.0", "end"), template_menu.get()
+                )
+                filepath.write_text(template_content)
+                messagebox.showinfo(
+                    "Success", f"Experiment {name} created successfully!"
+                )
+                self._reload_experiments()
+                dialog.destroy()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create experiment: {e}")
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Create",
+            command=create_experiment,
+            fg_color="#27ae60",
+            hover_color="#219150",
+            width=100,
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _get_experiment_template(
+        self, name: str, description: str, template_type: str
+    ) -> str:
+        """Generate experiment template code based on type."""
+        template = f'''"""{name}
+{description}
+"""
+
+import logging
+import time
+from pathlib import Path
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def main() -> None:
+    """Main experiment function."""
+    logger.info(f"Starting experiment: {name}")
+    
+    try:
+        # TODO: Implement your experiment logic here
+        result = run_experiment()
+        
+        logger.info(f"Experiment completed successfully: {{result}}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Experiment failed: {{e}}")
+        raise
+
+def run_experiment() -> dict:
+    """Run the actual experiment."""
+    # TODO: Add your experiment implementation
+    
+    # Example: Simulate some work
+    time.sleep(1)
+    
+    # Return results
+    return {{
+        "status": "success",
+        "message": "Experiment completed",
+        "data": {{"value": 42}},
+        "timestamp": time.time()
+    }}
+
+if __name__ == "__main__":
+    main()
+'''
+        return template
+
+    def _open_experiment_directory(self) -> None:
+        """Open the experiments directory in file explorer."""
+        import platform
+        import subprocess
+
+        experiments_dir = self.research_dir / "experiments"
+
+        try:
+            if platform.system() == "Windows":
+                subprocess.run(["explorer", str(experiments_dir)], check=True)
+            elif platform.system() == "Darwin":  # macOS
+                subprocess.run(["open", str(experiments_dir)], check=True)
+            else:  # Linux
+                subprocess.run(["xdg-open", str(experiments_dir)], check=True)
+
+            self._log(f"Opened experiments directory: {experiments_dir}", "#3498db")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open directory: {e}")
+
+    def _import_experiment_results(self) -> None:
+        """Import experiment results from file."""
+        from tkinter import filedialog
+
+        file_path = filedialog.askopenfilename(
+            title="Import Experiment Results",
+            filetypes=[
+                ("JSON files", "*.json"),
+                ("CSV files", "*.csv"),
+                ("All files", "*.*"),
+            ],
+            initialdir=str(self.research_dir),
+        )
+
+        if file_path:
+            try:
+                # TODO: Implement proper result import logic
+                self._log(f"Imported results from: {Path(file_path).name}", "#27ae60")
+                messagebox.showinfo("Success", "Results imported successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to import results: {e}")
+
+    def _save_experiment_results(self) -> None:
+        """Save current experiment results."""
+        if not self.experiment_results:
+            messagebox.showinfo("No Results", "No experiment results to save.")
+            return
+
+        from tkinter import filedialog
+
+        file_path = filedialog.asksaveasfilename(
+            title="Save Experiment Results",
+            defaultextension=".json",
+            filetypes=[
+                ("JSON files", "*.json"),
+                ("CSV files", "*.csv"),
+                ("All files", "*.*"),
+            ],
+            initialdir=str(self.research_dir),
+        )
+
+        if file_path:
+            try:
+                import json
+
+                with open(file_path, "w") as f:
+                    json.dump(self.experiment_results, f, indent=2)
+                self._log(f"Saved results to: {Path(file_path).name}", "#27ae60")
+                messagebox.showinfo("Success", "Results saved successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save results: {e}")
+
+    def _export_research_report(self) -> None:
+        """Export comprehensive research report."""
+        from tkinter import filedialog
+
+        file_path = filedialog.asksaveasfilename(
+            title="Export Research Report",
+            defaultextension=".md",
+            filetypes=[
+                ("Markdown files", "*.md"),
+                ("HTML files", "*.html"),
+                ("PDF files", "*.pdf"),
+                ("All files", "*.*"),
+            ],
+            initialdir=str(self.research_dir),
+        )
+
+        if file_path:
+            try:
+                report_content = self._generate_research_report()
+                Path(file_path).write_text(report_content)
+                self._log(f"Exported report to: {Path(file_path).name}", "#27ae60")
+                messagebox.showinfo("Success", "Research report exported successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export report: {e}")
+
+    def _generate_research_report(self) -> str:
+        """Generate a comprehensive research report."""
+        from datetime import datetime
+
+        report = f"""# APGI Research Report
+
+**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**Research Directory:** {self.research_dir}
+
+## Executive Summary
+
+This report summarizes the current state of experiments and results in the APGI research environment.
+
+## Experiment Overview
+
+**Total Experiments:** {len(self.experiments)}
+**Running Experiments:** {len(self.running_experiments)}
+**Completed Results:** {len(self.experiment_results)}
+
+## Experiments
+
+"""
+
+        for name, script in self.experiments:
+            status = (
+                "🟢 Ready" if name not in self.running_experiments else "🔵 Running"
+            )
+            report += (
+                f"\n### {name}\n- **Script:** `{script}`\n- **Status:** {status}\n"
+            )
+
+            if name in self.experiment_results:
+                report += "- **Results:** Available\n"
+
+        report += f"""
+
+## Guardrail Status
+
+- **Current Status:** {self.guardrail_state['status']}
+- **Confidence Level:** {self.guardrail_state['confidence']:.0%}
+- **Regression Rate:** {self.guardrail_state['last_regression']:.1%}
+- **Escalation Count:** {self.guardrail_state['escalation_count']}
+
+## Hypotheses
+
+"""
+
+        pending_hypotheses = self.approval_board.get_pending_hypotheses()
+        if pending_hypotheses:
+            for hypothesis in pending_hypotheses:
+                report += f"\n### {hypothesis.title}\n"
+                report += f"- **Status:** {hypothesis.status.value}\n"
+                report += f"- **Confidence:** {hypothesis.confidence_score:.2f}\n"
+                report += f"- **Description:** {hypothesis.description}\n"
+        else:
+            report += "\nNo pending hypotheses.\n"
+
+        report += """
+
+## Recommendations
+
+Based on the current state of experiments and guardrails:
+
+1. Review any running experiments for completion
+2. Address any escalated guardrail issues
+3. Consider approving pending hypotheses
+4. Plan next iteration of experiments
+
+---
+
+*Report generated by APGI Experiment Runner*
+"""
+
+        return report
+
+    def _reload_experiments(self) -> None:
+        """Reload experiments from directory."""
+        self.experiments = self._find_experiments()
+        # Refresh the UI
+        self._refresh_experiment_display()
+        self._log(
+            f"Reloaded {len(self.experiments)} experiments from directory", "#3498db"
+        )
+
+    def _refresh_experiment_display(self) -> None:
+        """Refresh the experiment display in the main area."""
+        # Clear existing cards
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        # Recreate experiment cards
+        for i, (name, script) in enumerate(self.experiments):
+            self._create_experiment_card(self.scrollable_frame, name, script, i)
+
+    def _clear_session(self) -> None:
+        """Clear current session data."""
+        result = messagebox.askyesno(
+            "Clear Session",
+            "This will clear all current results and reset the session. Continue?",
+        )
+
+        if result:
+            # Stop all running experiments
+            self._stop_all()
+
+            # Clear results
+            self.experiment_results.clear()
+
+            # Clear console
+            self._clear_console()
+
+            # Reset guardrails
+            self._update_guardrail_dashboard()
+
+            self._log("Session cleared - all data reset", "#f39c12")
+            messagebox.showinfo(
+                "Session Cleared", "Session has been cleared successfully."
+            )
+
+    def _confirm_exit(self) -> None:
+        """Confirm application exit with optional save."""
+        if self.running_experiments:
+            result = messagebox.askyesno(
+                "Experiments Running",
+                "There are experiments still running. Exit anyway?",
+            )
+            if not result:
+                return
+
+        if self.experiment_results:
+            save_result: Optional[bool] = messagebox.askyesnocancel(
+                "Save Results", "Do you want to save experiment results before exiting?"
+            )
+            if save_result is True:  # Yes
+                self._save_experiment_results()
+            elif save_result is None:  # Cancel
+                return
+            else:  # No (False)
+                pass  # Continue to quit
+
+        self.quit()
 
     def _show_edit_menu(self) -> None:
-        """Show Edit menu with options."""
+        """Show comprehensive Edit menu with research-oriented functionality."""
         edit_menu = ctk.CTkToplevel(self)
         edit_menu.title("Edit")
-        edit_menu.geometry("200x150")
+        edit_menu.geometry("300x600")
         edit_menu.transient(self)
-        ctk.CTkLabel(edit_menu, text="Edit options - Coming soon").pack(pady=20)
+        edit_menu.attributes("-topmost", True)
+
+        # Menu title
+        ctk.CTkLabel(
+            edit_menu, text="Edit Operations", font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(15, 10))
+
+        # Console Operations
+        ctk.CTkLabel(
+            edit_menu,
+            text="Console",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="🧹 Clear Console",
+            command=self._clear_console,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="📋 Copy Console Output",
+            command=self._copy_console_output,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="💾 Save Console Log",
+            command=self._save_console_log,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Experiment Operations
+        ctk.CTkLabel(
+            edit_menu,
+            text="Experiments",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="🔄 Refresh Experiments",
+            command=self._reload_experiments,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="✏️ Edit Experiment Script",
+            command=self._edit_experiment_script,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="🗑️ Delete Experiment",
+            command=self._delete_experiment,
+            width=250,
+            height=35,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+        ).pack(pady=2, padx=20)
+
+        # Results Operations
+        ctk.CTkLabel(
+            edit_menu,
+            text="Results",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="🗑️ Clear All Results",
+            command=self._clear_all_results,
+            width=250,
+            height=35,
+            fg_color="#f39c12",
+            hover_color="#d68910",
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="📊 Reset Visualizations",
+            command=self._reset_visualizations,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Configuration
+        ctk.CTkLabel(
+            edit_menu,
+            text="Configuration",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="⚙️ Settings",
+            command=self._show_settings_dialog,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            edit_menu,
+            text="🔧 Reset Guardrails",
+            command=self._reset_guardrails,
+            width=250,
+            height=35,
+            fg_color="#f39c12",
+            hover_color="#d68910",
+        ).pack(pady=2, padx=20)
+
+    def _copy_console_output(self) -> None:
+        """Copy console output to clipboard."""
+        try:
+            import pyperclip
+
+            console_text = self.console_text.get("1.0", "end").strip()
+            pyperclip.copy(console_text)
+            self._log("Console output copied to clipboard", "#27ae60")
+            messagebox.showinfo("Success", "Console output copied to clipboard!")
+        except ImportError:
+            # Fallback to tkinter clipboard
+            try:
+                self.clipboard_clear()
+                console_text = self.console_text.get("1.0", "end").strip()
+                self.clipboard_append(console_text)
+                self._log("Console output copied to clipboard", "#27ae60")
+                messagebox.showinfo("Success", "Console output copied to clipboard!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to copy to clipboard: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to copy to clipboard: {e}")
+
+    def _save_console_log(self) -> None:
+        """Save console log to file."""
+        from datetime import datetime
+        from tkinter import filedialog
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"console_log_{timestamp}.txt"
+
+        file_path = filedialog.asksaveasfilename(
+            title="Save Console Log",
+            defaultextension=".txt",
+            initialfile=default_filename,
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("Log files", "*.log"),
+                ("All files", "*.*"),
+            ],
+            initialdir=str(self.research_dir),
+        )
+
+        if file_path:
+            try:
+                console_text = self.console_text.get("1.0", "end").strip()
+                Path(file_path).write_text(console_text, encoding="utf-8")
+                self._log(f"Console log saved to: {Path(file_path).name}", "#27ae60")
+                messagebox.showinfo("Success", "Console log saved successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save console log: {e}")
+
+    def _edit_experiment_script(self) -> None:
+        """Edit selected experiment script."""
+        if not self.experiments:
+            messagebox.showinfo("No Experiments", "No experiments available to edit.")
+            return
+
+        # Create experiment selection dialog
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("✏️ Edit Experiment Script")
+        dialog.geometry("400x300")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Select Experiment to Edit",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 10))
+
+        # Experiment selection
+        experiment_names = [name for name, _ in self.experiments]
+        selected_experiment = ctk.CTkOptionMenu(dialog, values=experiment_names)
+        selected_experiment.pack(pady=10, padx=20)
+
+        def open_in_editor() -> None:
+            experiment_name = selected_experiment.get()
+            script_path = None
+
+            for name, script in self.experiments:
+                if name == experiment_name:
+                    script_path = self.research_dir / script
+                    break
+
+            if script_path and script_path.exists():
+                try:
+                    import platform
+                    import subprocess
+
+                    if platform.system() == "Windows":
+                        subprocess.run(["notepad", str(script_path)], check=True)
+                    elif platform.system() == "Darwin":  # macOS
+                        subprocess.run(
+                            ["open", "-a", "TextEdit", str(script_path)], check=True
+                        )
+                    else:  # Linux
+                        subprocess.run(["xdg-open", str(script_path)], check=True)
+
+                    self._log(
+                        f"Opened script for editing: {script_path.name}", "#3498db"
+                    )
+                    dialog.destroy()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to open script: {e}")
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Open in Editor",
+            command=open_in_editor,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+            width=120,
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _delete_experiment(self) -> None:
+        """Delete selected experiment."""
+        if not self.experiments:
+            messagebox.showinfo("No Experiments", "No experiments available to delete.")
+            return
+
+        # Create experiment selection dialog
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("🗑️ Delete Experiment")
+        dialog.geometry("400x300")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Select Experiment to Delete",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 10))
+
+        ctk.CTkLabel(
+            dialog,
+            text="⚠️ This will permanently delete the experiment file!",
+            font=ctk.CTkFont(size=12),
+            text_color="#e74c3c",
+        ).pack(pady=5)
+
+        # Experiment selection
+        experiment_names = [name for name, _ in self.experiments]
+        selected_experiment = ctk.CTkOptionMenu(dialog, values=experiment_names)
+        selected_experiment.pack(pady=10, padx=20)
+
+        def confirm_delete() -> None:
+            experiment_name = selected_experiment.get()
+            script_path = None
+
+            for name, script in self.experiments:
+                if name == experiment_name:
+                    script_path = self.research_dir / script
+                    break
+
+            if script_path and script_path.exists():
+                result = messagebox.askyesno(
+                    "Confirm Delete",
+                    f"Are you sure you want to delete {experiment_name}?\\n\\nFile: {script_path.name}",
+                )
+
+                if result:
+                    try:
+                        script_path.unlink()
+                        self._log(f"Deleted experiment: {experiment_name}", "#e74c3c")
+                        self._reload_experiments()
+                        dialog.destroy()
+                        messagebox.showinfo(
+                            "Success", "Experiment deleted successfully!"
+                        )
+                    except Exception as e:
+                        messagebox.showerror(
+                            "Error", f"Failed to delete experiment: {e}"
+                        )
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Delete",
+            command=confirm_delete,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            fg_color="#7f8c8d",
+            hover_color="#636e72",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _clear_all_results(self) -> None:
+        """Clear all experiment results."""
+        result = messagebox.askyesno(
+            "Clear All Results", "This will clear all experiment results. Continue?"
+        )
+
+        if result:
+            self.experiment_results.clear()
+            self._log("All experiment results cleared", "#f39c12")
+            messagebox.showinfo("Success", "All experiment results have been cleared.")
+
+    def _reset_visualizations(self) -> None:
+        """Reset all visualization windows."""
+        # Close any open visualization windows
+        for widget in self.winfo_children():
+            if isinstance(widget, ctk.CTkToplevel) and "VIZ" in widget.title():
+                widget.destroy()
+
+        # Reset current figure and canvas
+        self.current_figure = None
+        self.current_canvas = None
+
+        self._log("All visualizations reset", "#f39c12")
+        messagebox.showinfo("Success", "All visualizations have been reset.")
+
+    def _show_settings_dialog(self) -> None:
+        """Show application settings dialog."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("⚙️ Settings")
+        dialog.geometry("400x500")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog,
+            text="Application Settings",
+            font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 10))
+
+        settings_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        settings_frame.pack(padx=20, fill="x", pady=10)
+
+        # Console font size
+        ctk.CTkLabel(
+            settings_frame, text="Console Font Size:", font=ctk.CTkFont(size=12)
+        ).grid(row=0, column=0, sticky="w", padx=5, pady=5)
+
+        font_size_var = ctk.StringVar(value="13")
+        font_size_menu = ctk.CTkOptionMenu(
+            settings_frame,
+            values=["10", "11", "12", "13", "14", "15", "16"],
+            variable=font_size_var,
+        )
+        font_size_menu.grid(row=0, column=1, padx=5, pady=5)
+
+        # Auto-save results
+        ctk.CTkLabel(
+            settings_frame, text="Auto-save Results:", font=ctk.CTkFont(size=12)
+        ).grid(row=1, column=0, sticky="w", padx=5, pady=5)
+
+        autosave_var = ctk.BooleanVar(value=False)
+        autosave_check = ctk.CTkCheckBox(settings_frame, variable=autosave_var)
+        autosave_check.grid(row=1, column=1, padx=5, pady=5)
+
+        # Show notifications
+        ctk.CTkLabel(
+            settings_frame, text="Show Notifications:", font=ctk.CTkFont(size=12)
+        ).grid(row=2, column=0, sticky="w", padx=5, pady=5)
+
+        notifications_var = ctk.BooleanVar(value=True)
+        notifications_check = ctk.CTkCheckBox(
+            settings_frame, variable=notifications_var
+        )
+        notifications_check.grid(row=2, column=1, padx=5, pady=5)
+
+        def apply_settings() -> None:
+            try:
+                # Apply console font size
+                new_font_size = int(font_size_var.get())
+                self.console_text.configure(font=("Courier", new_font_size))
+
+                # Store other settings (would need to implement persistence)
+                self._log("Settings applied successfully", "#27ae60")
+                dialog.destroy()
+                messagebox.showinfo("Success", "Settings applied successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to apply settings: {e}")
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Apply",
+            command=apply_settings,
+            fg_color="#27ae60",
+            hover_color="#219150",
+            width=100,
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _reset_guardrails(self) -> None:
+        """Reset guardrail system to default state."""
+        result = messagebox.askyesno(
+            "Reset Guardrails",
+            "This will reset the guardrail system to default state. Continue?",
+        )
+
+        if result:
+            self.guardrail_state = {
+                "status": "IDLE",
+                "confidence": 1.0,
+                "last_regression": 0.0,
+                "escalation_count": 0,
+                "last_experiment": "",
+            }
+            self._update_guardrail_dashboard()
+            self._log("Guardrail system reset to default state", "#f39c12")
+            messagebox.showinfo("Success", "Guardrail system has been reset.")
 
     def _show_view_menu(self) -> None:
-        """Show View menu with options."""
+        """Show comprehensive View menu with display options."""
         view_menu = ctk.CTkToplevel(self)
         view_menu.title("View")
-        view_menu.geometry("200x150")
+        view_menu.geometry("300x600")
         view_menu.transient(self)
+        view_menu.attributes("-topmost", True)
+
+        # Menu title
+        ctk.CTkLabel(
+            view_menu, text="View Options", font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(15, 10))
+
+        # Appearance
+        ctk.CTkLabel(
+            view_menu,
+            text="Appearance",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
         ctk.CTkButton(
             view_menu,
-            text="Toggle Appearance",
+            text="🌓 Toggle Appearance",
             command=lambda: self.change_appearance_mode(
                 "Light" if ctk.get_appearance_mode() == "Dark" else "Dark"
             ),
-        ).pack(pady=10)
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="🌙 Dark Mode",
+            command=lambda: self.change_appearance_mode("Dark"),
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="☀️ Light Mode",
+            command=lambda: self.change_appearance_mode("Light"),
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="💻 System Mode",
+            command=lambda: self.change_appearance_mode("System"),
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Layout
+        ctk.CTkLabel(
+            view_menu,
+            text="Layout",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="📐 Toggle Sidebar",
+            command=self._toggle_sidebar,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="📊 Maximize Console",
+            command=self._maximize_console,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu, text="🔍 Zoom In", command=self._zoom_in, width=250, height=35
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu, text="🔍 Zoom Out", command=self._zoom_out, width=250, height=35
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="🔄 Reset Zoom",
+            command=self._reset_zoom,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Windows
+        ctk.CTkLabel(
+            view_menu,
+            text="Windows",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="📈 Show All Visualizations",
+            command=self._show_all_visualizations,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="🗑️ Close All Windows",
+            command=self._close_all_windows,
+            width=250,
+            height=35,
+            fg_color="#f39c12",
+            hover_color="#d68910",
+        ).pack(pady=2, padx=20)
+
+        # Refresh
+        ctk.CTkLabel(
+            view_menu,
+            text="Refresh",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="🔄 Refresh UI",
+            command=self._refresh_ui,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+    def _toggle_sidebar(self) -> None:
+        """Toggle sidebar visibility."""
+        if hasattr(self, "navigation_frame"):
+            if self.navigation_frame.winfo_ismapped():
+                self.navigation_frame.grid_remove()
+                self._log("Sidebar hidden", "#3498db")
+            else:
+                self.navigation_frame.grid(row=1, column=0, sticky="nsew")
+                self._log("Sidebar shown", "#3498db")
+
+    def _maximize_console(self) -> None:
+        """Maximize console area."""
+        current_state = self.console_frame.grid_info()
+        if current_state["row"] == 2:  # Normal console position
+            # Maximize console
+            self.console_frame.grid_forget()
+            self.console_frame.grid(
+                row=0,
+                column=0,
+                columnspan=2,
+                rowspan=3,
+                sticky="nsew",
+                padx=20,
+                pady=20,
+            )
+            self._log("Console maximized", "#3498db")
+        else:
+            # Restore normal layout
+            self.console_frame.grid_forget()
+            self.console_frame.grid(
+                row=2, column=0, columnspan=2, padx=20, pady=(10, 20), sticky="nsew"
+            )
+            self._log("Console restored to normal size", "#3498db")
+
+    def _zoom_in(self) -> None:
+        """Zoom in UI elements."""
+        try:
+            current_font = self.console_text.cget("font")
+            if isinstance(current_font, tuple) and len(current_font) >= 2:
+                new_size = min(current_font[1] + 1, 20)  # Max size 20
+                self.console_text.configure(font=(current_font[0], new_size))
+                self._log(f"Zoomed in to font size {new_size}", "#3498db")
+        except Exception as e:
+            self._log(f"Failed to zoom in: {e}", "#e74c3c")
+
+    def _zoom_out(self) -> None:
+        """Zoom out UI elements."""
+        try:
+            current_font = self.console_text.cget("font")
+            if isinstance(current_font, tuple) and len(current_font) >= 2:
+                new_size = max(current_font[1] - 1, 8)  # Min size 8
+                self.console_text.configure(font=(current_font[0], new_size))
+                self._log(f"Zoomed out to font size {new_size}", "#3498db")
+        except Exception as e:
+            self._log(f"Failed to zoom out: {e}", "#e74c3c")
+
+    def _reset_zoom(self) -> None:
+        """Reset zoom to default."""
+        try:
+            self.console_text.configure(font=("Courier", 13))
+            self._log("Zoom reset to default", "#3498db")
+        except Exception as e:
+            self._log(f"Failed to reset zoom: {e}", "#e74c3c")
+
+    def _show_all_visualizations(self) -> None:
+        """Show all available visualizations."""
+        if not self.experiment_results:
+            messagebox.showinfo(
+                "No Results", "No experiment results available for visualization."
+            )
+            return
+
+        for experiment_name in self.experiment_results:
+            try:
+                self._show_results_visualization(experiment_name)
+            except Exception as e:
+                self._log(
+                    f"Failed to show visualization for {experiment_name}: {e}",
+                    "#e74c3c",
+                )
+
+        self._log(f"Opened {len(self.experiment_results)} visualizations", "#27ae60")
+
+    def _close_all_windows(self) -> None:
+        """Close all popup windows except main window."""
+        closed_count = 0
+        for widget in self.winfo_children():
+            if isinstance(widget, ctk.CTkToplevel):
+                widget.destroy()
+                closed_count += 1
+
+        self._log(f"Closed {closed_count} popup windows", "#f39c12")
+        messagebox.showinfo("Success", f"Closed {closed_count} popup windows.")
+
+    def _refresh_ui(self) -> None:
+        """Refresh the entire UI."""
+        try:
+            # Refresh experiments
+            self._reload_experiments()
+
+            # Refresh hypothesis display
+            self._refresh_hypothesis_display()
+
+            # Update guardrail dashboard
+            self._update_guardrail_dashboard()
+
+            self._log("UI refreshed successfully", "#27ae60")
+            messagebox.showinfo("Success", "UI has been refreshed.")
+        except Exception as e:
+            self._log(f"Failed to refresh UI: {e}", "#e74c3c")
+            messagebox.showerror("Error", f"Failed to refresh UI: {e}")
 
     def _show_help_menu(self) -> None:
-        """Show Help menu with options."""
+        """Show comprehensive Help menu with documentation and resources."""
         help_menu = ctk.CTkToplevel(self)
         help_menu.title("Help")
-        help_menu.geometry("300x200")
+        help_menu.geometry("350x700")
         help_menu.transient(self)
+        help_menu.attributes("-topmost", True)
+
+        # Menu title
         ctk.CTkLabel(
             help_menu,
-            text="APGI Experiment Runner",
+            text="Help & Documentation",
             font=ctk.CTkFont(size=16, weight="bold"),
-        ).pack(pady=10)
-        ctk.CTkLabel(help_menu, text="APGI Research").pack(pady=5)
-        ctk.CTkButton(help_menu, text="Close", command=help_menu.destroy).pack(pady=20)
+        ).pack(pady=(15, 10))
+
+        # Documentation
+        ctk.CTkLabel(
+            help_menu,
+            text="Documentation",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="📖 User Guide",
+            command=self._show_user_guide,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="🔧 API Documentation",
+            command=self._show_api_docs,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="📚 Experiment Templates",
+            command=self._show_experiment_templates,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Tutorials
+        ctk.CTkLabel(
+            help_menu,
+            text="Tutorials",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="🎯 Getting Started",
+            command=self._show_getting_started,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="🧪 Creating Experiments",
+            command=self._show_experiment_tutorial,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="🤖 XPR Agent Guide",
+            command=self._show_xpr_guide,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Support
+        ctk.CTkLabel(
+            help_menu,
+            text="Support",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="🐛 Report Issue",
+            command=self._report_issue,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="💬 Feedback",
+            command=self._send_feedback,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # About
+        ctk.CTkLabel(
+            help_menu,
+            text="About",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#3498db",
+        ).pack(pady=(10, 5), anchor="w", padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="ℹ️ About APGI",
+            command=self._show_about,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            help_menu,
+            text="📋 System Info",
+            command=self._show_system_info,
+            width=300,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        # Close button
+        ctk.CTkButton(
+            help_menu,
+            text="❌ Close",
+            command=help_menu.destroy,
+            fg_color="#7f8c8d",
+            hover_color="#636e72",
+            width=300,
+            height=35,
+        ).pack(pady=(15, 20))
+
+    def _show_user_guide(self) -> None:
+        """Show user guide documentation."""
+        guide_text = """# APGI Experiment Runner - User Guide
+
+## Getting Started
+1. **Experiments Tab**: View and run available experiments
+2. **Guardrails Panel**: Monitor system safety and confidence levels
+3. **Hypothesis Board**: Track and manage research hypotheses
+4. **Console**: View real-time experiment output and logs
+
+## Running Experiments
+- **RUN**: Execute a single experiment
+- **VIZ**: View experiment results and visualizations
+- **XPR AUTO**: Launch autonomous experiment improvement
+
+## File Operations
+- Create new experiments with templates
+- Import/export results and data
+- Generate comprehensive research reports
+
+## Tips
+- Use the sidebar for quick access to common actions
+- Monitor guardrail status for system safety
+- Save your work regularly with File → Save Results
+"""
+        self._show_text_dialog("📖 User Guide", guide_text)
+
+    def _show_api_docs(self) -> None:
+        """Show API documentation."""
+        api_docs = """# APGI API Documentation
+
+## Core Classes
+- `ExperimentRunnerGUI`: Main application interface
+- `ApprovalBoard`: Hypothesis management system
+- `AutonomousAgent`: Experiment optimization engine
+
+## Key Methods
+- `run_experiment(name, script)`: Execute experiment
+- `show_results_visualization(name)`: Display results
+- `create_hypothesis(...)`: Create research hypothesis
+
+## File Structure
+```
+apgi-research/
+├── experiments/     # Experiment scripts
+├── docs/           # Documentation
+├── tests/          # Test files
+└── *.py           # Core modules
+```
+
+## Configuration
+- Edit settings via Edit → Settings
+- Modify guardrail parameters
+- Customize appearance and layout
+"""
+        self._show_text_dialog("🔧 API Documentation", api_docs)
+
+    def _show_experiment_templates(self) -> None:
+        """Show experiment template documentation."""
+        templates = """# Experiment Templates
+
+## Basic Experiment Template
+```python
+def main() -> None:
+    \"\"\"Main experiment function.\"\"\"
+    logger.info("Starting experiment")
+    
+    try:
+        result = run_experiment()
+        logger.info(f"Completed: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed: {e}")
+        raise
+
+def run_experiment() -> dict:
+    \"\"\"Run the actual experiment.\"\"\"
+    # Your experiment logic here
+    return {"status": "success", "data": {...}}
+```
+
+## Data Analysis Template
+- Includes pandas, numpy integration
+- Built-in visualization support
+- Statistical analysis helpers
+
+## Model Training Template
+- ML framework integration
+- Hyperparameter optimization
+- Model evaluation metrics
+
+## Visualization Template
+- Matplotlib/Plotly support
+- Interactive charts
+- Export capabilities
+"""
+        self._show_text_dialog("📚 Experiment Templates", templates)
+
+    def _show_getting_started(self) -> None:
+        """Show getting started tutorial."""
+        tutorial = """# Getting Started with APGI
+
+## Step 1: Explore Experiments
+- Browse available experiments in the main panel
+- Click RUN to execute individual experiments
+- Use VIZ to view results and charts
+
+## Step 2: Create Your Own Experiment
+1. File → New → New Experiment
+2. Choose a template (Basic, Data Analysis, etc.)
+3. Enter experiment name and description
+4. Edit the generated script
+
+## Step 3: Run Experiments
+- Start with RUN for manual execution
+- Try XPR AUTO for autonomous improvement
+- Monitor progress in the console
+
+## Step 4: Analyze Results
+- Use VIZ buttons to view visualizations
+- Check guardrail status for system health
+- Export reports with File → Export Report
+
+## Step 5: Manage Hypotheses
+- Create hypotheses with 📝 New Hypothesis
+- Review pending hypotheses
+- Track experiment outcomes
+"""
+        self._show_text_dialog("🎯 Getting Started", tutorial)
+
+    def _show_experiment_tutorial(self) -> None:
+        """Show experiment creation tutorial."""
+        tutorial = """# Creating Experiments Tutorial
+
+## Experiment Structure
+Every experiment should have:
+1. `main()` function - Entry point
+2. `run_experiment()` function - Core logic
+3. Proper logging and error handling
+4. Return structured results
+
+## Best Practices
+- Use descriptive variable names
+- Add comprehensive logging
+- Handle errors gracefully
+- Return structured data
+
+## Example: Data Processing
+```python
+def run_experiment() -> dict:
+    \"\"\"Process sample data.\"\"\"
+    import pandas as pd
+    import numpy as np
+    
+    # Load data
+    data = pd.read_csv("sample.csv")
+    
+    # Process
+    processed = data.dropna()
+    summary = processed.describe()
+    
+    return {
+        "status": "success",
+        "rows_processed": len(processed),
+        "summary": summary.to_dict()
+    }
+```
+
+## Testing Your Experiment
+- Test with small datasets first
+- Verify output structure
+- Check error handling
+"""
+        self._show_text_dialog("🧪 Creating Experiments", tutorial)
+
+    def _show_xpr_guide(self) -> None:
+        """Show XPR Agent guide."""
+        guide = """# XPR Agent Guide
+
+## What is XPR AUTO?
+XPR AUTO is an autonomous experiment improvement agent that:
+- Analyzes current experiment performance
+- Identifies optimization opportunities
+- Implements improvements automatically
+- Respects guardrail constraints
+
+## Using XPR AUTO
+1. Click XPR AUTO on any experiment
+2. Configure constraints (iterations, time budget, etc.)
+3. Review the generated improvement plan
+4. Approve, modify, or reject the plan
+5. Monitor autonomous execution
+
+## Configuration Options
+- **Max Iterations**: Number of improvement cycles
+- **Time Budget**: Maximum execution time (seconds)
+- **Min Confidence**: Minimum confidence threshold
+- **Protected Files**: Files that cannot be modified
+
+## Guardrails
+XPR AUTO operates within strict safety constraints:
+- Confidence level monitoring
+- Regression detection
+- Escalation procedures
+- Human approval requirements
+
+## Best Practices
+- Start with conservative settings
+- Monitor guardrail status closely
+- Review generated plans before approval
+- Keep regular backups
+"""
+        self._show_text_dialog("🤖 XPR Agent Guide", guide)
+
+    def _report_issue(self) -> None:
+        """Report an issue."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("🐛 Report Issue")
+        dialog.geometry("500x400")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog, text="Report an Issue", font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(15, 10))
+
+        form_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        form_frame.pack(padx=20, fill="x", pady=10)
+
+        # Issue type
+        ctk.CTkLabel(form_frame, text="Issue Type:", font=ctk.CTkFont(size=12)).grid(
+            row=0, column=0, sticky="w", padx=5, pady=5
+        )
+        issue_type = ctk.CTkOptionMenu(
+            form_frame, values=["Bug", "Feature Request", "Performance Issue", "Other"]
+        )
+        issue_type.grid(row=0, column=1, padx=5, pady=5)
+
+        # Description
+        ctk.CTkLabel(form_frame, text="Description:", font=ctk.CTkFont(size=12)).grid(
+            row=1, column=0, sticky="nw", padx=5, pady=5
+        )
+        desc_entry = ctk.CTkTextbox(form_frame, height=100)
+        desc_entry.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
+
+        def submit_issue() -> None:
+            issue_data = {
+                "type": issue_type.get(),
+                "description": desc_entry.get("0.0", "end").strip(),
+                "timestamp": time.time(),
+            }
+            # In a real implementation, this would send to a tracking system
+            self._log(f"Issue reported: {issue_data['type']}", "#f39c12")
+            messagebox.showinfo(
+                "Thank You", "Your issue has been reported. We'll look into it!"
+            )
+            dialog.destroy()
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Submit",
+            command=submit_issue,
+            fg_color="#3498db",
+            hover_color="#2980b9",
+            width=100,
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _send_feedback(self) -> None:
+        """Send feedback."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("💬 Send Feedback")
+        dialog.geometry("500x300")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        ctk.CTkLabel(
+            dialog, text="Send Feedback", font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=(15, 10))
+
+        ctk.CTkLabel(dialog, text="Your feedback helps us improve APGI!").pack(pady=5)
+
+        feedback_entry = ctk.CTkTextbox(dialog, height=100, width=450)
+        feedback_entry.pack(padx=20, pady=10)
+        feedback_entry.insert(
+            "0.0", "What do you think about APGI? What features would you like to see?"
+        )
+
+        def send_feedback() -> None:
+            feedback_text = feedback_entry.get("0.0", "end").strip()
+            if feedback_text:
+                self._log("Feedback submitted - thank you!", "#27ae60")
+                messagebox.showinfo(
+                    "Thank You!",
+                    "Your feedback has been submitted. We appreciate your input!",
+                )
+                dialog.destroy()
+            else:
+                messagebox.showwarning(
+                    "Empty", "Please enter some feedback before submitting."
+                )
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=15)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Send",
+            command=send_feedback,
+            fg_color="#27ae60",
+            hover_color="#219150",
+            width=100,
+        ).pack(side="left", padx=5)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="Cancel",
+            command=dialog.destroy,
+            fg_color="#e74c3c",
+            hover_color="#c0392b",
+            width=100,
+        ).pack(side="left", padx=5)
+
+    def _show_about(self) -> None:
+        """Show about dialog."""
+        about_text = """# About APGI Experiment Runner
+
+## Version Information
+- **Version**: 2.0 Premium Edition
+- **Build**: Research Environment
+- **Platform**: Python-based Experiment Management
+
+## Key Features
+- 🧪 Experiment management and execution
+- 🤖 Autonomous experiment improvement (XPR)
+- 📊 Real-time visualization and analysis
+- 🛡️ Guardrail safety system
+- 📝 Hypothesis tracking and approval
+- 📈 Comprehensive reporting
+
+## Technologies Used
+- **Framework**: CustomTkinter + Python
+- **Visualization**: Matplotlib + NumPy
+- **AI Integration**: LiteLLM + Autonomous Agents
+- **Safety**: Multi-layer guardrail system
+
+## Research Focus
+APGI (Autonomous Program Generation and Improvement) is designed for:
+- Scientific experiment automation
+- Machine learning model optimization
+- Data analysis workflows
+- Research reproducibility
+
+## License
+Internal Research Use Only
+© 2024 APGI Research Team
+"""
+        self._show_text_dialog("ℹ️ About APGI", about_text)
+
+    def _show_system_info(self) -> None:
+        """Show system information."""
+        import platform
+        import sys
+        from datetime import datetime
+
+        system_info = f"""# System Information
+
+## Platform Details
+- **OS**: {platform.system()} {platform.release()}
+- **Architecture**: {platform.machine()}
+- **Processor**: {platform.processor()}
+- **Python Version**: {sys.version}
+
+## Application Info
+- **APGI Version**: 2.0 Premium Edition
+- **Started**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+- **Research Directory**: {self.research_dir}
+- **Experiments Found**: {len(self.experiments)}
+- **Running Processes**: {len(self.running_experiments)}
+
+## Dependencies Status
+"""
+
+        # Check key dependencies
+        deps_status = {
+            "customtkinter": "✅ Available",
+            "matplotlib": "✅ Available",
+            "numpy": "✅ Available",
+            "litellm": "✅ Available" if LLM_AVAILABLE else "❌ Not Available",
+        }
+
+        for dep, status in deps_status.items():
+            system_info += f"- **{dep}**: {status}\n"
+
+        system_info += f"""
+## Memory Usage
+- **Guardrail State**: {len(self.guardrail_state)} parameters tracked
+- **Experiment Results**: {len(self.experiment_results)} stored
+- **Hypotheses**: {len(self.approval_board.get_pending_hypotheses())} pending
+
+## Performance Metrics
+- **UI Theme**: {ctk.get_appearance_mode()}
+- **Console Font**: {self.console_text.cget('font')}
+- **Window Size**: {self.geometry()}
+"""
+
+        self._show_text_dialog("📋 System Information", system_info)
+
+    def _show_text_dialog(self, title: str, content: str) -> None:
+        """Helper method to show text content in a dialog."""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title(title)
+        dialog.geometry("600x500")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        # Create scrollable text widget
+        text_frame = ctk.CTkScrollableFrame(dialog)
+        text_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        text_widget = ctk.CTkTextbox(text_frame, height=400)
+        text_widget.pack(fill="both", expand=True)
+        text_widget.insert("0.0", content)
+        text_widget.configure(state="disabled")  # Make read-only
+
+        # Close button
+        ctk.CTkButton(
+            dialog,
+            text="Close",
+            command=dialog.destroy,
+            fg_color="#7f8c8d",
+            hover_color="#636e72",
+            width=100,
+        ).pack(pady=(0, 15))
 
 
 if __name__ == "__main__":

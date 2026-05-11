@@ -4,7 +4,7 @@ Tests for APGI Profiling module including cProfile and line_profiler integration
 
 import pytest
 
-from apgi_profiler import (
+from utils.apgi_profiler import (
     LINE_PROFILER_AVAILABLE,
     PerformanceBudgetExceeded,
     _is_profiling_enabled,

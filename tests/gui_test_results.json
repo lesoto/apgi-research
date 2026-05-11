@@ -435,7 +435,7 @@
     {
       "name": "Test script exists",
       "passed": false,
-      "message": "/Users/lesoto/Sites/PYTHON/apgi-research/.claude/worktrees/silly-dijkstra-120a30/tests/experiments/run_stroop_effect.py not found"
+      "message": "/Users/lesoto/Sites/PYTHON/apgi-research/tests/experiments/run_stroop_effect.py not found"
     },
     {
       "name": "Experiment found: run_ai_benchmarking.py",

@@ -4,21 +4,23 @@ Aiming for 100% code coverage.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
 
-from apgi_data_retention import (
+from utils.apgi_data_retention import (
     DataSubjectRecord,
     DeletionExecutor,
     RetentionConfig,
     RetentionJobScheduler,
     RetentionPolicy,
-    _retention_scheduler,
     get_retention_scheduler,
     set_retention_scheduler,
 )
+
+# Store original scheduler for cleanup
+_retention_scheduler = get_retention_scheduler()
 
 
 class TestRetentionPolicy:
@@ -93,7 +95,7 @@ class TestDataSubjectRecord:
             subject_id="test_001",
             subject_name="Test",
             retention_policy=RetentionPolicy.PERMANENT,
-            created_at=datetime.utcnow() - timedelta(days=10000),
+            created_at=datetime.now(timezone.utc) - timedelta(days=10000),
         )
         config = RetentionConfig()
         assert record.is_retention_expired(config) is False
@@ -104,7 +106,7 @@ class TestDataSubjectRecord:
             subject_id="test_001",
             subject_name="Test",
             retention_policy=RetentionPolicy.GDPR_DEFAULT,
-            created_at=datetime.utcnow() - timedelta(days=2000),
+            created_at=datetime.now(timezone.utc) - timedelta(days=2000),
         )
         config = RetentionConfig(retention_days=1095)
         assert record.is_retention_expired(config) is True
@@ -115,7 +117,7 @@ class TestDataSubjectRecord:
             subject_id="test_001",
             subject_name="Test",
             retention_policy=RetentionPolicy.GDPR_DEFAULT,
-            created_at=datetime.utcnow() - timedelta(days=100),
+            created_at=datetime.now(timezone.utc) - timedelta(days=100),
         )
         config = RetentionConfig(retention_days=1095)
         assert record.is_retention_expired(config) is False
@@ -363,7 +365,7 @@ class TestRetentionJobScheduler:
             subject_name="Test User",
             data_categories=["config"],
             retention_policy=RetentionPolicy.GDPR_DEFAULT,
-            created_at=datetime.utcnow() - timedelta(days=2000),
+            created_at=datetime.now(timezone.utc) - timedelta(days=2000),
         )
         scheduler.data_subjects["sub_001"] = record
 
@@ -383,7 +385,7 @@ class TestRetentionJobScheduler:
             subject_name="Test User",
             data_categories=["config"],
             retention_policy=RetentionPolicy.GDPR_DEFAULT,
-            created_at=datetime.utcnow() - timedelta(days=2000),
+            created_at=datetime.now(timezone.utc) - timedelta(days=2000),
         )
         scheduler.data_subjects["sub_001"] = record
 
@@ -505,7 +507,7 @@ class TestRetentionJobScheduler:
             subject_name="Test User 2",
             data_categories=["experiment"],
             retention_policy=RetentionPolicy.GDPR_DEFAULT,
-            created_at=datetime.utcnow() - timedelta(days=2000),
+            created_at=datetime.now(timezone.utc) - timedelta(days=2000),
         )
         scheduler.data_subjects["sub_002"] = expired_record
 

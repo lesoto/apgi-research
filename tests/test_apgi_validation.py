@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from apgi_validation import (
+from utils.apgi_validation import (
     SAFE_IMPORT_MODULES,
     SAFE_PACKAGE_PATTERNS,
     ExperimentProgressTracker,

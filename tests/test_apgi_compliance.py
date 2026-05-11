@@ -5,7 +5,7 @@ Comprehensive tests for apgi_compliance.py - Compliance and data retention modul
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from apgi_compliance import (
+from utils.apgi_compliance import (
     RETENTION_POLICIES,
     ComplianceManager,
     DataClassification,
@@ -120,9 +120,10 @@ class TestComplianceManager:
 
         assert len(manager.audit_trail) == 3
 
-    @patch("apgi_compliance.logger")
-    def test_log_parameter_change_logs_to_logger(self, mock_logger):
+    @patch("utils.apgi_logging.get_logger")
+    def test_log_parameter_change_logs_to_logger(self, mock_get_logger):
         """Test that parameter changes are logged."""
+        mock_logger = mock_get_logger.return_value
         manager = ComplianceManager()
         manager.log_parameter_change("user1", "tau_s", 0.3, 0.4)
 
@@ -131,9 +132,10 @@ class TestComplianceManager:
         assert "Compliance Audit" in log_message
         assert "parameter_change" in log_message
 
-    @patch("apgi_compliance.logger")
-    def test_log_experiment_run_logs_to_logger(self, mock_logger):
+    @patch("utils.apgi_logging.get_logger")
+    def test_log_experiment_run_logs_to_logger(self, mock_get_logger):
         """Test that experiment runs are logged."""
+        mock_logger = mock_get_logger.return_value
         manager = ComplianceManager()
         manager.log_experiment_run("exp_123", DataClassification.INTERNAL)
 
@@ -291,9 +293,10 @@ class TestComplianceManagerEnforceRetention:
         result = manager.enforce_retention(records)
         assert len(result) == 1
 
-    @patch("apgi_compliance.logger")
-    def test_enforce_retention_deletion_logged(self, mock_logger):
+    @patch("utils.apgi_logging.get_logger")
+    def test_enforce_retention_deletion_logged(self, mock_get_logger):
         """Test that deletion routine is logged."""
+        mock_logger = mock_get_logger.return_value
         manager = ComplianceManager()
         old_time = datetime.now() - timedelta(days=400)
         records = [
@@ -312,6 +315,13 @@ class TestComplianceManagerEnforceRetention:
 
 class TestPseudonymizeParticipant:
     """Tests for pseudonymize_participant function."""
+
+    def setup_method(self):
+        """Set up test environment with required environment variable."""
+        # Set the required environment variable for pseudonymization
+        import os
+
+        os.environ["APGI_PSEUDONYM_SALT"] = "test_salt_for_pseudonymization"
 
     def test_pseudonymize_basic(self):
         """Test basic pseudonymization."""
@@ -349,7 +359,9 @@ class TestPseudonymizeParticipant:
         """Test pseudonymization uses default salt."""
         participant_id = "user123"
         result = pseudonymize_participant(participant_id)
-        expected = pseudonymize_participant(participant_id, "apgi_default_salt_x9Z")
+        expected = pseudonymize_participant(
+            participant_id, "test_salt_for_pseudonymization"
+        )
         assert result == expected
 
 

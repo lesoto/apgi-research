@@ -21,8 +21,8 @@ from apgi_integration import (
     DynamicalSystem,
     RunningStatistics,
 )
-from git_operations import GitRollbackManager
-from performance_monitoring import MemorySnapshot, PerformanceMonitor
+from utils.git_operations import GitRollbackManager
+from utils.performance_monitoring import MemorySnapshot, PerformanceMonitor
 from progress_tracking import ProgressTracker, TrialResult
 from validation import (
     validate_code_modification,

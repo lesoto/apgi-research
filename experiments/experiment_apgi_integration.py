@@ -294,12 +294,15 @@ class ExperimentAPGIRunner:
         if not self.apgi or not self.apgi_params.enabled:
             return None
 
-        metrics = self.apgi.process_trial(
-            observed=observed,
-            predicted=predicted,
-            trial_type=trial_type,
-            precision_ext=precision_ext,
-            precision_int=precision_int,
+        metrics = cast(
+            Dict[str, float],
+            self.apgi.process_trial(
+                observed=observed,
+                predicted=predicted,
+                trial_type=trial_type,
+                precision_ext=precision_ext,
+                precision_int=precision_int,
+            ),
         )
 
         self.apgi_metrics_history.append(metrics)
@@ -317,7 +320,7 @@ def get_experiment_apgi_config(experiment_name: str) -> ExportedAPGIParams:
         ExportedAPGIParams with experiment-specific tuning
     """
     # Map experiment names to their APGI configurations
-    # These values come from apgi_integration.py get_apgi_config_for_experiment
+    # These values come from utils.apgi_integration.py get_apgi_config_for_experiment
     configs = {
         # Attention experiments - higher precision
         "attentional_blink": {"tau_s": 0.25, "beta": 1.8, "theta_0": 0.4, "alpha": 6.0},

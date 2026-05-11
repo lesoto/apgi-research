@@ -161,6 +161,7 @@ class EnhancedAttentionalBlinkRunner:
         self.experiment = ABExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
         self.start_time: Optional[float] = None
+        self.apgi: Optional[APGIIntegration] = None
 
         # Initialize APGI integration if enabled
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -283,7 +284,7 @@ class EnhancedAttentionalBlinkRunner:
                 ),
             }
         else:
-            self.apgi = None  # type: ignore[assignment]
+            self.apgi = None
 
     def reset(self) -> None:
         """Reset experiment and participant state."""

@@ -22,22 +22,9 @@ Implementation of the APGI framework including:
 """
 PARAMETER NOTATION STANDARD
 ============================
-β_som  : Somatic modulation gain (dimensionless)
-         Controls exponential amplification of precision by vmPFC-insula markers
-         Typical range: 0.3-0.7 (pathological anxiety: ~1.2)
-         
-beta_spec : Spectral exponent of aperiodic neural activity (1/f^beta_spec)
-         Characterizes hierarchical timescale integration
-         Typical range: 0.8-1.2 (wakefulness), 1.5-2.0 (deep sleep)
-"""
 
-
-"""
-COMPLETE PARAMETER REFERENCE
-=============================
-
-SOMATIC/INTEROCEPTIVE PARAMETERS:
-beta_som  : Somatic modulation gain (dimensionless) in [0.3, 0.8]
+# SOMATIC/INTEROCEPTIVE PARAMETERS:
+beta_som: Somatic modulation gain (dimensionless) in [0.3, 0.8]
            Variable name: `beta`
            Controls exponential amplification: Pi_eff = Pi * exp(beta_som * M)
            
@@ -79,23 +66,28 @@ Always specify subscript (beta_som, beta_spec, beta_M, beta_cross) in formulas t
 """
 
 import json
+import os
 import warnings
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import matplotlib
-
-matplotlib.use("Agg")  # Use non-interactive backend
-import warnings
-
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 # Suppress numpy overflow warnings from legitimate numerical operations
-warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy")
+# Use context manager for specific functions where overflow is expected
+@contextmanager
+def _suppress_numpy_warnings() -> Any:
+    """Context manager to suppress numpy warnings temporarily."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        yield
+
 
 try:
     import plotly.io as pio
@@ -133,7 +125,8 @@ class FoundationalEquations:
         Returns:
             Prediction error ε(t)
         """
-        return observed - predicted
+        with _suppress_numpy_warnings():
+            return observed - predicted
 
     @staticmethod
     def z_score(error: float, mean: float, std: float) -> float:
@@ -150,14 +143,15 @@ class FoundationalEquations:
         Returns:
             Z-score normalized prediction error
         """
-        if abs(std) < 1e-10:
-            return 0.0  # Handle zero or near-zero standard deviation
-        return (error - mean) / std
+        with _suppress_numpy_warnings():
+            if abs(std) < 1e-10:
+                return 0.0  # Handle zero or near-zero standard deviation
+            return (error - mean) / std
 
     @staticmethod
     def precision(variance: float) -> float:
         """
-        Compute precision: Π = 1/σ²_ε
+        Compute precision: Pi = 1/sigma^2_epsilon
 
         From Section 1.3 of APGI-Equations.md
 
@@ -453,6 +447,11 @@ class DynamicalSystemEquations:
         tau_A: float,
         sigma_A: float,
         dt: float,
+        t: float = 0.0,
+        max_eps: float = 0.5,
+        eps_i_history: Optional[List[float]] = None,
+        tau_int: float = 5.0,
+        t_peak: float = 10.0,
         rng: Optional[np.random.Generator] = None,
     ) -> float:
         """
@@ -468,6 +467,11 @@ class DynamicalSystemEquations:
             tau_A: Arousal time constant
             sigma_A: Noise strength
             dt: Time step
+            t: Current time (for time-varying dynamics)
+            max_eps: Maximum prediction error for scaling
+            eps_i_history: History of interoceptive prediction errors
+            tau_int: Integration time constant for history effects
+            t_peak: Peak time for circadian modulation
             rng: Optional random number generator
 
         Returns:
@@ -475,6 +479,10 @@ class DynamicalSystemEquations:
         """
         if rng is None:
             rng = np.random.default_rng()
+
+        # Handle eps_i_history parameter (can be None or empty list)
+        if eps_i_history is None:
+            eps_i_history = []
 
         # Exponential approach to target
         dynamics = (A_target - A) / tau_A
@@ -1150,947 +1158,65 @@ class StateCategory(Enum):
 class APGIStateLibrary:
     """COMPLETE library of 51 psychological states"""
 
-    def __init__(self) -> None:
+    def __init__(self, states_file: Optional[str] = None) -> None:
         self.states: Dict[str, PsychologicalState] = {}
         self.categories: Dict[str, StateCategory] = {}
-        self._initialize_all_states()
-
-    def _initialize_all_states(self) -> None:
-        """Initialize ALL 51 psychological states"""
-
-        # ========== 1-4: OPTIMAL FUNCTIONING STATES ==========
-        self._add_state(
-            name="flow",
-            category=StateCategory.OPTIMAL_FUNCTIONING,
-            description="State of complete immersion and optimal experience",
-            phenomenology=[
-                "effortless attention",
-                "sense of control",
-                "altered time perception",
-            ],
-            Pi_e_actual=6.5,
-            Pi_i_baseline_actual=1.5,
-            M_ca=0.3,
-            beta_som=1.0,
-            z_e=0.4,
-            z_i=0.2,
-            theta_t=1.8,
-            Pi_e_expected=6.5,
-            Pi_i_expected=1.5,  # Π̂ = Π
-            arousal_level=0.7,
-            content_domain="neutral",
+        self.states_file = states_file or os.path.join(
+            os.path.dirname(__file__), "data", "states.json"
         )
+        self._load_states_from_json()
 
-        self._add_state(
-            name="focus",
-            category=StateCategory.OPTIMAL_FUNCTIONING,
-            description="Concentrated attentional engagement",
-            phenomenology=[
-                "narrowed attention",
-                "reduced distraction",
-                "goal-directed",
-            ],
-            Pi_e_actual=8.0,
-            Pi_i_baseline_actual=1.2,
-            M_ca=0.25,
-            beta_som=1.2,
-            z_e=0.8,
-            z_i=0.3,
-            theta_t=-0.5,
-            Pi_e_expected=8.0,
-            Pi_i_expected=1.2,
-            arousal_level=0.8,
-        )
+    def _load_states_from_json(self) -> None:
+        """Load psychological states from JSON configuration file."""
+        import json
 
-        self._add_state(
-            name="serenity",
-            category=StateCategory.OPTIMAL_FUNCTIONING,
-            description="Peaceful, calm state of being",
-            phenomenology=["calmness", "contentment", "present-moment awareness"],
-            Pi_e_actual=1.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.7,
-            beta_som=0.8,
-            z_e=0.2,
-            z_i=0.3,
-            theta_t=1.5,
-            Pi_e_expected=1.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.3,
-        )
+        try:
+            with open(self.states_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
-        self._add_state(
-            name="mindfulness",
-            category=StateCategory.OPTIMAL_FUNCTIONING,
-            description="Non-judgmental present-moment awareness",
-            phenomenology=["observing awareness", "non-reactivity", "acceptance"],
-            Pi_e_actual=3.0,
-            Pi_i_baseline_actual=3.5,
-            M_ca=0.9,
-            beta_som=1.0,
-            z_e=0.6,
-            z_i=0.5,
-            theta_t=0.0,
-            Pi_e_expected=3.0,
-            Pi_i_expected=3.5,
-            arousal_level=0.5,
-        )
+            states_data = data.get("psychological_states", [])
 
-        # ========== 5-11: POSITIVE AFFECTIVE STATES ==========
-        self._add_state(
-            name="amusement",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="State of finding something funny",
-            phenomenology=["laughter", "lightness", "playfulness"],
-            Pi_e_actual=4.0,
-            Pi_i_baseline_actual=1.0,
-            M_ca=-0.1,
-            beta_som=0.8,
-            z_e=1.2,
-            z_i=0.2,
-            theta_t=-0.3,
-            Pi_e_expected=4.0,
-            Pi_i_expected=1.0,
-            arousal_level=0.6,
-        )
+            for state_data in states_data:
+                # Convert string category to enum
+                category_str = state_data["category"]
+                try:
+                    category = getattr(StateCategory, category_str)
+                except AttributeError:
+                    # Fallback to default if category not found
+                    category = StateCategory.UNELABORATED
 
-        self._add_state(
-            name="joy",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Intense positive affective state",
-            phenomenology=["elation", "excitement", "pleasure"],
-            Pi_e_actual=5.0,
-            Pi_i_baseline_actual=2.5,
-            M_ca=0.8,
-            beta_som=1.1,
-            z_e=1.0,
-            z_i=0.7,
-            theta_t=-0.8,
-            Pi_e_expected=5.0,
-            Pi_i_expected=2.5,
-            arousal_level=0.9,
-        )
+                # Create state with data from JSON
+                self._add_state(
+                    name=state_data["name"],
+                    category=category,
+                    description=state_data["description"],
+                    phenomenology=state_data["phenomenology"],
+                    Pi_e_actual=state_data["Pi_e_actual"],
+                    Pi_i_baseline_actual=state_data["Pi_i_baseline_actual"],
+                    M_ca=state_data["M_ca"],
+                    beta_som=state_data["beta_som"],
+                    z_e=state_data["z_e"],
+                    z_i=state_data["z_i"],
+                    theta_t=state_data["theta_t"],
+                    Pi_e_expected=state_data["Pi_e_expected"],
+                    Pi_i_expected=state_data["Pi_i_expected"],
+                    arousal_level=state_data["arousal_level"],
+                    content_domain=state_data.get("content_domain", "neutral"),
+                    GAD_profile=state_data.get("GAD_profile", False),
+                    MDD_profile=state_data.get("MDD_profile", False),
+                    psychosis_profile=state_data.get("psychosis_profile", False),
+                )
 
-        self._add_state(
-            name="pride",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Pleasure from one's achievements",
-            phenomenology=["self-satisfaction", "accomplishment", "confidence"],
-            Pi_e_actual=4.5,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.1,
-            beta_som=1.3,
-            z_e=1.2,
-            z_i=0.9,
-            theta_t=-0.6,
-            Pi_e_expected=4.5,
-            Pi_i_expected=3.0,
-            arousal_level=0.7,
-        )
+            print(
+                f"✅ Loaded {len(self.states)} psychological states from {self.states_file}"
+            )
 
-        self._add_state(
-            name="romantic_love_early",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Early stage romantic love",
-            phenomenology=["infatuation", "obsession", "euphoria"],
-            Pi_e_actual=7.5,
-            Pi_i_baseline_actual=4.0,
-            M_ca=1.8,
-            beta_som=1.8,
-            z_e=1.5,
-            z_i=1.3,
-            theta_t=-1.5,
-            Pi_e_expected=7.5,
-            Pi_i_expected=4.0,
-            arousal_level=0.95,
-        )
-
-        self._add_state(
-            name="romantic_love_sustained",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Long-term romantic love",
-            phenomenology=["attachment", "comfort", "deep affection"],
-            Pi_e_actual=5.0,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.2,
-            beta_som=1.3,
-            z_e=0.5,
-            z_i=0.6,
-            theta_t=-0.8,
-            Pi_e_expected=5.0,
-            Pi_i_expected=3.0,
-            arousal_level=0.6,
-        )
-
-        self._add_state(
-            name="gratitude",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Thankful appreciation for benefits received",
-            phenomenology=["thankfulness", "appreciation", "warmth"],
-            Pi_e_actual=4.0,
-            Pi_i_baseline_actual=2.5,
-            M_ca=0.8,
-            beta_som=1.1,
-            z_e=0.3,
-            z_i=0.5,
-            theta_t=-0.4,
-            Pi_e_expected=4.0,
-            Pi_i_expected=2.5,
-            arousal_level=0.6,
-        )
-
-        self._add_state(
-            name="hope",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Optimistic expectation of future outcomes",
-            phenomenology=["anticipation", "positive expectation", "aspiration"],
-            Pi_e_actual=5.0,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.6,
-            beta_som=0.9,
-            z_e=0.9,
-            z_i=0.4,
-            theta_t=-0.7,
-            Pi_e_expected=5.0,
-            Pi_i_expected=2.0,
-            arousal_level=0.7,
-        )
-
-        self._add_state(
-            name="optimism",
-            category=StateCategory.POSITIVE_AFFECTIVE,
-            description="Generalized positive outlook",
-            phenomenology=["positive expectation", "resilience", "confidence"],
-            Pi_e_actual=3.0,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.4,
-            beta_som=0.8,
-            z_e=0.4,
-            z_i=0.3,
-            theta_t=-0.5,
-            Pi_e_expected=3.0,
-            Pi_i_expected=2.0,
-            arousal_level=0.5,
-        )
-
-        # ========== 12-19: COGNITIVE AND ATTENTIONAL STATES ==========
-        self._add_state(
-            name="curiosity",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="Drive to explore and learn new information",
-            phenomenology=["interest", "exploration", "desire for knowledge"],
-            Pi_e_actual=6.0,
-            Pi_i_baseline_actual=1.0,
-            M_ca=-0.2,
-            beta_som=0.7,
-            z_e=1.4,
-            z_i=0.2,
-            theta_t=-0.9,
-            Pi_e_expected=6.0,
-            Pi_i_expected=1.0,
-            arousal_level=0.7,
-        )
-
-        self._add_state(
-            name="boredom",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="State of low arousal and lack of interest",
-            phenomenology=["restlessness", "dissatisfaction", "time drags"],
-            Pi_e_actual=0.8,
-            Pi_i_baseline_actual=1.5,
-            M_ca=-0.3,
-            beta_som=0.8,
-            z_e=0.1,
-            z_i=0.2,
-            theta_t=-1.0,
-            Pi_e_expected=0.8,
-            Pi_i_expected=1.5,
-            arousal_level=0.2,
-        )
-
-        self._add_state(
-            name="creativity",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="State conducive to novel idea generation",
-            phenomenology=["divergent thinking", "playfulness", "insight"],
-            Pi_e_actual=4.0,
-            Pi_i_baseline_actual=1.0,
-            M_ca=-0.3,
-            beta_som=0.7,
-            z_e=1.2,
-            z_i=0.2,
-            theta_t=-1.2,
-            Pi_e_expected=4.0,
-            Pi_i_expected=1.0,
-            arousal_level=0.6,
-        )
-
-        self._add_state(
-            name="inspiration",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="Sudden creative insight or motivation",
-            phenomenology=["aha moment", "clarity", "motivation surge"],
-            Pi_e_actual=8.5,
-            Pi_i_baseline_actual=1.5,
-            M_ca=0.4,
-            beta_som=0.9,
-            z_e=2.0,
-            z_i=0.4,
-            theta_t=-2.0,
-            Pi_e_expected=8.5,
-            Pi_i_expected=1.5,
-            arousal_level=0.8,
-        )
-
-        self._add_state(
-            name="hyperfocus",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="Extreme concentration on single task",
-            phenomenology=[
-                "tunnel vision",
-                "time distortion",
-                "exclusion of distractions",
-            ],
-            Pi_e_actual=9.5,
-            Pi_i_baseline_actual=0.5,
-            M_ca=-0.8,
-            beta_som=0.6,
-            z_e=0.6,
-            z_i=0.1,
-            theta_t=2.5,
-            Pi_e_expected=9.5,
-            Pi_i_expected=0.5,
-            arousal_level=0.9,
-        )
-
-        self._add_state(
-            name="fatigue",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="State of tiredness and reduced capacity",
-            phenomenology=["tiredness", "low energy", "reduced motivation"],
-            Pi_e_actual=1.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.4,
-            beta_som=0.8,
-            z_e=0.3,
-            z_i=0.4,
-            theta_t=1.8,
-            Pi_e_expected=1.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.2,
-        )
-
-        self._add_state(
-            name="decision_fatigue",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="Reduced decision quality after many decisions",
-            phenomenology=["indecisiveness", "mental exhaustion", "choice avoidance"],
-            Pi_e_actual=2.5,
-            Pi_i_baseline_actual=1.5,
-            M_ca=0.3,
-            beta_som=0.8,
-            z_e=0.8,
-            z_i=0.3,
-            theta_t=1.5,
-            Pi_e_expected=2.5,
-            Pi_i_expected=1.5,
-            arousal_level=0.3,
-        )
-
-        self._add_state(
-            name="mind_wandering",
-            category=StateCategory.COGNITIVE_ATTENTIONAL,
-            description="Spontaneous thought unrelated to current task",
-            phenomenology=["daydreaming", "task-unrelated thought", "self-reflection"],
-            Pi_e_actual=0.8,
-            Pi_i_baseline_actual=3.5,
-            M_ca=0.6,
-            beta_som=1.1,
-            z_e=0.2,
-            z_i=0.9,
-            theta_t=1.5,
-            Pi_e_expected=0.8,
-            Pi_i_expected=3.5,
-            arousal_level=0.4,
-        )
-
-        # ========== 20-26: AVERSIVE AFFECTIVE STATES ==========
-        self._add_state(
-            name="fear",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Response to immediate, specific threat",
-            phenomenology=["alarm", "urge to escape", "physiological arousal"],
-            Pi_e_actual=8.0,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.9,
-            beta_som=1.9,
-            z_e=2.5,
-            z_i=2.0,
-            theta_t=-2.5,
-            Pi_e_expected=9.0,
-            Pi_i_expected=3.5,  # Π̂ > Π for threat vigilance
-            arousal_level=0.95,
-            content_domain="survival",
-            GAD_profile=True,
-        )
-
-        self._add_state(
-            name="anxiety",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Anticipatory response to uncertain threat",
-            phenomenology=["worry", "tension", "apprehension"],
-            Pi_e_actual=6.5,
-            Pi_i_baseline_actual=3.5,
-            M_ca=1.5,
-            beta_som=1.6,
-            z_e=1.5,
-            z_i=1.3,
-            theta_t=-1.5,
-            Pi_e_expected=8.0,
-            Pi_i_expected=4.5,  # LARGE Π̂ > Π gap
-            arousal_level=0.8,
-            GAD_profile=True,
-        )
-
-        self._add_state(
-            name="anger",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Response to perceived wrong or obstacle",
-            phenomenology=["irritation", "frustration", "impulse to act"],
-            Pi_e_actual=7.5,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.5,
-            beta_som=1.6,
-            z_e=2.0,
-            z_i=1.4,
-            theta_t=-1.2,
-            Pi_e_expected=7.5,
-            Pi_i_expected=3.0,
-            arousal_level=0.9,
-            content_domain="survival",
-        )
-
-        self._add_state(
-            name="guilt",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Affect following perceived wrongdoing",
-            phenomenology=["remorse", "self-blame", "wish to repair"],
-            Pi_e_actual=5.0,
-            Pi_i_baseline_actual=2.5,
-            M_ca=0.8,
-            beta_som=1.1,
-            z_e=1.3,
-            z_i=0.9,
-            theta_t=-0.8,
-            Pi_e_expected=5.0,
-            Pi_i_expected=2.5,
-            arousal_level=0.6,
-            MDD_profile=True,
-        )
-
-        self._add_state(
-            name="shame",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Negative global self-evaluation",
-            phenomenology=["humiliation", "inadequacy", "desire to hide"],
-            Pi_e_actual=7.0,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.3,
-            beta_som=1.3,
-            z_e=1.8,
-            z_i=1.2,
-            theta_t=-1.5,
-            Pi_e_expected=7.0,
-            Pi_i_expected=3.0,
-            arousal_level=0.7,
-            MDD_profile=True,
-        )
-
-        self._add_state(
-            name="loneliness",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Distress from perceived social isolation",
-            phenomenology=["social pain", "isolation", "longing for connection"],
-            Pi_e_actual=5.5,
-            Pi_i_baseline_actual=2.5,
-            M_ca=0.8,
-            beta_som=1.1,
-            z_e=1.4,
-            z_i=0.9,
-            theta_t=-1.0,
-            Pi_e_expected=5.5,
-            Pi_i_expected=2.5,
-            arousal_level=0.5,
-            MDD_profile=True,
-        )
-
-        self._add_state(
-            name="overwhelm",
-            category=StateCategory.AVERSIVE_AFFECTIVE,
-            description="Feeling unable to cope with demands",
-            phenomenology=["helplessness", "cognitive overload", "freezing"],
-            Pi_e_actual=3.0,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.2,
-            beta_som=1.3,
-            z_e=2.8,
-            z_i=1.5,
-            theta_t=0.0,
-            Pi_e_expected=3.0,
-            Pi_i_expected=3.0,
-            arousal_level=0.85,
-            GAD_profile=True,
-        )
-
-        # ========== 27-33: PATHOLOGICAL AND EXTREME STATES ==========
-        self._add_state(
-            name="depression",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Pathological state of low mood and energy",
-            phenomenology=["sadness", "anhedonia", "fatigue", "hopelessness"],
-            Pi_e_actual=2.0,
-            Pi_i_baseline_actual=1.5,
-            M_ca=0.3,
-            beta_som=0.8,
-            z_e=0.4,
-            z_i=0.8,
-            theta_t=1.5,
-            Pi_e_expected=2.0,
-            Pi_i_expected=1.5,
-            arousal_level=0.2,
-            MDD_profile=True,
-        )
-
-        self._add_state(
-            name="learned_helplessness",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Belief that actions don't affect outcomes",
-            phenomenology=["passivity", "hopelessness", "lack of initiative"],
-            Pi_e_actual=1.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.5,
-            beta_som=0.8,
-            z_e=0.2,
-            z_i=0.4,
-            theta_t=2.0,
-            Pi_e_expected=1.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.3,
-            MDD_profile=True,
-        )
-
-        self._add_state(
-            name="pessimistic_depression",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Depression with negative future expectations",
-            phenomenology=["hopelessness", "negative forecasting", "catastrophizing"],
-            Pi_e_actual=2.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.7,
-            beta_som=1.1,
-            z_e=0.3,
-            z_i=0.6,
-            theta_t=1.8,
-            Pi_e_expected=2.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.3,
-            MDD_profile=True,
-        )
-
-        self._add_state(
-            name="panic",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Acute, overwhelming fear response",
-            phenomenology=[
-                "terror",
-                "dread",
-                "impending doom",
-                "physiological overwhelm",
-            ],
-            Pi_e_actual=4.0,
-            Pi_i_baseline_actual=5.0,
-            M_ca=2.0,
-            beta_som=2.2,
-            z_e=1.5,
-            z_i=3.0,
-            theta_t=-3.0,
-            Pi_e_expected=5.0,
-            Pi_i_expected=6.0,  # Large expectation gap
-            arousal_level=0.99,
-            content_domain="survival",
-            GAD_profile=True,
-        )
-
-        self._add_state(
-            name="dissociation",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Disconnection from thoughts, feelings, or identity",
-            phenomenology=["detachment", "unreality", "emotional numbing"],
-            Pi_e_actual=2.0,
-            Pi_i_baseline_actual=0.5,
-            M_ca=-1.5,
-            beta_som=0.5,
-            z_e=0.8,
-            z_i=0.1,
-            theta_t=2.0,
-            Pi_e_expected=2.0,
-            Pi_i_expected=0.5,
-            arousal_level=0.1,
-            psychosis_profile=True,
-        )
-
-        self._add_state(
-            name="depersonalization",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Feeling detached from one's self",
-            phenomenology=["self-detachment", "observer perspective", "unreality"],
-            Pi_e_actual=3.0,
-            Pi_i_baseline_actual=0.8,
-            M_ca=-1.2,
-            beta_som=0.6,
-            z_e=1.0,
-            z_i=0.5,
-            theta_t=1.5,
-            Pi_e_expected=3.0,
-            Pi_i_expected=0.8,
-            arousal_level=0.2,
-            psychosis_profile=True,
-        )
-
-        self._add_state(
-            name="derealization",
-            category=StateCategory.PATHOLOGICAL_EXTREME,
-            description="Feeling that the world is unreal",
-            phenomenology=[
-                "world-unreality",
-                "dreamlike state",
-                "perceptual distortion",
-            ],
-            Pi_e_actual=1.5,
-            Pi_i_baseline_actual=1.5,
-            M_ca=-0.8,
-            beta_som=0.7,
-            z_e=1.2,
-            z_i=0.4,
-            theta_t=1.8,
-            Pi_e_expected=1.5,
-            Pi_i_expected=1.5,
-            arousal_level=0.3,
-            psychosis_profile=True,
-        )
-
-        # ========== 34-39: ALTERED AND BOUNDARY STATES ==========
-        self._add_state(
-            name="awe",
-            category=StateCategory.ALTERED_BOUNDARY,
-            description="Response to vast, overwhelming stimuli",
-            phenomenology=["wonder", "smallness", "transcendence"],
-            Pi_e_actual=3.5,
-            Pi_i_baseline_actual=2.5,
-            M_ca=0.8,
-            beta_som=1.1,
-            z_e=2.8,
-            z_i=0.7,
-            theta_t=-1.5,
-            Pi_e_expected=3.5,
-            Pi_i_expected=2.5,
-            arousal_level=0.8,
-        )
-
-        self._add_state(
-            name="trance",
-            category=StateCategory.ALTERED_BOUNDARY,
-            description="Altered state with focused attention",
-            phenomenology=["narrowed awareness", "suggestibility", "time distortion"],
-            Pi_e_actual=1.0,
-            Pi_i_baseline_actual=4.0,
-            M_ca=0.4,
-            beta_som=0.8,
-            z_e=0.2,
-            z_i=0.6,
-            theta_t=2.0,
-            Pi_e_expected=1.0,
-            Pi_i_expected=4.0,
-            arousal_level=0.3,
-        )
-
-        self._add_state(
-            name="mystical_experience",
-            category=StateCategory.ALTERED_BOUNDARY,
-            description="Profound spiritual or transcendent experience",
-            phenomenology=["unity", "noetic quality", "transcendence", "ineffability"],
-            Pi_e_actual=2.5,
-            Pi_i_baseline_actual=5.0,
-            M_ca=1.5,
-            beta_som=0.9,
-            z_e=1.0,
-            z_i=1.2,
-            theta_t=-1.0,
-            Pi_e_expected=2.5,
-            Pi_i_expected=5.0,
-            arousal_level=0.4,
-        )
-
-        self._add_state(
-            name="ego_dissolution",
-            category=StateCategory.ALTERED_BOUNDARY,
-            description="Loss of self-other boundaries",
-            phenomenology=["boundary dissolution", "unity", "self-transcendence"],
-            Pi_e_actual=1.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=-0.5,
-            beta_som=0.6,
-            z_e=0.8,
-            z_i=0.4,
-            theta_t=1.0,
-            Pi_e_expected=1.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.3,
-            psychosis_profile=True,
-        )
-
-        self._add_state(
-            name="peak_experience",
-            category=StateCategory.ALTERED_BOUNDARY,
-            description="Moment of optimal functioning and fulfillment",
-            phenomenology=["intense joy", "meaning", "transcendence", "clarity"],
-            Pi_e_actual=6.0,
-            Pi_i_baseline_actual=3.0,
-            M_ca=1.2,
-            beta_som=1.4,
-            z_e=1.8,
-            z_i=0.9,
-            theta_t=-1.8,
-            Pi_e_expected=6.0,
-            Pi_i_expected=3.0,
-            arousal_level=0.9,
-        )
-
-        self._add_state(
-            name="nostalgia",
-            category=StateCategory.ALTERED_BOUNDARY,
-            description="Sentimental longing for the past",
-            phenomenology=["bittersweet feeling", "warmth", "personal relevance"],
-            Pi_e_actual=3.0,
-            Pi_i_baseline_actual=2.5,
-            M_ca=0.6,
-            beta_som=1.0,
-            z_e=0.5,
-            z_i=0.6,
-            theta_t=-0.3,
-            Pi_e_expected=3.0,
-            Pi_i_expected=2.5,
-            arousal_level=0.5,
-        )
-
-        # ========== 40-45: TRANSITIONAL AND CONTEXTUAL STATES ==========
-        self._add_state(
-            name="confusion",
-            category=StateCategory.TRANSITIONAL_CONTEXTUAL,
-            description="State of uncertainty and lack of clarity",
-            phenomenology=["disorientation", "uncertainty", "cognitive dissonance"],
-            Pi_e_actual=2.5,
-            Pi_i_baseline_actual=1.5,
-            M_ca=0.2,
-            beta_som=0.9,
-            z_e=1.8,
-            z_i=0.7,
-            theta_t=0.5,
-            Pi_e_expected=3.5,
-            Pi_i_expected=2.0,  # Π̂ > Π for resolution seeking
-            arousal_level=0.6,
-        )
-
-        self._add_state(
-            name="frustration",
-            category=StateCategory.TRANSITIONAL_CONTEXTUAL,
-            description="Response to blocked goals or obstacles",
-            phenomenology=["irritation", "tension", "motivation to overcome"],
-            Pi_e_actual=4.0,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.8,
-            beta_som=1.2,
-            z_e=1.5,
-            z_i=0.8,
-            theta_t=-0.2,
-            Pi_e_expected=4.0,
-            Pi_i_expected=2.0,
-            arousal_level=0.7,
-        )
-
-        self._add_state(
-            name="anticipation",
-            category=StateCategory.TRANSITIONAL_CONTEXTUAL,
-            description="Expectant waiting for future events",
-            phenomenology=["expectancy", "readiness", "future-oriented attention"],
-            Pi_e_actual=5.0,
-            Pi_i_baseline_actual=1.8,
-            M_ca=0.4,
-            beta_som=1.0,
-            z_e=1.2,
-            z_i=0.5,
-            theta_t=-0.8,
-            Pi_e_expected=5.0,
-            Pi_i_expected=1.8,
-            arousal_level=0.6,
-        )
-
-        self._add_state(
-            name="relief",
-            category=StateCategory.TRANSITIONAL_CONTEXTUAL,
-            description="Release from distress or difficulty",
-            phenomenology=["release", "relaxation", "positive resolution"],
-            Pi_e_actual=2.0,
-            Pi_i_baseline_actual=2.5,
-            M_ca=-0.4,
-            beta_som=0.8,
-            z_e=0.3,
-            z_i=0.4,
-            theta_t=0.8,
-            Pi_e_expected=2.0,
-            Pi_i_expected=2.5,
-            arousal_level=0.4,
-        )
-
-        self._add_state(
-            name="surprise",
-            category=StateCategory.TRANSITIONAL_CONTEXTUAL,
-            description="Unexpected event or information",
-            phenomenology=["startle", "novelty detection", "cognitive reorientation"],
-            Pi_e_actual=7.0,
-            Pi_i_baseline_actual=1.0,
-            M_ca=0.3,
-            beta_som=1.1,
-            z_e=2.5,
-            z_i=0.3,
-            theta_t=-1.8,
-            Pi_e_expected=7.0,
-            Pi_i_expected=1.0,
-            arousal_level=0.8,
-        )
-
-        self._add_state(
-            name="disappointment",
-            category=StateCategory.TRANSITIONAL_CONTEXTUAL,
-            description="Response to unmet expectations",
-            phenomenology=["letdown", "sadness", "revised expectations"],
-            Pi_e_actual=2.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=-0.2,
-            beta_som=0.9,
-            z_e=0.8,
-            z_i=0.6,
-            theta_t=0.3,
-            Pi_e_expected=4.0,
-            Pi_i_expected=2.5,  # Π̂ > Π (expectations exceeded reality)
-            arousal_level=0.4,
-            MDD_profile=True,
-        )
-
-        # ========== 46-51: UNELABORATED AND CONTEXT-DEPENDENT STATES ==========
-        self._add_state(
-            name="contentment",
-            category=StateCategory.UNELABORATED,
-            description="State of peaceful satisfaction",
-            phenomenology=["satisfaction", "peace", "acceptance"],
-            Pi_e_actual=2.0,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.5,
-            beta_som=0.9,
-            z_e=0.3,
-            z_i=0.3,
-            theta_t=0.5,
-            Pi_e_expected=2.0,
-            Pi_i_expected=2.0,
-            arousal_level=0.4,
-        )
-
-        self._add_state(
-            name="interest",
-            category=StateCategory.UNELABORATED,
-            description="Engaged attention to specific stimuli",
-            phenomenology=["attention", "engagement", "curiosity"],
-            Pi_e_actual=4.5,
-            Pi_i_baseline_actual=1.2,
-            M_ca=-0.1,
-            beta_som=0.8,
-            z_e=1.0,
-            z_i=0.3,
-            theta_t=-0.6,
-            Pi_e_expected=4.5,
-            Pi_i_expected=1.2,
-            arousal_level=0.6,
-        )
-
-        self._add_state(
-            name="calm",
-            category=StateCategory.UNELABORATED,
-            description="State of tranquility and low arousal",
-            phenomenology=["tranquility", "low arousal", "emotional stability"],
-            Pi_e_actual=1.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.3,
-            beta_som=0.7,
-            z_e=0.2,
-            z_i=0.3,
-            theta_t=1.2,
-            Pi_e_expected=1.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.3,
-        )
-
-        self._add_state(
-            name="neutral",
-            category=StateCategory.UNELABORATED,
-            description="Baseline emotional state",
-            phenomenology=["baseline", "equilibrium", "no strong valence"],
-            Pi_e_actual=2.5,
-            Pi_i_baseline_actual=2.0,
-            M_ca=0.0,
-            beta_som=1.0,
-            z_e=0.5,
-            z_i=0.4,
-            theta_t=0.0,
-            Pi_e_expected=2.5,
-            Pi_i_expected=2.0,
-            arousal_level=0.5,
-        )
-
-        self._add_state(
-            name="alert",
-            category=StateCategory.UNELABORATED,
-            description="State of readiness and attention",
-            phenomenology=["readiness", "attentiveness", "preparedness"],
-            Pi_e_actual=5.0,
-            Pi_i_baseline_actual=1.5,
-            M_ca=0.2,
-            beta_som=1.0,
-            z_e=0.8,
-            z_i=0.4,
-            theta_t=-0.4,
-            Pi_e_expected=5.0,
-            Pi_i_expected=1.5,
-            arousal_level=0.7,
-        )
-
-        self._add_state(
-            name="reflective",
-            category=StateCategory.UNELABORATED,
-            description="State of introspection and self-contemplation",
-            phenomenology=["introspection", "self-awareness", "contemplation"],
-            Pi_e_actual=2.0,
-            Pi_i_baseline_actual=3.0,
-            M_ca=0.6,
-            beta_som=1.1,
-            z_e=0.4,
-            z_i=0.7,
-            theta_t=0.8,
-            Pi_e_expected=2.0,
-            Pi_i_expected=3.0,
-            arousal_level=0.4,
-        )
-
-        print(f"✅ Initialized {len(self.states)} psychological states")
+        except FileNotFoundError:
+            raise RuntimeError(f"States file not found: {self.states_file}")
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Invalid JSON in states file: {e}")
+        except Exception as e:
+            raise RuntimeError(f"Error loading states from JSON: {e}")
 
         # Initialize psychiatric profiles
         self._initialize_psychiatric_profiles()
@@ -2795,6 +1921,71 @@ class EnhancedSurpriseIgnitionSystem:
             return self.params.theta_neutral
         else:
             return self.params.theta_0
+
+    def compute_surprise(self, prediction_error: float, precision: float) -> float:
+        """
+        Compute surprise based on prediction error and precision.
+
+        S = 0.5 * Pi * (epsilon^2)
+
+        Args:
+            prediction_error: Prediction error (epsilon)
+            precision: Precision (Pi)
+
+        Returns:
+            Surprise value S
+        """
+        return self.foundational.accumulated_signal(  # type: ignore[attr-defined,no-any-return]
+            eps_e=prediction_error,
+            eps_i=0.0,  # Not used for exteroceptive surprise
+            Pi_e=precision,
+            Pi_i_eff=1.0,  # Default value
+        )
+
+    def compute_ignition_probability(
+        self, accumulated_signal: float, threshold: float
+    ) -> float:
+        """
+        Compute ignition probability based on accumulated signal and threshold.
+
+        P(broadcast) = σ(α(S - θ))
+
+        Args:
+            accumulated_signal: Current accumulated signal (surprise)
+            threshold: Dynamic ignition threshold
+
+        Returns:
+            Ignition probability in [0, 1]
+        """
+        return self.ignition_system.ignition_probability(
+            S=accumulated_signal, theta=threshold, alpha=self.params.alpha
+        )
+
+    def update_dynamics(self, state: Dict[str, float]) -> Dict[str, float]:
+        """
+        Update system dynamics based on current state.
+
+        Args:
+            state: Current state dictionary with keys like 'precision', 'prediction_error', 'surprise'
+
+        Returns:
+            Updated state dictionary
+        """
+        # Extract current state values
+        precision = state.get("precision", 1.0)
+        prediction_error = state.get("prediction_error", 0.0)
+        surprise = state.get("surprise", 0.0)
+
+        # Simple dynamics update (can be extended based on requirements)
+        new_precision = precision * 0.99  # Slight decay
+        new_prediction_error = prediction_error * 0.95  # Slight reduction
+        new_surprise = surprise * 0.98  # Slight decay
+
+        return {
+            "precision": new_precision,
+            "prediction_error": new_prediction_error,
+            "surprise": new_surprise,
+        }
 
     def step(
         self, inputs: Union[float, Dict[str, Any]], dt: float = 0.01

@@ -21,7 +21,7 @@ def get_dangerous_system_paths() -> List[str]:
     system = platform.system()
 
     if system == "Windows":
-        windir = os.environ.get("WINDIR", r"C:\Windows")
+        windir = os.environ.get("WINDIR", r"C:\\Windows")
         dangerous.extend(
             [
                 f"{windir}\\System32",
@@ -42,7 +42,7 @@ def get_dangerous_system_paths() -> List[str]:
                 "/bin/",
                 "/sbin/",
                 "/var/",
-                "/tmp/",
+                str(tempfile.gettempdir()),  # Use system temp directory
                 "/dev/",
                 "/proc/",
                 "/sys/",
@@ -60,7 +60,7 @@ def get_dangerous_system_paths() -> List[str]:
                 "/bin/",
                 "/sbin/",
                 "/var/",
-                "/tmp/",
+                str(tempfile.gettempdir()),  # Use system temp directory
                 "/dev/",
                 "/proc/",
                 "/sys/",

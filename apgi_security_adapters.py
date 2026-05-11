@@ -18,11 +18,11 @@ import json
 import subprocess
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 
-from apgi_logging import get_logger
+from utils.apgi_logging import get_logger
 
 
 class SecurityLevel(Enum):
@@ -46,7 +46,7 @@ class SecurityContext:
     pickle_allowed: bool = False
     serialization_format: str = "json"  # json, msgpack, protobuf
     security_level: SecurityLevel = SecurityLevel.STANDARD
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def __post_init__(self) -> None:
         """Validate context configuration."""
@@ -61,7 +61,7 @@ class SecurityEvent:
     """Audit event for security operations."""
 
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     context_id: str = ""
     operator_id: str = ""
     event_type: str = ""  # subprocess_call, pickle_attempt, config_validation, etc.
@@ -361,11 +361,14 @@ class SecurityAdapterFactory:
 
 
 # Global factory instance (can be replaced for testing)
-_security_factory = SecurityAdapterFactory()
+_security_factory: Optional[SecurityAdapterFactory] = None
 
 
 def get_security_factory() -> SecurityAdapterFactory:
     """Get global security adapter factory."""
+    global _security_factory
+    if _security_factory is None:
+        _security_factory = SecurityAdapterFactory()
     return _security_factory
 
 

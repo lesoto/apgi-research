@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from apgi_double_dissociation import (
+from utils.apgi_double_dissociation import (
     DoubleDissociationProtocol,
     SessionData,
     automated_double_dissociation_task,

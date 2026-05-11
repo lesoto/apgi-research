@@ -12,7 +12,7 @@ This template provides:
 - Full runner system integrating all components
 
 Usage:
-    from apgi_implementation_template import APGIModel, CONFIG
+    from utils.apgi_implementation_template import APGIModel, CONFIG
 
     model = APGIModel()
     for t in range(1000):

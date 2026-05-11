@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from apgi_profiler import enforce_budget, profile_hot_path
+from utils.apgi_profiler import enforce_budget, profile_hot_path
 
 # =============================================================================
 # APGI PARAMETERS

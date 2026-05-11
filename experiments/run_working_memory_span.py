@@ -19,7 +19,7 @@ Modification Guidelines:
 """
 
 import time
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, Optional, Union, cast
 
 import numpy as np
 
@@ -220,6 +220,7 @@ class EnhancedWorkingMemorySpanRunner:
         self.generator = WorkingMemorySpanGenerator()
         self.memory_system = SimulatedWorkingMemorySystem()
         self.start_time: Optional[float] = None
+        self.apgi: Optional[APGIIntegration] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -309,12 +310,12 @@ class EnhancedWorkingMemorySpanRunner:
                 "rt_var": 40000.0,
             }
         else:
-            self.apgi = None  # type: ignore[assignment]
+            self.apgi = None
             self.hierarchical = None  # type: ignore[assignment]
             self.precision_gap = None  # type: ignore[assignment]
             self.neuromodulators = None  # type: ignore[assignment]
             self.running_stats = None  # type: ignore[assignment]
-        self.trials: List[WMSpanTrial] = []
+        self.trials: list[WMSpanTrial] = []
 
     def run_experiment(self) -> Dict:
         """

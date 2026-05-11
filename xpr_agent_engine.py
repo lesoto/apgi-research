@@ -9,12 +9,13 @@ import json
 import logging
 import os
 import time
+from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
-from apgi_compliance import ComplianceManager, DataClassification
-from apgi_double_dissociation import DoubleDissociationProtocol, SessionData
+from utils.apgi_compliance import ComplianceManager, DataClassification
+from utils.apgi_double_dissociation import DoubleDissociationProtocol, SessionData
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +196,57 @@ LLM_PROVIDERS = {
 }
 
 
+class RateLimiter:
+    """Simple rate limiter for API calls using token bucket algorithm."""
+
+    def __init__(self, max_calls_per_minute: int = 60, max_calls_per_hour: int = 1000):
+        self.max_calls_per_minute = max_calls_per_minute
+        self.max_calls_per_hour = max_calls_per_hour
+        self.calls_minute: Dict[str, deque] = defaultdict(deque)
+        self.calls_hour: Dict[str, deque] = defaultdict(deque)
+
+    def _cleanup_old_calls(self, provider: str, current_time: float) -> None:
+        """Remove calls older than the time windows."""
+        # Clean up minute window (older than 60 seconds)
+        while (
+            self.calls_minute[provider]
+            and current_time - self.calls_minute[provider][0] > 60
+        ):
+            self.calls_minute[provider].popleft()
+
+        # Clean up hour window (older than 3600 seconds)
+        while (
+            self.calls_hour[provider]
+            and current_time - self.calls_hour[provider][0] > 3600
+        ):
+            self.calls_hour[provider].popleft()
+
+    def can_make_call(self, provider: str) -> tuple[bool, str]:
+        """Check if a call can be made and return wait time if not."""
+        current_time = time.time()
+        self._cleanup_old_calls(provider, current_time)
+
+        # Check minute rate limit
+        if len(self.calls_minute[provider]) >= self.max_calls_per_minute:
+            oldest_call = self.calls_minute[provider][0]
+            wait_time = 60 - (current_time - oldest_call)
+            return False, f"Rate limit exceeded (per minute). Wait {wait_time:.1f}s"
+
+        # Check hour rate limit
+        if len(self.calls_hour[provider]) >= self.max_calls_per_hour:
+            oldest_call = self.calls_hour[provider][0]
+            wait_time = 3600 - (current_time - oldest_call)
+            return False, f"Rate limit exceeded (per hour). Wait {wait_time:.1f}s"
+
+        return True, ""
+
+    def record_call(self, provider: str) -> None:
+        """Record a successful API call."""
+        current_time = time.time()
+        self.calls_minute[provider].append(current_time)
+        self.calls_hour[provider].append(current_time)
+
+
 class LLMIntegration:
     """Enhanced LLM integration using litellm unified API.
 
@@ -207,6 +259,9 @@ class LLMIntegration:
         self.preferred_provider = preferred_provider
         self._initialized: Dict[str, bool] = {}
         self._current_provider: Optional[str] = None
+        self.rate_limiter = RateLimiter(
+            max_calls_per_minute=60, max_calls_per_hour=1000
+        )
 
     def _get_provider_config(self, provider: str) -> Dict[str, Any]:
         """Get configuration for specific LLM provider."""
@@ -279,6 +334,12 @@ class LLMIntegration:
         config = self._get_provider_config(provider)
         model = config.get("model", "gpt-4")
 
+        # Check rate limiting before making the API call
+        can_call, wait_message = self.rate_limiter.can_make_call(provider)
+        if not can_call:
+            logger.warning(f"Rate limit exceeded for {provider}: {wait_message}")
+            return None
+
         try:
             response = litellm.completion(
                 model=model,
@@ -286,6 +347,8 @@ class LLMIntegration:
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
+            # Record successful call in rate limiter
+            self.rate_limiter.record_call(provider)
             return response
         except Exception as e:
             logger.error(f"litellm.completion failed: {e}")

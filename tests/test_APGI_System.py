@@ -4,13 +4,11 @@ from __future__ import annotations
 Focused tests for APGI_System module based on actual implementation.
 """
 
-from unittest.mock import patch
+import os
+import sys
 
-import matplotlib
-import numpy as np
-import pytest
-
-matplotlib.use("Agg")  # Force Agg backend at module level
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from unittest.mock import patch
 
@@ -33,6 +31,9 @@ from APGI_System import (
     StateCategory,
     verify_all_equations,
 )
+
+# Import matplotlib backend management for testing
+from utils.matplotlib_backend import non_interactive_backend
 
 
 class TestFoundationalEquations:
@@ -583,16 +584,17 @@ class TestCompleteAPGIVisualizer:
         library = APGIStateLibrary()
         viz = CompleteAPGIVisualizer(library)
 
-        with patch("matplotlib.pyplot.savefig") as mock_savefig:
-            viz.plot_parameter_distributions()
-            # Should call savefig
-            mock_savefig.assert_called()
+        with non_interactive_backend():
+            with patch("matplotlib.pyplot.savefig") as mock_savefig:
+                viz.plot_parameter_distributions()
+                # Should call savefig
+                mock_savefig.assert_called()
 
-        # Clean up matplotlib state to prevent pollution of other tests
-        import matplotlib.pyplot as plt
+            # Clean up matplotlib state to prevent pollution of other tests
+            import matplotlib.pyplot as plt
 
-        plt.close("all")
-        plt.style.use("default")
+            plt.close("all")
+            plt.style.use("default")
 
 
 class TestModuleFunctions:
@@ -600,22 +602,15 @@ class TestModuleFunctions:
 
     def test_run_complete_demo(self):
         """Test running complete demo with matplotlib backend issues."""
-        # Force matplotlib backend before importing anything else
-        import matplotlib
+        with non_interactive_backend():
+            # Restore real matplotlib modules if they were mocked by other tests
+            import sys
 
-        matplotlib.use("Agg")
+            for mod_name in list(sys.modules.keys()):
+                if mod_name.startswith("matplotlib"):
+                    del sys.modules[mod_name]
 
-        # Restore real matplotlib modules if they were mocked by other tests
-        import sys
-
-        for mod_name in list(sys.modules.keys()):
-            if mod_name.startswith("matplotlib"):
-                del sys.modules[mod_name]
-
-        # Force matplotlib backend again after clearing modules
-        import matplotlib
-
-        matplotlib.use("Agg")
+            # This should run without errors
 
         # This should run without errors
         exception_msg = None

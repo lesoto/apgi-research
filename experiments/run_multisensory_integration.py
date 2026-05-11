@@ -112,6 +112,7 @@ class EnhancedMultisensoryRunner:
         self.experiment = MultisensoryExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
         self.start_time: float = 0.0
+        self.apgi: Optional[APGIIntegration] = None
 
         # Initialize 100/100 APGI components
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -179,7 +180,7 @@ class EnhancedMultisensoryRunner:
                 "rt_var": 40000.0,
             }
         else:
-            self.apgi = None  # type: ignore
+            self.apgi = None
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()

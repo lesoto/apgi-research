@@ -5,7 +5,7 @@ Tests for mutation_testing.py - mutation testing module.
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from tests.mutation_testing import (
+from utils.mutation_testing import (
     Mutant,
     MutationConfig,
     MutationOperator,

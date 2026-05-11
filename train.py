@@ -95,7 +95,8 @@ def has_ve(layer_idx: int, n_layer: int) -> bool:
 def apply_rotary_emb(
     x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
 ) -> torch.Tensor:
-    assert x.ndim == 4
+    if x.ndim != 4:
+        raise ValueError(f"Expected 4D tensor, got {x.ndim}D")
     d = x.shape[3] // 2
     x1, x2 = x[..., :d], x[..., d:]
     y1 = x1 * cos + x2 * sin
@@ -110,8 +111,14 @@ class CausalSelfAttention(nn.Module):
         self.n_kv_head = config.n_kv_head
         self.n_embd = config.n_embd
         self.head_dim = self.n_embd // self.n_head
-        assert self.n_embd % self.n_head == 0
-        assert self.n_kv_head <= self.n_head and self.n_head % self.n_kv_head == 0
+        if self.n_embd % self.n_head != 0:
+            raise ValueError(
+                f"n_embd ({self.n_embd}) must be divisible by n_head ({self.n_head})"
+            )
+        if not (self.n_kv_head <= self.n_head and self.n_head % self.n_kv_head == 0):
+            raise ValueError(
+                f"n_kv_head ({self.n_kv_head}) must be <= n_head ({self.n_head}) and n_head % n_kv_head == 0"
+            )
         self.c_q = nn.Linear(self.n_embd, self.n_head * self.head_dim, bias=False)
         self.c_k = nn.Linear(self.n_embd, self.n_kv_head * self.head_dim, bias=False)
         self.c_v = nn.Linear(self.n_embd, self.n_kv_head * self.head_dim, bias=False)
@@ -139,7 +146,8 @@ class CausalSelfAttention(nn.Module):
         # input-dependent gate per head
         if ve is not None:
             ve = ve.view(B, T, self.n_kv_head, self.head_dim)
-            assert self.ve_gate is not None, "ve_gate should exist when ve is provided"
+            if self.ve_gate is None:
+                raise ValueError("ve_gate should exist when ve is provided")
             gate = 2 * torch.sigmoid(self.ve_gate(x[..., : self.ve_gate_channels]))
             v = v + gate.unsqueeze(-1) * ve
 
@@ -291,7 +299,10 @@ class GPT(nn.Module):
 
     def _compute_window_sizes(self, config: GPTConfig) -> List[Tuple[int, int]]:
         pattern = config.window_pattern.upper()
-        assert all(c in "SL" for c in pattern)
+        if not all(c in "SL" for c in pattern):
+            raise ValueError(
+                f"Window pattern must only contain 'S' and 'L', got: {pattern}"
+            )
         long_window = config.sequence_len
         short_window = long_window // 2
         char_to_window = {"L": (long_window, 0), "S": (short_window, 0)}
@@ -366,14 +377,17 @@ class GPT(nn.Module):
         lm_head_params = [p for p in list(self.lm_head.parameters()) if has_grad(p)]
         resid_params = [self.resid_lambdas] if self.resid_lambdas.requires_grad else []
         x0_params = [self.x0_lambdas] if self.x0_lambdas.requires_grad else []
-        assert len(list(self.parameters())) == (
+        if len(list(self.parameters())) != (
             len(matrix_params)
             + len(embedding_params)
             + len(lm_head_params)
             + len(value_embeds_params)
             + len(resid_params)
             + len(x0_params)
-        )
+        ):
+            raise ValueError(
+                f"Parameter count mismatch: expected {len(matrix_params) + len(embedding_params) + len(lm_head_params) + len(value_embeds_params) + len(resid_params) + len(x0_params)}, got {len(list(self.parameters()))}"
+            )
         # Scale LR ∝ 1/√dmodel (tuned at 768 dim)
         dmodel_lr_scale = (model_dim / 768) ** -0.5
         print(
@@ -455,7 +469,10 @@ class GPT(nn.Module):
         if targets is not None:
             targets = targets.to(device)
         B, T = idx.size()
-        assert T <= self.cos.size(1)
+        if T > self.cos.size(1):
+            raise ValueError(
+                f"Sequence length {T} exceeds cosine table size {self.cos.size(1)}"
+            )
         cos_sin = self.cos[:, :T], self.sin[:, :T]
 
         x = self.transformer.wte(idx)  # type: ignore[operator]
@@ -763,7 +780,10 @@ num_flops_per_token = model.estimate_flops()
 print(f"Estimated FLOPs per token: {num_flops_per_token:e}")
 
 tokens_per_fwdbwd = DEVICE_BATCH_SIZE * MAX_SEQ_LEN
-assert TOTAL_BATCH_SIZE % tokens_per_fwdbwd == 0
+if TOTAL_BATCH_SIZE % tokens_per_fwdbwd != 0:
+    raise ValueError(
+        f"TOTAL_BATCH_SIZE ({TOTAL_BATCH_SIZE}) must be divisible by tokens_per_fwdbwd ({tokens_per_fwdbwd})"
+    )
 grad_accum_steps = TOTAL_BATCH_SIZE // tokens_per_fwdbwd
 
 optimizer = model.setup_optimizer(

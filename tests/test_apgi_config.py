@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from apgi_config import (
+from utils.apgi_config import (
     PYDANTIC_AVAILABLE,
     APGIExperimentConfigSchema,
     APGIMetricsConfigSchema,
@@ -525,7 +525,7 @@ class TestPydanticFallback:
         """Test schema behavior when pydantic is not available."""
         # This test verifies the fallback classes work
         # Even if pydantic is available, the fallback classes should be defined
-        from apgi_config import BaseModel, Field, ValidationError
+        from utils.apgi_config import BaseModel, Field, ValidationError
 
         # These should always be defined (either real pydantic or fallback)
         assert BaseModel is not None

@@ -36,13 +36,13 @@ class TestUpdateImports:
     def test_remove_old_imports(self):
         """Test removal of old APGI imports."""
         content = """
-from apgi_integration import APGIIntegration, APGIParameters
-from apgi_integration import format_apgi_output
+from utils.apgi_integration import APGIIntegration, APGIParameters
+from utils.apgi_integration import format_apgi_output
 print("test")
 """
         result = update_imports(content, "test_experiment")
         assert "Removed: migrated" in result
-        assert "from apgi_integration import APGIIntegration" not in result
+        assert "from utils.apgi_integration import APGIIntegration" not in result
 
     def test_add_standardized_imports(self):
         """Test addition of standardized imports."""

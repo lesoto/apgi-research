@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 import pytest
 
-from apgi_protocols import (
+from utils.apgi_protocols import (
     APGIModelProtocol,
     BaseAPGIRunner,
     ExperimentRunnerProtocol,

@@ -1,6 +1,6 @@
 import pytest
 
-from apgi_security import (
+from utils.apgi_security import (
     PickleSecurityError,
     SecureSubprocessError,
     secure_loads,
@@ -30,10 +30,13 @@ def test_config_signing_validation():
     secret = "test_key"
 
     import hashlib
+    import hmac
     import json
 
-    string_data = json.dumps(config, sort_keys=True) + secret
-    valid_hash = hashlib.sha256(string_data.encode("utf-8")).hexdigest()
+    config_str = json.dumps(config, sort_keys=True)
+    valid_hash = hmac.new(
+        secret.encode("utf-8"), config_str.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
 
     # Valid
     assert validate_config_checksum(config, valid_hash, secret) is True

@@ -15,11 +15,11 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar
 
 from apgi_audit import AuditEventType, get_audit_sink
-from apgi_authz import get_authz_manager
-from apgi_config import APGIExperimentConfigSchema
-from apgi_errors import APGIIntegrationError, APGIRuntimeError, APGITimeoutError
+from utils.apgi_authz import get_authz_manager
+from utils.apgi_config import APGIExperimentConfigSchema
+from utils.apgi_errors import APGIIntegrationError, APGIRuntimeError, APGITimeoutError
 from apgi_integration import APGIIntegration, APGIParameters
-from apgi_logging import APGIContextLogger, get_logger
+from utils.apgi_logging import APGIContextLogger, get_logger
 from apgi_security_adapters import SecurityLevel, get_security_factory
 
 T = TypeVar("T")  # Generic trial data type
@@ -341,15 +341,18 @@ class APGIOrchestrationKernel:
 
 
 # Global kernel instance
-_kernel = APGIOrchestrationKernel()
+_kernel: Optional[APGIOrchestrationKernel] = None
 
 
 def get_orchestration_kernel() -> APGIOrchestrationKernel:
     """Get global orchestration kernel."""
+    global _kernel
+    if _kernel is None:
+        _kernel = APGIOrchestrationKernel()
     return _kernel
 
 
-def set_orchestration_kernel(kernel: APGIOrchestrationKernel) -> None:
+def set_orchestration_kernel(kernel: Optional[APGIOrchestrationKernel]) -> None:
     """Set global orchestration kernel (for testing)."""
     global _kernel
     _kernel = kernel

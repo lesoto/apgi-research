@@ -29,6 +29,7 @@ Classes:
 """
 
 import argparse
+import ast
 import asyncio
 import importlib
 import json
@@ -63,7 +64,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class TimeoutError(Exception):
+class APGITimeoutError(Exception):
     """Custom timeout exception."""
 
     pass
@@ -71,7 +72,7 @@ class TimeoutError(Exception):
 
 def timeout_handler(signum: int, frame: Any) -> None:
     """Signal handler for timeout."""
-    raise TimeoutError("Experiment execution timed out")
+    raise APGITimeoutError("Experiment execution timed out")
 
 
 @dataclass
@@ -507,7 +508,7 @@ class RequestRetryHandler:
             TimeoutError: If all retries are exhausted
         """
         last_error: Optional[
-            Union[TimeoutError, subprocess.TimeoutExpired, Exception]
+            Union[APGITimeoutError, subprocess.TimeoutExpired, Exception]
         ] = None
         for attempt in range(self.max_retries + 1):
             try:
@@ -515,7 +516,7 @@ class RequestRetryHandler:
                 if "timeout" in kwargs or hasattr(func, "__code__"):
                     kwargs.setdefault("timeout", self.timeout)
                 return func(*args, **kwargs)
-            except (TimeoutError, subprocess.TimeoutExpired) as e:
+            except (APGITimeoutError, subprocess.TimeoutExpired) as e:
                 last_error = e
                 if attempt < self.max_retries:
                     backoff = min(self.backoff_base * (2**attempt), self.max_backoff)
@@ -532,7 +533,7 @@ class RequestRetryHandler:
                     )
                     time.sleep(backoff)
 
-        raise TimeoutError(
+        raise APGITimeoutError(
             f"[APGI AGENT] Request failed after {self.max_retries + 1} attempts: {last_error}"
         )
 
@@ -961,7 +962,7 @@ class AutonomousAgent:
                     status="success",
                 )
 
-            except TimeoutError:
+            except APGITimeoutError:
                 completion_time = time.time() - start_time
                 logger.error(
                     f"[APGI AGENT] Experiment {experiment_name} timed out after {timeout_seconds} seconds"
@@ -1703,8 +1704,10 @@ class AutonomousAgent:
                             else:
                                 # Try to evaluate safely for lists/strings or keep as string
                                 try:
-                                    parameters[param_name] = eval(param_value)
-                                except (ValueError, SyntaxError, NameError, TypeError):
+                                    parameters[param_name] = ast.literal_eval(
+                                        param_value
+                                    )
+                                except (ValueError, SyntaxError):
                                     parameters[param_name] = param_value
                         except (ValueError, SyntaxError):
                             parameters[param_name] = param_value

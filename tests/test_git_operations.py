@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from git_operations import (
+from utils.git_operations import (
     GitError,
     GitOperation,
     GitOperations,

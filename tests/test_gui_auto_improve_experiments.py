@@ -531,6 +531,1323 @@ class TestGUIMethodBehavior:
             gui.ExperimentRunnerGUI.change_appearance_mode(None, "Light")
             mock_set.assert_called_once_with("Light")
 
+    def test_check_dependencies_missing_optional(self):
+        """Test dependency check with missing optional dependencies."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/tmp")
+        mock_gui.console_text = MagicMock()
+
+        # Mock only core dependencies as available
+        with patch.dict(
+            "sys.modules",
+            {
+                "numpy": MagicMock(),
+                "pandas": MagicMock(),
+                "matplotlib": MagicMock(),
+                "customtkinter": MagicMock(),
+                "scipy": MagicMock(),
+            },
+            clear=True,
+        ):
+            # Remove optional dependencies
+            for mod in ["torch", "sklearn", "requests", "tqdm", "PIL"]:
+                if mod in sys.modules:
+                    del sys.modules[mod]
+
+            with patch("tkinter.messagebox"):
+                # Should not exit, just show warnings for optional deps
+                gui.ExperimentRunnerGUI._check_dependencies(mock_gui)
+
+    def test_find_experiments_filters_correctly(self):
+        """Test that _find_experiments filters files correctly."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/tmp/test_research")
+
+        # Mock mixed files
+        all_files = [
+            Path("run_valid.py"),
+            Path("run_another.py"),
+            Path("prepare_file.py"),  # Doesn't start with 'run_'
+            Path("run_test.txt"),  # Doesn't end with '.py'
+            Path("other_file.py"),  # Doesn't start with 'run_'
+            Path("run_third.py"),
+        ]
+
+        with patch("gui.Path.glob") as mock_glob:
+            mock_glob.return_value = [Path(f) for f in all_files]
+
+            experiments = gui.ExperimentRunnerGUI._find_experiments(mock_gui)
+
+            # Should only find files starting with 'run_' and ending with '.py'
+            expected = [
+                ("Valid", "experiments/run_valid.py"),
+                ("Another", "experiments/run_another.py"),
+                ("Third", "experiments/run_third.py"),
+            ]
+            assert experiments == expected
+
+    def test_execute_script_success(self):
+        """Test _execute_script with successful execution."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/tmp")
+        mock_gui.console_text = MagicMock()
+        mock_gui.active_processes = {}
+
+        mock_process = MagicMock()
+        mock_process.stdout.readline.side_effect = ["Test output\n", ""]
+        mock_process.poll.return_value = None
+        mock_process.wait.return_value = 0
+
+        with patch("gui.secure_popen", return_value=mock_process):
+            with patch("gui.threading.Thread") as mock_thread:
+                mock_thread.return_value = MagicMock()
+
+                gui.ExperimentRunnerGUI._execute_script(
+                    mock_gui, "test_exp", "run_test.py"
+                )
+
+                # Should start thread and log output
+                mock_thread.assert_called_once()
+                assert mock_gui.active_processes.get("test_exp") == mock_process
+
+    def test_execute_script_failure(self):
+        """Test _execute_script with failed execution."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/tmp")
+        mock_gui.console_text = MagicMock()
+        mock_gui.active_processes = {}
+
+        mock_process = MagicMock()
+        mock_process.stdout.readline.side_effect = ["Error output\n", ""]
+        mock_process.poll.return_value = 1  # Non-zero exit code
+        mock_process.wait.return_value = 1
+
+        with patch("gui.secure_popen", return_value=mock_process):
+            with patch("gui.threading.Thread") as mock_thread:
+                mock_thread.return_value = MagicMock()
+
+                gui.ExperimentRunnerGUI._execute_script(
+                    mock_gui, "test_exp", "run_test.py"
+                )
+
+                # Should handle failure gracefully
+                assert "test_exp" not in mock_gui.active_processes
+
+    def test_parse_experiment_results_basic(self):
+        """Test basic experiment results parsing."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {}
+        mock_gui.current_figure = MagicMock()
+        mock_gui.current_canvas = MagicMock()
+
+        # Sample output lines with metrics
+        output_lines = [
+            "Experiment completed successfully",
+            "Accuracy: 0.85",
+            "Precision: 0.82",
+            "Recall: 0.88",
+            "F1-Score: 0.85",
+            "Loss: 0.25",
+        ]
+
+        gui.ExperimentRunnerGUI._parse_experiment_results(
+            mock_gui, "test_exp", output_lines
+        )
+
+        # Should parse and store results
+        assert "test_exp" in mock_gui.experiment_results
+        results = mock_gui.experiment_results["test_exp"]
+        assert "metrics" in results
+        assert results["metrics"]["accuracy"] == 0.85
+        assert results["metrics"]["precision"] == 0.82
+
+    def test_parse_experiment_results_with_guardrails(self):
+        """Test parsing results with guardrail information."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {}
+        mock_gui.current_figure = MagicMock()
+        mock_gui.current_canvas = MagicMock()
+
+        output_lines = [
+            "APGI Guardrail Status:",
+            "Confidence: 0.92",
+            "Escalations: 2",
+            "Warnings: 1",
+            "Safety Score: 0.88",
+            "Accuracy: 0.90",
+        ]
+
+        gui.ExperimentRunnerGUI._parse_experiment_results(
+            mock_gui, "test_exp", output_lines
+        )
+
+        results = mock_gui.experiment_results["test_exp"]
+        assert "guardrails" in results
+        assert results["guardrails"]["confidence"] == 0.92
+        assert results["guardrails"]["escalations"] == 2
+        assert results["guardrails"]["safety_score"] == 0.88
+
+    def test_update_guardrail_dashboard(self):
+        """Test guardrail dashboard update."""
+        mock_gui = MagicMock()
+        mock_gui.guardrail_confidence_label = MagicMock()
+        mock_gui.guardrail_escalations_label = MagicMock()
+        mock_gui.guardrail_warnings_label = MagicMock()
+        mock_gui.guardrail_safety_label = MagicMock()
+
+        gui.ExperimentRunnerGUI._update_guardrail_dashboard(
+            mock_gui, "ACTIVE", 0.85, 3, 2, 0.90
+        )
+
+        # Should update all labels
+        mock_gui.guardrail_confidence_label.configure.assert_called()
+        mock_gui.guardrail_escalations_label.configure.assert_called()
+        mock_gui.guardrail_warnings_label.configure.assert_called()
+        mock_gui.guardrail_safety_label.configure.assert_called()
+
+    def test_notify_guardrail_escalation(self):
+        """Test guardrail escalation notification."""
+        mock_gui = MagicMock()
+        mock_gui._log = MagicMock()
+
+        with patch("tkinter.messagebox.showwarning") as mock_warning:
+            gui.ExperimentRunnerGUI._notify_guardrail_escalation(
+                mock_gui, "test_exp", 0.75, "Low confidence detected"
+            )
+
+            # Should show warning and log message
+            mock_warning.assert_called_once()
+            mock_gui._log.assert_called()
+
+    def test_run_all_sequential(self):
+        """Test running all experiments sequentially."""
+        mock_gui = MagicMock()
+        mock_gui.experiments = [
+            ("exp1", "run_exp1.py"),
+            ("exp2", "run_exp2.py"),
+        ]
+        mock_gui.running_experiments = set()
+        mock_gui.stop_all = False
+        mock_gui._run_experiment = MagicMock()
+        mock_gui._log = MagicMock()
+
+        # Mock time.sleep to avoid actual delays
+        with patch("time.sleep"):
+            gui.ExperimentRunnerGUI._run_all_sequential(mock_gui)
+
+            # Should run all experiments
+            assert mock_gui._run_experiment.call_count == 2
+            mock_gui._run_experiment.assert_any_call("exp1", "run_exp1.py")
+            mock_gui._run_experiment.assert_any_call("exp2", "run_exp2.py")
+
+    def test_run_all_sequential_with_stop(self):
+        """Test sequential run with stop flag."""
+        mock_gui = MagicMock()
+        mock_gui.experiments = [
+            ("exp1", "run_exp1.py"),
+            ("exp2", "run_exp2.py"),
+        ]
+        mock_gui.running_experiments = set()
+        mock_gui.stop_all = True  # Set stop flag
+        mock_gui._run_experiment = MagicMock()
+
+        with patch("time.sleep"):
+            gui.ExperimentRunnerGUI._run_all_sequential(mock_gui)
+
+            # Should not run any experiments due to stop flag
+            mock_gui._run_experiment.assert_not_called()
+
+    def test_display_dependencies_status(self):
+        """Test dependency status display."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        mock_gui.research_dir = Path("/tmp")
+
+        # Mock all dependencies as available
+        with patch.dict(
+            "sys.modules",
+            {
+                "numpy": MagicMock(),
+                "pandas": MagicMock(),
+                "matplotlib": MagicMock(),
+                "customtkinter": MagicMock(),
+                "scipy": MagicMock(),
+                "torch": MagicMock(),
+                "sklearn": MagicMock(),
+                "requests": MagicMock(),
+                "tqdm": MagicMock(),
+                "PIL": MagicMock(),
+            },
+        ):
+            gui.ExperimentRunnerGUI._display_dependencies_status(mock_gui)
+
+            # Should log status information
+            assert mock_gui.console_text.insert.called
+
+    def test_repair_dependencies(self):
+        """Test dependency repair functionality."""
+        mock_gui = MagicMock()
+        mock_gui._display_dependencies_status = MagicMock()
+        mock_gui._log = MagicMock()
+
+        with patch("gui.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+
+            gui.ExperimentRunnerGUI._repair_dependencies(mock_gui)
+
+            # Should display status and attempt repairs
+            mock_gui._display_dependencies_status.assert_called_once()
+
+    def test_create_visualization_panel(self):
+        """Test visualization panel creation."""
+        mock_gui = MagicMock()
+        mock_parent = MagicMock()
+
+        with patch("gui.Figure") as mock_figure:
+            with patch("gui.FigureCanvasTkAgg") as mock_canvas:
+                with patch("gui.NavigationToolbar2Tk") as mock_toolbar:
+
+                    gui.ExperimentRunnerGUI._create_visualization_panel(
+                        mock_gui, mock_parent
+                    )
+
+                    # Should create figure, canvas, and toolbar
+                    mock_figure.assert_called_once()
+                    mock_canvas.assert_called_once()
+                    mock_toolbar.assert_called_once()
+
+    def test_plot_experiment_results(self):
+        """Test plotting experiment results."""
+        mock_gui = MagicMock()
+        mock_gui.current_figure = MagicMock()
+        mock_gui.current_canvas = MagicMock()
+        mock_ax = MagicMock()
+        mock_gui.current_figure.add_subplot.return_value = mock_ax
+
+        results = {
+            "metrics": {
+                "accuracy": 0.85,
+                "precision": 0.82,
+                "recall": 0.88,
+                "f1_score": 0.85,
+            }
+        }
+
+        gui.ExperimentRunnerGUI._plot_experiment_results(mock_gui, "test_exp", results)
+
+        # Should create plot and update canvas
+        mock_ax.bar.assert_called()
+        mock_gui.current_canvas.draw.assert_called()
+
+    def test_show_create_hypothesis_dialog(self):
+        """Test hypothesis creation dialog."""
+        mock_gui = MagicMock()
+        mock_gui.approval_board = MagicMock()
+        mock_gui.hypothesis_scrollable = MagicMock()
+
+        with patch("gui.ctk.CTkToplevel") as mock_toplevel:
+            with patch("gui.ctk.CTkFrame"):
+                with patch("gui.ctk.CTkLabel"):
+                    with patch("gui.ctk.CTkEntry"):
+                        with patch("gui.ctk.CTkButton"):
+
+                            gui.ExperimentRunnerGUI._show_create_hypothesis_dialog(
+                                mock_gui
+                            )
+
+                            # Should create dialog with widgets
+                            mock_toplevel.assert_called_once()
+
+    def test_show_hypothesis_review_empty(self):
+        """Test hypothesis review with no pending hypotheses."""
+        mock_gui = MagicMock()
+        mock_gui.approval_board = MagicMock()
+        mock_gui.approval_board.get_pending_hypotheses.return_value = []
+
+        with patch("tkinter.messagebox.showinfo") as mock_info:
+            gui.ExperimentRunnerGUI._show_hypothesis_review(mock_gui)
+
+            # Should show info message
+            mock_info.assert_called_once()
+
+    def test_refresh_hypothesis_display(self):
+        """Test refreshing hypothesis display."""
+        mock_gui = MagicMock()
+        mock_gui.hypothesis_scrollable = MagicMock()
+        mock_gui.hypothesis_scrollable.winfo_children.return_value = [
+            MagicMock(),
+            MagicMock(),
+        ]
+        mock_gui.approval_board = MagicMock()
+        mock_gui.approval_board.get_all_hypotheses.return_value = []
+
+        gui.ExperimentRunnerGUI._refresh_hypothesis_display(mock_gui)
+
+        # Should clear existing widgets and refresh
+        assert mock_gui.hypothesis_scrollable.winfo_children.called
+        for widget in mock_gui.hypothesis_scrollable.winfo_children.return_value:
+            widget.destroy.assert_called()
+
+
+class TestFileMenuFunctionality:
+    """Test File menu functionality."""
+
+    def test_create_new_experiment_exists(self):
+        """Test _create_new_experiment method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_create_new_experiment")
+        assert callable(gui.ExperimentRunnerGUI._create_new_experiment)
+
+    def test_create_new_experiment_functionality(self):
+        """Test creating a new experiment dialog."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/tmp/test_experiments")
+
+        with patch("tkinter.simpledialog.askstring") as mock_dialog:
+            mock_dialog.return_value = "test_experiment"
+
+            with patch("pathlib.Path.mkdir"):
+                with patch("gui.ctk.CTkTextbox") as mock_textbox:
+                    with patch("gui.ctk.CTkButton") as mock_button:
+                        gui.ExperimentRunnerGUI._create_new_experiment(mock_gui)
+
+                        # Should ask for experiment name
+                        mock_dialog.assert_called_once()
+                        # Should create UI elements
+                        assert mock_textbox.called or mock_button.called
+
+    def test_load_experiment_functionality(self):
+        """Test loading experiment from file."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/tmp/test_experiments")
+
+        with patch("tkinter.filedialog.askopenfilename") as mock_dialog:
+            mock_dialog.return_value = "/path/to/experiment.py"
+
+            with patch("pathlib.Path.read_text", return_value="print('test code')"):
+                with patch("gui.ctk.CTkTextbox") as mock_textbox:
+                    gui.ExperimentRunnerGUI._load_experiment(mock_gui)
+
+                    mock_dialog.assert_called_once()
+                    mock_textbox.assert_called()
+
+
+class TestExperimentExecution:
+    """Test experiment execution functionality."""
+
+    def test_execute_script_success(self):
+        """Test successful script execution."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+        mock_gui.log_text = MagicMock()
+
+        with patch("apgi_security.secure_popen") as mock_popen:
+            mock_process = MagicMock()
+            mock_process.communicate.return_value = ("output", "")
+            mock_process.returncode = 0
+            mock_popen.return_value = mock_process
+
+            result = gui.ExperimentRunnerGUI._execute_script(
+                mock_gui, "test_script.py", "test_exp"
+            )
+
+            assert result is True
+            mock_popen.assert_called_once()
+
+    def test_execute_script_failure(self):
+        """Test script execution failure."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+        mock_gui.log_text = MagicMock()
+
+        with patch("apgi_security.secure_popen") as mock_popen:
+            mock_process = MagicMock()
+            mock_process.communicate.return_value = ("", "error")
+            mock_process.returncode = 1
+            mock_popen.return_value = mock_process
+
+            result = gui.ExperimentRunnerGUI._execute_script(
+                mock_gui, "test_script.py", "test_exp"
+            )
+
+            assert result is False
+
+    def test_execute_script_stopped(self):
+        """Test script execution when stopped."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = True
+
+        result = gui.ExperimentRunnerGUI._execute_script(
+            mock_gui, "test_script.py", "test_exp"
+        )
+
+        assert result is False
+
+    def test_parse_experiment_results(self):
+        """Test parsing experiment results."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {}
+
+        # Test with valid JSON output
+        test_output = '{"accuracy": 0.85, "loss": 0.15}'
+        gui.ExperimentRunnerGUI._parse_experiment_results(
+            mock_gui, "test_exp", test_output
+        )
+
+        assert "test_exp" in mock_gui.experiment_results
+        assert mock_gui.experiment_results["test_exp"]["accuracy"] == 0.85
+
+    def test_parse_experiment_results_invalid_json(self):
+        """Test parsing experiment results with invalid JSON."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {}
+
+        # Test with invalid JSON
+        test_output = "invalid json output"
+        gui.ExperimentRunnerGUI._parse_experiment_results(
+            mock_gui, "test_exp", test_output
+        )
+
+        # Should handle gracefully without crashing
+        assert "test_exp" in mock_gui.experiment_results
+
+    def test_finish_experiment(self):
+        """Test finishing experiment execution."""
+        mock_gui = MagicMock()
+        mock_gui.running_experiments = {"test_exp"}
+        mock_gui.experiment_buttons = {"test_exp": MagicMock()}
+        mock_gui.status_indicators = {"test_exp": MagicMock()}
+        mock_gui.experiment_results = {"test_exp": {"accuracy": 0.85}}
+
+        with patch("gui.ctk.CTkProgressBar"):
+            gui.ExperimentRunnerGUI._finish_experiment(mock_gui, "test_exp")
+
+            assert "test_exp" not in mock_gui.running_experiments
+            mock_gui.experiment_buttons["test_exp"].configure.assert_called()
+
+
+class TestAutoImproveFunctionality:
+    """Test auto-improve functionality."""
+
+    def test_run_auto_improve_with_llm(self):
+        """Test auto-improve with LLM available."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+        mock_gui.code_text = MagicMock()
+        mock_gui.code_text.get.return_value = "print('test code')"
+
+        # Mock LLM available
+        with patch("gui.LLM_AVAILABLE", True):
+            with patch("gui.litellm.completion") as mock_completion:
+                mock_completion.return_value = "improved_code"
+
+                with patch("gui.ctk.CTkTextbox"):
+                    gui.ExperimentRunnerGUI._run_auto_improve(mock_gui)
+
+                    mock_completion.assert_called_once()
+
+    def test_run_auto_improve_no_llm(self):
+        """Test auto-improve without LLM."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+
+        # Mock LLM not available
+        with patch("gui.LLM_AVAILABLE", False):
+            with patch("tkinter.messagebox.showinfo") as mock_info:
+                gui.ExperimentRunnerGUI._run_auto_improve(mock_gui)
+
+                mock_info.assert_called_once()
+
+
+class TestUtilityMethods:
+    """Test utility methods."""
+
+    def test_log_method(self):
+        """Test logging method."""
+        mock_gui = MagicMock()
+        mock_gui.log_text = MagicMock()
+        mock_gui.log_text.insert = MagicMock()
+
+        gui.ExperimentRunnerGUI._log(mock_gui, "Test message")
+
+        mock_gui.log_text.insert.assert_called()
+
+    def test_clear_console(self):
+        """Test clearing console."""
+        mock_gui = MagicMock()
+        mock_gui.log_text = MagicMock()
+        mock_gui.log_text.delete = MagicMock()
+
+        gui.ExperimentRunnerGUI._clear_console(mock_gui)
+
+        mock_gui.log_text.delete.assert_called_once()
+
+    def test_display_dependencies_status(self):
+        """Test displaying dependencies status."""
+        mock_gui = MagicMock()
+        mock_gui.deps_frame = MagicMock()
+
+        with patch("gui.ctk.CTkLabel") as mock_label:
+            gui.ExperimentRunnerGUI._display_dependencies_status(mock_gui)
+
+            mock_label.assert_called()
+
+    def test_repair_dependencies(self):
+        """Test repairing dependencies."""
+        mock_gui = MagicMock()
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+
+            with patch("tkinter.messagebox.showinfo") as mock_info:
+                gui.ExperimentRunnerGUI._repair_dependencies(mock_gui)
+
+                mock_run.assert_called()
+                mock_info.assert_called()
+
+
+class TestVisualizationFunctionality:
+    """Test visualization functionality."""
+
+    def test_create_visualization_panel(self):
+        """Test creating visualization panel."""
+        mock_gui = MagicMock()
+
+        with patch("gui.matplotlib.figure.Figure") as mock_figure:
+            with patch("gui.FigureCanvasTkAgg") as mock_canvas:
+                gui.ExperimentRunnerGUI._create_visualization_panel(mock_gui)
+
+                mock_figure.assert_called_once()
+                mock_canvas.assert_called_once()
+
+    def test_update_guardrail_dashboard(self):
+        """Test updating guardrail dashboard."""
+        mock_gui = MagicMock()
+        mock_gui.guardrail_canvas = MagicMock()
+        mock_gui.guardrail_canvas.get_tk_widget = MagicMock()
+
+        with patch("gui.matplotlib.figure.Figure"):
+            gui.ExperimentRunnerGUI._update_guardrail_dashboard(mock_gui)
+
+            # Should attempt to update visualization
+            assert mock_gui.guardrail_canvas.called
+
+
+class TestHypothesisManagement:
+    """Test hypothesis management functionality."""
+
+    def test_create_hypothesis_success(self):
+        """Test successful hypothesis creation."""
+        mock_gui = MagicMock()
+        mock_gui.approval_board = MagicMock()
+        mock_gui.hypothesis_entry = MagicMock()
+        mock_gui.hypothesis_entry.get.return_value = "Test hypothesis"
+
+        with patch("tkinter.messagebox.showinfo") as mock_info:
+            gui.ExperimentRunnerGUI._create_hypothesis(mock_gui)
+
+            mock_gui.approval_board.submit_hypothesis.assert_called_once()
+            mock_info.assert_called_once()
+
+    def test_create_hypothesis_empty(self):
+        """Test hypothesis creation with empty input."""
+        mock_gui = MagicMock()
+        mock_gui.hypothesis_entry = MagicMock()
+        mock_gui.hypothesis_entry.get.return_value = ""
+
+        with patch("tkinter.messagebox.showwarning") as mock_warning:
+            gui.ExperimentRunnerGUI._create_hypothesis(mock_gui)
+
+            mock_warning.assert_called_once()
+
+    def test_approve_hypothesis(self):
+        """Test approving a hypothesis."""
+        mock_gui = MagicMock()
+        mock_gui.approval_board = MagicMock()
+        mock_hypothesis = MagicMock()
+        mock_hypothesis.id = "test_id"
+
+        gui.ExperimentRunnerGUI._approve_hypothesis(mock_gui, mock_hypothesis)
+
+        mock_gui.approval_board.approve_hypothesis.assert_called_once_with("test_id")
+
+    def test_reject_hypothesis(self):
+        """Test rejecting a hypothesis."""
+        mock_gui = MagicMock()
+        mock_gui.approval_board = MagicMock()
+        mock_hypothesis = MagicMock()
+        mock_hypothesis.id = "test_id"
+
+        gui.ExperimentRunnerGUI._reject_hypothesis(mock_gui, mock_hypothesis)
+
+        mock_gui.approval_board.reject_hypothesis.assert_called_once_with("test_id")
+
+
+class TestExperimentManagement:
+    """Test experiment management functionality."""
+
+    def test_run_all_experiments(self):
+        """Test running all experiments."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+        mock_gui.experiment_cards = ["exp1", "exp2"]
+
+        with patch.object(gui.ExperimentRunnerGUI, "_run_experiment"):
+            gui.ExperimentRunnerGUI._run_all(mock_gui)
+
+            # Should attempt to run all experiments
+            assert gui.ExperimentRunnerGUI._run_experiment.call_count == 2
+
+    def test_run_all_sequential(self):
+        """Test running all experiments sequentially."""
+        mock_gui = MagicMock()
+        mock_gui.stop_all = False
+        mock_gui.experiment_cards = ["exp1", "exp2"]
+
+        with patch.object(gui.ExperimentRunnerGUI, "_run_experiment"):
+            gui.ExperimentRunnerGUI._run_all_sequential(mock_gui)
+
+            # Should run experiments sequentially
+            assert gui.ExperimentRunnerGUI._run_experiment.call_count == 2
+
+    def test_stop_all_experiments(self):
+        """Test stopping all experiments."""
+        mock_gui = MagicMock()
+        mock_gui.running_experiments = {"exp1", "exp2"}
+        mock_gui.active_processes = {"exp1": MagicMock(), "exp2": MagicMock()}
+
+        gui.ExperimentRunnerGUI._stop_all(mock_gui)
+
+        assert mock_gui.stop_all is True
+        # Should terminate all active processes
+        for process in mock_gui.active_processes.values():
+            process.terminate.assert_called()
+
+    def test_get_experiment_template_exists(self):
+        """Test _get_experiment_template method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_get_experiment_template")
+        assert callable(gui.ExperimentRunnerGUI._get_experiment_template)
+
+    def test_open_experiment_directory_exists(self):
+        """Test _open_experiment_directory method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_open_experiment_directory")
+        assert callable(gui.ExperimentRunnerGUI._open_experiment_directory)
+
+    def test_import_experiment_results_exists(self):
+        """Test _import_experiment_results method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_import_experiment_results")
+        assert callable(gui.ExperimentRunnerGUI._import_experiment_results)
+
+    def test_save_experiment_results_exists(self):
+        """Test _save_experiment_results method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_save_experiment_results")
+        assert callable(gui.ExperimentRunnerGUI._save_experiment_results)
+
+    def test_export_research_report_exists(self):
+        """Test _export_research_report method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_export_research_report")
+        assert callable(gui.ExperimentRunnerGUI._export_research_report)
+
+    def test_generate_research_report_exists(self):
+        """Test _generate_research_report method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_generate_research_report")
+        assert callable(gui.ExperimentRunnerGUI._generate_research_report)
+
+    def test_reload_experiments_exists(self):
+        """Test _reload_experiments method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_reload_experiments")
+        assert callable(gui.ExperimentRunnerGUI._reload_experiments)
+
+    def test_refresh_experiment_display_exists(self):
+        """Test _refresh_experiment_display method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_refresh_experiment_display")
+        assert callable(gui.ExperimentRunnerGUI._refresh_experiment_display)
+
+    def test_clear_session_exists(self):
+        """Test _clear_session method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_clear_session")
+        assert callable(gui.ExperimentRunnerGUI._clear_session)
+
+    def test_confirm_exit_exists(self):
+        """Test _confirm_exit method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_confirm_exit")
+        assert callable(gui.ExperimentRunnerGUI._confirm_exit)
+
+    @patch("tkinter.messagebox.askyesno")
+    @patch("tkinter.messagebox.showinfo")
+    def test_clear_session_with_confirmation(self, mock_showinfo, mock_askyesno):
+        """Test clear session with user confirmation."""
+        mock_gui = MagicMock()
+        mock_gui.running_experiments = set()
+        mock_gui.experiment_results = {"test": "data"}
+        mock_gui.console_text = MagicMock()
+        mock_gui.guardrail_state = {"status": "test"}
+        mock_gui._update_guardrail_dashboard = MagicMock()
+        mock_gui._clear_console = MagicMock()
+        mock_gui._log = MagicMock()
+
+        mock_askyesno.return_value = True
+
+        gui.ExperimentRunnerGUI._clear_session(mock_gui)
+
+        mock_askyesno.assert_called_once()
+        mock_gui._clear_console.assert_called_once()
+        mock_gui._update_guardrail_dashboard.assert_called_once()
+        mock_showinfo.assert_called_once()
+
+    @patch("tkinter.messagebox.askyesno")
+    def test_clear_session_cancelled(self, mock_askyesno):
+        """Test clear session when user cancels."""
+        mock_gui = MagicMock()
+        mock_gui._log = MagicMock()
+
+        mock_askyesno.return_value = False
+
+        gui.ExperimentRunnerGUI._clear_session(mock_gui)
+
+        mock_askyesno.assert_called_once()
+        # Should not clear anything
+        mock_gui._log.assert_not_called()
+
+
+class TestEditMenuFunctionality:
+    """Test Edit menu functionality."""
+
+    def test_copy_console_output_exists(self):
+        """Test _copy_console_output method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_copy_console_output")
+        assert callable(gui.ExperimentRunnerGUI._copy_console_output)
+
+    def test_save_console_log_exists(self):
+        """Test _save_console_log method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_save_console_log")
+        assert callable(gui.ExperimentRunnerGUI._save_console_log)
+
+    def test_edit_experiment_script_exists(self):
+        """Test _edit_experiment_script method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_edit_experiment_script")
+        assert callable(gui.ExperimentRunnerGUI._edit_experiment_script)
+
+    def test_delete_experiment_exists(self):
+        """Test _delete_experiment method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_delete_experiment")
+        assert callable(gui.ExperimentRunnerGUI._delete_experiment)
+
+    def test_clear_all_results_exists(self):
+        """Test _clear_all_results method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_clear_all_results")
+        assert callable(gui.ExperimentRunnerGUI._clear_all_results)
+
+    def test_reset_visualizations_exists(self):
+        """Test _reset_visualizations method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_reset_visualizations")
+        assert callable(gui.ExperimentRunnerGUI._reset_visualizations)
+
+    def test_show_settings_dialog_exists(self):
+        """Test _show_settings_dialog method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_settings_dialog")
+        assert callable(gui.ExperimentRunnerGUI._show_settings_dialog)
+
+    def test_reset_guardrails_exists(self):
+        """Test _reset_guardrails method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_reset_guardrails")
+        assert callable(gui.ExperimentRunnerGUI._reset_guardrails)
+
+    @patch("tkinter.messagebox.askyesno")
+    @patch("tkinter.messagebox.showinfo")
+    def test_clear_all_results_with_confirmation(self, mock_showinfo, mock_askyesno):
+        """Test clear all results with user confirmation."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {"test": "data"}
+        mock_gui._log = MagicMock()
+
+        mock_askyesno.return_value = True
+
+        gui.ExperimentRunnerGUI._clear_all_results(mock_gui)
+
+        mock_askyesno.assert_called_once()
+        assert len(mock_gui.experiment_results) == 0
+        mock_showinfo.assert_called_once()
+
+    @patch("tkinter.messagebox.askyesno")
+    def test_reset_guardrails_with_confirmation(self, mock_askyesno):
+        """Test reset guardrails with user confirmation."""
+        mock_gui = MagicMock()
+        mock_gui.guardrail_state = {"status": "test"}
+        mock_gui._update_guardrail_dashboard = MagicMock()
+        mock_gui._log = MagicMock()
+
+        mock_askyesno.return_value = True
+
+        gui.ExperimentRunnerGUI._reset_guardrails(mock_gui)
+
+        mock_askyesno.assert_called_once()
+        assert mock_gui.guardrail_state["status"] == "IDLE"
+        mock_gui._update_guardrail_dashboard.assert_called_once()
+
+
+class TestViewMenuFunctionality:
+    """Test View menu functionality."""
+
+    def test_toggle_sidebar_exists(self):
+        """Test _toggle_sidebar method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_toggle_sidebar")
+        assert callable(gui.ExperimentRunnerGUI._toggle_sidebar)
+
+    def test_maximize_console_exists(self):
+        """Test _maximize_console method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_maximize_console")
+        assert callable(gui.ExperimentRunnerGUI._maximize_console)
+
+    def test_zoom_in_exists(self):
+        """Test _zoom_in method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_zoom_in")
+        assert callable(gui.ExperimentRunnerGUI._zoom_in)
+
+    def test_zoom_out_exists(self):
+        """Test _zoom_out method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_zoom_out")
+        assert callable(gui.ExperimentRunnerGUI._zoom_out)
+
+    def test_reset_zoom_exists(self):
+        """Test _reset_zoom method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_reset_zoom")
+        assert callable(gui.ExperimentRunnerGUI._reset_zoom)
+
+    def test_show_all_visualizations_exists(self):
+        """Test _show_all_visualizations method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_all_visualizations")
+        assert callable(gui.ExperimentRunnerGUI._show_all_visualizations)
+
+    def test_close_all_windows_exists(self):
+        """Test _close_all_windows method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_close_all_windows")
+        assert callable(gui.ExperimentRunnerGUI._close_all_windows)
+
+    def test_refresh_ui_exists(self):
+        """Test _refresh_ui method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_refresh_ui")
+        assert callable(gui.ExperimentRunnerGUI._refresh_ui)
+
+    @patch("tkinter.messagebox.showinfo")
+    def test_close_all_windows_with_count(self, mock_showinfo):
+        """Test close all windows shows count."""
+        mock_gui = MagicMock()
+        mock_gui._log = MagicMock()
+        mock_gui.winfo_children.return_value = [
+            MagicMock(spec=gui.ctk.CTkToplevel),
+            MagicMock(spec=gui.ctk.CTkToplevel),
+            MagicMock(),  # Not a CTkToplevel
+        ]
+
+        gui.ExperimentRunnerGUI._close_all_windows(mock_gui)
+
+        # Should destroy 2 CTkToplevel windows
+        assert mock_gui.winfo_children.return_value[0].destroy.called
+        assert mock_gui.winfo_children.return_value[1].destroy.called
+        assert not mock_gui.winfo_children.return_value[2].destroy.called
+        mock_showinfo.assert_called_once_with("Success", "Closed 2 popup windows.")
+
+
+class TestHelpMenuFunctionality:
+    """Test Help menu functionality."""
+
+    def test_show_user_guide_exists(self):
+        """Test _show_user_guide method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_user_guide")
+        assert callable(gui.ExperimentRunnerGUI._show_user_guide)
+
+    def test_show_api_docs_exists(self):
+        """Test _show_api_docs method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_api_docs")
+        assert callable(gui.ExperimentRunnerGUI._show_api_docs)
+
+    def test_show_experiment_templates_exists(self):
+        """Test _show_experiment_templates method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_experiment_templates")
+        assert callable(gui.ExperimentRunnerGUI._show_experiment_templates)
+
+    def test_show_getting_started_exists(self):
+        """Test _show_getting_started method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_getting_started")
+        assert callable(gui.ExperimentRunnerGUI._show_getting_started)
+
+    def test_show_experiment_tutorial_exists(self):
+        """Test _show_experiment_tutorial method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_experiment_tutorial")
+        assert callable(gui.ExperimentRunnerGUI._show_experiment_tutorial)
+
+    def test_show_xpr_guide_exists(self):
+        """Test _show_xpr_guide method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_xpr_guide")
+        assert callable(gui.ExperimentRunnerGUI._show_xpr_guide)
+
+    def test_report_issue_exists(self):
+        """Test _report_issue method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_report_issue")
+        assert callable(gui.ExperimentRunnerGUI._report_issue)
+
+    def test_send_feedback_exists(self):
+        """Test _send_feedback method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_send_feedback")
+        assert callable(gui.ExperimentRunnerGUI._send_feedback)
+
+    def test_show_about_exists(self):
+        """Test _show_about method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_about")
+        assert callable(gui.ExperimentRunnerGUI._show_about)
+
+    def test_show_system_info_exists(self):
+        """Test _show_system_info method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_system_info")
+        assert callable(gui.ExperimentRunnerGUI._show_system_info)
+
+    def test_show_text_dialog_exists(self):
+        """Test _show_text_dialog method exists."""
+        assert hasattr(gui.ExperimentRunnerGUI, "_show_text_dialog")
+        assert callable(gui.ExperimentRunnerGUI._show_text_dialog)
+
+    @patch("tkinter.messagebox.showinfo")
+    def test_report_issue_submission(self, mock_showinfo):
+        """Test issue report submission."""
+        mock_gui = MagicMock()
+        mock_gui._log = MagicMock()
+
+        with patch("gui.ctk.CTkToplevel"):
+            with patch("gui.ctk.CTkLabel"):
+                with patch("gui.ctk.CTkOptionMenu"):
+                    with patch("gui.ctk.CTkTextbox"):
+                        with patch("gui.ctk.CTkFrame"):
+                            with patch("gui.ctk.CTkButton"):
+                                gui.ExperimentRunnerGUI._report_issue(mock_gui)
+
+        mock_showinfo.assert_called_once_with(
+            "Thank You", "Your issue has been reported. We'll look into it!"
+        )
+
+    @patch("tkinter.messagebox.showinfo")
+    def test_send_feedback_submission(self, mock_showinfo):
+        """Test feedback submission."""
+        mock_gui = MagicMock()
+        mock_gui._log = MagicMock()
+
+        with patch("gui.ctk.CTkToplevel"):
+            with patch("gui.ctk.CTkLabel"):
+                with patch("gui.ctk.CTkTextbox"):
+                    with patch("gui.ctk.CTkFrame"):
+                        with patch("gui.ctk.CTkButton"):
+                            gui.ExperimentRunnerGUI._send_feedback(mock_gui)
+
+        mock_showinfo.assert_called_once_with(
+            "Thank You!", "Your feedback has been submitted. We appreciate your input!"
+        )
+
+
+class TestGUICoreFunctionality:
+    """Test core GUI functionality with improved coverage."""
+
+    def test_generate_research_report_content(self):
+        """Test research report generation content."""
+        mock_gui = MagicMock()
+        mock_gui.experiments = [
+            ("Test1", "experiments/run_test1.py"),
+            ("Test2", "experiments/run_test2.py"),
+        ]
+        mock_gui.experiment_results = {
+            "Test1": {"status": "success", "data": {"value": 42}}
+        }
+        mock_gui.running_experiments = set()
+        mock_gui.approval_board = MagicMock()
+        mock_gui.approval_board.get_pending_hypotheses.return_value = []
+        mock_gui.guardrail_state = {
+            "status": "IDLE",
+            "confidence": 0.95,
+            "last_regression": 0.1,
+            "escalation_count": 0,
+            "last_experiment": "",
+        }
+
+        report = gui.ExperimentRunnerGUI._generate_research_report(mock_gui)
+
+        # Check that report contains expected sections
+        assert "# APGI Research Report" in report
+        assert "Test1" in report
+        assert "Test2" in report
+        assert "Guardrail Status" in report
+        assert "Hypotheses" in report
+
+    def test_get_experiment_template_basic(self):
+        """Test experiment template generation."""
+        template = gui.ExperimentRunnerGUI._get_experiment_template(
+            "Test Experiment", "Test description", "Basic Experiment"
+        )
+
+        assert "Test Experiment" in template
+        assert "Test description" in template
+        assert "def main() -> None:" in template
+        assert "def run_experiment() -> dict:" in template
+
+    def test_get_experiment_template_data_analysis(self):
+        """Test data analysis template generation."""
+        template = gui.ExperimentRunnerGUI._get_experiment_template(
+            "Data Analysis", "Data analysis experiment", "Data Analysis"
+        )
+
+        assert "Data Analysis" in template
+        assert "def main() -> None:" in template
+        assert "def run_experiment() -> dict:" in template
+
+    def test_get_experiment_template_model_training(self):
+        """Test model training template generation."""
+        template = gui.ExperimentRunnerGUI._get_experiment_template(
+            "Model Training", "Model training experiment", "Model Training"
+        )
+
+        assert "Model Training" in template
+        assert "def main() -> None:" in template
+        assert "def run_experiment() -> dict:" in template
+
+    def test_get_experiment_template_visualization(self):
+        """Test visualization template generation."""
+        template = gui.ExperimentRunnerGUI._get_experiment_template(
+            "Visualization", "Visualization experiment", "Visualization"
+        )
+
+        assert "Visualization" in template
+        assert "def main() -> None:" in template
+        assert "def run_experiment() -> dict:" in template
+
+    @patch("tkinter.filedialog.askopenfilename")
+    def test_import_experiment_results_success(self, mock_filedialog):
+        """Test successful import of experiment results."""
+        mock_gui = MagicMock()
+        mock_gui._log = MagicMock()
+        mock_filedialog.return_value = "/path/to/results.json"
+
+        gui.ExperimentRunnerGUI._import_experiment_results(mock_gui)
+
+        mock_filedialog.assert_called_once()
+        mock_gui._log.assert_called_once()
+
+    @patch("tkinter.filedialog.asksaveasfilename")
+    @patch("json.dump")
+    def test_save_experiment_results_success(self, mock_json_dump, mock_filedialog):
+        """Test successful save of experiment results."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {"test": "data"}
+        mock_gui._log = MagicMock()
+        mock_filedialog.return_value = "/path/to/save.json"
+
+        gui.ExperimentRunnerGUI._save_experiment_results(mock_gui)
+
+        mock_filedialog.assert_called_once()
+        mock_json_dump.assert_called_once()
+        mock_gui._log.assert_called_once()
+
+    @patch("tkinter.filedialog.asksaveasfilename")
+    def test_save_experiment_results_no_data(self, mock_filedialog):
+        """Test save experiment results when no data exists."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {}
+        mock_gui._log = MagicMock()
+
+        with patch("tkinter.messagebox.showinfo") as mock_info:
+            gui.ExperimentRunnerGUI._save_experiment_results(mock_gui)
+
+        mock_info.assert_called_once_with(
+            "No Results", "No experiment results to save."
+        )
+        mock_filedialog.assert_not_called()
+
+    @patch("tkinter.messagebox.askyesno")
+    def test_confirm_exit_with_running_experiments(self, mock_askyesno):
+        """Test exit confirmation with running experiments."""
+        mock_gui = MagicMock()
+        mock_gui.running_experiments = {"test"}
+        mock_gui._log = MagicMock()
+        mock_askyesno.return_value = False
+
+        gui.ExperimentRunnerGUI._confirm_exit(mock_gui)
+
+        mock_askyesno.assert_called_once()
+        mock_gui._log.assert_not_called()
+
+    @patch("tkinter.messagebox.askyesno")
+    @patch("tkinter.messagebox.askyesnocancel")
+    def test_confirm_exit_save_results_cancel(self, mock_askyesnocancel, mock_askyesno):
+        """Test exit confirmation with save results cancelled."""
+        mock_gui = MagicMock()
+        mock_gui.running_experiments = set()
+        mock_gui.experiment_results = {"test": "data"}
+        mock_gui._log = MagicMock()
+        mock_askyesno.return_value = True
+        mock_askyesnocancel.return_value = None  # Cancel
+
+        gui.ExperimentRunnerGUI._confirm_exit(mock_gui)
+
+        mock_askyesno.assert_called_once()
+        mock_askyesnocancel.assert_called_once()
+        mock_gui._log.assert_not_called()
+
+    @patch("subprocess.run")
+    def test_open_experiment_directory_macos(self, mock_subprocess):
+        """Test opening experiment directory on macOS."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/test/dir")
+        mock_gui._log = MagicMock()
+        mock_subprocess.return_value.returncode = 0
+
+        with patch("platform.system", return_value="Darwin"):
+            gui.ExperimentRunnerGUI._open_experiment_directory(mock_gui)
+
+        mock_subprocess.assert_called_once_with(["open", "/test/dir"], check=True)
+        mock_gui._log.assert_called_once()
+
+    @patch("subprocess.run")
+    def test_open_experiment_directory_windows(self, mock_subprocess):
+        """Test opening experiment directory on Windows."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/test/dir")
+        mock_gui._log = MagicMock()
+        mock_subprocess.return_value.returncode = 0
+
+        with patch("platform.system", return_value="Windows"):
+            gui.ExperimentRunnerGUI._open_experiment_directory(mock_gui)
+
+        mock_subprocess.assert_called_once_with(["explorer", "/test/dir"], check=True)
+        mock_gui._log.assert_called_once()
+
+    @patch("subprocess.run")
+    def test_open_experiment_directory_linux(self, mock_subprocess):
+        """Test opening experiment directory on Linux."""
+        mock_gui = MagicMock()
+        mock_gui.research_dir = Path("/test/dir")
+        mock_gui._log = MagicMock()
+        mock_subprocess.return_value.returncode = 0
+
+        with patch("platform.system", return_value="Linux"):
+            gui.ExperimentRunnerGUI._open_experiment_directory(mock_gui)
+
+        mock_subprocess.assert_called_once_with(["xdg-open", "/test/dir"], check=True)
+        mock_gui._log.assert_called_once()
+
+    def test_zoom_in_increases_font_size(self):
+        """Test zoom in increases font size."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        mock_gui.console_text.cget.return_value = ("Courier", 13)
+        mock_gui._log = MagicMock()
+
+        gui.ExperimentRunnerGUI._zoom_in(mock_gui)
+
+        mock_gui.console_text.configure.assert_called_once_with(font=("Courier", 14))
+        mock_gui._log.assert_called_once_with("Zoomed in to font size 14", "#3498db")
+
+    def test_zoom_out_decreases_font_size(self):
+        """Test zoom out decreases font size."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        mock_gui.console_text.cget.return_value = ("Courier", 13)
+        mock_gui._log = MagicMock()
+
+        gui.ExperimentRunnerGUI._zoom_out(mock_gui)
+
+        mock_gui.console_text.configure.assert_called_once_with(font=("Courier", 12))
+        mock_gui._log.assert_called_once_with("Zoomed out to font size 12", "#3498db")
+
+    def test_reset_zoom_resets_font_size(self):
+        """Test reset zoom resets font size to default."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        mock_gui._log = MagicMock()
+
+        gui.ExperimentRunnerGUI._reset_zoom(mock_gui)
+
+        mock_gui.console_text.configure.assert_called_once_with(font=("Courier", 13))
+        mock_gui._log.assert_called_once_with("Zoom reset to default", "#3498db")
+
+    def test_zoom_in_max_limit(self):
+        """Test zoom in respects maximum font size limit."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        mock_gui.console_text.cget.return_value = ("Courier", 20)
+        mock_gui._log = MagicMock()
+
+        gui.ExperimentRunnerGUI._zoom_in(mock_gui)
+
+        # Should not increase beyond max size 20
+        mock_gui.console_text.configure.assert_called_once_with(font=("Courier", 20))
+        mock_gui._log.assert_called_once_with("Zoomed in to font size 20", "#3498db")
+
+    def test_zoom_out_min_limit(self):
+        """Test zoom out respects minimum font size limit."""
+        mock_gui = MagicMock()
+        mock_gui.console_text = MagicMock()
+        mock_gui.console_text.cget.return_value = ("Courier", 8)
+        mock_gui._log = MagicMock()
+
+        gui.ExperimentRunnerGUI._zoom_out(mock_gui)
+
+        # Should not decrease below min size 8
+        mock_gui.console_text.configure.assert_called_once_with(font=("Courier", 8))
+        mock_gui._log.assert_called_once_with("Zoomed out to font size 8", "#3498db")
+
+    @patch("tkinter.messagebox.showinfo")
+    def test_show_all_visualizations_no_results(self, mock_showinfo):
+        """Test show all visualizations when no results exist."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {}
+        mock_gui._log = MagicMock()
+        mock_gui._show_results_visualization = MagicMock()
+
+        gui.ExperimentRunnerGUI._show_all_visualizations(mock_gui)
+
+        mock_showinfo.assert_called_once_with(
+            "No Results", "No experiment results available for visualization."
+        )
+        mock_gui._show_results_visualization.assert_not_called()
+
+    @patch("tkinter.messagebox.showinfo")
+    def test_show_all_visualizations_with_results(self, mock_showinfo):
+        """Test show all visualizations when results exist."""
+        mock_gui = MagicMock()
+        mock_gui.experiment_results = {"test1": "data1", "test2": "data2"}
+        mock_gui._log = MagicMock()
+        mock_gui._show_results_visualization = MagicMock()
+
+        gui.ExperimentRunnerGUI._show_all_visualizations(mock_gui)
+
+        mock_gui._show_results_visualization.assert_called()
+        mock_gui._log.assert_called_once_with("Opened 2 visualizations", "#27ae60")
+
+    def test_refresh_ui_calls_all_refresh_methods(self):
+        """Test refresh UI calls all refresh methods."""
+        mock_gui = MagicMock()
+        mock_gui._reload_experiments = MagicMock()
+        mock_gui._refresh_hypothesis_display = MagicMock()
+        mock_gui._update_guardrail_dashboard = MagicMock()
+        mock_gui._log = MagicMock()
+
+        with patch("tkinter.messagebox.showinfo"):
+            gui.ExperimentRunnerGUI._refresh_ui(mock_gui)
+
+        mock_gui._reload_experiments.assert_called_once()
+        mock_gui._refresh_hypothesis_display.assert_called_once()
+        mock_gui._update_guardrail_dashboard.assert_called_once()
+        mock_gui._log.assert_called_once_with("UI refreshed successfully", "#27ae60")
+
+    @patch("tkinter.messagebox.showerror")
+    def test_refresh_ui_handles_errors(self, mock_showerror):
+        """Test refresh UI handles errors gracefully."""
+        mock_gui = MagicMock()
+        mock_gui._reload_experiments = MagicMock(side_effect=Exception("Test error"))
+        mock_gui._log = MagicMock()
+
+        with patch("tkinter.messagebox.showinfo"):
+            gui.ExperimentRunnerGUI._refresh_ui(mock_gui)
+
+        mock_gui._log.assert_called_with("Failed to refresh UI: Test error", "#e74c3c")
+        mock_showerror.assert_called_once()
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

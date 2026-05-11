@@ -2,17 +2,17 @@ name: APGI CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, develop, feature/*, fix/* ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
   schedule:
     # Run security scans daily at 2 AM UTC
     - cron: '0 2 * * *'
 
 env:
-  APGI_AUDIT_KEY: ${{ secrets.APGI_AUDIT_KEY || 'x' }}
+  APGI_AUDIT_KEY: ${{ secrets.APGI_AUDIT_KEY }}
   APGI_OPERATOR_ROLE: operator
-  APGI_CONFIG_SECRET_KEY: ${{ secrets.APGI_CONFIG_SECRET_KEY || 'x' }}
+  APGI_CONFIG_SECRET_KEY: ${{ secrets.APGI_CONFIG_SECRET_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------------

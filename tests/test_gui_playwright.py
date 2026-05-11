@@ -300,6 +300,7 @@ class TestGUIBasic:
                                 assert hasattr(app, "experiments")
                                 assert hasattr(app, "experiment_cards")
 
+    @pytest.mark.timeout(30)  # Add timeout to prevent hanging
     def test_gui_experiment_discovery(
         self, temp_research_dir: Path, monkeypatch: Any
     ) -> None:
@@ -313,43 +314,116 @@ class TestGUIBasic:
         except ImportError:
             pytest.skip("Required dependencies not installed")
 
-        # Mock the research directory and all CTk widgets
-        with patch.object(
-            Path, "glob", return_value=list(temp_research_dir.glob("run_*.py"))
+        # Create comprehensive mocks to prevent any GUI operations
+        mock_ctk = MagicMock()
+        mock_ctk.CTk = MagicMock()
+        mock_ctk.CTkFont = MagicMock(return_value=MagicMock())
+        mock_ctk.CTkFrame = MagicMock(return_value=MagicMock())
+        mock_ctk.CTkLabel = MagicMock(return_value=MagicMock())
+        mock_ctk.CTkButton = MagicMock(return_value=MagicMock())
+        mock_ctk.CTkTextbox = MagicMock(return_value=MagicMock())
+        mock_ctk.CTkOptionMenu = MagicMock(return_value=MagicMock())
+        mock_ctk.CTkProgressBar = MagicMock(return_value=MagicMock())
+        mock_ctk.set_appearance_mode = MagicMock()
+        mock_ctk.set_default_color_theme = MagicMock()
+        mock_ctk.winfo_screenwidth = MagicMock(return_value=1920)
+        mock_ctk.winfo_screenheight = MagicMock(return_value=1080)
+
+        # Mock the DropdownMenu patch target
+        mock_dropdown_menu = MagicMock()
+        mock_dropdown_menu._add_menu_commands = MagicMock()
+        mock_ctk.windows = MagicMock()
+        mock_ctk.windows.widgets = MagicMock()
+        mock_ctk.windows.widgets.core_widget_classes = MagicMock()
+        mock_ctk.windows.widgets.core_widget_classes.dropdown_menu = MagicMock()
+        mock_ctk.windows.widgets.core_widget_classes.dropdown_menu.DropdownMenu = (
+            mock_dropdown_menu
+        )
+
+        # Mock tkinter completely to prevent any GUI operations
+        mock_tkinter = MagicMock()
+        mock_tkinter.messagebox = MagicMock()
+
+        # Mock matplotlib to prevent plotting operations
+        mock_matplotlib = MagicMock()
+        mock_matplotlib.use = MagicMock()
+        mock_matplotlib.backends = MagicMock()
+        mock_matplotlib.backends.backend_tkagg = MagicMock()
+        mock_matplotlib.backends.backend_tkagg.FigureCanvasTkAgg = MagicMock()
+        mock_matplotlib.backends.backend_tkagg.NavigationToolbar2Tk = MagicMock()
+        mock_matplotlib.figure = MagicMock()
+        mock_matplotlib.figure.Figure = MagicMock(return_value=MagicMock())
+
+        # Mock hypothesis approval board
+        mock_approval_board = MagicMock()
+        mock_approval_board.ApprovalBoard = MagicMock()
+        mock_approval_board.Hypothesis = MagicMock()
+        mock_approval_board.HypothesisStatus = MagicMock()
+
+        # Mock apgi_security
+        mock_apgi_security = MagicMock()
+        mock_apgi_security.secure_popen = MagicMock()
+
+        # Mock numpy and other dependencies
+        mock_numpy = MagicMock()
+        mock_numpy.array = MagicMock(return_value=MagicMock())
+
+        # Create a comprehensive mock environment
+        with patch.dict(
+            "sys.modules",
+            {
+                "customtkinter": mock_ctk,
+                "tkinter": mock_tkinter,
+                "tkinter.messagebox": mock_tkinter.messagebox,
+                "matplotlib": mock_matplotlib,
+                "matplotlib.backends": mock_matplotlib.backends,
+                "matplotlib.backends.backend_tkagg": mock_matplotlib.backends.backend_tkagg,
+                "matplotlib.backends.backend_tkagg.FigureCanvasTkAgg": mock_matplotlib.backends.backend_tkagg.FigureCanvasTkAgg,
+                "matplotlib.backends.backend_tkagg.NavigationToolbar2Tk": mock_matplotlib.backends.backend_tkagg.NavigationToolbar2Tk,
+                "matplotlib.figure": mock_matplotlib.figure,
+                "hypothesis_approval_board": mock_approval_board,
+                "apgi_security": mock_apgi_security,
+                "numpy": mock_numpy,
+            },
         ):
-            with patch.object(Path, "resolve", return_value=temp_research_dir):
-                with patch("GUI_auto_improve_experiments.ctk.CTk", MagicMock()):
-                    with patch("GUI_auto_improve_experiments.ctk.CTkFont", MagicMock()):
+            # Remove cached module to force reimport with mocked dependencies
+            if "GUI_auto_improve_experiments" in sys.modules:
+                del sys.modules["GUI_auto_improve_experiments"]
+
+            # Mock the research directory and all CTk widgets
+            with patch.object(
+                Path, "glob", return_value=list(temp_research_dir.glob("run_*.py"))
+            ):
+                with patch.object(Path, "resolve", return_value=temp_research_dir):
+                    # Mock the file operations to prevent actual file system calls
+                    with patch(
+                        "GUI_auto_improve_experiments.Path.glob",
+                        return_value=list(temp_research_dir.glob("run_*.py")),
+                    ):
                         with patch(
-                            "GUI_auto_improve_experiments.ctk.CTkFrame", MagicMock()
+                            "GUI_auto_improve_experiments.Path.resolve",
+                            return_value=temp_research_dir,
                         ):
                             with patch(
-                                "GUI_auto_improve_experiments.ctk.CTkLabel", MagicMock()
+                                "GUI_auto_improve_experiments.Path.exists",
+                                return_value=True,
                             ):
                                 with patch(
-                                    "GUI_auto_improve_experiments.ctk.CTkButton",
-                                    MagicMock(),
+                                    "GUI_auto_improve_experiments.Path.is_dir",
+                                    return_value=True,
                                 ):
                                     with patch(
-                                        "GUI_auto_improve_experiments.ctk.CTkTextbox",
-                                        MagicMock(),
+                                        "GUI_auto_improve_experiments.Path.__truediv__",
+                                        return_value=temp_research_dir,
                                     ):
-                                        with patch(
-                                            "GUI_auto_improve_experiments.ctk.CTkOptionMenu",
-                                            MagicMock(),
-                                        ):
-                                            with patch(
-                                                "GUI_auto_improve_experiments.ctk.CTkProgressBar",
-                                                MagicMock(),
-                                            ):
-                                                app = ExperimentRunnerGUI()
-                                                # Check experiments were found
-                                                assert len(app.experiments) > 0
-                                                for name, _ in app.experiments:
-                                                    assert (
-                                                        "Visual Search" in name
-                                                        or "Stroop" in name
-                                                    )
+                                        app = ExperimentRunnerGUI()
+                                        # Check experiments were found
+                                        assert len(app.experiments) > 0
+                                        for name, _ in app.experiments:
+                                            assert (
+                                                "Visual Search" in name
+                                                or "Stroop" in name
+                                            )
 
 
 @pytest.mark.gui

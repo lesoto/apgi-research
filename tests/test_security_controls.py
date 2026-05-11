@@ -37,7 +37,7 @@ class TestAuditSecurity:
             if "APGI_AUDIT_KEY" in os.environ:
                 del os.environ["APGI_AUDIT_KEY"]
 
-            from apgi_audit import ImmutableAuditSink
+            from utils.apgi_audit import ImmutableAuditSink
 
             # Should raise RuntimeError when key is missing
             with pytest.raises(RuntimeError) as exc_info:
@@ -50,7 +50,7 @@ class TestAuditSecurity:
     def test_audit_key_minimum_entropy(self):
         """Test that audit key must have minimum entropy."""
         with patch.dict(os.environ, {"APGI_AUDIT_KEY": "short"}):
-            from apgi_audit import ImmutableAuditSink
+            from utils.apgi_audit import ImmutableAuditSink
 
             with pytest.raises(RuntimeError) as exc_info:
                 ImmutableAuditSink()
@@ -60,7 +60,7 @@ class TestAuditSecurity:
     @pytest.mark.security
     def test_audit_key_rejects_weak_patterns(self):
         """Test that weak key patterns are rejected."""
-        from apgi_audit import ImmutableAuditSink
+        from utils.apgi_audit import ImmutableAuditSink
 
         # Use longer keys that pass entropy check (32+ bytes) but contain weak patterns
         weak_patterns = [
@@ -82,7 +82,7 @@ class TestAuditSecurity:
         strong_key = "a" * 64  # 64 character key (sufficient entropy)
 
         with patch.dict(os.environ, {"APGI_AUDIT_KEY": strong_key}):
-            from apgi_audit import ImmutableAuditSink
+            from utils.apgi_audit import ImmutableAuditSink
 
             # Should not raise
             sink = ImmutableAuditSink()
@@ -100,7 +100,7 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_cli_entrypoint_requires_auth(self):
         """Test that CLI entry points require authorization."""
-        from apgi_authz import Permission
+        from utils.apgi_authz import Permission
         from apgi_cli import AuthorizationError, require_auth
 
         # Mock function that requires RUN_EXPERIMENT permission
@@ -116,12 +116,17 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_authz_denies_guest_for_run_experiment(self):
         """Test that guest role cannot run experiments."""
-        from apgi_authz import AuthorizationContext, Permission, Role, get_authz_manager
+        from utils.apgi_authz import (
+            AuthorizationContext,
+            Permission,
+            Role,
+            get_authz_manager,
+        )
 
         authz = get_authz_manager()
 
         # Register a guest user
-        guest = authz.register_operator(username="test_guest", role=Role.GUEST)
+        guest, _ = authz.register_operator(username="test_guest", role=Role.GUEST)
 
         # Create context for running experiment
         context = AuthorizationContext(
@@ -138,12 +143,19 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_authz_allows_operator_for_run_experiment(self):
         """Test that operator role can run experiments."""
-        from apgi_authz import AuthorizationContext, Permission, Role, get_authz_manager
+        from utils.apgi_authz import (
+            AuthorizationContext,
+            Permission,
+            Role,
+            get_authz_manager,
+        )
 
         authz = get_authz_manager()
 
         # Register an operator
-        operator = authz.register_operator(username="test_operator", role=Role.OPERATOR)
+        operator, _ = authz.register_operator(
+            username="test_operator", role=Role.OPERATOR
+        )
 
         # Create context for running experiment
         context = AuthorizationContext(
@@ -160,12 +172,17 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_authz_logs_denied_actions(self):
         """Test that denied actions are logged."""
-        from apgi_authz import AuthorizationContext, Permission, Role, get_authz_manager
+        from utils.apgi_authz import (
+            AuthorizationContext,
+            Permission,
+            Role,
+            get_authz_manager,
+        )
 
         authz = get_authz_manager()
 
         # Register guest user
-        guest = authz.register_operator(username="test_guest_logs", role=Role.GUEST)
+        guest, _ = authz.register_operator(username="test_guest_logs", role=Role.GUEST)
 
         context = AuthorizationContext(
             operator=guest,
@@ -196,7 +213,7 @@ class TestConfigSecurity:
     @pytest.mark.security
     def test_config_secret_key_required_for_validation(self):
         """Test that config validation requires secret key."""
-        from apgi_security import validate_config_checksum
+        from utils.apgi_security import validate_config_checksum
 
         config = {"setting": "value"}
         expected_hash = "some_hash"
@@ -223,7 +240,7 @@ class TestProfilerSecurity:
     @pytest.mark.security
     def test_profiler_disabled_by_default(self):
         """Test that profiling is disabled by default."""
-        from apgi_profiler import _is_profiling_enabled
+        from utils.apgi_profiler import _is_profiling_enabled
 
         # Ensure env var is not set
         with patch.dict(os.environ, {}, clear=True):
@@ -236,7 +253,7 @@ class TestProfilerSecurity:
     @pytest.mark.parametrize("value", ["1", "true", "yes", "on", "TRUE", "True"])
     def test_profiler_enabled_with_valid_env_var(self, value):
         """Test that profiling can be enabled via environment variable."""
-        from apgi_profiler import _is_profiling_enabled
+        from utils.apgi_profiler import _is_profiling_enabled
 
         with patch.dict(os.environ, {"APGI_ENABLE_PROFILING": value}):
             assert _is_profiling_enabled() is True
@@ -244,7 +261,7 @@ class TestProfilerSecurity:
     @pytest.mark.security
     def test_profiler_decorator_no_op_when_disabled(self):
         """Test that profiler decorator is no-op when disabled."""
-        from apgi_profiler import profile_hot_path
+        from utils.apgi_profiler import profile_hot_path
 
         call_count = 0
 
@@ -284,7 +301,7 @@ class TestSubprocessSecurity:
     @pytest.mark.security
     def test_secure_popen_validates_command(self):
         """Test that secure_popen validates commands."""
-        from apgi_security import SecureSubprocessError, secure_popen
+        from utils.apgi_security import SecureSubprocessError, secure_popen
 
         with pytest.raises(SecureSubprocessError):
             secure_popen(["rm", "-rf", "/"])
@@ -292,11 +309,11 @@ class TestSubprocessSecurity:
     @pytest.mark.security
     def test_secure_popen_allows_whitelisted_commands(self):
         """Test that whitelisted commands are allowed."""
-        import apgi_security
-        from apgi_security import SecureSubprocessError, secure_popen
+        import utils.apgi_security
+        from utils.apgi_security import SecureSubprocessError, secure_popen
 
         # Clear the global singleton to force re-creation with new env
-        apgi_security._default_subprocess_wrapper = None
+        utils.apgi_security._default_subprocess_wrapper = None
 
         # Should not raise for allowed commands
         # Using 'echo' which is typically allowed in tests
@@ -332,7 +349,7 @@ class TestPickleSecurity:
         # Try to load pickle data without explicit opt-in
         import pickle
 
-        from apgi_security import PickleSecurityError, secure_loads
+        from utils.apgi_security import PickleSecurityError, secure_loads
 
         pickled = pickle.dumps({"test": "data"})
 
@@ -344,7 +361,7 @@ class TestPickleSecurity:
         """Test that secure_loads accepts JSON data."""
         import json
 
-        from apgi_security import secure_loads
+        from utils.apgi_security import secure_loads
 
         data = {"test": "data", "number": 42}
         json_bytes = json.dumps(data).encode()
@@ -428,19 +445,23 @@ class TestSecurityIntegration:
             },
         ):
             # 2. Import security components
-            from apgi_audit import get_audit_sink
-            from apgi_authz import AuthorizationContext, Permission, get_authz_manager
-            from apgi_security import secure_loads_json
+            from utils.apgi_audit import get_audit_sink
+            from utils.apgi_authz import (
+                AuthorizationContext,
+                Permission,
+                get_authz_manager,
+            )
+            from utils.apgi_security import secure_loads_json
 
             # 3. Verify audit sink works
             sink = get_audit_sink()
             assert sink is not None
 
             # 4. Verify authz works
-            from apgi_authz import Role
+            from utils.apgi_authz import Role
 
             authz = get_authz_manager()
-            operator = authz.register_operator(
+            operator, _ = authz.register_operator(
                 username="integration_test", role=Role.OPERATOR
             )
 

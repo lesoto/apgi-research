@@ -20,10 +20,12 @@ from apgi_security_adapters import (
     SecurityMetrics,
     SerializationSecurityAdapter,
     SubprocessSecurityAdapter,
-    _security_factory,
     get_security_factory,
     set_security_factory,
 )
+
+# Store original factory for cleanup
+_security_factory = get_security_factory()
 
 
 class TestSecurityLevel:
@@ -555,4 +557,5 @@ class TestGlobalFunctions:
         assert get_security_factory() is new_factory
 
         # Reset to original
-        set_security_factory(_security_factory)
+        original_factory = get_security_factory()
+        set_security_factory(original_factory)

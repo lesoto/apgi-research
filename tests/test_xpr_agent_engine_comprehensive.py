@@ -115,22 +115,46 @@ class TestSkillResult:
             confidence=0.9,
             metadata={"version": "1.0"},
         )
-        assert result.success is True
-        assert result.skill_type == "test_skill"
-        assert result.result == {"key": "value"}
-        assert result.error is None
-        assert result.execution_time == 1.5
-        assert result.confidence == 0.9
-        assert result.metadata == {"version": "1.0"}
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.skill_type != "test_skill":
+            raise AssertionError(
+                f"Expected skill_type 'test_skill', got: {result.skill_type}"
+            )
+        if result.result != {"key": "value"}:
+            raise AssertionError(
+                f"Expected result {{'key': 'value'}}, got: {result.result}"
+            )
+        if result.error is not None:
+            raise AssertionError(f"Expected error to be None, got: {result.error}")
+        if result.execution_time != 1.5:
+            raise AssertionError(
+                f"Expected execution_time 1.5, got: {result.execution_time}"
+            )
+        if result.confidence != 0.9:
+            raise AssertionError(f"Expected confidence 0.9, got: {result.confidence}")
+        if result.metadata != {"version": "1.0"}:
+            raise AssertionError(
+                f"Expected metadata {{'version': '1.0'}}, got: {result.metadata}"
+            )
 
     def test_skill_result_defaults(self) -> None:
         """Test SkillResult with default values."""
         result = SkillResult(success=True, skill_type="test")
-        assert result.result is None
-        assert result.error is None
-        assert result.execution_time == 0.0
-        assert result.confidence == 0.0
-        assert result.metadata is None
+        if result.result is not None:
+            raise AssertionError(f"Expected result to be None, got: {result.result}")
+        if result.error is not None:
+            raise AssertionError(f"Expected error to be None, got: {result.error}")
+        if result.execution_time != 0.0:
+            raise AssertionError(
+                f"Expected execution_time 0.0, got: {result.execution_time}"
+            )
+        if result.confidence != 0.0:
+            raise AssertionError(f"Expected confidence 0.0, got: {result.confidence}")
+        if result.metadata is not None:
+            raise AssertionError(
+                f"Expected metadata to be None, got: {result.metadata}"
+            )
 
     def test_skill_result_failure(self) -> None:
         """Test SkillResult for failed execution."""
@@ -140,8 +164,12 @@ class TestSkillResult:
             error="Something went wrong",
             confidence=0.0,
         )
-        assert result.success is False
-        assert result.error == "Something went wrong"
+        if result.success:
+            raise AssertionError("Result should be unsuccessful")
+        if result.error != "Something went wrong":
+            raise AssertionError(
+                f"Expected error 'Something went wrong', got: {result.error}"
+            )
 
 
 class TestExecutionReport:
@@ -156,9 +184,16 @@ class TestExecutionReport:
             result={"metric": 0.95},
             confidence=0.85,
         )
-        assert report.experiment_name == "exp_001"
-        assert report.success is True
-        assert report.execution_time == 2.5
+        if report.experiment_name != "exp_001":
+            raise AssertionError(
+                f"Expected experiment_name 'exp_001', got: {report.experiment_name}"
+            )
+        if not report.success:
+            raise AssertionError("Expected success to be True")
+        if report.execution_time != 2.5:
+            raise AssertionError(
+                f"Expected execution_time 2.5, got: {report.execution_time}"
+            )
 
     def test_execution_report_post_init(self) -> None:
         """Test __post_init__ initializes metadata."""
@@ -167,7 +202,10 @@ class TestExecutionReport:
             success=True,
             execution_time=1.0,
         )
-        assert report.metadata == {}
+        if report.metadata != {}:
+            raise AssertionError(
+                f"Expected empty metadata dict, got: {report.metadata}"
+            )
 
     def test_execution_report_with_metadata(self) -> None:
         """Test ExecutionReport with custom metadata."""
@@ -178,7 +216,10 @@ class TestExecutionReport:
             metadata={"git_commit": "abc123", "timestamp": "2024-01-01"},
         )
         if report.metadata:
-            assert report.metadata["git_commit"] == "abc123"
+            if report.metadata["git_commit"] != "abc123":
+                raise AssertionError(
+                    f"Expected git_commit 'abc123', got: {report.metadata['git_commit']}"
+                )
 
 
 # =============================================================================
@@ -191,23 +232,35 @@ class TestXPRAgentEngine:
 
     def test_engine_initialization(self, engine: XPRAgentEngine) -> None:
         """Test engine initializes with empty state."""
-        assert engine.skills == {}
-        assert engine.execution_history == []
-        assert engine.current_plan is None
+        if engine.skills != {}:
+            raise AssertionError(f"Expected empty skills dict, got: {engine.skills}")
+        if engine.execution_history != []:
+            raise AssertionError(
+                f"Expected empty execution_history, got: {engine.execution_history}"
+            )
+        if engine.current_plan is not None:
+            raise AssertionError(
+                f"Expected current_plan to be None, got: {engine.current_plan}"
+            )
 
     def test_register_skill(
         self, engine: XPRAgentEngine, sample_skill_func: Callable[[int], int]
     ) -> None:
         """Test registering a skill."""
         engine.register_skill("double", sample_skill_func)
-        assert "double" in engine.skills
-        assert engine.skills["double"] == sample_skill_func
+        if "double" not in engine.skills:
+            raise AssertionError("Expected 'double' in engine.skills")
+        if engine.skills["double"] != sample_skill_func:
+            raise AssertionError(
+                "Expected engine.skills['double'] to equal sample_skill_func"
+            )
 
     def test_register_multiple_skills(self, engine: XPRAgentEngine) -> None:
         """Test registering multiple skills."""
         engine.register_skill("skill1", lambda x: x)
         engine.register_skill("skill2", lambda x: x + 1)
-        assert len(engine.skills) == 2
+        if len(engine.skills) != 2:
+            raise AssertionError(f"Expected 2 skills, got: {len(engine.skills)}")
 
     def test_execute_skill_success(
         self, engine: XPRAgentEngine, sample_skill_func: Callable[[int], int]
@@ -216,19 +269,31 @@ class TestXPRAgentEngine:
         engine.register_skill("double", sample_skill_func)
         result = engine.execute_skill("double", 5)
 
-        assert result.success is True
-        assert result.skill_type == "double"
-        assert result.result == 10
-        assert result.error is None
-        assert result.confidence == 0.8
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.skill_type != "double":
+            raise AssertionError(
+                f"Expected skill_type 'double', got: {result.skill_type}"
+            )
+        if result.result != 10:
+            raise AssertionError(f"Expected result 10, got: {result.result}")
+        if result.error is not None:
+            raise AssertionError(f"Expected error to be None, got: {result.error}")
+        if result.confidence != 0.8:
+            raise AssertionError(f"Expected confidence 0.8, got: {result.confidence}")
 
     def test_execute_skill_not_found(self, engine: XPRAgentEngine) -> None:
         """Test executing a non-existent skill."""
         result = engine.execute_skill("nonexistent")
 
-        assert result.success is False
-        assert result.error == "Skill 'nonexistent' not found"
-        assert result.confidence == 0.0
+        if result.success:
+            raise AssertionError("Result should be unsuccessful")
+        if result.error != "Skill 'nonexistent' not found":
+            raise AssertionError(
+                f"Expected error 'Skill 'nonexistent' not found', got: {result.error}"
+            )
+        if result.confidence != 0.0:
+            raise AssertionError(f"Expected confidence 0.0, got: {result.confidence}")
 
     def test_execute_skill_failure(
         self, engine: XPRAgentEngine, sample_failing_skill: Callable[[int], int]
@@ -237,9 +302,14 @@ class TestXPRAgentEngine:
         engine.register_skill("failing", sample_failing_skill)
         result = engine.execute_skill("failing", 5)
 
-        assert result.success is False
-        assert result.error is not None and "Skill failed" in result.error
-        assert result.confidence == 0.0
+        if result.success:
+            raise AssertionError("Result should be unsuccessful")
+        if result.error is None or "Skill failed" not in result.error:
+            raise AssertionError(
+                f"Expected error with 'Skill failed', got: {result.error}"
+            )
+        if result.confidence != 0.0:
+            raise AssertionError(f"Expected confidence 0.0, got: {result.confidence}")
 
     def test_execute_skill_with_kwargs(self, engine: XPRAgentEngine) -> None:
         """Test executing skill with keyword arguments."""
@@ -250,16 +320,27 @@ class TestXPRAgentEngine:
         engine.register_skill("multiply", skill_with_kwargs)
         result = engine.execute_skill("multiply", 5, multiplier=3)
 
-        assert result.success is True
-        assert result.result == 15
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.result != 15:
+            raise AssertionError(f"Expected result 15, got: {result.result}")
 
     def test_get_performance_summary_empty(self, engine: XPRAgentEngine) -> None:
         """Test performance summary with no history."""
         summary = engine.get_performance_summary()
 
-        assert summary["total_experiments"] == 0
-        assert summary["success_rate"] == 0.0
-        assert summary["avg_execution_time"] == 0.0
+        if summary["total_experiments"] != 0:
+            raise AssertionError(
+                f"Expected total_experiments 0, got: {summary['total_experiments']}"
+            )
+        if summary["success_rate"] != 0.0:
+            raise AssertionError(
+                f"Expected success_rate 0.0, got: {summary['success_rate']}"
+            )
+        if summary["avg_execution_time"] != 0.0:
+            raise AssertionError(
+                f"Expected avg_execution_time 0.0, got: {summary['avg_execution_time']}"
+            )
 
     def test_get_performance_summary_with_data(
         self, engine: XPRAgentEngine, sample_execution_report: ExecutionReport
@@ -269,9 +350,18 @@ class TestXPRAgentEngine:
 
         summary = engine.get_performance_summary()
 
-        assert summary["total_experiments"] == 1
-        assert summary["success_rate"] == 1.0
-        assert summary["avg_execution_time"] == 1.5
+        if summary["total_experiments"] != 1:
+            raise AssertionError(
+                f"Expected total_experiments 1, got: {summary['total_experiments']}"
+            )
+        if summary["success_rate"] != 1.0:
+            raise AssertionError(
+                f"Expected success_rate 1.0, got: {summary['success_rate']}"
+            )
+        if summary["avg_execution_time"] != 1.5:
+            raise AssertionError(
+                f"Expected avg_execution_time 1.5, got: {summary['avg_execution_time']}"
+            )
 
     def test_add_execution_report(self, engine: XPRAgentEngine) -> None:
         """Test adding execution report to history."""
@@ -282,8 +372,14 @@ class TestXPRAgentEngine:
         )
         engine.add_execution_report(report)
 
-        assert len(engine.execution_history) == 1
-        assert engine.execution_history[0].experiment_name == "test_exp"
+        if len(engine.execution_history) != 1:
+            raise AssertionError(
+                f"Expected 1 execution in history, got: {len(engine.execution_history)}"
+            )
+        if engine.execution_history[0].experiment_name != "test_exp":
+            raise AssertionError(
+                f"Expected experiment_name 'test_exp', got: {engine.execution_history[0].experiment_name}"
+            )
 
     def test_add_multiple_execution_reports(self, engine: XPRAgentEngine) -> None:
         """Test adding multiple execution reports."""
@@ -295,50 +391,70 @@ class TestXPRAgentEngine:
             )
             engine.add_execution_report(report)
 
-        assert len(engine.execution_history) == 5
+        if len(engine.execution_history) != 5:
+            raise AssertionError(
+                f"Expected 5 executions in history, got: {len(engine.execution_history)}"
+            )
         summary = engine.get_performance_summary()
-        assert summary["success_rate"] == 0.6  # 3 out of 5 successful
+        if summary["success_rate"] != 0.6:
+            raise AssertionError(
+                f"Expected success_rate 0.6, got: {summary['success_rate']}"
+            )  # 3 out of 5 successful
 
     def test_set_and_get_current_plan(self, engine: XPRAgentEngine) -> None:
         """Test setting and getting current plan."""
         plan = {"hypothesis": "Test hypothesis", "steps": ["step1", "step2"]}
         engine.set_current_plan(plan)
 
-        assert engine.get_current_plan() == plan
+        if engine.get_current_plan() != plan:
+            raise AssertionError("Expected current_plan to equal plan")
 
     def test_get_current_plan_none(self, engine: XPRAgentEngine) -> None:
         """Test getting plan when none is set."""
-        assert engine.get_current_plan() is None
+        if engine.get_current_plan() is not None:
+            raise AssertionError("Expected current_plan to be None")
 
     def test_plan_experiment_with_lr(self, engine: XPRAgentEngine) -> None:
         """Test experiment planning with learning rate parameter."""
         current_params = {"lr": 0.01, "epochs": 10}
         result = engine.plan_experiment("optimize_learning", current_params)
 
-        assert result.success is True
-        assert "modifications" in str(result.result)
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if "modifications" not in str(result.result):
+            raise AssertionError("Expected 'modifications' in result.result")
         # lr gets multiplied by 0.9 (9% decrease)
         if isinstance(result.result, dict):
-            assert result.result["modifications"]["lr"] == pytest.approx(
-                0.009, rel=1e-3
-            )
+            if (
+                not pytest.approx(result.result["modifications"]["lr"], rel=1e-3)
+                == 0.009
+            ):
+                raise AssertionError(
+                    f"Expected lr approximately 0.009, got: {result.result['modifications']['lr']}"
+                )
 
     def test_plan_experiment_with_epochs(self, engine: XPRAgentEngine) -> None:
         """Test experiment planning with epochs parameter."""
         current_params = {"epochs": 100}
         result = engine.plan_experiment("optimize_training", current_params)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["modifications"]["epochs"] == 110  # 100 * 1.1
+            if result.result["modifications"]["epochs"] != 110:
+                raise AssertionError(
+                    f"Expected epochs 110, got: {result.result['modifications']['epochs']}"
+                )  # 100 * 1.1
 
     def test_plan_experiment_empty_params(self, engine: XPRAgentEngine) -> None:
         """Test experiment planning with empty parameters."""
         result = engine.plan_experiment("test_task", {})
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["modifications"] == {}
+            if result.result["modifications"] != {}:
+                raise AssertionError("Expected empty modifications dict")
 
 
 # =============================================================================
@@ -353,28 +469,40 @@ class TestLLMIntegration:
         self, llm_integration: LLMIntegration
     ) -> None:
         """Test LLMIntegration initialization."""
-        assert llm_integration.preferred_provider == "openai"
-        assert llm_integration._initialized == {}
+        if llm_integration.preferred_provider != "openai":
+            raise AssertionError(
+                f"Expected preferred_provider 'openai', got: {llm_integration.preferred_provider}"
+            )
+        if llm_integration._initialized != {}:
+            raise AssertionError(
+                f"Expected empty _initialized dict, got: {llm_integration._initialized}"
+            )
 
     def test_llm_integration_custom_provider(self) -> None:
         """Test LLMIntegration with custom provider."""
         integration = LLMIntegration(preferred_provider="local")
-        assert integration.preferred_provider == "local"
+        if integration.preferred_provider != "local":
+            raise AssertionError(
+                f"Expected preferred_provider 'local', got: {integration.preferred_provider}"
+            )
 
     def test_get_provider_config_existing(
         self, llm_integration: LLMIntegration
     ) -> None:
         """Test getting config for existing provider."""
         config = llm_integration._get_provider_config("openai")
-        assert config is not None
-        assert "model" in config
+        if config is None:
+            raise AssertionError("Expected config to not be None")
+        if "model" not in config:
+            raise AssertionError("Expected 'model' in config")
 
     def test_get_provider_config_nonexistent(
         self, llm_integration: LLMIntegration
     ) -> None:
         """Test getting config for non-existent provider."""
         config = llm_integration._get_provider_config("nonexistent")
-        assert config == {}
+        if config != {}:
+            raise AssertionError(f"Expected empty config dict, got: {config}")
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test_key"})
     def test_initialize_client_openai_success(
@@ -382,8 +510,10 @@ class TestLLMIntegration:
     ) -> None:
         """Test initializing OpenAI client with API key."""
         result = llm_integration._initialize_client("openai")
-        assert result is True
-        assert llm_integration._initialized.get("openai") is True
+        if result is not True:
+            raise AssertionError("Expected result to be True")
+        if not llm_integration._initialized.get("openai"):
+            raise AssertionError("Expected openai to be initialized")
 
     def test_initialize_client_openai_no_key(
         self, llm_integration: LLMIntegration
@@ -392,7 +522,8 @@ class TestLLMIntegration:
         # Ensure no API key is set
         with patch.dict(os.environ, {}, clear=True):
             result = llm_integration._initialize_client("openai")
-            assert result is False
+            if result:
+                raise AssertionError("Expected result to be False")
 
     @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test_key"})
     def test_initialize_client_anthropic_raises_valueerror(
@@ -405,7 +536,8 @@ class TestLLMIntegration:
     def test_initialize_client_local(self, llm_integration: LLMIntegration) -> None:
         """Test initializing local provider."""
         result = llm_integration._initialize_client("local")
-        assert result is True
+        if result is not True:
+            raise AssertionError("Expected result to be True")
 
     def test_initialize_client_unsupported_raises_valueerror(
         self, llm_integration: LLMIntegration
@@ -423,7 +555,8 @@ class TestLLMIntegration:
         ) as mock_init:
             result = llm_integration.get_client("openai")
             mock_init.assert_called_once_with("openai")
-            assert result is True
+            if result is not True:
+                raise AssertionError("Expected result to be True")
 
     def test_get_client_already_initialized(
         self, llm_integration: LLMIntegration
@@ -431,7 +564,8 @@ class TestLLMIntegration:
         """Test get_client returns True when already initialized."""
         llm_integration._initialized["openai"] = True
         result = llm_integration.get_client("openai")
-        assert result is True
+        if result is not True:
+            raise AssertionError("Expected result to be True")
 
     def test_generate_text_provider_not_initialized(
         self, llm_integration: LLMIntegration
@@ -439,14 +573,16 @@ class TestLLMIntegration:
         """Test generate_text when provider not initialized."""
         with patch.object(llm_integration, "_initialize_client", return_value=False):
             result = llm_integration.generate_text("test prompt", provider="openai")
-            assert result == ""
+            if result != "":
+                raise AssertionError("Expected result to be empty string")
 
     def test_generate_text_no_litellm(self, llm_integration: LLMIntegration) -> None:
         """Test generate_text when litellm is not available."""
         with patch("xpr_agent_engine.litellm", None):
             with patch.object(llm_integration, "_initialized", {"openai": True}):
                 result = llm_integration.generate_text("test", provider="openai")
-                assert result == ""
+                if result != "":
+                    raise AssertionError("Expected result to be empty string")
 
 
 # =============================================================================
@@ -460,14 +596,20 @@ class TestEnhancedXPRAgentEngine:
     def test_enhanced_engine_initialization(self) -> None:
         """Test EnhancedXPRAgentEngine initialization."""
         engine = EnhancedXPRAgentEngine()
-        assert engine.llm_integration is not None
-        assert isinstance(engine.llm_integration, LLMIntegration)
+        if engine.llm_integration is None:
+            raise AssertionError("Expected llm_integration to not be None")
+        if not isinstance(engine.llm_integration, LLMIntegration):
+            raise AssertionError(
+                "Expected llm_integration to be LLMIntegration instance"
+            )
 
     def test_enhanced_engine_skills_registered(self) -> None:
         """Test that enhanced skills are registered on init."""
         engine = EnhancedXPRAgentEngine()
-        assert "plan_experiment" in engine.skills
-        assert "llm_plan_generation" in engine.skills
+        if "plan_experiment" not in engine.skills:
+            raise AssertionError("Expected 'plan_experiment' in engine.skills")
+        if "llm_plan_generation" not in engine.skills:
+            raise AssertionError("Expected 'llm_plan_generation' in engine.skills")
 
 
 # =============================================================================
@@ -482,11 +624,24 @@ class TestXPRAgentEngineEnhanced:
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test XPRAgentEngineEnhanced initialization."""
-        assert enhanced_engine.llm_integration is not None
-        assert enhanced_engine.llm_providers == {}
-        assert enhanced_engine.performance_history == {}
-        assert enhanced_engine.skill_dependencies == {}
-        assert enhanced_engine.optimization_strategies == {}
+        if enhanced_engine.llm_integration is None:
+            raise AssertionError("Expected llm_integration to not be None")
+        if enhanced_engine.llm_providers != {}:
+            raise AssertionError(
+                f"Expected empty llm_providers dict, got: {enhanced_engine.llm_providers}"
+            )
+        if enhanced_engine.performance_history != {}:
+            raise AssertionError(
+                f"Expected empty performance_history dict, got: {enhanced_engine.performance_history}"
+            )
+        if enhanced_engine.skill_dependencies != {}:
+            raise AssertionError(
+                f"Expected empty skill_dependencies dict, got: {enhanced_engine.skill_dependencies}"
+            )
+        if enhanced_engine.optimization_strategies != {}:
+            raise AssertionError(
+                f"Expected empty optimization_strategies dict, got: {enhanced_engine.optimization_strategies}"
+            )
 
     def test_register_llm_provider(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -495,8 +650,10 @@ class TestXPRAgentEngineEnhanced:
         config = {"model": "gpt-4", "api_key": "test"}
         enhanced_engine.register_llm_provider("custom", config)
 
-        assert "custom" in enhanced_engine.llm_providers
-        assert enhanced_engine.llm_providers["custom"] == config
+        if "custom" not in enhanced_engine.llm_providers:
+            raise AssertionError("Expected 'custom' in llm_providers")
+        if enhanced_engine.llm_providers["custom"] != config:
+            raise AssertionError("Expected llm_providers['custom'] to equal config")
 
     def test_set_optimization_strategy(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -505,8 +662,12 @@ class TestXPRAgentEngineEnhanced:
         strategy = {"learning_rate": 0.01, "batch_size": 32}
         enhanced_engine.set_optimization_strategy("training", strategy)
 
-        assert "training" in enhanced_engine.optimization_strategies
-        assert enhanced_engine.optimization_strategies["training"] == strategy
+        if "training" not in enhanced_engine.optimization_strategies:
+            raise AssertionError("Expected 'training' in optimization_strategies")
+        if enhanced_engine.optimization_strategies["training"] != strategy:
+            raise AssertionError(
+                "Expected optimization_strategies['training'] to equal strategy"
+            )
 
     def test_analyze_performance_trend_no_history(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -514,8 +675,12 @@ class TestXPRAgentEngineEnhanced:
         """Test analyzing trend with no history."""
         result = enhanced_engine.analyze_performance_trend("unknown_type")
 
-        assert result["trend"] == 0.0
-        assert result["volatility"] == 0.0
+        if result["trend"] != 0.0:
+            raise AssertionError(f"Expected trend 0.0, got: {result['trend']}")
+        if result["volatility"] != 0.0:
+            raise AssertionError(
+                f"Expected volatility 0.0, got: {result['volatility']}"
+            )
 
     def test_analyze_performance_trend_with_history(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -524,8 +689,14 @@ class TestXPRAgentEngineEnhanced:
         enhanced_engine.performance_history["test_type"] = [0.1, 0.2, 0.3, 0.4, 0.5]
         result = enhanced_engine.analyze_performance_trend("test_type", window_size=3)
 
-        assert result["trend"] > 0  # Upward trend
-        assert result["volatility"] >= 0
+        if result["trend"] <= 0:
+            raise AssertionError(
+                f"Expected trend > 0, got: {result['trend']}"
+            )  # Upward trend
+        if result["volatility"] < 0:
+            raise AssertionError(
+                f"Expected volatility >= 0, got: {result['volatility']}"
+            )
 
     def test_analyze_performance_trend_with_window_larger_than_data(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -534,7 +705,8 @@ class TestXPRAgentEngineEnhanced:
         enhanced_engine.performance_history["test"] = [0.5, 0.6]
         result = enhanced_engine.analyze_performance_trend("test", window_size=10)
 
-        assert result["trend"] == 0.55  # Average of [0.5, 0.6]
+        if result["trend"] != 0.55:  # Average of [0.5, 0.6]
+            raise AssertionError(f"Expected trend 0.55, got: {result['trend']}")
 
     def test_xpr_plan_experiment_success(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -543,10 +715,16 @@ class TestXPRAgentEngineEnhanced:
         current_params = {"lr": 0.01, "epochs": 100}
         result = enhanced_engine.xpr_plan_experiment("optimize", current_params)
 
-        assert isinstance(result, XPRSkillResult)
-        assert result.success is True
-        assert result.skill_type == XPRSkillType.PLAN_GENERATION.value
-        assert "modifications" in result.result
+        if not isinstance(result, XPRSkillResult):
+            raise AssertionError("Result should be XPRSkillResult instance")
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.skill_type != XPRSkillType.PLAN_GENERATION.value:
+            raise AssertionError(
+                f"Expected skill_type 'plan_generation', got: {result.skill_type}"
+            )
+        if "modifications" not in result.result:
+            raise AssertionError("Expected 'modifications' in result.result")
 
     def test_xpr_plan_experiment_with_performance_history(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -556,9 +734,11 @@ class TestXPRAgentEngineEnhanced:
         current_params = {"lr": 0.01}
         result = enhanced_engine.xpr_plan_experiment("optimize", current_params)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if result.metadata:
-            assert result.metadata.get("adaptive") is True
+            if not result.metadata.get("adaptive"):
+                raise AssertionError("Expected metadata.get('adaptive') to be True")
 
     def test_xpr_plan_experiment_no_improving_trend(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -568,10 +748,12 @@ class TestXPRAgentEngineEnhanced:
         current_params = {"epochs": 100}
         result = enhanced_engine.xpr_plan_experiment("optimize", current_params)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
             modified_epochs = result.result["modifications"]["epochs"]
-            assert isinstance(modified_epochs, (int, float))
+            if not isinstance(modified_epochs, (int, float)):
+                raise AssertionError("Expected modified_epochs to be int or float")
 
     def test_xpr_plan_experiment_exception_handling(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -585,9 +767,14 @@ class TestXPRAgentEngineEnhanced:
         ):
             result = enhanced_engine.xpr_plan_experiment("test", {})
 
-            assert isinstance(result, XPRSkillResult)
-            assert result.success is False
-            assert result.error is not None and "Test error" in result.error
+            if not isinstance(result, XPRSkillResult):
+                raise AssertionError("Result should be XPRSkillResult instance")
+            if result.success:
+                raise AssertionError("Result should be unsuccessful")
+            if result.error is None or "not found" not in result.error:
+                raise AssertionError(
+                    f"Expected error with 'not found', got: {result.error}"
+                )
 
     def test_extract_missing_module_success(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -596,7 +783,8 @@ class TestXPRAgentEngineEnhanced:
         error_msg = "No module named 'numpy'"
         result = enhanced_engine._extract_missing_module(error_msg)
 
-        assert result == "numpy"
+        if result != "numpy":
+            raise AssertionError(f"Expected result 'numpy', got: {result}")
 
     def test_extract_missing_module_no_match(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -605,7 +793,8 @@ class TestXPRAgentEngineEnhanced:
         error_msg = "Some other error message"
         result = enhanced_engine._extract_missing_module(error_msg)
 
-        assert result is None
+        if result is not None:
+            raise AssertionError("Expected result to be None")
 
     def test_xpr_job_debug_import_error(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -618,10 +807,15 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_job_debug(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["error_type"] == "import_error"
-            assert "missing_module" in result.result["dependencies"]
+            if result.result["error_type"] != "import_error":
+                raise AssertionError(
+                    f"Expected error_type 'import_error', got: {result.result['error_type']}"
+                )
+            if "missing_module" not in result.result["dependencies"]:
+                raise AssertionError("Expected 'missing_module' in dependencies")
 
     def test_xpr_job_debug_module_not_found(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -634,9 +828,13 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_job_debug(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["error_type"] == "module_not_found"
+            if result.result["error_type"] != "module_not_found":
+                raise AssertionError(
+                    f"Expected error_type 'module_not_found', got: {result.result['error_type']}"
+                )
 
     def test_xpr_job_debug_permission_error(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -649,9 +847,13 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_job_debug(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["error_type"] == "permission_error"
+            if result.result["error_type"] != "permission_error":
+                raise AssertionError(
+                    f"Expected error_type 'permission_error', got: {result.result['error_type']}"
+                )
 
     def test_xpr_job_debug_timeout(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -663,9 +865,13 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_job_debug(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["error_type"] == "timeout_error"
+            if result.result["error_type"] != "timeout_error":
+                raise AssertionError(
+                    f"Expected error_type 'timeout_error', got: {result.result['error_type']}"
+                )
 
     def test_xpr_job_debug_generic_error(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -677,9 +883,13 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_job_debug(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["error_type"] == "generic_error"
+            if result.result["error_type"] != "generic_error":
+                raise AssertionError(
+                    f"Expected error_type 'generic_error', got: {result.result['error_type']}"
+                )
 
     def test_xpr_job_debug_exception_handling(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -693,8 +903,10 @@ class TestXPRAgentEngineEnhanced:
 
         result = enhanced_engine.xpr_job_debug(BadDict())
 
-        assert result.success is False
-        assert result.error is not None
+        if result.success:
+            raise AssertionError("Result should be unsuccessful")
+        if result.error is None:
+            raise AssertionError("Expected error to not be None")
 
     def test_xpr_issue_fix_syntax_error(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -706,10 +918,15 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_issue_fix(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["fix_type"] == "syntax_fix"
-            assert "42" in result.result["generated_code"]
+            if result.result["fix_type"] != "syntax_fix":
+                raise AssertionError(
+                    f"Expected fix_type 'syntax_fix', got: {result.result['fix_type']}"
+                )
+            if "42" not in result.result["generated_code"]:
+                raise AssertionError("Expected '42' in generated_code")
 
     def test_xpr_issue_fix_file_not_found(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -721,9 +938,14 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_issue_fix(experiment_data)
 
-        assert result.success is True
-        assert result.result["fix_type"] == "file_creation_fix"
-        assert "missing.txt" in result.result["generated_code"]
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.result["fix_type"] != "file_creation_fix":
+            raise AssertionError(
+                f"Expected fix_type 'file_creation_fix', got: {result.result['fix_type']}"
+            )
+        if "missing.txt" not in result.result["generated_code"]:
+            raise AssertionError("Expected 'missing.txt' in generated_code")
 
     def test_xpr_issue_fix_import_error(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -735,10 +957,15 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_issue_fix(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert result.result["fix_type"] == "import_fix"
-            assert "import requests" in result.result["generated_code"]
+            if result.result["fix_type"] != "import_fix":
+                raise AssertionError(
+                    f"Expected fix_type 'import_fix', got: {result.result['fix_type']}"
+                )
+            if "import requests" not in result.result["generated_code"]:
+                raise AssertionError("Expected 'import requests' in generated_code")
 
     def test_xpr_issue_fix_exception_handling(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -752,8 +979,10 @@ class TestXPRAgentEngineEnhanced:
 
         result = enhanced_engine.xpr_issue_fix(BadDict())
 
-        assert result.success is False
-        assert result.error is not None
+        if result.success:
+            raise AssertionError("Result should be unsuccessful")
+        if result.error is None:
+            raise AssertionError("Expected error to not be None")
 
     def test_xpr_issue_report_success(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -767,7 +996,8 @@ class TestXPRAgentEngineEnhanced:
         }
         result = enhanced_engine.xpr_issue_report(experiment_data)
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
             assert "experiment_name" in result.result
             assert "severity" in result.result
@@ -785,24 +1015,36 @@ class TestXPRAgentEngineEnhanced:
 
         result = enhanced_engine.xpr_issue_report(BadDict())
 
-        assert result.success is False
-        assert result.error is not None
+        if result.success:
+            raise AssertionError("Result should be unsuccessful")
+        if result.error is None:
+            raise AssertionError("Expected error to not be None")
 
     def test_assess_severity_critical(
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test severity assessment for critical errors."""
-        assert enhanced_engine._assess_severity("Critical system failure") == "critical"
-        assert enhanced_engine._assess_severity("Fatal error occurred") == "critical"
-        assert enhanced_engine._assess_severity("System crash") == "critical"
+        if enhanced_engine._assess_severity("Critical system failure") != "critical":
+            raise AssertionError(
+                "Expected severity 'critical' for Critical system failure"
+            )
+        if enhanced_engine._assess_severity("Fatal error occurred") != "critical":
+            raise AssertionError(
+                "Expected severity 'critical' for Fatal error occurred"
+            )
+        if enhanced_engine._assess_severity("System crash") != "critical":
+            raise AssertionError("Expected severity 'critical' for System crash")
 
     def test_assess_severity_high(
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test severity assessment for high severity."""
-        assert enhanced_engine._assess_severity("Error in processing") == "high"
-        assert enhanced_engine._assess_severity("Exception raised") == "high"
-        assert enhanced_engine._assess_severity("Task failed") == "high"
+        if enhanced_engine._assess_severity("Error in processing") != "high":
+            raise AssertionError("Expected severity 'high' for Error in processing")
+        if enhanced_engine._assess_severity("Exception raised") != "high":
+            raise AssertionError("Expected severity 'high' for Exception raised")
+        if enhanced_engine._assess_severity("Task failed") != "high":
+            raise AssertionError("Expected severity 'high' for Task failed")
 
     def test_assess_severity_medium(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -811,7 +1053,8 @@ class TestXPRAgentEngineEnhanced:
         assert (
             enhanced_engine._assess_severity("Warning: something happened") == "medium"
         )
-        assert enhanced_engine._assess_severity("Notice") == "medium"
+        if enhanced_engine._assess_severity("Notice") != "medium":
+            raise AssertionError("Expected severity 'medium' for Notice")
 
     def test_generate_recommendations_timeout(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -819,8 +1062,14 @@ class TestXPRAgentEngineEnhanced:
         """Test recommendation generation for timeout."""
         recs = enhanced_engine._generate_recommendations("Request timeout", {})
 
-        assert any("timeout" in r.lower() for r in recs)
-        assert any("duration" in r.lower() for r in recs)
+        if not any("timeout" in r.lower() for r in recs):
+            raise AssertionError(
+                "Expected at least one recommendation to contain 'timeout'"
+            )
+        if not any("duration" in r.lower() for r in recs):
+            raise AssertionError(
+                "Expected at least one recommendation to contain 'duration'"
+            )
 
     def test_generate_recommendations_memory(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -828,8 +1077,14 @@ class TestXPRAgentEngineEnhanced:
         """Test recommendation generation for memory issues."""
         recs = enhanced_engine._generate_recommendations("Out of memory error", {})
 
-        assert any("memory" in r.lower() for r in recs)
-        assert any("batch" in r.lower() for r in recs)
+        if not any("memory" in r.lower() for r in recs):
+            raise AssertionError(
+                "Expected at least one recommendation to contain 'memory'"
+            )
+        if not any("batch" in r.lower() for r in recs):
+            raise AssertionError(
+                "Expected at least one recommendation to contain 'batch'"
+            )
 
     def test_generate_recommendations_permission(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -837,7 +1092,10 @@ class TestXPRAgentEngineEnhanced:
         """Test recommendation generation for permission issues."""
         recs = enhanced_engine._generate_recommendations("Permission denied", {})
 
-        assert any("permission" in r.lower() for r in recs)
+        if not any("permission" in r.lower() for r in recs):
+            raise AssertionError(
+                "Expected at least one recommendation to contain 'permission'"
+            )
 
     def test_generate_recovery_steps(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -845,36 +1103,50 @@ class TestXPRAgentEngineEnhanced:
         """Test recovery steps generation."""
         steps = enhanced_engine._generate_recovery_steps("any error")
 
-        assert len(steps) == 5
-        assert all(isinstance(step, str) for step in steps)
+        if len(steps) != 5:
+            raise AssertionError(f"Expected 5 steps, got: {len(steps)}")
+        if not all(isinstance(step, str) for step in steps):
+            raise AssertionError("All steps should be strings")
 
     def test_analyze_root_cause_import(
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test root cause analysis for ImportError."""
         cause = enhanced_engine._analyze_root_cause("ImportError: No module named 'x'")
-        assert "Missing or incompatible dependency" in cause
+        if "Missing or incompatible dependency" not in cause:
+            raise AssertionError(
+                f"Expected 'Missing or incompatible dependency' in cause, got: {cause}"
+            )
 
     def test_analyze_root_cause_permission(
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test root cause analysis for PermissionError."""
         cause = enhanced_engine._analyze_root_cause("PermissionError: denied")
-        assert "Insufficient file system permissions" in cause
+        if "Insufficient file system permissions" not in cause:
+            raise AssertionError(
+                f"Expected 'Insufficient file system permissions' in cause, got: {cause}"
+            )
 
     def test_analyze_root_cause_timeout(
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test root cause analysis for timeout."""
         cause = enhanced_engine._analyze_root_cause("timeout occurred")
-        assert "Resource exhaustion" in cause
+        if "Resource exhaustion" not in cause:
+            raise AssertionError(
+                f"Expected 'Resource exhaustion' in cause, got: {cause}"
+            )
 
     def test_analyze_root_cause_generic(
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test root cause analysis for generic errors."""
         cause = enhanced_engine._analyze_root_cause("Unknown error")
-        assert "Unknown error requiring investigation" in cause
+        if "Unknown error requiring investigation" not in cause:
+            raise AssertionError(
+                f"Expected 'Unknown error requiring investigation' in cause, got: {cause}"
+            )
 
     def test_xpr_skill_chain_success(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -886,10 +1158,14 @@ class TestXPRAgentEngineEnhanced:
 
         results = enhanced_engine.xpr_skill_chain({"value": 5}, ["skill1", "skill2"])
 
-        assert len(results) == 2
-        assert all(isinstance(r, XPRSkillResult) for r in results)
-        assert results[0].success is True
-        assert results[1].success is True
+        if len(results) != 2:
+            raise AssertionError(f"Expected 2 results, got {len(results)}")
+        if not all(isinstance(r, XPRSkillResult) for r in results):
+            raise AssertionError("All results should be XPRSkillResult instances")
+        if not results[0].success:
+            raise AssertionError("First result should be successful")
+        if not results[1].success:
+            raise AssertionError("Second result should be successful")
 
     def test_xpr_skill_chain_skill_not_found(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -897,9 +1173,14 @@ class TestXPRAgentEngineEnhanced:
         """Test skill chain with missing skill."""
         results = enhanced_engine.xpr_skill_chain({}, ["nonexistent_skill"])
 
-        assert len(results) == 1
-        assert results[0].success is False
-        assert results[0].error is not None and "not found" in results[0].error
+        if len(results) != 1:
+            raise AssertionError(f"Expected 1 result, got: {len(results)}")
+        if results[0].success:
+            raise AssertionError("First result should be unsuccessful")
+        if results[0].error is None or "not found" not in results[0].error:
+            raise AssertionError(
+                f"Expected error with 'not found', got: {results[0].error}"
+            )
 
     def test_xpr_skill_chain_exception_handling(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -912,8 +1193,10 @@ class TestXPRAgentEngineEnhanced:
         enhanced_engine.register_skill("failing", failing_skill)
         results = enhanced_engine.xpr_skill_chain({}, ["failing"])
 
-        assert len(results) == 1
-        assert results[0].success is False
+        if len(results) != 1:
+            raise AssertionError(f"Expected 1 result, got: {len(results)}")
+        if results[0].success:
+            raise AssertionError("First result should be unsuccessful")
 
     def test_get_performance_summary_enhanced(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -964,7 +1247,8 @@ class TestRegisterXPRSkills:
         register_xpr_skills(engine)  # type: ignore[arg-type]
 
         # Should only register plan_experiment
-        assert "plan_experiment" in engine.skills
+        if "plan_experiment" not in engine.skills:
+            raise AssertionError("Expected 'plan_experiment' in engine.skills")
         # These should not be registered on base engine
         assert "xpr_job_debug" not in engine.skills
         assert "xpr_issue_fix" not in engine.skills
@@ -973,7 +1257,8 @@ class TestRegisterXPRSkills:
         assert "xpr_plan_experiment" not in engine.skills
 
         # Should only register plan_experiment
-        assert "plan_experiment" in engine.skills
+        if "plan_experiment" not in engine.skills:
+            raise AssertionError("Expected 'plan_experiment' in engine.skills")
         # These should not be registered on base engine
         assert "xpr_job_debug" not in engine.skills
 
@@ -1002,7 +1287,10 @@ class TestXPRSkillType:
             skill_type=XPRSkillType.PLAN_GENERATION.value,
             result={},
         )
-        assert result.skill_type == "plan_generation"
+        if result.skill_type != "plan_generation":
+            raise AssertionError(
+                f"Expected skill_type 'plan_generation', got: {result.skill_type}"
+            )
 
 
 # =============================================================================
@@ -1022,16 +1310,20 @@ class TestEdgeCases:
         engine.register_skill("none_test", skill_with_none)
         result = engine.execute_skill("none_test", None)
 
-        assert result.success is True
-        assert result.result == "default"
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.result != "default":
+            raise AssertionError(f"Expected result 'default', got: {result.result}")
 
     def test_execute_skill_returning_none(self, engine: XPRAgentEngine) -> None:
         """Test executing skill that returns None."""
         engine.register_skill("returns_none", lambda: None)
         result = engine.execute_skill("returns_none")
 
-        assert result.success is True
-        assert result.result is None
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.result is not None:
+            raise AssertionError(f"Expected result to be None, got: {result.result}")
 
     def test_performance_history_with_empty_list(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -1040,8 +1332,12 @@ class TestEdgeCases:
         enhanced_engine.performance_history["test"] = []
         result = enhanced_engine.analyze_performance_trend("test")
 
-        assert result["trend"] == 0.0
-        assert result["volatility"] == 0.0
+        if result["trend"] != 0.0:
+            raise AssertionError(f"Expected trend 0.0, got: {result['trend']}")
+        if result["volatility"] != 0.0:
+            raise AssertionError(
+                f"Expected volatility 0.0, got: {result['volatility']}"
+            )
 
     def test_performance_history_with_single_value(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -1103,7 +1399,8 @@ class TestEdgeCases:
             }
         )
 
-        assert result.success is True
+        if not result.success:
+            raise AssertionError("Result should be successful")
         assert result.result["error_type"] == expected_type
 
 
@@ -1120,16 +1417,20 @@ class TestBoundaryValues:
         engine.register_skill("identity", lambda x: x)
         result = engine.execute_skill("identity", 1e308)
 
-        assert result.success is True
-        assert result.result == 1e308
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.result != 1e308:
+            raise AssertionError(f"Expected result 1e308, got: {result.result}")
 
     def test_execute_skill_with_zero(self, engine: XPRAgentEngine) -> None:
         """Test executing skill with zero."""
         engine.register_skill("double", lambda x: x * 2)
         result = engine.execute_skill("double", 0)
 
-        assert result.success is True
-        assert result.result == 0
+        if not result.success:
+            raise AssertionError("Result should be successful")
+        if result.result != 0:
+            raise AssertionError(f"Expected result 0, got: {result.result}")
 
     def test_execution_report_with_zero_time(self) -> None:
         """Test ExecutionReport with zero execution time."""
@@ -1138,7 +1439,10 @@ class TestBoundaryValues:
             success=True,
             execution_time=0.0,
         )
-        assert report.execution_time == 0.0
+        if report.execution_time != 0.0:
+            raise AssertionError(
+                f"Expected execution_time 0.0, got: {report.execution_time}"
+            )
 
     def test_performance_trend_with_negative_values(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -1147,8 +1451,12 @@ class TestBoundaryValues:
         enhanced_engine.performance_history["test"] = [-0.5, -0.4, -0.3]
         result = enhanced_engine.analyze_performance_trend("test")
 
-        assert result["trend"] == pytest.approx(-0.4, rel=1e-3)  # Average
-        assert result["volatility"] >= 0
+        if not pytest.approx(result["trend"], rel=1e-3) == -0.4:  # Average
+            raise AssertionError(f"Expected trend approx -0.4, got: {result['trend']}")
+        if result["volatility"] < 0:
+            raise AssertionError(
+                f"Expected volatility >= 0, got: {result['volatility']}"
+            )
 
     def test_performance_trend_with_mixed_values(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -1157,15 +1465,22 @@ class TestBoundaryValues:
         enhanced_engine.performance_history["test"] = [-0.5, 0.0, 0.5]
         result = enhanced_engine.analyze_performance_trend("test")
 
-        assert result["trend"] == 0.0  # Average
+        if result["trend"] != 0.0:  # Average
+            raise AssertionError(f"Expected trend 0.0, got: {result['trend']}")
 
     def test_xpr_skill_result_with_edge_confidence_values(self) -> None:
         """Test XPRSkillResult with edge confidence values."""
         result_min = XPRSkillResult(success=True, skill_type="test", confidence=0.0)
         result_max = XPRSkillResult(success=True, skill_type="test", confidence=1.0)
 
-        assert result_min.confidence == 0.0
-        assert result_max.confidence == 1.0
+        if result_min.confidence != 0.0:
+            raise AssertionError(
+                f"Expected confidence 0.0, got: {result_min.confidence}"
+            )
+        if result_max.confidence != 1.0:
+            raise AssertionError(
+                f"Expected confidence 1.0, got: {result_max.confidence}"
+            )
 
 
 # =============================================================================
@@ -1204,7 +1519,10 @@ class TestXPRIntegration:
 
         # Check performance summary
         summary = engine.get_performance_summary()
-        assert summary["total_experiments"] == 1
+        if summary["total_experiments"] != 1:
+            raise AssertionError(
+                f"Expected total_experiments 1, got: {summary['total_experiments']}"
+            )
         # avg_confidence should be 0 since we didn't set confidence on the report
         assert "avg_confidence" in summary
 

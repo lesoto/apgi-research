@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from performance_monitoring import (
+from utils.performance_monitoring import (
     BenchmarkResult,
     CPUSnapshot,
     MemorySnapshot,

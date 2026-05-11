@@ -690,7 +690,7 @@ try:
 
         # Test that the script can be executed (with --help or quick dry-run)
         proc = subprocess.Popen(
-            [sys.executable, "-m", "experiments.run_stroop_effect"],
+            ["python3", "-m", "experiments.run_stroop_effect"],
             cwd=RESEARCH_DIR,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -814,4 +814,5 @@ with open(results_path, "w") as out_f:
 print(f"\nDetailed results saved to: {results_path}")
 
 # Exit with appropriate code
-sys.exit(0 if failed_val == 0 else 1)
+if __name__ == "__main__":
+    sys.exit(0 if failed_val == 0 else 1)

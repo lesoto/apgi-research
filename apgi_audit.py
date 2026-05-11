@@ -8,13 +8,14 @@ Implements signed action logs and audit trail integrity.
 import hashlib
 import hmac
 import json
+import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from apgi_logging import get_logger
+from utils.apgi_logging import get_logger
 
 
 class AuditEventType(Enum):
@@ -42,7 +43,7 @@ class AuditEvent:
 
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     event_type: AuditEventType = AuditEventType.EXPERIMENT_STARTED
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     operator_id: str = ""
     operator_name: str = ""
     resource_type: str = ""
@@ -120,11 +121,53 @@ class AuditEvent:
 class ImmutableAuditSink:
     """Append-only audit sink with integrity guarantees."""
 
-    def __init__(self, secret_key: Optional[str] = None):
+    def __init__(
+        self, secret_key: Optional[str] = None, audit_file: Optional[str] = None
+    ):
         self.logger = get_logger("apgi.audit")
         self.secret_key = secret_key or self._get_default_key()
         self.events: List[AuditEvent] = []
         self.sequence_counter = 0
+        self.audit_file = audit_file or os.path.join(os.getcwd(), "audit_trail.jsonl")
+        self._load_existing_events()
+
+    def _load_existing_events(self) -> None:
+        """Load existing events from audit trail file if it exists."""
+        import os
+
+        if os.path.exists(self.audit_file):
+            try:
+                with open(self.audit_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            event_data = json.loads(line)
+                            event = AuditEvent(
+                                event_type=AuditEventType(event_data["event_type"]),
+                                operator_id=event_data["operator_id"],
+                                operator_name=event_data["operator_name"],
+                                resource_type=event_data["resource_type"],
+                                resource_id=event_data["resource_id"],
+                                action=event_data["action"],
+                                details=event_data.get("details", {}),
+                                status=event_data.get("status", "success"),
+                                error_message=event_data.get("error_message"),
+                                sequence_number=event_data["sequence_number"],
+                                previous_hash=event_data["previous_hash"],
+                            )
+                            # Re-sign to verify integrity
+                            event.sign(self.secret_key)
+                            self.events.append(event)
+                            self.sequence_counter = max(
+                                self.sequence_counter, event.sequence_number + 1
+                            )
+                self.logger.info(
+                    f"Loaded {len(self.events)} audit events from {self.audit_file}"
+                )
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to load audit trail from {self.audit_file}: {e}"
+                )
 
     def _get_default_key(self) -> str:
         """
@@ -199,6 +242,14 @@ class ImmutableAuditSink:
         self.events.append(event)
         self.sequence_counter += 1
 
+        # Append to file for persistence
+        try:
+            with open(self.audit_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(event.to_dict()) + "\n")
+                f.flush()
+        except Exception as e:
+            self.logger.error(f"Failed to write audit event to {self.audit_file}: {e}")
+
         self.logger.info(
             f"Audit event recorded: {event_type.value} by {operator_name} "
             f"on {resource_type}/{resource_id}"
@@ -255,7 +306,7 @@ class ImmutableAuditSink:
     def export_audit_trail(self, filepath: str) -> None:
         """Export audit trail to JSON file."""
         data = {
-            "export_timestamp": datetime.utcnow().isoformat(),
+            "export_timestamp": datetime.now(timezone.utc).isoformat(),
             "total_events": len(self.events),
             "integrity_verified": self.verify_integrity(),
             "events": [e.to_dict() for e in self.events],

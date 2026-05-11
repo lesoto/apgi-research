@@ -5,7 +5,6 @@ Provides comprehensive progress tracking, logging, and monitoring capabilities.
 """
 
 import json
-import pickle
 import threading
 import time
 from dataclasses import asdict, dataclass, field
@@ -485,27 +484,33 @@ class ProgressTracker:
             with open(progress_file, "w") as f:
                 json.dump(asdict(self.progress), f, indent=2, default=str)
 
-            # Also save as pickle for faster loading
-            pickle_file = (
-                self.output_dir
-                / f"{self.experiment_name}_{self.participant_id}_progress.pkl"
-            )
-            with open(pickle_file, "wb") as f:
-                pickle.dump(self.progress, f)
-
         except Exception as e:
             print(f"Failed to save progress: {e}")
 
     def load_progress(self) -> bool:
         """Load progress from file."""
         try:
-            pickle_file = (
+            progress_file = (
                 self.output_dir
-                / f"{self.experiment_name}_{self.participant_id}_progress.pkl"
+                / f"{self.experiment_name}_{self.participant_id}_progress.json"
             )
-            if pickle_file.exists():
-                with open(pickle_file, "rb") as f:
-                    self.progress = pickle.load(f)
+            if progress_file.exists():
+                with open(progress_file, "r") as f:
+                    data = json.load(f)
+                    # Reconstruct progress object from JSON
+                    self.progress = ExperimentProgress(
+                        experiment_name=data["experiment_name"],
+                        participant_id=data["participant_id"],
+                        status=data["status"],
+                        start_time=data["start_time"],
+                        current_trial=data.get("current_trial", 0),
+                        total_trials=data.get("total_trials", 0),
+                        completed_trials=data.get("completed_trials", 0),
+                        trials=data.get("trials", []),
+                        apgi_summary=data.get("apgi_summary"),
+                        end_time=data.get("end_time"),
+                        error_log=data.get("error_log", []),
+                    )
                 return True
         except Exception as e:
             print(f"Failed to load progress: {e}")
@@ -558,7 +563,7 @@ class ProgressTracker:
         with open(report_file, "w") as f:
             json.dump(summary, f, indent=2, default=str)
 
-        # Also save progress as pickle for loading
+        # Also save progress as JSON for loading
         self._save_progress()
 
         return report_file

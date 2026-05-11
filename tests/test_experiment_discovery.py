@@ -98,7 +98,7 @@ def test_apgi_metrics_discovery():
             "metrics" in attr.lower() for attr in dir(module)
         )
     except ImportError as e:
-        pytest.fail(f"Failed to import apgi_metrics: {e}")
+        pytest.fail(f"Failed to import utils.apgi_metrics: {e}")
 
 
 def test_core_modules_discovery():

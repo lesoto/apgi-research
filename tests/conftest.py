@@ -87,6 +87,17 @@ def deterministic_environment() -> Generator[None, None, None]:
     os.environ["TESTING"] = "1"
     os.environ["PYTHONHASHSEED"] = str(DETERMINISTIC_SEED)
 
+    # Set required environment variables for APGI modules (fixes BUG-H009)
+    if "APGI_AUDIT_KEY" not in os.environ:
+        # Use a dummy but valid key (32 bytes)
+        os.environ["APGI_AUDIT_KEY"] = "0" * 64
+
+    if "APGI_CONFIG_SECRET_KEY" not in os.environ:
+        os.environ["APGI_CONFIG_SECRET_KEY"] = "test_secret_key_for_config_validation"
+
+    if "APGI_KMS_KEY" not in os.environ:
+        os.environ["APGI_KMS_KEY"] = "test_kms_key_for_security_adapters"
+
     yield
 
     # Restore original environment

@@ -19,7 +19,7 @@ Usage:
 import signal
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import numpy as np
 
@@ -195,12 +195,15 @@ class StandardAPGIRunner:
         self.trial_count += 1
 
         # Process with basic APGI integration
-        basic_metrics = self.apgi.process_trial(
-            observed=observed,
-            predicted=predicted,
-            trial_type=trial_type,
-            precision_ext=precision_ext,
-            precision_int=precision_int,
+        basic_metrics = cast(
+            Dict[str, float],
+            self.apgi.process_trial(
+                observed=observed,
+                predicted=predicted,
+                trial_type=trial_type,
+                precision_ext=precision_ext,
+                precision_int=precision_int,
+            ),
         )
 
         # Add hierarchical processing

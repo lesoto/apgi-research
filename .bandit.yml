@@ -1,0 +1,31 @@
+# Bandit Security Scanner Configuration
+# Excludes test files from assert warnings (B101) as they are standard pytest practice
+
+skips:
+  # Skip assert warnings in test files - standard pytest practice
+  - 'B101'
+
+exclude_dirs:
+  - ./tests
+  - ./test
+  - tests/
+  - test/
+  - ./.git
+  - ./__pycache__
+  - ./.mypy_cache
+  - ./venv
+  - ./env
+  - ./.venv
+  - ./.env
+  - ./node_modules
+
+# Severity levels to report (exclude LOW for cleaner output)
+# Comment out to see all issues including LOW severity
+severity:
+  - MEDIUM
+  - HIGH
+
+# Confidence levels to report
+confidence:
+  - MEDIUM
+  - HIGH

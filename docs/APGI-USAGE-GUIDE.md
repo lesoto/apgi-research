@@ -83,7 +83,7 @@ Based on `ultimate_apgi_template.py` and `APGI_System.py`, full compliance requi
 
 The APGI system includes 8 new production-ready modules implementing security, compliance, and performance improvements:
 
-| Module | Purpose | Key Classes/Functions |
+ | Module | Purpose | Key Classes/Functions |
 | ------ | --------- | ---------------------- |
 | `apgi_config.py` | Typed configuration management | `APGIExperimentConfigSchema`, `ConfigManager`, `get_config()` |
 | `apgi_cli.py` | Standardized CLI framework | `cli_entrypoint()`, `@require_auth`, `create_standard_parser()` |
@@ -93,6 +93,18 @@ The APGI system includes 8 new production-ready modules implementing security, c
 | `apgi_audit.py` | Immutable audit logging | `AuditSink`, `AuditEventType`, `get_audit_sink()` |
 | `apgi_data_retention.py` | Data lifecycle management | `RetentionScheduler`, `RetentionPolicy`, `get_retention_scheduler()` |
 | `apgi_timeout_abstraction.py` | Cross-platform timeouts | `TimeoutManager`, `CancellableOperation`, `get_timeout_manager()` |
+
+Environment Variables Required for Production
+
+| Variable | Used In | Description | Required |
+| ---------- | --------- | ------------- | ---------- |
+| `APGI_AUDIT_KEY` | `apgi_audit.py` | HMAC signing key for audit trail (≥32 bytes, use `openssl rand -hex 32`) | **Mandatory** |
+| `APGI_KMS_KEY` | `apgi_security_adapters.py` | KMS key for config checksum validation | **Mandatory** |
+| `APGI_CONFIG_SECRET_KEY` | `apgi_security.py` | Config validation secret | **Mandatory** |
+| `APGI_PSEUDONYM_SALT` | `apgi_compliance.py` | Pseudonymization salt (replaces hardcoded value after C004 fix) | **Mandatory** |
+| `APGI_ALLOWED_SUBPROCESS_CMDS` | `apgi_security.py` | Comma-separated subprocess allowlist override | Optional |
+| `APGI_CONFIG_FILE` | `apgi_config.py` | Path to JSON/YAML config file | Optional |
+| `APGI_OPERATOR_ROLE` | CI workflow | Operator role for CI test runs | Optional |
 
 ### Quick Reference: Production Module Usage
 
@@ -151,8 +163,8 @@ with manager.timeout(10.0, "Operation timed out"):
 
 **Current Status (April 2026):** All 30 experiment files now achieve **100/100 or higher** APGI compliance.
 
-| File | Rating | Status |
-| ------ | -------- | -------- |
+ | File | Rating | Status |
+| ---------------------- | ------ | -------- |
 | run_ai_benchmarking.py | 100/100 | ✅ FIXED |
 | run_artificial_grammar_learning.py | 110/100 | ✅ Complete |
 | run_attentional_blink.py | 110/100 | ✅ Complete |
@@ -186,8 +198,8 @@ with manager.timeout(10.0, "Operation timed out"):
 
 ### Files at 95/100 (Minor Output Formatting)
 
-| File | Rating | Status |
-|------|--------|--------|
+ | File | Rating | Status |
+| --- | --- | --- |
 
 All files now at 100/100 or higher.
 
@@ -197,19 +209,19 @@ All files now at 100/100 or higher.
 - **Files at 100/100**: 19 files ✅
 - **Files at 110/100**: 11 files ✅
 - **Files below 100/100**: 0 files
-- **Average compliance**: 104/100
-- **Prepare files at 100/100**: All 29 files ✅
+- **Average compliance**: 106/100
+- **Prepare files at 100/100**: All 30 files ✅
 
 ### Upgrade Impact Summary
 
-| Metric | Before | After | Improvement |
-| ------ | ------ | ----- | ----------- |
-| Files at 100/100 | 14 | 14 | - |
-| Files at 95-99/100 | 0 | 5 | +5 |
+ | Metric | Before | After | Improvement |
+| --- | --- | --- | --- |
+| Files at 100/100 | 14 | 19 | +5 |
+| Files at 95-99/100 | 0 | 0 | - |
 | Files at 90-94/100 | 0 | 0 | - |
 | Files at 80/100 | 9 | 0 | -9 |
 | Files at 20/100 | 6 | 0 | -6 |
-| Average Rating | ~75/100 | 104/100 | +29 |
+| Average Rating | ~75/100 | 106/100 | +31 |
 
 ### Key Components Now Implemented in ALL Files
 
@@ -226,16 +238,17 @@ All files now at 100/100 or higher.
 
 ### All Files Now Include
 
-1. ✅ Foundational Equations (prediction error, precision, z-scores)
-2. ✅ Dynamical System Equations (S, θ, M, A, Π dynamics via APGIIntegration)
-3. ✅ Π vs Π̂ Distinction (PrecisionExpectationState)
-4. ✅ Hierarchical 5-Level Processing (HierarchicalProcessor with tau_levels)
-5. ✅ Neuromodulator Mapping (ACh, NE, DA, 5-HT)
-6. ✅ Domain-Specific Thresholds (survival vs neutral)
-7. ✅ Psychiatric Profiles (GAD, MDD, Psychosis)
-8. ✅ Running Statistics (z-score normalization)
-9. ✅ Measurement Proxies (ignition rate, metabolic cost, HEP, P3b)
+1. ✅ **Foundational Equations** (prediction error, precision, z-scores) - All 30 files
+2. ✅ **Dynamical System Equations** (S, θ, M, A, Π dynamics via APGIIntegration)
+3. ✅ **Π vs Π̂ Distinction** (PrecisionExpectationState) - All 30 files
+4. ✅ **Hierarchical 5-Level Processing** (HierarchicalProcessor with tau_levels)
+5. ✅ **Neuromodulator Mapping** (ACh, NE, DA, 5-HT)
+6. ✅ **Domain-Specific Thresholds** (survival vs neutral)
+7. ✅ **Running Statistics** (z-score normalization) - All 30 files
+8. ✅ **Measurement Proxies** (ignition rate, metabolic cost, HEP, P3b)
+9. ✅ **APGI-Enhanced Metrics Output** - All 30 files
 10. ✅ **Double Dissociation Protocol** (multi-session Stage 1 anchor, EEG prior)
+11. ✅ **Full APGI_PARAMS export from prepare files**
 
 ---
 
@@ -259,15 +272,16 @@ python batch_upgrade_run_files.py
 ```
 
 1. ✅ **Foundational Equations** (prediction error, precision, z-scores)
-2. ✅ **Dynamical System Equations** (S, θ, M dynamics via APGIIntegration)
+2. ✅ **Dynamical System Equations** (S, θ, M, A, Π dynamics)
 3. ✅ **Π vs Π̂ Distinction** (PrecisionExpectationState)
-4. ✅ **Hierarchical 5-Level Processing** (HierarchicalProcessor with tau_levels)
+4. ✅ **Hierarchical 5-Level Processing** (HierarchicalProcessor)
 5. ✅ **Neuromodulator Mapping** (ACh, NE, DA, 5-HT)
 6. ✅ **Domain-Specific Thresholds** (survival vs neutral)
 7. ✅ **Running Statistics** (z-score normalization)
-8. ✅ **APGI-Enhanced Metrics Output** (ignition, surprise, metabolic cost)
-9. ✅ **Time Budget Compliance** (600s)
-10. ✅ **Full APGI_PARAMS export from prepare files**
+8. ✅ **Measurement Proxies** (ignition rate, metabolic cost)
+9. ✅ **APGI-Enhanced Metrics Output**
+10. ✅ **Time Budget Compliance** (600s)
+11. ✅ **Full APGI_PARAMS export from prepare files**
 
 ## System Overview
 
@@ -314,23 +328,23 @@ P = ignition_probability(S, theta, alpha)
 
 ### 3. Dynamical System Equations (`DynamicalSystemEquations`)
 
-| Variable | Equation | Time Constant |
-| ---------- | ---------- | --------------- |
-| Surprise (S) | dS/dt = -τ_S⁻¹S + ½Πᵉ(εᵉ)² + ½Πⁱ_eff(εⁱ)² + σ_Sξ_S | τ_S: 0.2-0.5s |
-| Threshold (θ) | dθ/dt = τ_θ⁻¹(θ₀(A) - θ) + γ_M M + λ S + σ_θ ξ_θ | τ_θ: 30s |
-| Somatic Marker (M) | dM/dt = τ_M⁻¹(M*(εⁱ) - M) + γ_context C + σ_M ξ_M | τ_M: 1.5s |
-| Arousal (A) | dA/dt = τ_A⁻¹(A_target - A) + σ_A ξ_A | τ_A: 0.2s |
-| Precision (Π) | dΠ/dt = α_Π(Π* - Π) + σ_Π ξ_Π | Variable |
+| Variable    | Equation                                                                 | Time Constant   |
+|-------------|--------------------------------------------------------------------------|-----------------|
+| Surprise (S) | dS/dt = -τ_S⁻¹S + ½Πᵉ(εᵉ)² + ½Πⁱ_eff(εⁱ)² + σ_Sξ_S                     | τ_S: 0.2-0.5s   |
+| Threshold (θ) | dθ/dt = τ_θ⁻¹(θ₀(A) - θ) + γ_M M + λ S + σ_θ ξ_θ                     | τ_θ: 30s        |
+| Somatic Marker (M) | dM/dt = τ_M⁻¹(M*(εⁱ) - M) + γ_context C + σ_M ξ_M                | τ_M: 1.5s       |
+| Arousal (A)  | dA/dt = τ_A⁻¹(A_target - A) + σ_A ξ_A                              | τ_A: 0.2s       |
+| Precision (Π) | dΠ/dt = α_Π(Π* - Π) + σ_Π ξ_Π                                      | Variable        |
 
 ### 4. Parameter Ranges (Validated)
 
-| Parameter | Valid Range | Default | Description |
-| ----------- | ------------- | --------- | ------------- |
-| τ_S | 0.2-0.5s | 0.35s | Surprise decay time constant |
-| α | 3.0-8.0 | 5.5 | Sigmoid steepness |
-| β_som | 0.5-2.5 | 1.5 | Somatic influence gain |
-| θ_survival | 0.1-0.5 | 0.3 | Threshold for survival content |
-| θ_neutral | 0.5-1.0 | 0.7 | Threshold for neutral content |
+| Parameter   | Valid Range | Default | Description                    |
+|-------------|-------------|---------|--------------------------------|
+| τ_S         | 0.2-0.5s    | 0.35s   | Surprise decay time constant   |
+| α           | 3.0-8.0     | 5.5     | Sigmoid steepness              |
+| β_som       | 0.5-2.5     | 1.5     | Somatic influence gain        |
+| θ_survival  | 0.1-0.5     | 0.3     | Threshold for survival content |
+| θ_neutral   | 0.5-1.0     | 0.7     | Threshold for neutral content  |
 
 ### 5. Measurement Equations (`MeasurementEquations`)
 
@@ -369,14 +383,14 @@ duration = compute_ignition_duration(P_ignition, S_t)  # ms
 
 All 29 experiments were verified against 6 criteria:
 
-| Criterion | Description | Status |
-| ---------- | ------------- | -------- |
-| File Structure | Both `prepare_*.py` and `run_*.py` exist | ✅ All Pass |
-| READ-ONLY Designation | `prepare_*.py` marked READ-ONLY | ✅ All Pass |
-| AGENT-EDITABLE Designation | `run_*.py` marked AGENT-EDITABLE | ✅ All Pass |
-| Time Budget | 600 seconds (10 minutes) defined | ✅ All Pass |
-| Primary Metrics | Output format: `primary_metric: <value>` | ✅ All Pass |
-| Import Structure | Proper imports from prepare files | ✅ All Pass |
+ | Criterion|  Description|  Status|
+ | ----------|  -------------|  --------|
+ | File Structure|  Both `prepare_*.py` and `run_*.py` exist|  ✅ All Pass|
+ | READ-ONLY Designation|  `prepare_*.py` marked READ-ONLY|  ✅ All Pass|
+ | AGENT-EDITABLE Designation|  `run_*.py` marked AGENT-EDITABLE|  ✅ All Pass|
+ | Time Budget|  600 seconds (10 minutes) defined|  ✅ All Pass|
+ | Primary Metrics|  Output format: `primary_metric: <value>`|  ✅ All Pass|
+ | Import Structure|  Proper imports from prepare files|  ✅ All Pass|
 
 ### Verification Summary
 
@@ -465,61 +479,61 @@ EXPLORATION_PROB = 0.10  # Reduce exploration
 
 ### Decision-Making Tasks
 
-| Experiment | Primary Metric | Description |
-| ---------- | ---------------- | ------------- |
-| Iowa Gambling Task | `net_score` | Decision-making under uncertainty |
-| Go/No-Go | `d_prime` | Response inhibition |
-| Stop Signal | `stop_signal_rt` | Inhibitory control |
-| Simon Effect | `simon_effect_ms` | Stimulus-response compatibility |
+ | Experiment|  Primary Metric|  Description|
+ | ----------|  ----------------|  -------------|
+ | Iowa Gambling Task|  `net_score`|  Decision-making under uncertainty|
+ | Go/No-Go|  `d_prime`|  Response inhibition|
+ | Stop Signal|  `stop_signal_rt`|  Inhibitory control|
+ | Simon Effect|  `simon_effect_ms`|  Stimulus-response compatibility|
 
 ### Attention Tasks
 
-| Experiment | Primary Metric | Description |
-| ---------- | ---------------- | ------------- |
-| Attentional Blink | `blink_magnitude` | Temporal attention limitation |
-| Posner Cueing | `cueing_effect_ms` | Spatial attention orienting |
-| Visual Search | `conjunction_slope` | Search efficiency |
-| Change Blindness | `change_detection_rate` | Visual change detection |
-| Inattentional Blindness | `detection_rate` | Unexpected stimulus detection |
-| Navon Task | `global_local_bias` | Global vs local processing |
+ | Experiment|  Primary Metric|  Description|
+ | ----------|  ----------------|  -------------|
+ | Attentional Blink|  `blink_magnitude`|  Temporal attention limitation|
+ | Posner Cueing|  `cueing_effect_ms`|  Spatial attention orienting|
+ | Visual Search|  `conjunction_slope`|  Search efficiency|
+ | Change Blindness|  `change_detection_rate`|  Visual change detection|
+ | Inattentional Blindness|  `detection_rate`|  Unexpected stimulus detection|
+ | Navon Task|  `global_local_bias`|  Global vs local processing|
 
 ### Memory Tasks
 
-| Experiment | Primary Metric | Description |
-| ---------- | ---------------- | ------------- |
-| Dual N-Back | `d_prime` | Working memory updating |
-| Sternberg Memory | `memory_scan_rate` | Memory scanning speed |
-| Working Memory Span | `span_size` | Working memory capacity |
-| DRM False Memory | `false_alarm_rate` | False memory creation |
-| Serial Reaction Time | `sequence_learning` | Implicit sequence learning |
-| Artificial Grammar Learning | `grammar_accuracy` | Implicit grammar learning |
-| Probabilistic Category Learning | `category_accuracy` | Probabilistic learning |
+ | Experiment|  Primary Metric|  Description|
+ | ----------|  ----------------|  -------------|
+ | Dual N-Back|  `d_prime`|  Working memory updating|
+ | Sternberg Memory|  `memory_scan_rate`|  Memory scanning speed|
+ | Working Memory Span|  `span_size`|  Working memory capacity|
+ | DRM False Memory|  `false_alarm_rate`|  False memory creation|
+ | Serial Reaction Time|  `sequence_learning`|  Implicit sequence learning|
+ | Artificial Grammar Learning|  `grammar_accuracy`|  Implicit grammar learning|
+ | Probabilistic Category Learning|  `category_accuracy`|  Probabilistic learning|
 
 ### Interference Tasks
 
-| Experiment | Primary Metric | Description |
-| ---------- | ---------------- | ------------- |
-| Stroop Effect | `interference_effect_ms` | Cognitive interference |
-| Eriksen Flanker | `flanker_effect_ms` | Response competition |
-| Masking | `backward_masking_effect` | Visual masking |
+ | Experiment|  Primary Metric|  Description|
+ | ----------|  ----------------|  -------------|
+ | Stroop Effect|  `interference_effect_ms`|  Cognitive interference|
+ | Eriksen Flanker|  `flanker_effect_ms`|  Response competition|
+ | Masking|  `backward_masking_effect`|  Visual masking|
 
 ### Perception Tasks
 
-| Experiment | Primary Metric | Description |
-| ---------- | ---------------- | ------------- |
-| Binocular Rivalry | `dominance_duration` | Perceptual alternation |
-| Multisensory Integration | `integration_index` | Cross-modal integration |
-| Time Estimation | `temporal_precision` | Time perception accuracy |
+ | Experiment|  Primary Metric|  Description|
+ | ----------|  ----------------|  -------------|
+ | Binocular Rivalry|  `dominance_duration`|  Perceptual alternation|
+ | Multisensory Integration|  `integration_index`|  Cross-modal integration|
+ | Time Estimation|  `temporal_precision`|  Time perception accuracy|
 
 ### Specialized Tasks
 
-| Experiment | Primary Metric | Description |
-| ---------- | ---------------- | ------------- |
-| Somatic Marker Priming | `priming_effect` | Somatic influence on decisions |
-| Interoceptive Gating | `gating_ratio` | Interoceptive processing |
-| Metabolic Cost | `metabolic_efficiency` | Energy efficiency |
-| Virtual Navigation | `navigation_accuracy` | Spatial navigation |
-| AI Benchmarking | `benchmark_score` | AI performance metrics |
+ | Experiment|  Primary Metric|  Description|
+ | ----------|  ----------------|  -------------|
+ | Somatic Marker Priming|  `priming_effect`|  Somatic influence on decisions|
+ | Interoceptive Gating|  `gating_ratio`|  Interoceptive processing|
+ | Metabolic Cost|  `metabolic_efficiency`|  Energy efficiency|
+ | Virtual Navigation|  `navigation_accuracy`|  Spatial navigation|
+ | AI Benchmarking|  `benchmark_score`|  AI performance metrics|
 
 ---
 
@@ -542,13 +556,13 @@ APGI_PARAMS = {
 
 ### Task-Specific Optimizations
 
-| Task Type | τ_S | β | θ₀ | α |
-| --------- | --- | - | -- | - |
-| Fast temporal (AB) | 0.25 | 1.8 | 0.4 | 6.0 |
-| Decision (IGT) | 0.40 | 2.0 | 0.4 | 5.0 |
-| Interference (Stroop) | 0.30 | 1.6 | 0.35 | 6.0 |
-| Memory (N-Back) | 0.35 | 1.4 | 0.45 | 5.5 |
-| Perception (Search) | 0.35 | 1.3 | 0.5 | 5.0 |
+ | Task Type|  τ_S|  β|  θ₀|  α|
+ | ---------|  ---|  -|  --|  -|
+ | Fast temporal (AB)|  0.25|  1.8|  0.4|  6.0|
+ | Decision (IGT)|  0.40|  2.0|  0.4|  5.0|
+ | Interference (Stroop)|  0.30|  1.6|  0.35|  6.0|
+ | Memory (N-Back)|  0.35|  1.4|  0.45|  5.5|
+ | Perception (Search)|  0.35|  1.3|  0.5|  5.0|
 
 ---
 

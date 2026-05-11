@@ -103,6 +103,7 @@ class EnhancedVisualSearchRunner:
         self.experiment = VSExperiment(num_trials=NUM_TRIALS_CONFIG)
         self.participant = SimulatedParticipant()
         self.start_time: Optional[float] = None
+        self.apgi: Optional[APGIIntegration] = None
 
         # Initialize APGI integration if enabled
         self.enable_apgi = enable_apgi and APGI_PARAMS.get("enabled", True)
@@ -154,7 +155,7 @@ class EnhancedVisualSearchRunner:
                 "HT5": float(cast(float, APGI_PARAMS.get("HT5", 1.0))),
             }
         else:
-            self.apgi = None  # type: ignore[assignment]
+            self.apgi = None
 
     def run_experiment(self) -> Dict:
         self.start_time = time.time()

@@ -97,7 +97,7 @@ During a run, watch for:
 ### Troubleshooting Common Issues
 
 | Issue | Solution |
-|-------|----------|
+| ------- | ---------- |
 | `ModuleNotFoundError` | Run `uv sync` to install dependencies |
 | `FileNotFoundError: data/stimuli/` | Run `uv run prepare.py` to generate stimuli |
 | Slow startup | First run compiles dependencies; subsequent runs are faster |
