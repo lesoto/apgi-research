@@ -6,8 +6,9 @@ import logging
 import os
 import sys
 
-# CRITICAL: Must set multiprocessing start method BEFORE ANY OTHER IMPORTS on macOS
-# to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
+# Must set multiprocessing start method before any other imports on macOS
+# to prevent "The process has forked and you cannot use this CoreFoundation
+# functionality" error.
 if sys.platform == "darwin":
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
     import multiprocessing
@@ -26,21 +27,8 @@ except ImportError:
     LLM_AVAILABLE = False
     print("litellm not available, using mock LLM integration")
 
-# CRITICAL: Must set multiprocessing start method BEFORE ANY OTHER IMPORTS on macOS
-# to prevent "The process has forked and you cannot use this CoreFoundation functionality" error
-import sys
-
-if sys.platform == "darwin":
-    os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-    import multiprocessing
-
-    try:
-        multiprocessing.set_start_method("spawn", force=True)
-    except RuntimeError:
-        pass  # Already set
-
 from tkinter import messagebox
-from typing import Any, Optional, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 import customtkinter as ctk
 
@@ -72,19 +60,17 @@ ctk.windows.widgets.core_widget_classes.dropdown_menu.DropdownMenu._add_menu_com
 
 import importlib.util
 import json
-import logging
 import re
 import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
 
 # Matplotlib imports for embedded visualization
 import matplotlib
 import numpy as np
 
-from utils.apgi_security import secure_popen
+from utils.apgi_security import secure_popen, secure_run
 
 # Import hypothesis approval board
 from hypothesis_approval_board import ApprovalBoard, Hypothesis, HypothesisStatus
@@ -93,9 +79,7 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 
-# Set appearance mode and color theme
 # Configure matplotlib for embedded GUI
-matplotlib.use("TkAgg")
 matplotlib.rcParams["figure.figsize"] = (8, 6)
 matplotlib.rcParams["figure.dpi"] = 100
 matplotlib.rcParams["font.size"] = 8
@@ -146,6 +130,10 @@ class ExperimentRunnerGUI(ctk.CTk):
         # Create menu bar
         self._create_menu_bar()
 
+        # Thread-safety lock for all shared mutable state accessed from background
+        # threads (running_experiments, active_processes, stop_all).
+        self._state_lock = threading.Lock()
+
         # Application state
         self.running_experiments: Set[str] = set()
         self.experiment_cards: Dict[str, ctk.CTkFrame] = {}
@@ -156,6 +144,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.current_figure: Figure | None = None
         self.current_canvas: FigureCanvasTkAgg | None = None
         self.experiment_results: Dict[str, dict] = {}
+
+        # Agent engine (lazy init on first use to avoid startup latency)
+        self._agent_engine: Optional["XPRAgentEngine"] = None
 
         # Hypothesis approval board
         self.approval_board: ApprovalBoard = ApprovalBoard()
@@ -173,6 +164,9 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.experiments = self._find_experiments()
 
         self._setup_ui()
+
+        # Register graceful shutdown handler
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
         # Check dependencies after UI is initialized so we can log to console
         self._check_dependencies()
@@ -208,6 +202,53 @@ class ExperimentRunnerGUI(ctk.CTk):
             print("Optional dependencies missing (some features may be unavailable):")
             for msg in missing_optional:
                 print(msg)
+
+    # ------------------------------------------------------------------
+    # Lifecycle helpers
+    # ------------------------------------------------------------------
+
+    @property
+    def agent_engine(self) -> "XPRAgentEngine":
+        """Lazy-initialise XPRAgentEngine on first access."""
+        if self._agent_engine is None:
+            from xpr_agent_engine import XPRAgentEngine
+
+            self._agent_engine = XPRAgentEngine()
+        return self._agent_engine
+
+    def _on_close(self) -> None:
+        """Graceful shutdown: terminate all running experiment processes."""
+        with self._state_lock:
+            self.stop_all = True
+            procs = list(self.active_processes.items())
+        for name, proc in procs:
+            if proc.poll() is None:
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=5)
+                except Exception:
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
+            logging.getLogger(__name__).info(f"Terminated experiment process: {name}")
+        self.destroy()
+
+    def _stop_experiment(self, name: str) -> None:
+        """Terminate a single running experiment by name."""
+        with self._state_lock:
+            proc = self.active_processes.pop(name, None)
+            self.running_experiments.discard(name)
+        if proc is not None and proc.poll() is None:
+            try:
+                proc.terminate()
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+        self.after(
+            0,
+            lambda: self._log(f"[STOPPED] {name}", "#e74c3c"),
+        )
 
     def _find_experiments(self) -> List[Tuple[str, str]]:
         """Dynamically find all run_*.py files in the experiments directory."""
@@ -1294,17 +1335,20 @@ class ExperimentRunnerGUI(ctk.CTk):
             # )
         except Exception as e:
             plan_str = f"Failed to generate plan: {e}"
-            self._log(f"[XPR AGENT] Plan APPROVED. Executing {name} tuning.", "#2ecc71")
-            self._update_guardrail_dashboard(status="RUNNING", experiment=name)
+            # Show the error in the textbox widget — never overwrite plan_text reference.
+            plan_text.delete("0.0", "end")
+            plan_text.insert("0.0", plan_str)
+            self._log(f"[XPR AGENT] Plan generation failed: {e}", "#e74c3c")
+            self._update_guardrail_dashboard(status="WARNING", experiment=name)
             self._update_guardrail_dashboard(
                 status="WARNING", confidence=0.6, experiment=name
             )
-            # Capture the current plan text (may have been edited by human)
-            current_plan_text = self.agent_engine.get_current_plan()
-            if current_plan_text and current_plan_text.result:
-                plan_text = current_plan_text.result.get("plan", "No plan available")
+            # Capture current agent plan string (if any) to use in the modify chain.
+            _plan_result = self.agent_engine.get_current_plan()
+            if _plan_result and _plan_result.result:
+                plan_content = _plan_result.result.get("plan", plan_str)
             else:
-                plan_text = "No plan available"
+                plan_content = plan_str
             dialog.destroy()
 
             def run_modify_chain() -> None:
@@ -1316,12 +1360,11 @@ class ExperimentRunnerGUI(ctk.CTk):
                         .replace(".py", "")
                     )
                     # Step 1: Run issue-fix chain on the current plan
-                    # Use execute_skill instead of non-existent xpr_skill_chain
                     fix_result = engine.execute_skill(
                         "issue_fix",
                         experiment_key=experiment_key,
-                        original_plan=plan_text,
-                        current_plan=current_plan_text,
+                        original_plan=plan_content,
+                        current_plan=plan_content,
                     )
                     fix_summary = (
                         str(fix_result.result)
@@ -2508,9 +2551,21 @@ class ExperimentRunnerGUI(ctk.CTk):
             for spine in ax.spines.values():
                 spine.set_color("white")
 
-        # Helper to safely get value or 0
-        def get_val(key: str, default: float = 0.0) -> float:
-            return float(results.get(key, default))
+        def get_val(key: str) -> Optional[float]:
+            """Return float value from results, or None if not present."""
+            v = results.get(key)
+            return float(v) if v is not None else None
+
+        def _no_data(ax: Any, title: str) -> None:
+            """Render a 'No data' placeholder on an axis."""
+            ax.text(
+                0.5, 0.5, "No data\n(run experiment first)",
+                ha="center", va="center", transform=ax.transAxes,
+                color="#7f8c8d", fontsize=9,
+            )
+            ax.set_title(title)
+            ax.set_xticks([])
+            ax.set_yticks([])
 
         # Panel 1: Core Dynamics
         core_keys = [
@@ -2520,14 +2575,17 @@ class ExperimentRunnerGUI(ctk.CTk):
             "mean_threshold",
         ]
         core_vals = [get_val(k) for k in core_keys]
-        ax1.bar(
-            ["Ignition", "Metabolism", "Surprise", "Threshold"],
-            core_vals,
-            color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"],
-            alpha=0.8,
-        )
-        ax1.set_title("1. Core Dynamics")
-        ax1.tick_params(axis="x", rotation=45)
+        if any(v is not None for v in core_vals):
+            ax1.bar(
+                ["Ignition", "Metabolism", "Surprise", "Threshold"],
+                [v or 0.0 for v in core_vals],
+                color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"],
+                alpha=0.8,
+            )
+            ax1.set_title("1. Core Dynamics")
+            ax1.tick_params(axis="x", rotation=45)
+        else:
+            _no_data(ax1, "1. Core Dynamics")
 
         # Panel 2: Measurement Proxies
         proxy_keys = [
@@ -2536,18 +2594,18 @@ class ExperimentRunnerGUI(ctk.CTk):
             "primary_metric",
             "secondary_metric",
         ]
-        proxy_vals = [
-            get_val(k, np.random.uniform(0.1, 0.9) if "proxy" in k else 0.0)
-            for k in proxy_keys
-        ]
-        ax2.bar(
-            ["Efficiency", "Stability", "Primary", "Secondary"],
-            proxy_vals,
-            color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
-            alpha=0.8,
-        )
-        ax2.set_title("2. Measurement Proxies")
-        ax2.tick_params(axis="x", rotation=45)
+        proxy_vals = [get_val(k) for k in proxy_keys]
+        if any(v is not None for v in proxy_vals):
+            ax2.bar(
+                ["Efficiency", "Stability", "Primary", "Secondary"],
+                [v or 0.0 for v in proxy_vals],
+                color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
+                alpha=0.8,
+            )
+            ax2.set_title("2. Measurement Proxies")
+            ax2.tick_params(axis="x", rotation=45)
+        else:
+            _no_data(ax2, "2. Measurement Proxies")
 
         # Panel 3: Neuromodulators
         neuro_keys = [
@@ -2556,14 +2614,17 @@ class ExperimentRunnerGUI(ctk.CTk):
             "noradrenaline",
             "acetylcholine",
         ]
-        neuro_vals = [get_val(k, np.random.uniform(0.3, 0.8)) for k in neuro_keys]
-        ax3.bar(
-            ["DA", "5-HT", "NE", "ACh"],
-            neuro_vals,
-            color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"],
-            alpha=0.8,
-        )
-        ax3.set_title("3. Neuromodulators")
+        neuro_vals = [get_val(k) for k in neuro_keys]
+        if any(v is not None for v in neuro_vals):
+            ax3.bar(
+                ["DA", "5-HT", "NE", "ACh"],
+                [v or 0.0 for v in neuro_vals],
+                color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"],
+                alpha=0.8,
+            )
+            ax3.set_title("3. Neuromodulators")
+        else:
+            _no_data(ax3, "3. Neuromodulators")
 
         # Panel 4: Domain-specific
         domain_keys = [
@@ -2572,15 +2633,18 @@ class ExperimentRunnerGUI(ctk.CTk):
             "social_score",
             "learning_rate",
         ]
-        domain_vals = [get_val(k, np.random.uniform(0.2, 0.9)) for k in domain_keys]
-        ax4.bar(
-            ["Foraging", "Economic", "Social", "Learning"],
-            domain_vals,
-            color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
-            alpha=0.8,
-        )
-        ax4.set_title("4. Domain-Specific")
-        ax4.tick_params(axis="x", rotation=45)
+        domain_vals = [get_val(k) for k in domain_keys]
+        if any(v is not None for v in domain_vals):
+            ax4.bar(
+                ["Foraging", "Economic", "Social", "Learning"],
+                [v or 0.0 for v in domain_vals],
+                color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
+                alpha=0.8,
+            )
+            ax4.set_title("4. Domain-Specific")
+            ax4.tick_params(axis="x", rotation=45)
+        else:
+            _no_data(ax4, "4. Domain-Specific")
 
         # Panel 5: Psychiatric
         psych_keys = [
@@ -2589,45 +2653,52 @@ class ExperimentRunnerGUI(ctk.CTk):
             "mania_index",
             "psychosis_risk",
         ]
-        psych_vals = [get_val(k, np.random.uniform(0.0, 0.4)) for k in psych_keys]
-        ax5.bar(
-            ["Anxiety", "Depression", "Mania", "Psychotic"],
-            psych_vals,
-            color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
-            alpha=0.8,
-        )
-        ax5.set_title("5. Psychiatric Indicators")
-        ax5.tick_params(axis="x", rotation=45)
+        psych_vals = [get_val(k) for k in psych_keys]
+        if any(v is not None for v in psych_vals):
+            ax5.bar(
+                ["Anxiety", "Depression", "Mania", "Psychotic"],
+                [v or 0.0 for v in psych_vals],
+                color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
+                alpha=0.8,
+            )
+            ax5.set_title("5. Psychiatric Indicators")
+            ax5.tick_params(axis="x", rotation=45)
+        else:
+            _no_data(ax5, "5. Psychiatric Indicators")
 
         # Panel 6: State Space
-        state_x = results.get("state_x", np.random.randn(20))
-        state_y = results.get("state_y", np.random.randn(20))
-        ax6.scatter(state_x, state_y, c="#1abc9c", alpha=0.6)
-        ax6.set_title("6. State Space Trajectory")
-        ax6.set_xticks([])
-        ax6.set_yticks([])
+        state_x = results.get("state_x")
+        state_y = results.get("state_y")
+        if state_x is not None and state_y is not None:
+            ax6.scatter(state_x, state_y, c="#1abc9c", alpha=0.6)
+            ax6.set_title("6. State Space Trajectory")
+            ax6.set_xticks([])
+            ax6.set_yticks([])
+        else:
+            _no_data(ax6, "6. State Space Trajectory")
 
         # Panel 7: Precision Gap
-        time_steps = results.get("time_steps", np.arange(20))
-        expected_prec = results.get("expected_precision", np.linspace(0.8, 0.9, 20))
-        actual_prec = results.get(
-            "actual_precision", expected_prec - np.random.uniform(0.01, 0.1, 20)
-        )
-        ax7.plot(
-            time_steps, expected_prec, label="Expected Precision", color="#3498db", lw=2
-        )
-        ax7.plot(
-            time_steps, actual_prec, label="Actual Precision", color="#e74c3c", lw=2
-        )
-        ax7.fill_between(
-            time_steps,
-            expected_prec,
-            actual_prec,
-            color="#9b59b6",
-            alpha=0.3,
-            label="Precision Gap",
-        )
-        ax7.set_title("7. Precision Gap over Time")
+        time_steps = results.get("time_steps")
+        expected_prec = results.get("expected_precision")
+        actual_prec = results.get("actual_precision")
+        if time_steps is not None and expected_prec is not None and actual_prec is not None:
+            ax7.plot(
+                time_steps, expected_prec, label="Expected Precision", color="#3498db", lw=2
+            )
+            ax7.plot(
+                time_steps, actual_prec, label="Actual Precision", color="#e74c3c", lw=2
+            )
+            ax7.fill_between(
+                time_steps,
+                expected_prec,
+                actual_prec,
+                color="#9b59b6",
+                alpha=0.3,
+                label="Precision Gap",
+            )
+            ax7.set_title("7. Precision Gap over Time")
+        else:
+            _no_data(ax7, "7. Precision Gap over Time")
         ax7.legend(
             loc="upper right", facecolor="#2b2b2b", labelcolor="white", fontsize=8
         )
@@ -2695,9 +2766,19 @@ class ExperimentRunnerGUI(ctk.CTk):
                 for spine in ax.spines.values():
                     spine.set_color("white")
 
-            # Helper to safely get value or 0
-            def get_val(key: str, default: float = 0.0) -> float:
-                return cast(float, results.get(key, default))
+            def get_val2(key: str) -> Optional[float]:
+                v = results.get(key)
+                return float(v) if v is not None else None
+
+            def _no_data2(ax: Any, title: str) -> None:
+                ax.text(
+                    0.5, 0.5, "No data\n(run experiment first)",
+                    ha="center", va="center", transform=ax.transAxes,
+                    color="#7f8c8d", fontsize=9,
+                )
+                ax.set_title(title)
+                ax.set_xticks([])
+                ax.set_yticks([])
 
             # Panel 1: Core Dynamics
             core_keys = [
@@ -2706,121 +2787,101 @@ class ExperimentRunnerGUI(ctk.CTk):
                 "mean_surprise",
                 "mean_threshold",
             ]
-            core_vals = [get_val(k) for k in core_keys]
-            ax1.bar(
-                ["Ignition", "Metabolism", "Surprise", "Threshold"],
-                core_vals,
-                color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"],
-                alpha=0.8,
-            )
-            ax1.set_title("1. Core Dynamics")
-            ax1.tick_params(axis="x", rotation=45)
+            core_vals2 = [get_val2(k) for k in core_keys]
+            if any(v is not None for v in core_vals2):
+                ax1.bar(
+                    ["Ignition", "Metabolism", "Surprise", "Threshold"],
+                    [v or 0.0 for v in core_vals2],
+                    color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"],
+                    alpha=0.8,
+                )
+                ax1.set_title("1. Core Dynamics")
+                ax1.tick_params(axis="x", rotation=45)
+            else:
+                _no_data2(ax1, "1. Core Dynamics")
 
             # Panel 2: Measurement Proxies
-            proxy_keys = [
-                "proxy_efficiency",
-                "proxy_stability",
-                "primary_metric",
-                "secondary_metric",
-            ]
-            proxy_vals = [
-                get_val(k, np.random.uniform(0.1, 0.9) if "proxy" in k else 0.0)
-                for k in proxy_keys
-            ]
-            # Note: generating mock data for some metrics if missing since we upgraded to 7-panels
-            ax2.bar(
-                ["Efficiency", "Stability", "Primary", "Secondary"],
-                proxy_vals,
-                color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
-                alpha=0.8,
-            )
-            ax2.set_title("2. Measurement Proxies")
-            ax2.tick_params(axis="x", rotation=45)
+            proxy_keys = ["proxy_efficiency", "proxy_stability", "primary_metric", "secondary_metric"]
+            proxy_vals2 = [get_val2(k) for k in proxy_keys]
+            if any(v is not None for v in proxy_vals2):
+                ax2.bar(
+                    ["Efficiency", "Stability", "Primary", "Secondary"],
+                    [v or 0.0 for v in proxy_vals2],
+                    color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
+                    alpha=0.8,
+                )
+                ax2.set_title("2. Measurement Proxies")
+                ax2.tick_params(axis="x", rotation=45)
+            else:
+                _no_data2(ax2, "2. Measurement Proxies")
 
             # Panel 3: Neuromodulators
-            neuro_keys = [
-                "dopamine_level",
-                "serotonin_level",
-                "noradrenaline",
-                "acetylcholine",
-            ]
-            neuro_vals = [get_val(k, np.random.uniform(0.3, 0.8)) for k in neuro_keys]
-            ax3.bar(
-                ["DA", "5-HT", "NE", "ACh"],
-                neuro_vals,
-                color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"],
-                alpha=0.8,
-            )
-            ax3.set_title("3. Neuromodulators")
+            neuro_keys = ["dopamine_level", "serotonin_level", "noradrenaline", "acetylcholine"]
+            neuro_vals2 = [get_val2(k) for k in neuro_keys]
+            if any(v is not None for v in neuro_vals2):
+                ax3.bar(
+                    ["DA", "5-HT", "NE", "ACh"],
+                    [v or 0.0 for v in neuro_vals2],
+                    color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"],
+                    alpha=0.8,
+                )
+                ax3.set_title("3. Neuromodulators")
+            else:
+                _no_data2(ax3, "3. Neuromodulators")
 
             # Panel 4: Domain-specific
-            domain_keys = [
-                "foraging_efficiency",
-                "economic_value",
-                "social_score",
-                "learning_rate",
-            ]
-            domain_vals = [get_val(k, np.random.uniform(0.2, 0.9)) for k in domain_keys]
-            ax4.bar(
-                ["Foraging", "Economic", "Social", "Learning"],
-                domain_vals,
-                color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
-                alpha=0.8,
-            )
-            ax4.set_title("4. Domain-Specific")
-            ax4.tick_params(axis="x", rotation=45)
+            domain_keys = ["foraging_efficiency", "economic_value", "social_score", "learning_rate"]
+            domain_vals2 = [get_val2(k) for k in domain_keys]
+            if any(v is not None for v in domain_vals2):
+                ax4.bar(
+                    ["Foraging", "Economic", "Social", "Learning"],
+                    [v or 0.0 for v in domain_vals2],
+                    color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
+                    alpha=0.8,
+                )
+                ax4.set_title("4. Domain-Specific")
+                ax4.tick_params(axis="x", rotation=45)
+            else:
+                _no_data2(ax4, "4. Domain-Specific")
 
             # Panel 5: Psychiatric
-            psych_keys = [
-                "anxiety_index",
-                "depression_index",
-                "mania_index",
-                "psychosis_risk",
-            ]
-            psych_vals = [get_val(k, np.random.uniform(0.0, 0.4)) for k in psych_keys]
-            ax5.bar(
-                ["Anxiety", "Depression", "Mania", "Psychotic"],
-                psych_vals,
-                color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
-                alpha=0.8,
-            )
-            ax5.set_title("5. Psychiatric Indicators")
-            ax5.tick_params(axis="x", rotation=45)
+            psych_keys = ["anxiety_index", "depression_index", "mania_index", "psychosis_risk"]
+            psych_vals2 = [get_val2(k) for k in psych_keys]
+            if any(v is not None for v in psych_vals2):
+                ax5.bar(
+                    ["Anxiety", "Depression", "Mania", "Psychotic"],
+                    [v or 0.0 for v in psych_vals2],
+                    color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
+                    alpha=0.8,
+                )
+                ax5.set_title("5. Psychiatric Indicators")
+                ax5.tick_params(axis="x", rotation=45)
+            else:
+                _no_data2(ax5, "5. Psychiatric Indicators")
 
             # Panel 6: State Space
-            state_x = results.get("state_x", np.random.randn(20))
-            state_y = results.get("state_y", np.random.randn(20))
-            ax6.scatter(state_x, state_y, c="#1abc9c", alpha=0.6)
-            ax6.set_title("6. State Space Trajectory")
-            ax6.set_xticks([])
-            ax6.set_yticks([])
+            state_x2 = results.get("state_x")
+            state_y2 = results.get("state_y")
+            if state_x2 is not None and state_y2 is not None:
+                ax6.scatter(state_x2, state_y2, c="#1abc9c", alpha=0.6)
+                ax6.set_title("6. State Space Trajectory")
+                ax6.set_xticks([])
+                ax6.set_yticks([])
+            else:
+                _no_data2(ax6, "6. State Space Trajectory")
 
             # Panel 7: Precision Gap
-            time_steps = results.get("time_steps", np.arange(20))
-            expected_prec = results.get("expected_precision", np.linspace(0.8, 0.9, 20))
-            actual_prec = results.get(
-                "actual_precision", expected_prec - np.random.uniform(0.01, 0.1, 20)
-            )
-            ax7.plot(
-                time_steps,
-                expected_prec,
-                label="Expected Precision",
-                color="#3498db",
-                lw=2,
-            )
-            ax7.plot(
-                time_steps, actual_prec, label="Actual Precision", color="#e74c3c", lw=2
-            )
-            ax7.fill_between(
-                time_steps,
-                expected_prec,
-                actual_prec,
-                color="#9b59b6",
-                alpha=0.3,
-                label="Precision Gap",
-            )
-            ax7.set_title("7. Precision Gap over Time")
-            ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
+            time_steps2 = results.get("time_steps")
+            expected_prec2 = results.get("expected_precision")
+            actual_prec2 = results.get("actual_precision")
+            if time_steps2 is not None and expected_prec2 is not None and actual_prec2 is not None:
+                ax7.plot(time_steps2, expected_prec2, label="Expected Precision", color="#3498db", lw=2)
+                ax7.plot(time_steps2, actual_prec2, label="Actual Precision", color="#e74c3c", lw=2)
+                ax7.fill_between(time_steps2, expected_prec2, actual_prec2, color="#9b59b6", alpha=0.3, label="Precision Gap")
+                ax7.set_title("7. Precision Gap over Time")
+                ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
+            else:
+                _no_data2(ax7, "7. Precision Gap over Time")
 
             viz_canvas.draw()
         else:
@@ -3148,11 +3209,11 @@ if __name__ == "__main__":
 
         try:
             if platform.system() == "Windows":
-                subprocess.run(["explorer", str(experiments_dir)], check=True)
+                secure_run(["explorer", str(experiments_dir)], check=True)
             elif platform.system() == "Darwin":  # macOS
-                subprocess.run(["open", str(experiments_dir)], check=True)
+                secure_run(["open", str(experiments_dir)], check=True)
             else:  # Linux
-                subprocess.run(["xdg-open", str(experiments_dir)], check=True)
+                secure_run(["xdg-open", str(experiments_dir)], check=True)
 
             self._log(f"Opened experiments directory: {experiments_dir}", "#3498db")
         except Exception as e:
@@ -3595,16 +3656,15 @@ Based on the current state of experiments and guardrails:
             if script_path and script_path.exists():
                 try:
                     import platform
-                    import subprocess
 
                     if platform.system() == "Windows":
-                        subprocess.run(["notepad", str(script_path)], check=True)
+                        secure_run(["notepad", str(script_path)], check=True)
                     elif platform.system() == "Darwin":  # macOS
-                        subprocess.run(
+                        secure_run(
                             ["open", "-a", "TextEdit", str(script_path)], check=True
                         )
                     else:  # Linux
-                        subprocess.run(["xdg-open", str(script_path)], check=True)
+                        secure_run(["xdg-open", str(script_path)], check=True)
 
                     self._log(
                         f"Opened script for editing: {script_path.name}", "#3498db"

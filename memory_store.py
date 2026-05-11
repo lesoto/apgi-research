@@ -74,17 +74,25 @@ class MemoryStore:
         self._tfidf_dirty = True
         self._idf: Dict[str, float] = {}
         self._doc_vectors: List[Dict[str, float]] = []
+        # Cached embedding model — loaded at most once per MemoryStore instance.
+        self._embedding_model: Any = None
         # Check for advanced embedding availability
         self.has_semantic_embeddings = self._check_embedding_availability()
+
+    def _get_embedding_model(self) -> Any:
+        """Return the cached SentenceTransformer model, loading it on first call."""
+        if self._embedding_model is None:
+            from sentence_transformers import SentenceTransformer
+
+            self._embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+            logger.info("SentenceTransformer model loaded and cached.")
+        return self._embedding_model
 
     def _check_embedding_availability(self) -> bool:
         """Check if advanced semantic embedding models are available."""
         try:
-            from sentence_transformers import SentenceTransformer
-
-            # Test if we can load a model
-            model = SentenceTransformer("all-MiniLM-L6-v2")
-            _ = model.encode("test")  # Test encoding
+            model = self._get_embedding_model()
+            _ = model.encode("test")
             logger.info(
                 "Advanced semantic embeddings (sentence-transformers) available"
             )
@@ -101,7 +109,16 @@ class MemoryStore:
             try:
                 with open(self.storage_path, "r") as f:
                     data = json.load(f)
-                    return [MemoryEntry(**entry) for entry in data]
+                entries = []
+                for entry in data:
+                    # Reconstruct VectorEmbedding from dict before unpacking into
+                    # the dataclass — plain dicts are not valid for the typed field.
+                    raw_embedding = entry.get("embedding")
+                    if isinstance(raw_embedding, dict):
+                        entry = dict(entry)
+                        entry["embedding"] = VectorEmbedding.from_dict(raw_embedding)
+                    entries.append(MemoryEntry(**entry))
+                return entries
             except Exception as e:
                 logger.error(f"Failed to load memory store: {e}")
         return []
@@ -150,12 +167,8 @@ class MemoryStore:
             VectorEmbedding object with dense vector representation
         """
         try:
-            # Try to use sentence-transformers for proper semantic embeddings
-            from sentence_transformers import SentenceTransformer
-
-            model = SentenceTransformer(
-                "all-MiniLM-L6-v2"
-            )  # Lightweight, efficient model
+            # Use cached model — never reload from disk on each call.
+            model = self._get_embedding_model()
 
             # Generate proper semantic embedding
             embedding_vector = model.encode(text, convert_to_numpy=True)

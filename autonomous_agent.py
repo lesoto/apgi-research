@@ -37,6 +37,7 @@ import logging
 import re
 import signal
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import asdict, dataclass
@@ -648,7 +649,7 @@ class AsyncGitOperations:
             raise ValueError(f"[APGI AGENT] Git command not in whitelist: {args}")
 
         # Run command in executor to avoid blocking
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         try:
             result = await asyncio.wait_for(
                 loop.run_in_executor(
@@ -912,12 +913,31 @@ class AutonomousAgent:
             start_time = time.time()
             old_signal_handler = None
             signals_set = False
-            try:
-                old_signal_handler = signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(timeout_seconds)
+            _timer: Optional[threading.Timer] = None
+            if sys.platform != "win32":
+                # SIGALRM is Unix-only; use it for low-overhead timeout.
+                try:
+                    old_signal_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(timeout_seconds)
+                    signals_set = True
+                except (ValueError, AttributeError):
+                    pass
+            else:
+                # Windows fallback: threading.Timer fires timeout_handler from a
+                # daemon thread which raises in the main thread via signal.raise_signal
+                # if available (Python 3.8+), otherwise logs a warning.
+                def _win_timeout() -> None:
+                    try:
+                        signal.raise_signal(signal.SIGTERM)
+                    except Exception:
+                        logging.getLogger(__name__).warning(
+                            "Experiment timed out but could not raise signal on Windows."
+                        )
+
+                _timer = threading.Timer(timeout_seconds, _win_timeout)
+                _timer.daemon = True
+                _timer.start()
                 signals_set = True
-            except ValueError:
-                pass
 
             try:
                 # Import and run experiment
@@ -1045,14 +1065,17 @@ class AutonomousAgent:
                     status="crash",
                 )
             finally:
-                # Clean up signal handler
+                # Clean up timeout mechanism
                 if signals_set:
-                    try:
-                        signal.alarm(0)
-                        if old_signal_handler is not None:
-                            signal.signal(signal.SIGALRM, old_signal_handler)
-                    except ValueError:
-                        pass
+                    if sys.platform != "win32":
+                        try:
+                            signal.alarm(0)
+                            if old_signal_handler is not None:
+                                signal.signal(signal.SIGALRM, old_signal_handler)
+                        except (ValueError, AttributeError):
+                            pass
+                    elif _timer is not None:
+                        _timer.cancel()
 
         # Should not reach here, but safety fallback
         return ExperimentResult(

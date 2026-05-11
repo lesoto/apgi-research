@@ -5,9 +5,11 @@ This module provides the XPRAgentEngine and SkillResult classes
 that form the foundation of the autonomous agent system.
 """
 
+import datetime
 import json
 import logging
 import os
+import re
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
@@ -623,35 +625,6 @@ class EnhancedXPRAgentEngine(XPRAgentEngine):
         self.skills["llm_plan_generation"] = self.llm_integration.generate_plan
 
 
-"""
-XPR Agent Engine - Enhanced Autonomous Agent Framework
-
-This module extends the XPR Agent Engine with additional capabilities
-for enterprise-grade autonomous experimentation and optimization.
-
-Key enhancements over XPR Agent Engine:
-- Enhanced LLM integration with multiple provider support
-- Advanced skill chaining with dependency resolution
-- Performance-driven skill selection
-- Comprehensive error recovery and self-healing
-- Real-time metrics and monitoring
-- Advanced plan generation with natural language understanding
-- Multi-objective optimization strategies
-"""
-
-import datetime
-import logging
-import re
-import time
-from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Dict, List
-
-# XPRAgentEngine is already defined above in this same file
-
-logger = logging.getLogger(__name__)
-
-
 class XPRSkillType(Enum):
     """Enhanced skill types for XPR Agent Engine."""
 
@@ -971,9 +944,9 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                             "error_type": "import_error",
                             "suggested_fixes": [
                                 f"Install missing module: {missing_module}",
-                                "Verify PYTHONPATH: {os.environ.get('PYTHONPATH', 'Not set')}",
-                                "Run: pip install {missing_module}",
-                                "Check module location: {file_path}",
+                                f"Verify PYTHONPATH: {os.environ.get('PYTHONPATH', 'Not set')}",
+                                f"Run: pip install {missing_module}",
+                                f"Check module location: {file_path}",
                             ],
                             "dependencies": [missing_module],
                             "confidence": 0.9,
@@ -1000,7 +973,7 @@ class XPRAgentEngineEnhanced(XPRAgentEngine):
                     {
                         "error_type": "permission_error",
                         "suggested_fixes": [
-                            "Check file permissions: {file_path}",
+                            f"Check file permissions: {file_path}",
                             "Run with appropriate privileges",
                             "Verify directory access rights",
                             "Check user and group ownership",

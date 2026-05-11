@@ -9,6 +9,7 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import secrets
 import uuid
 from dataclasses import dataclass, field
@@ -178,7 +179,21 @@ class AuthorizationManager:
         self.sessions: Dict[str, TokenPair] = {}  # session_id -> token_pair
         self.authorization_log: List[Dict] = []
         self.log_limit = 10000  # Cap the in-memory log
-        self.secret_key = secret_key or secrets.token_urlsafe(32)
+        # Load JWT secret from env var so tokens survive process restarts.
+        # Fall back to a generated secret with a startup warning (suitable for
+        # single-process dev use only).
+        env_secret = os.environ.get("APGI_JWT_SECRET")
+        if secret_key:
+            self.secret_key = secret_key
+        elif env_secret:
+            self.secret_key = env_secret
+        else:
+            self.secret_key = secrets.token_urlsafe(32)
+            self.logger.warning(
+                "APGI_JWT_SECRET not set — using an ephemeral signing key. "
+                "All tokens will be invalidated on process restart. "
+                "Set APGI_JWT_SECRET to a stable secret for production use."
+            )
         self.token_blacklist: Set[str] = set()  # revoked tokens
 
     def _hash_token(self, token: str) -> str:

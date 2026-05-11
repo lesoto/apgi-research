@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from utils.apgi_security import secure_run
 from validation import ValidationResult, validate_git_operations
 
 
@@ -78,9 +79,9 @@ class GitRollbackManager:
     ) -> subprocess.CompletedProcess:
         """Run a git command and return the result."""
         try:
-            result = subprocess.run(
+            result = secure_run(
                 ["git"] + cmd,
-                cwd=self.repo_path,
+                cwd=str(self.repo_path),
                 capture_output=True,
                 text=True,
                 check=check,
@@ -454,9 +455,9 @@ class GitOperations:
     ) -> subprocess.CompletedProcess:
         """Run a git command and return the result."""
         try:
-            result = subprocess.run(
+            result = secure_run(
                 ["git"] + cmd,
-                cwd=self.repo_path,
+                cwd=str(self.repo_path),
                 capture_output=True,
                 text=True,
                 check=check,

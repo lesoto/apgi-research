@@ -154,9 +154,23 @@ class ImmutableAuditSink:
                                 error_message=event_data.get("error_message"),
                                 sequence_number=event_data["sequence_number"],
                                 previous_hash=event_data["previous_hash"],
+                                # Restore integrity fields from the stored record.
+                                event_hash=event_data.get("event_hash", ""),
+                                signature=event_data.get("signature", ""),
                             )
-                            # Re-sign to verify integrity
-                            event.sign(self.secret_key)
+                            # Verify — never re-sign loaded events.
+                            if event.event_hash and event.signature:
+                                if not event.verify_signature(self.secret_key):
+                                    self.logger.error(
+                                        f"Audit event {event.sequence_number} "
+                                        "FAILED integrity check — possible tampering. "
+                                        f"event_id={event.event_id}"
+                                    )
+                            else:
+                                self.logger.warning(
+                                    f"Audit event {event.sequence_number} has no "
+                                    "stored signature (legacy record)."
+                                )
                             self.events.append(event)
                             self.sequence_counter = max(
                                 self.sequence_counter, event.sequence_number + 1

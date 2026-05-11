@@ -27,8 +27,10 @@ from typing import Any, Callable, Dict, List, Optional
 from apgi_audit import AuditEventType, get_audit_sink
 from utils.apgi_logging import get_logger
 
-# Default salt for pseudonymization when no environment variable is set
-DEFAULT_SALT = "default_salt_for_testing_purposes_only"
+# Sentinel so pseudonymize_participant can detect a missing env var at call
+# time rather than failing silently.  No default salt is provided — a
+# hardcoded fallback would make pseudonymization trivially reversible.
+_MISSING_SALT_SENTINEL = object()
 
 logger = logging.getLogger(__name__)
 
@@ -900,14 +902,28 @@ class RetentionJobScheduler:
 
 def pseudonymize_participant(participant_id: str, salt: Optional[str] = None) -> str:
     """
-    Optional pseudonymization pipeline for participant identifiers.
-    Hashes the participant ID to protect privacy in exported datasets.
+    Pseudonymization pipeline for participant identifiers.
+
+    Requires the APGI_PSEUDONYM_SALT environment variable to be set, or a
+    salt to be passed explicitly.  Raises ValueError if neither is available
+    so callers are alerted at pseudonymization time rather than silently
+    producing reversible hashes via a well-known fallback salt.
+
+    Generate a suitable salt with:
+        python -c "import secrets; print(secrets.token_hex(32))"
     """
     if not participant_id:
         return ""
 
     if salt is None:
-        salt = os.environ.get("APGI_PSEUDONYM_SALT", DEFAULT_SALT)
+        env_salt = os.environ.get("APGI_PSEUDONYM_SALT")
+        if not env_salt:
+            raise ValueError(
+                "APGI_PSEUDONYM_SALT environment variable must be set before "
+                "pseudonymizing participant identifiers.  "
+                "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        salt = env_salt
 
     pipeline_input = f"{participant_id}:{salt}".encode("utf-8")
     return hashlib.sha256(pipeline_input).hexdigest()

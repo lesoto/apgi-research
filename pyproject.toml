@@ -4,11 +4,6 @@ version = "0.1.0"
 description = "APGI Autonomous pretraining research swarm"
 readme = "README.md"
 requires-python = ">=3.10"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["apgi*"]
-exclude = ["tests*", "experiments*", "docs*", "htmlcov*", "test_reports*", ".benchmarks*", ".apgi_*"]
 dependencies = [
     "GitPython>=3.1.0",
     "customtkinter==5.2.2",
@@ -24,11 +19,16 @@ dependencies = [
     "scikit-learn>=1.3.0",
     "Pillow>=9.5.0",
     "tiktoken>=0.11.0",
-    "torch==2.9.1",
+    "torch>=2.0.0",
     "tqdm>=4.65.0",
     "pixelmatch>=0.4.0",
     "pydantic>=2.0.0",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["apgi*"]
+exclude = ["tests*", "experiments*", "docs*", "htmlcov*", "test_reports*", ".benchmarks*", ".apgi_*"]
 
 [project.optional-dependencies]
 dev = [
