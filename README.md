@@ -697,8 +697,6 @@ For issues, questions, or contributions:
 - **Documentation**: Check README.md and inline docs
 - **Community**: Join discussions in GitHub Discussions
 
-## Documentation
-
 - `docs/APGI-USAGE-GUIDE.md` - Complete usage guide
 - `docs/ALGORITHM.md` - Algorithm documentation
 - `docs/APGI-COMPLIANCE.md` - Compliance framework
