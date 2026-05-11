@@ -105,11 +105,15 @@ class TestAsyncGitOperations:
             None, lambda: manager.stage_files(["test_async.txt"])
         )
 
-        assert result.is_valid, f"Failed to stage: {result.errors}"
+        assert (
+            result.is_valid
+        ), f"Failed to stage: {result.errors}"  # nosec: B101 - Test assertion
 
         # Verify file is staged
         status = manager.get_status()
-        assert "test_async.txt" not in status["modified_files"]
+        assert (
+            "test_async.txt" not in status["modified_files"]
+        )  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 
@@ -131,11 +135,15 @@ class TestAsyncGitOperations:
             None, lambda: manager.commit_changes("Async test commit")
         )
 
-        assert result.is_valid, f"Failed to commit: {result.errors}"
+        assert (
+            result.is_valid
+        ), f"Failed to commit: {result.errors}"  # nosec: B101 - Test assertion
 
         # Verify commit exists
         status = manager.get_status()
-        assert status["operations_count"] == 2  # stage + commit
+        assert (
+            status["operations_count"] == 2
+        )  # stage + commit  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 
@@ -160,18 +168,20 @@ class TestAsyncGitOperations:
         )
 
         new_commit = manager.get_current_commit()
-        assert new_commit != initial_commit
+        assert new_commit != initial_commit  # nosec: B101 - Test assertion
 
         # Async rollback
         result = await loop.run_in_executor(
             None, lambda: manager.rollback_last_operation()
         )
 
-        assert result.is_valid, f"Failed to rollback: {result.errors}"
+        assert (
+            result.is_valid
+        ), f"Failed to rollback: {result.errors}"  # nosec: B101 - Test assertion
 
         # Verify we're back to initial commit
         final_commit = manager.get_current_commit()
-        assert final_commit == initial_commit
+        assert final_commit == initial_commit  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 
@@ -200,7 +210,9 @@ class TestAsyncGitOperations:
 
         # All operations should complete (some may fail due to git locking)
         success_count = sum(1 for r in results if hasattr(r, "is_valid") and r.is_valid)
-        assert success_count >= 1, "At least one staging operation should succeed"
+        assert (
+            success_count >= 1
+        ), "At least one staging operation should succeed"  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 
@@ -213,7 +225,9 @@ class TestAsyncGitOperations:
             None, lambda: manager.create_branch("async-test-branch")
         )
 
-        assert result.is_valid, f"Failed to create branch: {result.errors}"
+        assert (
+            result.is_valid
+        ), f"Failed to create branch: {result.errors}"  # nosec: B101 - Test assertion
 
         # Verify branch was created
         proc_result = subprocess.run(
@@ -224,7 +238,7 @@ class TestAsyncGitOperations:
             check=True,
         )
         branches = proc_result.stdout
-        assert "async-test-branch" in branches
+        assert "async-test-branch" in branches  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 
@@ -261,7 +275,9 @@ class TestAsyncGitStress:
         success_count = sum(1 for r in results if hasattr(r, "is_valid") and r.is_valid)
 
         # At least some should succeed (git may lock but should recover)
-        assert success_count >= 1, f"Expected at least 1 success, got {success_count}"
+        assert (
+            success_count >= 1
+        ), f"Expected at least 1 success, got {success_count}"  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 
@@ -284,7 +300,7 @@ class TestAsyncGitStress:
                 loop.run_in_executor(None, lambda: manager.stage_files(files[:10])),
                 timeout=5.0,
             )
-            assert result.is_valid
+            assert result.is_valid  # nosec: B101 - Test assertion
         except asyncio.TimeoutError:
             pytest.skip("Operation timed out - may indicate slow git operations")
 
@@ -338,7 +354,7 @@ class TestAsyncGitPerformance:
         sync_duration = time.time() - start
 
         # Async should be faster or comparable
-        assert (
+        assert (  # nosec: B101 - Test assertion
             async_duration <= sync_duration * 1.5
         ), "Async should not be significantly slower"
 
@@ -375,7 +391,9 @@ class TestAsyncGitPerformance:
         mem_increase = mem_after - mem_before
 
         # Should not leak memory excessively
-        assert mem_increase < 50, f"Memory increase too large: {mem_increase:.1f}MB"
+        assert (
+            mem_increase < 50
+        ), f"Memory increase too large: {mem_increase:.1f}MB"  # nosec: B101 - Test assertion
 
         manager.cleanup_backups()
 

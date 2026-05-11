@@ -39,8 +39,8 @@ class TestThreadBasedTimeout:
     def test_init(self):
         """Test initialization."""
         timeout = ThreadBasedTimeout()
-        assert timeout.timer is None
-        assert timeout.timed_out is False
+        assert timeout.timer is None  # nosec: B101 - Test assertion
+        assert timeout.timed_out is False  # nosec: B101 - Test assertion
 
     def test_start_timeout(self):
         """Test starting timeout."""
@@ -49,14 +49,16 @@ class TestThreadBasedTimeout:
 
         timeout.start(0.1, callback)
 
-        assert timeout.timer is not None
-        assert isinstance(timeout.timer, threading.Timer)
-        assert timeout.timer.daemon is True
+        assert timeout.timer is not None  # nosec: B101 - Test assertion
+        assert isinstance(
+            timeout.timer, threading.Timer
+        )  # nosec: B101 - Test assertion
+        assert timeout.timer.daemon is True  # nosec: B101 - Test assertion
 
         # Wait for timeout
         time.sleep(0.15)
         callback.assert_called_once()
-        assert timeout.timed_out is True
+        assert timeout.timed_out is True  # nosec: B101 - Test assertion
 
     def test_start_zero_timeout(self):
         """Test starting with zero timeout."""
@@ -66,7 +68,7 @@ class TestThreadBasedTimeout:
         timeout.start(0, callback)
 
         # Should return immediately without creating timer
-        assert timeout.timer is None
+        assert timeout.timer is None  # nosec: B101 - Test assertion
         callback.assert_not_called()
 
     def test_cancel_timeout(self):
@@ -95,7 +97,7 @@ class TestSignalBasedTimeout:
     def test_init(self):
         """Test initialization."""
         timeout = SignalBasedTimeout()
-        assert timeout.original_handler is None
+        assert timeout.original_handler is None  # nosec: B101 - Test assertion
 
     @pytest.mark.skipif(
         sys.platform == "win32", reason="SIGALRM not available on Windows"
@@ -155,20 +157,20 @@ class TestTimeoutManager:
     def test_init_default(self):
         """Test default initialization."""
         manager = TimeoutManager()
-        assert manager.prefer_signal is False
-        assert manager.active_timeouts == {}
+        assert manager.prefer_signal is False  # nosec: B101 - Test assertion
+        assert manager.active_timeouts == {}  # nosec: B101 - Test assertion
 
     def test_init_with_signal_preference(self):
         """Test initialization with signal preference."""
         manager = TimeoutManager(prefer_signal=True)
-        assert manager.prefer_signal is True
+        assert manager.prefer_signal is True  # nosec: B101 - Test assertion
 
     def test_select_strategy_thread_based(self):
         """Test selecting thread-based strategy."""
         manager = TimeoutManager()
         strategy = manager._select_strategy()
 
-        assert isinstance(strategy, ThreadBasedTimeout)
+        assert isinstance(strategy, ThreadBasedTimeout)  # nosec: B101 - Test assertion
 
     @pytest.mark.skipif(
         sys.platform == "win32", reason="SIGALRM not available on Windows"
@@ -178,7 +180,7 @@ class TestTimeoutManager:
         manager = TimeoutManager(prefer_signal=True)
         strategy = manager._select_strategy()
 
-        assert isinstance(strategy, SignalBasedTimeout)
+        assert isinstance(strategy, SignalBasedTimeout)  # nosec: B101 - Test assertion
 
     def test_select_strategy_windows_fallback(self):
         """Test fallback to thread-based on Windows."""
@@ -187,7 +189,9 @@ class TestTimeoutManager:
             strategy = manager._select_strategy()
 
             # Should fall back to thread-based on Windows
-            assert isinstance(strategy, ThreadBasedTimeout)
+            assert isinstance(
+                strategy, ThreadBasedTimeout
+            )  # nosec: B101 - Test assertion
 
     def test_timeout_context_manager_success(self):
         """Test timeout context manager with successful completion."""
@@ -212,7 +216,9 @@ class TestTimeoutManager:
             with manager.timeout(0.01, "Operation timed out"):
                 time.sleep(0.1)  # Sleep longer than timeout
 
-        assert "Operation timed out" in str(exc_info.value)
+        assert "Operation timed out" in str(
+            exc_info.value
+        )  # nosec: B101 - Test assertion
 
     def test_run_with_timeout_success(self):
         """Test running function with timeout successfully."""
@@ -222,7 +228,7 @@ class TestTimeoutManager:
             return x + y
 
         result = manager.run_with_timeout(test_func, 1.0, 5, y=5)
-        assert result == 10
+        assert result == 10  # nosec: B101 - Test assertion
 
     def test_run_with_timeout_failure(self):
         """Test running function that times out."""
@@ -242,22 +248,22 @@ class TestCancellationToken:
     def test_init(self):
         """Test initialization."""
         token = CancellationToken()
-        assert token.cancelled is False
+        assert token.cancelled is False  # nosec: B101 - Test assertion
 
     def test_cancel(self):
         """Test cancellation."""
         token = CancellationToken()
         token.cancel()
 
-        assert token.cancelled is True
+        assert token.cancelled is True  # nosec: B101 - Test assertion
 
     def test_is_cancelled(self):
         """Test checking cancellation status."""
         token = CancellationToken()
 
-        assert token.is_cancelled() is False
+        assert token.is_cancelled() is False  # nosec: B101 - Test assertion
         token.cancel()
-        assert token.is_cancelled() is True
+        assert token.is_cancelled() is True  # nosec: B101 - Test assertion
 
     def test_check_cancelled_no_exception(self):
         """Test check when not cancelled."""
@@ -274,7 +280,9 @@ class TestCancellationToken:
         with pytest.raises(APGITimeoutError) as exc_info:
             token.check_cancelled()
 
-        assert "Operation was cancelled" in str(exc_info.value)
+        assert "Operation was cancelled" in str(
+            exc_info.value
+        )  # nosec: B101 - Test assertion
 
 
 class TestCancellableOperation:
@@ -283,14 +291,14 @@ class TestCancellableOperation:
     def test_init_with_timeout(self):
         """Test initialization with timeout."""
         op = CancellableOperation(timeout_seconds=5.0)
-        assert op.timeout_seconds == 5.0
-        assert isinstance(op.token, CancellationToken)
-        assert isinstance(op.manager, TimeoutManager)
+        assert op.timeout_seconds == 5.0  # nosec: B101 - Test assertion
+        assert isinstance(op.token, CancellationToken)  # nosec: B101 - Test assertion
+        assert isinstance(op.manager, TimeoutManager)  # nosec: B101 - Test assertion
 
     def test_init_without_timeout(self):
         """Test initialization without timeout."""
         op = CancellableOperation()
-        assert op.timeout_seconds == 0
+        assert op.timeout_seconds == 0  # nosec: B101 - Test assertion
 
     def test_run_with_token(self):
         """Test running function that accepts token."""
@@ -300,7 +308,7 @@ class TestCancellableOperation:
             return x * 2
 
         result = op.run(func, 5)
-        assert result == 10
+        assert result == 10  # nosec: B101 - Test assertion
 
     def test_run_without_token(self):
         """Test running function that doesn't accept token."""
@@ -310,7 +318,7 @@ class TestCancellableOperation:
             return x * 2
 
         result = op.run(func, 5)
-        assert result == 10
+        assert result == 10  # nosec: B101 - Test assertion
 
     def test_run_with_timeout(self):
         """Test running with timeout."""
@@ -320,7 +328,7 @@ class TestCancellableOperation:
             return "success"
 
         result = op.run(func)
-        assert result == "success"
+        assert result == "success"  # nosec: B101 - Test assertion
 
     def test_run_with_timeout_exceeded(self):
         """Test running with timeout that is exceeded."""
@@ -338,7 +346,7 @@ class TestCancellableOperation:
         op = CancellableOperation()
         op.cancel()
 
-        assert op.token.cancelled is True
+        assert op.token.cancelled is True  # nosec: B101 - Test assertion
 
 
 class TestGlobalFunctions:
@@ -347,14 +355,14 @@ class TestGlobalFunctions:
     def test_get_timeout_manager(self):
         """Test getting global timeout manager."""
         manager = get_timeout_manager()
-        assert isinstance(manager, TimeoutManager)
+        assert isinstance(manager, TimeoutManager)  # nosec: B101 - Test assertion
 
     def test_set_timeout_manager(self):
         """Test setting global timeout manager."""
         new_manager = TimeoutManager()
         set_timeout_manager(new_manager)
 
-        assert get_timeout_manager() is new_manager
+        assert get_timeout_manager() is new_manager  # nosec: B101 - Test assertion
 
     def test_with_timeout_decorator(self):
         """Test with_timeout decorator."""
@@ -364,7 +372,7 @@ class TestGlobalFunctions:
             return x * 2
 
         result = test_func(5)
-        assert result == 10
+        assert result == 10  # nosec: B101 - Test assertion
 
     def test_with_timeout_decorator_failure(self):
         """Test with_timeout decorator with timeout."""

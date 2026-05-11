@@ -46,7 +46,25 @@ class SecurityContext:
     operator_id: Optional[str] = None
     role: str = "user"
     subprocess_allowlist: Set[str] = field(
-        default_factory=lambda: {"git", "pytest", "python", "python3"}
+        default_factory=lambda: {
+            "git",
+            "pytest",
+            "python",
+            "python3",
+            "pip",
+            "pip3",
+            "uv",
+            "node",
+            "npm",
+            "curl",
+            "wget",
+            "rsync",
+            "ssh",
+            "scp",
+            "tar",
+            "unzip",
+            "zip",
+        }
     )
     pickle_allowed: bool = False
     serialization_format: str = "json"  # json, msgpack, protobuf

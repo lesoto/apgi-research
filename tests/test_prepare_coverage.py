@@ -38,7 +38,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.MAX_SEQ_LEN == 2048
+            assert prep.MAX_SEQ_LEN == 2048  # nosec: B101 - Test assertion
 
     def test_time_budget(self) -> None:
         """Test TIME_BUDGET constant."""
@@ -53,7 +53,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.TIME_BUDGET == 600
+            assert prep.TIME_BUDGET == 600  # nosec: B101 - Test assertion
 
     def test_eval_tokens(self) -> None:
         """Test EVAL_TOKENS constant."""
@@ -68,7 +68,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.EVAL_TOKENS == 40 * 524288
+            assert prep.EVAL_TOKENS == 40 * 524288  # nosec: B101 - Test assertion
 
     def test_vocab_size(self) -> None:
         """Test VOCAB_SIZE constant."""
@@ -83,7 +83,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.VOCAB_SIZE == 8192
+            assert prep.VOCAB_SIZE == 8192  # nosec: B101 - Test assertion
 
     def test_cache_dir(self) -> None:
         """Test CACHE_DIR constant."""
@@ -99,7 +99,7 @@ class TestConstants:
             import prepare as prep
 
             expected = Path.home() / ".cache" / "autoresearch"
-            assert prep.CACHE_DIR == expected
+            assert prep.CACHE_DIR == expected  # nosec: B101 - Test assertion
 
     def test_data_dir(self) -> None:
         """Test DATA_DIR constant."""
@@ -114,7 +114,9 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.DATA_DIR == prep.CACHE_DIR / "data"
+            assert (
+                prep.DATA_DIR == prep.CACHE_DIR / "data"
+            )  # nosec: B101 - Test assertion
 
     def test_tokenizer_dir(self) -> None:
         """Test TOKENIZER_DIR constant."""
@@ -129,7 +131,9 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.TOKENIZER_DIR == prep.CACHE_DIR / "tokenizer"
+            assert (
+                prep.TOKENIZER_DIR == prep.CACHE_DIR / "tokenizer"
+            )  # nosec: B101 - Test assertion
 
     def test_base_url(self) -> None:
         """Test BASE_URL constant."""
@@ -145,7 +149,7 @@ class TestConstants:
             import prepare as prep
 
             expected = "https://huggingface.co/datasets/karpathy/climbix-400b-shuffle/resolve/main"
-            assert prep.BASE_URL == expected
+            assert prep.BASE_URL == expected  # nosec: B101 - Test assertion
 
     def test_max_shard(self) -> None:
         """Test MAX_SHARD constant."""
@@ -160,7 +164,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.MAX_SHARD == 6542
+            assert prep.MAX_SHARD == 6542  # nosec: B101 - Test assertion
 
     def test_val_shard(self) -> None:
         """Test VAL_SHARD constant."""
@@ -175,7 +179,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.VAL_SHARD == 6542
+            assert prep.VAL_SHARD == 6542  # nosec: B101 - Test assertion
 
     def test_val_filename(self) -> None:
         """Test VAL_FILENAME constant."""
@@ -190,7 +194,9 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.VAL_FILENAME == "shard_06542.parquet"
+            assert (
+                prep.VAL_FILENAME == "shard_06542.parquet"
+            )  # nosec: B101 - Test assertion
 
     def test_split_pattern(self) -> None:
         """Test SPLIT_PATTERN constant."""
@@ -205,8 +211,8 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert isinstance(prep.SPLIT_PATTERN, str)
-            assert len(prep.SPLIT_PATTERN) > 0
+            assert isinstance(prep.SPLIT_PATTERN, str)  # nosec: B101 - Test assertion
+            assert len(prep.SPLIT_PATTERN) > 0  # nosec: B101 - Test assertion
 
     def test_special_tokens(self) -> None:
         """Test SPECIAL_TOKENS constant."""
@@ -221,8 +227,10 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert len(prep.SPECIAL_TOKENS) == 4
-            assert all(t.startswith("<|reserved_") for t in prep.SPECIAL_TOKENS)
+            assert len(prep.SPECIAL_TOKENS) == 4  # nosec: B101 - Test assertion
+            assert all(
+                t.startswith("<|reserved_") for t in prep.SPECIAL_TOKENS
+            )  # nosec: B101 - Test assertion
 
     def test_bos_token(self) -> None:
         """Test BOS_TOKEN constant."""
@@ -237,7 +245,7 @@ class TestConstants:
         ):
             import prepare as prep
 
-            assert prep.BOS_TOKEN == "<|reserved_0|>"
+            assert prep.BOS_TOKEN == "<|reserved_0|>"  # nosec: B101 - Test assertion
 
 
 class TestDownloadSingleShard:
@@ -273,7 +281,7 @@ class TestDownloadSingleShard:
                     import prepare as prep
 
                     result = prep.download_single_shard(1)
-                    assert result is True
+                    assert result is True  # nosec: B101 - Test assertion
 
     @patch("os.replace")
     @patch("os.remove")
@@ -320,7 +328,7 @@ class TestDownloadSingleShard:
                         import prepare as prep
 
                         result = prep.download_single_shard(1)
-                        assert result is True
+                        assert result is True  # nosec: B101 - Test assertion
 
     @patch("builtins.print")
     @patch("time.sleep")
@@ -350,7 +358,7 @@ class TestDownloadSingleShard:
                     import prepare as prep
 
                     result = prep.download_single_shard(1)
-                    assert result is False
+                    assert result is False  # nosec: B101 - Test assertion
 
 
 class TestDownloadData:
@@ -439,8 +447,10 @@ class TestListParquetFiles:
                     import prepare as prep
 
                     files = prep.list_parquet_files()
-                    assert len(files) == 2
-                    assert all(f.suffix == ".parquet" for f in files)
+                    assert len(files) == 2  # nosec: B101 - Test assertion
+                    assert all(
+                        f.suffix == ".parquet" for f in files
+                    )  # nosec: B101 - Test assertion
 
     def test_list_parquet_files_empty(self) -> None:
         """Test listing when no parquet files."""
@@ -460,7 +470,7 @@ class TestListParquetFiles:
                     import prepare as prep
 
                     files = prep.list_parquet_files()
-                    assert files == []
+                    assert files == []  # nosec: B101 - Test assertion
 
 
 class TestTextIterator:
@@ -500,7 +510,7 @@ class TestTextIterator:
                     import prepare as prep
 
                     texts = list(prep.text_iterator(max_chars=50))
-                    assert len(texts) > 0
+                    assert len(texts) > 0  # nosec: B101 - Test assertion
 
 
 class TestTrainTokenizer:
@@ -532,7 +542,7 @@ class TestTrainTokenizer:
                         import prepare as prep
 
                         result = prep.train_tokenizer()
-                        assert result is True
+                        assert result is True  # nosec: B101 - Test assertion
                         mock_rustbpe.Trainer.assert_not_called()
 
     @patch("builtins.open", mock_open())
@@ -575,7 +585,7 @@ class TestTrainTokenizer:
                             import prepare as prep
 
                             result = prep.train_tokenizer(data_dir, tokenizer_dir)
-                            assert result is True
+                            assert result is True  # nosec: B101 - Test assertion
 
     def test_train_tokenizer_failure(self) -> None:
         """Test tokenizer training failure."""
@@ -602,7 +612,7 @@ class TestTrainTokenizer:
                         import prepare as prep
 
                         result = prep.train_tokenizer(data_dir, tokenizer_dir)
-                        assert result is False
+                        assert result is False  # nosec: B101 - Test assertion
 
 
 class TestTokenizerClass:
@@ -625,7 +635,7 @@ class TestTokenizerClass:
             import prepare as prep
 
             tokenizer = prep.Tokenizer(mock_enc)
-            assert tokenizer.bos_token_id == 0
+            assert tokenizer.bos_token_id == 0  # nosec: B101 - Test assertion
 
     def test_get_vocab_size(self) -> None:
         """Test get_vocab_size method."""
@@ -644,7 +654,7 @@ class TestTokenizerClass:
             import prepare as prep
 
             tokenizer = prep.Tokenizer(mock_enc)
-            assert tokenizer.get_vocab_size() == 8192
+            assert tokenizer.get_vocab_size() == 8192  # nosec: B101 - Test assertion
 
     def test_get_bos_token_id(self) -> None:
         """Test get_bos_token_id method."""
@@ -663,7 +673,7 @@ class TestTokenizerClass:
             import prepare as prep
 
             tokenizer = prep.Tokenizer(mock_enc)
-            assert tokenizer.get_bos_token_id() == 0
+            assert tokenizer.get_bos_token_id() == 0  # nosec: B101 - Test assertion
 
     def test_encode_string(self) -> None:
         """Test encode with string input."""
@@ -683,7 +693,7 @@ class TestTokenizerClass:
 
             tokenizer = prep.Tokenizer(mock_enc)
             result = tokenizer.encode("test text")
-            assert result == [1, 2, 3]
+            assert result == [1, 2, 3]  # nosec: B101 - Test assertion
 
     def test_encode_with_prepend_int(self) -> None:
         """Test encode with integer prepend."""
@@ -703,8 +713,8 @@ class TestTokenizerClass:
 
             tokenizer = prep.Tokenizer(mock_enc)
             result = tokenizer.encode("test", prepend=0)
-            assert result[0] == 0
-            assert result[1:] == [1, 2, 3]
+            assert result[0] == 0  # nosec: B101 - Test assertion
+            assert result[1:] == [1, 2, 3]  # nosec: B101 - Test assertion
 
     def test_encode_with_prepend_str(self) -> None:
         """Test encode with string prepend."""
@@ -725,7 +735,7 @@ class TestTokenizerClass:
 
             tokenizer = prep.Tokenizer(mock_enc)
             result = tokenizer.encode("test", prepend="<bos>")
-            assert result[0] == 0
+            assert result[0] == 0  # nosec: B101 - Test assertion
 
     def test_encode_list(self) -> None:
         """Test encode with list input."""
@@ -745,7 +755,7 @@ class TestTokenizerClass:
 
             tokenizer = prep.Tokenizer(mock_enc)
             result = tokenizer.encode(["text1", "text2"])
-            assert len(result) == 2
+            assert len(result) == 2  # nosec: B101 - Test assertion
 
     def test_encode_invalid_type(self) -> None:
         """Test encode with invalid input type."""
@@ -784,7 +794,7 @@ class TestTokenizerClass:
 
             tokenizer = prep.Tokenizer(mock_enc)
             result = tokenizer.decode([1, 2, 3])
-            assert result == "decoded text"
+            assert result == "decoded text"  # nosec: B101 - Test assertion
 
     @patch("pickle.load")
     @patch("builtins.open", mock_open())
@@ -810,7 +820,9 @@ class TestTokenizerClass:
                     import prepare as prep
 
                     tokenizer = prep.Tokenizer.from_directory()
-                    assert tokenizer.get_vocab_size() == 8192
+                    assert (
+                        tokenizer.get_vocab_size() == 8192
+                    )  # nosec: B101 - Test assertion
 
 
 class TestGetTokenBytes:
@@ -837,7 +849,7 @@ class TestGetTokenBytes:
                     import prepare as prep
 
                     result = prep.get_token_bytes("cpu")
-                    assert result is not None
+                    assert result is not None  # nosec: B101 - Test assertion
 
 
 class TestUtilityFunctions:
@@ -870,7 +882,7 @@ class TestUtilityFunctions:
                 import prepare as prep
 
                 result = prep.download_file("http://example.com/test", filepath)
-                assert result is True
+                assert result is True  # nosec: B101 - Test assertion
 
     def test_download_file_already_exists(self) -> None:
         """Test download when file already exists."""
@@ -890,7 +902,7 @@ class TestUtilityFunctions:
                 import prepare as prep
 
                 result = prep.download_file("http://example.com/test", filepath)
-                assert result is True
+                assert result is True  # nosec: B101 - Test assertion
 
     def test_download_file_error(self) -> None:
         """Test download with error."""
@@ -912,7 +924,7 @@ class TestUtilityFunctions:
                 import prepare as prep
 
                 result = prep.download_file("http://example.com/test", filepath)
-                assert result is False
+                assert result is False  # nosec: B101 - Test assertion
 
     def test_tokenize_text(self) -> None:
         """Test tokenize_text function."""
@@ -931,7 +943,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.tokenize_text("test", mock_tokenizer)
-            assert result == [1, 2, 3]
+            assert result == [1, 2, 3]  # nosec: B101 - Test assertion
 
     def test_tokenize_batch(self) -> None:
         """Test tokenize_batch function."""
@@ -950,7 +962,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.tokenize_batch(["text1", "text2"], mock_tokenizer)
-            assert len(result) == 2
+            assert len(result) == 2  # nosec: B101 - Test assertion
 
     def test_validate_tokenizer_success(self) -> None:
         """Test successful tokenizer validation."""
@@ -970,7 +982,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.validate_tokenizer(mock_tokenizer)
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_validate_tokenizer_failure(self) -> None:
         """Test tokenizer validation failure."""
@@ -989,7 +1001,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.validate_tokenizer(mock_tokenizer)
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_validate_data_format_valid(self) -> None:
         """Test valid data format."""
@@ -1007,7 +1019,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.validate_data_format(valid_data)
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_validate_data_format_empty(self) -> None:
         """Test empty data format."""
@@ -1023,7 +1035,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.validate_data_format([])
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_validate_data_format_missing_text(self) -> None:
         """Test data format missing text key."""
@@ -1041,7 +1053,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.validate_data_format(invalid_data)
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_validate_data_format_non_string_text(self) -> None:
         """Test data format with non-string text."""
@@ -1059,7 +1071,7 @@ class TestUtilityFunctions:
             import prepare as prep
 
             result = prep.validate_data_format(invalid_data)
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
 
 class TestParseArgs:
@@ -1079,10 +1091,10 @@ class TestParseArgs:
             import prepare as prep
 
             args = prep.parse_args([])
-            assert args.num_shards is None
-            assert args.skip_download is False
-            assert args.skip_tokenizer is False
-            assert args.force is False
+            assert args.num_shards is None  # nosec: B101 - Test assertion
+            assert args.skip_download is False  # nosec: B101 - Test assertion
+            assert args.skip_tokenizer is False  # nosec: B101 - Test assertion
+            assert args.force is False  # nosec: B101 - Test assertion
 
     def test_parse_args_custom(self) -> None:
         """Test custom argument parsing."""
@@ -1106,10 +1118,10 @@ class TestParseArgs:
                     "--force",
                 ]
             )
-            assert args.num_shards == 10
-            assert args.skip_download is True
-            assert args.skip_tokenizer is True
-            assert args.force is True
+            assert args.num_shards == 10  # nosec: B101 - Test assertion
+            assert args.skip_download is True  # nosec: B101 - Test assertion
+            assert args.skip_tokenizer is True  # nosec: B101 - Test assertion
+            assert args.force is True  # nosec: B101 - Test assertion
 
 
 class TestMain:
@@ -1137,7 +1149,7 @@ class TestMain:
             import prepare as prep
 
             result = prep.main([])
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
 
     @patch("prepare.list_parquet_files")
     @patch("prepare.train_tokenizer")
@@ -1161,7 +1173,7 @@ class TestMain:
             import prepare as prep
 
             result = prep.main(["--skip-download"])
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
             mock_download.assert_not_called()
 
     @patch("prepare.list_parquet_files")
@@ -1185,7 +1197,7 @@ class TestMain:
             import prepare as prep
 
             result = prep.main(["--skip-tokenizer"])
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
             mock_train.assert_not_called()
 
     @patch("prepare.list_parquet_files")
@@ -1208,7 +1220,7 @@ class TestMain:
             import prepare as prep
 
             result = prep.main([])
-            assert result == 1
+            assert result == 1  # nosec: B101 - Test assertion
 
     @patch("prepare.list_parquet_files")
     @patch("prepare.train_tokenizer")
@@ -1232,7 +1244,7 @@ class TestMain:
             import prepare as prep
 
             result = prep.main([])
-            assert result == 1
+            assert result == 1  # nosec: B101 - Test assertion
 
 
 class TestCacheFunctions:
@@ -1257,9 +1269,9 @@ class TestCacheFunctions:
                     import prepare as prep
 
                     info = prep.get_cache_info()
-                    assert isinstance(info, dict)
-                    assert "size_bytes" in info
-                    assert "last_modified" in info
+                    assert isinstance(info, dict)  # nosec: B101 - Test assertion
+                    assert "size_bytes" in info  # nosec: B101 - Test assertion
+                    assert "last_modified" in info  # nosec: B101 - Test assertion
 
     def test_get_cache_info_not_exists(self) -> None:
         """Test getting cache info when cache doesn't exist."""
@@ -1276,8 +1288,8 @@ class TestCacheFunctions:
                 import prepare as prep
 
                 info = prep.get_cache_info()
-                assert isinstance(info, dict)
-                assert info["size_bytes"] == 0
+                assert isinstance(info, dict)  # nosec: B101 - Test assertion
+                assert info["size_bytes"] == 0  # nosec: B101 - Test assertion
 
     def test_cleanup_cache_success(self) -> None:
         """Test successful cache cleanup."""
@@ -1298,7 +1310,7 @@ class TestCacheFunctions:
                     import prepare as prep
 
                     result = prep.cleanup_cache()
-                    assert result is True
+                    assert result is True  # nosec: B101 - Test assertion
 
     def test_cleanup_cache_not_exists(self) -> None:
         """Test cleanup when cache doesn't exist."""
@@ -1315,7 +1327,7 @@ class TestCacheFunctions:
                 import prepare as prep
 
                 result = prep.cleanup_cache()
-                assert result is True
+                assert result is True  # nosec: B101 - Test assertion
 
     def test_cleanup_cache_failure(self) -> None:
         """Test cache cleanup failure."""
@@ -1338,7 +1350,7 @@ class TestCacheFunctions:
                         import prepare as prep
 
                         result = prep.cleanup_cache()
-                        assert result is False
+                        assert result is False  # nosec: B101 - Test assertion
 
 
 class TestDownloadShard:
@@ -1361,7 +1373,7 @@ class TestDownloadShard:
             import prepare as prep
 
             result = prep.download_shard(1, Path("/tmp"))
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
 
 class TestDownloadWorker:
@@ -1384,7 +1396,7 @@ class TestDownloadWorker:
             import prepare as prep
 
             result = prep.download_worker((1, Path("/tmp")))
-            assert result == (1, True)
+            assert result == (1, True)  # nosec: B101 - Test assertion
 
     @patch("prepare.download_shard")
     def test_download_worker_failure(self, mock_download: MagicMock) -> None:
@@ -1403,7 +1415,7 @@ class TestDownloadWorker:
             import prepare as prep
 
             result = prep.download_worker((1, Path("/tmp")))
-            assert result == (1, False)
+            assert result == (1, False)  # nosec: B101 - Test assertion
 
 
 class TestDownloadShardsParallel:
@@ -1428,7 +1440,7 @@ class TestDownloadShardsParallel:
             import prepare as prep
 
             result = prep.download_shards_parallel([1, 2, 3], Path("/tmp"))
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     @patch("prepare.Pool")
     def test_download_shards_parallel_failure(self, mock_pool: MagicMock) -> None:
@@ -1449,7 +1461,7 @@ class TestDownloadShardsParallel:
             import prepare as prep
 
             result = prep.download_shards_parallel([1, 2, 3], Path("/tmp"))
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
 
 class TestReadShard:
@@ -1480,7 +1492,7 @@ class TestReadShard:
                 import prepare as prep
 
                 result = prep.read_shard(1, data_dir)
-                assert result is not None
+                assert result is not None  # nosec: B101 - Test assertion
 
     def test_read_shard_not_exists(self) -> None:
         """Test read when shard doesn't exist."""
@@ -1499,7 +1511,7 @@ class TestReadShard:
                 import prepare as prep
 
                 result = prep.read_shard(1, data_dir)
-                assert result is None
+                assert result is None  # nosec: B101 - Test assertion
 
     @patch("pyarrow.parquet.read_table")
     def test_read_shard_error(self, mock_read: MagicMock) -> None:
@@ -1523,7 +1535,7 @@ class TestReadShard:
                 import prepare as prep
 
                 result = prep.read_shard(1, data_dir)
-                assert result is None
+                assert result is None  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

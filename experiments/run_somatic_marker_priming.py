@@ -32,6 +32,7 @@ from apgi_integration import APGIIntegration, APGIParameters
 from .prepare_somatic_marker_priming import (
     APGI_PARAMS,
     TIME_BUDGET,
+    EmotionType,
     PrimeType,
     SomaticMarkerExperiment,
 )
@@ -287,14 +288,33 @@ class EnhancedSomaticMarkerRunner:
         else:
             completion_time = 0.0
 
+        # Calculate priming effect from RT data
+        positive_trials = [
+            t for t in self.experiment.trials if t.emotion_type == EmotionType.POSITIVE
+        ]
+        negative_trials = [
+            t for t in self.experiment.trials if t.emotion_type == EmotionType.NEGATIVE
+        ]
+
+        same_marker_rt = (
+            np.mean([t.rt_ms for t in positive_trials]) if positive_trials else 0.0
+        )
+        different_marker_rt = (
+            np.mean([t.rt_ms for t in negative_trials]) if negative_trials else 0.0
+        )
+        priming_effect = different_marker_rt - same_marker_rt
+
+        # Calculate accuracy as proportion of advantageous choices
+        accuracy = summary.get("overall_advantageous_rate", 0.0)
+
         results = {
             "num_trials": len(self.experiment.trials),
             "completion_time_s": completion_time,
-            "d_prime": summary.get("d_prime", 0.0),
-            "accuracy": summary.get("accuracy", 0.0),
-            "priming_effect_ms": summary.get("priming_effect_ms", 0.0),
-            "same_marker_rt_ms": summary.get("same_marker_rt_ms", 0.0),
-            "different_marker_rt_ms": summary.get("different_marker_rt_ms", 0.0),
+            "d_prime": 0.0,  # Not calculated in this experiment
+            "accuracy": accuracy,
+            "priming_effect_ms": priming_effect,
+            "same_marker_rt_ms": same_marker_rt,
+            "different_marker_rt_ms": different_marker_rt,
         }
 
         # Calculate APGI metrics from history

@@ -348,6 +348,9 @@ class EnhancedIGTRunner:
                 results["apgi_precision_overestimated"] = (
                     self.precision_gap.precision_overestimated
                 )
+                # Debug: ensure precision gap was updated
+                if not hasattr(self.precision_gap, "precision_overestimated"):
+                    results["apgi_precision_overestimated"] = False
 
             # 100/100: Hierarchical processing
             if self.hierarchical:

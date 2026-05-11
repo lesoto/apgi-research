@@ -174,14 +174,14 @@ class TestGUIBasic:
         try:
             import customtkinter as ctk
 
-            assert ctk is not None
+            assert ctk is not None  # nosec: B101 - Test assertion
         except ImportError:
             pytest.skip("customtkinter not installed")
 
         try:
             from GUI_auto_improve_experiments import ExperimentRunnerGUI
 
-            assert ExperimentRunnerGUI is not None
+            assert ExperimentRunnerGUI is not None  # nosec: B101 - Test assertion
         except ImportError as e:
             pytest.skip(f"Cannot import GUI: {e}")
 
@@ -296,9 +296,13 @@ class TestGUIBasic:
                                 lambda self: None,
                             ):
                                 app = ExperimentRunnerGUI()
-                                assert app is not None
-                                assert hasattr(app, "experiments")
-                                assert hasattr(app, "experiment_cards")
+                                assert app is not None  # nosec: B101 - Test assertion
+                                assert hasattr(
+                                    app, "experiments"
+                                )  # nosec: B101 - Test assertion
+                                assert hasattr(
+                                    app, "experiment_cards"
+                                )  # nosec: B101 - Test assertion
 
     @pytest.mark.timeout(30)  # Add timeout to prevent hanging
     def test_gui_experiment_discovery(
@@ -418,9 +422,11 @@ class TestGUIBasic:
                                     ):
                                         app = ExperimentRunnerGUI()
                                         # Check experiments were found
-                                        assert len(app.experiments) > 0
+                                        assert (
+                                            len(app.experiments) > 0
+                                        )  # nosec: B101 - Test assertion
                                         for name, _ in app.experiments:
-                                            assert (
+                                            assert (  # nosec: B101 - Test assertion
                                                 "Visual Search" in name
                                                 or "Stroop" in name
                                             )
@@ -453,7 +459,9 @@ class TestGUIInteraction:
                         ):
                             app = ExperimentRunnerGUI()
                             # Verify menu exists
-                            assert hasattr(app, "_create_menu_bar")
+                            assert hasattr(
+                                app, "_create_menu_bar"
+                            )  # nosec: B101 - Test assertion
 
     def test_experiment_button_creation(
         self, temp_research_dir: Any, monkeypatch: MonkeyPatch
@@ -486,7 +494,9 @@ class TestGUIInteraction:
                                     app = ExperimentRunnerGUI()
                                     # Check buttons exist for experiments
                                     for exp_name, _ in app.experiments:
-                                        assert exp_name in app.experiment_buttons
+                                        assert (
+                                            exp_name in app.experiment_buttons
+                                        )  # nosec: B101 - Test assertion
 
     def test_status_indicators(
         self, temp_research_dir: Any, monkeypatch: MonkeyPatch
@@ -519,7 +529,9 @@ class TestGUIInteraction:
                                     app = ExperimentRunnerGUI()
                                     # Check status indicators exist
                                     for exp_name, _ in app.experiments:
-                                        assert exp_name in app.status_indicators
+                                        assert (
+                                            exp_name in app.status_indicators
+                                        )  # nosec: B101 - Test assertion
 
 
 @pytest.mark.visual
@@ -565,8 +577,12 @@ class TestGUIVisualRegression:
                                 ):
                                     app = ExperimentRunnerGUI()
                                     # Verify app was created successfully
-                                    assert app is not None
-                                    assert hasattr(app, "experiments")
+                                    assert (
+                                        app is not None
+                                    )  # nosec: B101 - Test assertion
+                                    assert hasattr(
+                                        app, "experiments"
+                                    )  # nosec: B101 - Test assertion
                                     # Skip screenshot comparison in mocked environment
                                     pytest.skip(
                                         "Screenshot tests require real GUI display"
@@ -618,8 +634,12 @@ sys.exit(0)
                                     app = ExperimentRunnerGUI()
 
                                     # Verify experiments were discovered
-                                    assert len(app.experiments) > 0
-                                    assert len(app.experiment_buttons) > 0
+                                    assert (
+                                        len(app.experiments) > 0
+                                    )  # nosec: B101 - Test assertion
+                                    assert (
+                                        len(app.experiment_buttons) > 0
+                                    )  # nosec: B101 - Test assertion
 
 
 @pytest.mark.performance
@@ -659,7 +679,7 @@ class TestGUIPerformance:
         startup()
         duration = time.perf_counter() - start
         # Should start in less than 5 seconds
-        assert duration < 5.0
+        assert duration < 5.0  # nosec: B101 - Test assertion
 
     def test_gui_memory_usage(
         self, temp_research_dir: Any, monkeypatch: MonkeyPatch
@@ -695,7 +715,7 @@ class TestGUIPerformance:
                             mem_increase = mem_after - mem_before
 
                             # Should use less than 100MB additional memory
-                            assert (
+                            assert (  # nosec: B101 - Test assertion
                                 mem_increase < 100
                             ), f"Memory increase too large: {mem_increase:.1f}MB"
 

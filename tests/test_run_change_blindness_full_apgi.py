@@ -38,15 +38,15 @@ class TestConstants:
 
     def test_time_budget(self):
         """Test TIME_BUDGET constant."""
-        assert runner.TIME_BUDGET == 600
+        assert runner.TIME_BUDGET == 600  # nosec: B101 - Test assertion
 
     def test_num_trials_config(self):
         """Test NUM_TRIALS_CONFIG constant."""
-        assert runner.NUM_TRIALS_CONFIG == 60
+        assert runner.NUM_TRIALS_CONFIG == 60  # nosec: B101 - Test assertion
 
     def test_change_probability(self):
         """Test CHANGE_PROBABILITY constant."""
-        assert runner.CHANGE_PROBABILITY == 0.50
+        assert runner.CHANGE_PROBABILITY == 0.50  # nosec: B101 - Test assertion
 
 
 class TestChangeBlindnessExperimentRunner:
@@ -61,7 +61,7 @@ class TestChangeBlindnessExperimentRunner:
             mock_apgi_runner.apgi = None
 
             runner_instance = runner.EnhancedChangeBlindnessRunnerWithAPGI()
-            assert runner_instance is not None
+            assert runner_instance is not None  # nosec: B101 - Test assertion
             mock_runner_class.assert_called_once()
 
     def test_run_experiment_with_apgi_enabled(self):
@@ -92,9 +92,9 @@ class TestChangeBlindnessExperimentRunner:
 
                 result = runner_instance.run_experiment()
 
-                assert "detection_rate" in result
-                assert "apgi_enabled" in result
-                assert result["apgi_enabled"] is True
+                assert "detection_rate" in result  # nosec: B101 - Test assertion
+                assert "apgi_enabled" in result  # nosec: B101 - Test assertion
+                assert result["apgi_enabled"] is True  # nosec: B101 - Test assertion
 
     def test_run_experiment_with_apgi_disabled(self):
         """Test running experiment with APGI disabled."""
@@ -112,9 +112,11 @@ class TestChangeBlindnessExperimentRunner:
 
                 result = runner_instance.run_experiment()
 
-                assert "detection_rate" in result
-                assert result["apgi_enabled"] is True  # The class always enables APGI
-                assert "apgi_metrics" in result
+                assert "detection_rate" in result  # nosec: B101 - Test assertion
+                assert (
+                    result["apgi_enabled"] is True
+                )  # The class always enables APGI  # nosec: B101 - Test assertion
+                assert "apgi_metrics" in result  # nosec: B101 - Test assertion
 
     def test_calculate_detection_rate(self):
         """Test detection rate calculation."""
@@ -173,7 +175,7 @@ class TestChangeBlindnessExperimentRunner:
                 results = runner_instance._calculate_comprehensive_results()
                 detection_rate = results["detection_rate"]
                 expected = 0.5  # 1 detected out of 2 change trials
-                assert detection_rate == expected
+                assert detection_rate == expected  # nosec: B101 - Test assertion
 
     def test_calculate_detection_rate_no_trials(self):
         """Test detection rate calculation with no trials."""
@@ -191,7 +193,7 @@ class TestChangeBlindnessExperimentRunner:
                 results = runner_instance._calculate_comprehensive_results()
                 rate = results["detection_rate"]
 
-                assert rate == 0.0
+                assert rate == 0.0  # nosec: B101 - Test assertion
 
     def test_get_experiment_summary(self):
         """Test experiment summary generation."""
@@ -249,10 +251,12 @@ class TestChangeBlindnessExperimentRunner:
                 summary = runner_instance._calculate_comprehensive_results()
 
                 # Verify the expected data structure is documented and used
-                assert "detection_rate" in summary
-                assert "mean_rt_ms" in summary
-                assert "apgi_enabled" in summary
-                assert "base_results" in expected_results
+                assert "detection_rate" in summary  # nosec: B101 - Test assertion
+                assert "mean_rt_ms" in summary  # nosec: B101 - Test assertion
+                assert "apgi_enabled" in summary  # nosec: B101 - Test assertion
+                assert (
+                    "base_results" in expected_results
+                )  # nosec: B101 - Test assertion
 
     def test_save_results(self):
         """Test results saving."""
@@ -272,7 +276,7 @@ class TestChangeBlindnessExperimentRunner:
 
             # Just verify the runner can be created and run
             test_runner = runner.EnhancedChangeBlindnessRunnerWithAPGI()
-            assert test_runner is not None
+            assert test_runner is not None  # nosec: B101 - Test assertion
 
     def test_main_function_with_error(self):
         """Test main function with error handling - the module has no main() function."""

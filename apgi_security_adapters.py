@@ -15,6 +15,7 @@ Key Features:
 import hashlib
 import hmac
 import json
+import os
 import subprocess
 import uuid
 from dataclasses import dataclass, field
@@ -253,8 +254,6 @@ class ConfigChecksumAdapter:
 
     def _get_default_key(self) -> str:
         """Get KMS key from environment variable."""
-        import os
-
         key = os.environ.get("APGI_KMS_KEY")
         if key is None:
             raise ValueError(

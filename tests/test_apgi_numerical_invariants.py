@@ -12,14 +12,14 @@ from apgi_integration import CoreEquations
 def test_prediction_error_invariant(observed, predicted):
     # Invariant: error = observed - predicted
     error = CoreEquations.prediction_error(observed, predicted)
-    assert np.isclose(error, observed - predicted)
+    assert np.isclose(error, observed - predicted)  # nosec: B101 - Test assertion
 
 
 @given(st.floats(min_value=0.0001, max_value=1000.0))
 def test_precision_invariant(variance):
     # Invariant: precision is always positive for positive variance
     precision = CoreEquations.precision(variance)
-    assert precision > 0
+    assert precision > 0  # nosec: B101 - Test assertion
 
 
 @given(
@@ -30,4 +30,4 @@ def test_precision_invariant(variance):
 def test_ignition_probability_bounds(S, theta, alpha):
     # Invariant: probability strictly between 0 and 1
     prob = CoreEquations.ignition_probability(S, theta, alpha)
-    assert 0.0 <= prob <= 1.0
+    assert 0.0 <= prob <= 1.0  # nosec: B101 - Test assertion

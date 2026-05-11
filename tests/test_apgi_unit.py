@@ -21,9 +21,9 @@ from apgi_integration import (
     DynamicalSystem,
     RunningStatistics,
 )
+from progress_tracking import ProgressTracker, TrialResult
 from utils.git_operations import GitRollbackManager
 from utils.performance_monitoring import MemorySnapshot, PerformanceMonitor
-from progress_tracking import ProgressTracker, TrialResult
 from validation import (
     validate_code_modification,
     validate_modifications_before_apply,
@@ -38,23 +38,23 @@ class TestAPGIParameters:
         """Test default parameter values."""
         params = APGIParameters()
 
-        assert 0.2 <= params.tau_S <= 0.5
-        assert 0.5 <= params.beta <= 2.5
-        assert 3.0 <= params.alpha <= 8.0
-        assert 0.3 <= params.rho <= 0.9
+        assert 0.2 <= params.tau_S <= 0.5  # nosec: B101 - Test assertion
+        assert 0.5 <= params.beta <= 2.5  # nosec: B101 - Test assertion
+        assert 3.0 <= params.alpha <= 8.0  # nosec: B101 - Test assertion
+        assert 0.3 <= params.rho <= 0.9  # nosec: B101 - Test assertion
 
     def test_parameter_validation(self):
         """Test parameter validation."""
         # Valid parameters
         params = APGIParameters()
         violations = params.validate()
-        assert len(violations) == 0
+        assert len(violations) == 0  # nosec: B101 - Test assertion
 
         # Invalid parameters
         params.tau_S = 1.0  # Outside range
         violations = params.validate()
-        assert len(violations) > 0
-        assert any("tau_S" in v for v in violations)
+        assert len(violations) > 0  # nosec: B101 - Test assertion
+        assert any("tau_S" in v for v in violations)  # nosec: B101 - Test assertion
 
     def test_domain_thresholds(self):
         """Test domain-specific thresholds."""
@@ -64,8 +64,8 @@ class TestAPGIParameters:
         neutral_threshold = params.get_domain_threshold("neutral")
         default_threshold = params.get_domain_threshold("other")
 
-        assert survival_threshold < neutral_threshold
-        assert default_threshold == params.theta_0
+        assert survival_threshold < neutral_threshold  # nosec: B101 - Test assertion
+        assert default_threshold == params.theta_0  # nosec: B101 - Test assertion
 
     def test_neuromodulator_effects(self):
         """Test neuromodulator effects calculation."""
@@ -74,15 +74,17 @@ class TestAPGIParameters:
 
         expected_keys = ["Pi_e_mod", "theta_mod", "beta_mod", "Pi_i_mod"]
         for key in expected_keys:
-            assert key in effects
-            assert isinstance(effects[key], (int, float))
+            assert key in effects  # nosec: B101 - Test assertion
+            assert isinstance(
+                effects[key], (int, float)
+            )  # nosec: B101 - Test assertion
 
     def test_precision_expectation_gap(self):
         """Test precision expectation gap calculation."""
         params = APGIParameters()
 
         gap = params.compute_precision_expectation_gap(2.0, 1.5)
-        assert isinstance(gap, (int, float))
+        assert isinstance(gap, (int, float))  # nosec: B101 - Test assertion
 
 
 class TestCoreEquations:
@@ -90,51 +92,63 @@ class TestCoreEquations:
 
     def test_prediction_error(self):
         """Test prediction error calculation."""
-        assert CoreEquations.prediction_error(10, 8) == 2
-        assert CoreEquations.prediction_error(5, 10) == -5
-        assert CoreEquations.prediction_error(0, 0) == 0
+        assert (
+            CoreEquations.prediction_error(10, 8) == 2
+        )  # nosec: B101 - Test assertion
+        assert (
+            CoreEquations.prediction_error(5, 10) == -5
+        )  # nosec: B101 - Test assertion
+        assert CoreEquations.prediction_error(0, 0) == 0  # nosec: B101 - Test assertion
 
     def test_precision(self):
         """Test precision calculation."""
-        assert CoreEquations.precision(1.0) == 1.0
-        assert CoreEquations.precision(0.5) == 2.0
-        assert CoreEquations.precision(0.1) == 10.0
-        assert CoreEquations.precision(0.0) == 1e6  # Cap for zero variance
+        assert CoreEquations.precision(1.0) == 1.0  # nosec: B101 - Test assertion
+        assert CoreEquations.precision(0.5) == 2.0  # nosec: B101 - Test assertion
+        assert CoreEquations.precision(0.1) == 10.0  # nosec: B101 - Test assertion
+        assert (
+            CoreEquations.precision(0.0) == 1e6
+        )  # Cap for zero variance  # nosec: B101 - Test assertion
 
     def test_z_score(self):
         """Test z-score calculation."""
         # Normal case
-        assert CoreEquations.z_score(2.0, 1.0, 1.0) == 1.0
-        assert CoreEquations.z_score(0.0, 1.0, 1.0) == -1.0
+        assert (
+            CoreEquations.z_score(2.0, 1.0, 1.0) == 1.0
+        )  # nosec: B101 - Test assertion
+        assert (
+            CoreEquations.z_score(0.0, 1.0, 1.0) == -1.0
+        )  # nosec: B101 - Test assertion
 
         # Edge case: zero standard deviation
-        assert CoreEquations.z_score(1.0, 0.0, 0.0) == 0.0
+        assert (
+            CoreEquations.z_score(1.0, 0.0, 0.0) == 0.0
+        )  # nosec: B101 - Test assertion
 
     def test_accumulated_signal(self):
         """Test accumulated signal calculation."""
         signal = CoreEquations.accumulated_signal(2.0, 1.0, 1.5, 0.5)
         expected = 0.5 * 2.0 * (1.0**2) + 0.5 * 1.5 * (0.5**2)
-        assert abs(signal - expected) < 1e-10
+        assert abs(signal - expected) < 1e-10  # nosec: B101 - Test assertion
 
     def test_effective_interoceptive_precision(self):
         """Test effective interoceptive precision."""
         precision = CoreEquations.effective_interoceptive_precision(1.0, 0.5, 0.0, 1.5)
         expected = 1.0 * (1.0 + 1.5 * (1.0 / (1.0 + np.exp(-(0.5 - 0.0)))))
-        assert abs(precision - expected) < 1e-10
+        assert abs(precision - expected) < 1e-10  # nosec: B101 - Test assertion
 
     def test_ignition_probability(self):
         """Test ignition probability calculation."""
         # High signal, low threshold
         prob = CoreEquations.ignition_probability(10.0, 1.0, 5.0)
-        assert prob > 0.9
+        assert prob > 0.9  # nosec: B101 - Test assertion
 
         # Low signal, high threshold
         prob = CoreEquations.ignition_probability(1.0, 10.0, 5.0)
-        assert prob < 0.1
+        assert prob < 0.1  # nosec: B101 - Test assertion
 
         # Edge case: equal signal and threshold
         prob = CoreEquations.ignition_probability(5.0, 5.0, 5.0)
-        assert 0.4 < prob < 0.6  # Should be around 0.5
+        assert 0.4 < prob < 0.6  # Should be around 0.5  # nosec: B101 - Test assertion
 
 
 class TestRunningStatistics:
@@ -144,9 +158,9 @@ class TestRunningStatistics:
         """Test RunningStatistics initialization."""
         stats = RunningStatistics()
 
-        assert stats.mean == 0.0
-        assert stats.var == 1.0
-        assert stats.count == 0
+        assert stats.mean == 0.0  # nosec: B101 - Test assertion
+        assert stats.var == 1.0  # nosec: B101 - Test assertion
+        assert stats.count == 0  # nosec: B101 - Test assertion
 
     def test_updates(self):
         """Test statistics updates."""
@@ -154,13 +168,15 @@ class TestRunningStatistics:
 
         # First update
         mean, std = stats.update(5.0)
-        assert mean == 5.0
-        assert std == 0.0  # Single value has zero variance
+        assert mean == 5.0  # nosec: B101 - Test assertion
+        assert (
+            std == 0.0
+        )  # Single value has zero variance  # nosec: B101 - Test assertion
 
         # Second update
         mean, std = stats.update(7.0)
-        assert mean == 6.0  # (5 + 7) / 2
-        assert std > 0.0
+        assert mean == 6.0  # (5 + 7) / 2  # nosec: B101 - Test assertion
+        assert std > 0.0  # nosec: B101 - Test assertion
 
     def test_z_score(self):
         """Test z-score calculation."""
@@ -168,14 +184,16 @@ class TestRunningStatistics:
 
         # Before any updates
         z = stats.z_score(5.0)
-        assert z == 0.0
+        assert z == 0.0  # nosec: B101 - Test assertion
 
         # After updates
         stats.update(10.0)
         stats.update(15.0)
 
         z = stats.z_score(10.0)
-        assert abs(z - (-1.0)) < 1e-10  # Mean=12.5, so z = (10 - 12.5) / std = -1.0
+        assert (
+            abs(z - (-1.0)) < 1e-10
+        )  # Mean=12.5, so z = (10 - 12.5) / std = -1.0  # nosec: B101 - Test assertion
 
     def test_reset(self):
         """Test statistics reset."""
@@ -183,13 +201,13 @@ class TestRunningStatistics:
         stats.update(5.0)
         stats.update(10.0)
 
-        assert stats.count == 2
-        assert stats.mean == 7.5
+        assert stats.count == 2  # nosec: B101 - Test assertion
+        assert stats.mean == 7.5  # nosec: B101 - Test assertion
 
         stats.reset()
-        assert stats.count == 0
-        assert stats.mean == 0.0
-        assert stats.var == 1.0
+        assert stats.count == 0  # nosec: B101 - Test assertion
+        assert stats.mean == 0.0  # nosec: B101 - Test assertion
+        assert stats.var == 1.0  # nosec: B101 - Test assertion
 
 
 class TestDynamicalSystem:
@@ -200,11 +218,11 @@ class TestDynamicalSystem:
         params = APGIParameters()
         system = DynamicalSystem(params)
 
-        assert system.S == 0.0
-        assert system.theta == params.theta_0
-        assert system.M == 0.0
-        assert len(system.S_history) == 0
-        assert len(system.ignition_history) == 0
+        assert system.S == 0.0  # nosec: B101 - Test assertion
+        assert system.theta == params.theta_0  # nosec: B101 - Test assertion
+        assert system.M == 0.0  # nosec: B101 - Test assertion
+        assert len(system.S_history) == 0  # nosec: B101 - Test assertion
+        assert len(system.ignition_history) == 0  # nosec: B101 - Test assertion
 
     def test_step(self):
         """Test single time step."""
@@ -230,10 +248,10 @@ class TestDynamicalSystem:
             "ignited",
         ]
         for key in expected_keys:
-            assert key in state
+            assert key in state  # nosec: B101 - Test assertion
             # Handle numpy bool types as well as Python bool
             val = state[key]
-            assert isinstance(
+            assert isinstance(  # nosec: B101 - Test assertion
                 val, (int, float, bool, np.bool_)
             ), f"{key} has type {type(val)}"
 
@@ -245,15 +263,15 @@ class TestDynamicalSystem:
         # Run a few steps to change state
         system.step(1.0, 0.3, 2.0, 1.5, 0.01)
         system.step(0.5, 0.15, 1.8, 1.2, 0.01)
-        assert system.S > 0.0
-        assert len(system.S_history) > 0
+        assert system.S > 0.0  # nosec: B101 - Test assertion
+        assert len(system.S_history) > 0  # nosec: B101 - Test assertion
         # Reset
         system.reset()
-        assert system.S == 0.0
-        assert system.theta == params.theta_0
-        assert system.M == 0.0
-        assert len(system.S_history) == 0
-        assert len(system.ignition_history) == 0
+        assert system.S == 0.0  # nosec: B101 - Test assertion
+        assert system.theta == params.theta_0  # nosec: B101 - Test assertion
+        assert system.M == 0.0  # nosec: B101 - Test assertion
+        assert len(system.S_history) == 0  # nosec: B101 - Test assertion
+        assert len(system.ignition_history) == 0  # nosec: B101 - Test assertion
 
     def test_metabolic_cost(self):
         """Test metabolic cost calculation."""
@@ -265,7 +283,7 @@ class TestDynamicalSystem:
             system.step(1.0, 0.3, 2.0, 1.5, 0.01)
 
         cost = system.get_metabolic_cost()
-        assert cost >= 0.0
+        assert cost >= 0.0  # nosec: B101 - Test assertion
 
     def test_ignition_rate(self):
         """Test ignition rate calculation."""
@@ -277,7 +295,7 @@ class TestDynamicalSystem:
             system.step(1.0, 0.3, 2.0, 1.5, 0.01)
 
         rate = system.get_ignition_rate()
-        assert 0.0 <= rate <= 1.0
+        assert 0.0 <= rate <= 1.0  # nosec: B101 - Test assertion
 
 
 class TestAPGIIntegration:
@@ -287,10 +305,10 @@ class TestAPGIIntegration:
         """Test APGIIntegration initialization."""
         apgi = APGIIntegration()
 
-        assert apgi.S == 0.0
-        assert apgi.theta == 0.5  # Default theta_0
-        assert apgi.M == 0.0
-        assert len(apgi.trial_metrics) == 0
+        assert apgi.S == 0.0  # nosec: B101 - Test assertion
+        assert apgi.theta == 0.5  # Default theta_0  # nosec: B101 - Test assertion
+        assert apgi.M == 0.0  # nosec: B101 - Test assertion
+        assert len(apgi.trial_metrics) == 0  # nosec: B101 - Test assertion
 
     def test_proxy_properties(self):
         """Test proxy properties to dynamical system."""
@@ -298,12 +316,12 @@ class TestAPGIIntegration:
 
         # Test setting and getting
         apgi.S = 1.0
-        assert apgi.S == 1.0
-        assert apgi.dynamics.S == 1.0
+        assert apgi.S == 1.0  # nosec: B101 - Test assertion
+        assert apgi.dynamics.S == 1.0  # nosec: B101 - Test assertion
 
         apgi.theta = 0.8
-        assert apgi.theta == 0.8
-        assert apgi.dynamics.theta == 0.8
+        assert apgi.theta == 0.8  # nosec: B101 - Test assertion
+        assert apgi.dynamics.theta == 0.8  # nosec: B101 - Test assertion
 
     def test_core_equations(self):
         """Test core equation methods."""
@@ -311,22 +329,22 @@ class TestAPGIIntegration:
 
         # Test prediction error
         error = apgi.compute_prediction_error(10, 8)
-        assert error == 2.0
+        assert error == 2.0  # nosec: B101 - Test assertion
 
         # Test precision
         precision = apgi.compute_precision(0.5)
-        assert precision == 1.0  # 0.5 * 0.5
+        assert precision == 1.0  # 0.5 * 0.5  # nosec: B101 - Test assertion
 
         # Test surprise
         surprise = apgi.compute_surprise(1.0, 2.0)
-        assert surprise == 1.0  # 0.5 * 2.0 * (1.0^2)
+        assert surprise == 1.0  # 0.5 * 2.0 * (1.0^2)  # nosec: B101 - Test assertion
 
     def test_ignition_probability(self):
         """Test ignition probability calculation."""
         apgi = APGIIntegration()
 
         prob = apgi.compute_ignition_probability(1.0, 2.0, 0.5)
-        assert 0.0 <= prob <= 1.0
+        assert 0.0 <= prob <= 1.0  # nosec: B101 - Test assertion
 
     def test_process_trial(self):
         """Test trial processing."""
@@ -345,7 +363,7 @@ class TestAPGIIntegration:
             "ignited",
         ]
         for key in expected_keys:
-            assert key in state
+            assert key in state  # nosec: B101 - Test assertion
 
     def test_finalize(self):
         """Test experiment finalization."""
@@ -368,7 +386,7 @@ class TestAPGIIntegration:
             "final_somatic_marker",
         ]
         for key in expected_keys:
-            assert key in summary
+            assert key in summary  # nosec: B101 - Test assertion
 
 
 class TestValidation:
@@ -383,8 +401,8 @@ class TestValidation:
             "stimulus_type": "visual",
         }
         result = validate_modifications_before_apply(valid_mods)
-        assert result.is_valid
-        assert len(result.errors) == 0
+        assert result.is_valid  # nosec: B101 - Test assertion
+        assert len(result.errors) == 0  # nosec: B101 - Test assertion
 
         # Invalid modifications
         invalid_mods = {
@@ -393,8 +411,8 @@ class TestValidation:
             "stimulus_type": "invalid_type",
         }
         result = validate_modifications_before_apply(invalid_mods)
-        assert not result.is_valid
-        assert len(result.errors) >= 2
+        assert not result.is_valid  # nosec: B101 - Test assertion
+        assert len(result.errors) >= 2  # nosec: B101 - Test assertion
 
     def test_validate_code_modification(self):
         """Test code modification validation."""
@@ -406,13 +424,13 @@ class TestValidation:
             # Valid code
             valid_code = "print('Hello, world!')\nprint('This is safe.')"
             result = validate_code_modification(temp_path, valid_code)
-            assert result.is_valid
+            assert result.is_valid  # nosec: B101 - Test assertion
 
             # Dangerous code
             dangerous_code = "import os; os.system('rm -rf /')\nprint('Dangerous!')"
             result = validate_code_modification(temp_path, dangerous_code)
-            assert not result.is_valid
-            assert len(result.errors) > 0
+            assert not result.is_valid  # nosec: B101 - Test assertion
+            assert len(result.errors) > 0  # nosec: B101 - Test assertion
         finally:
             os.unlink(temp_path)
 
@@ -421,17 +439,17 @@ class TestValidation:
         # Safe modules
         safe_modules = ["math", "random", "datetime", "collections", "eval", "exec"]
         for module in safe_modules:
-            assert validate_module_name(module)
+            assert validate_module_name(module)  # nosec: B101 - Test assertion
 
         # Dangerous modules
         dangerous_modules = ["os", "sys", "subprocess"]
         for module in dangerous_modules:
-            assert not validate_module_name(module)
+            assert not validate_module_name(module)  # nosec: B101 - Test assertion
 
         # Invalid names
         invalid_names = ["..module", "module$hack", "module;cmd"]
         for name in invalid_names:
-            assert not validate_module_name(name)
+            assert not validate_module_name(name)  # nosec: B101 - Test assertion
 
 
 class TestGitOperations:
@@ -444,8 +462,10 @@ class TestGitOperations:
             subprocess.run(["git", "init"], cwd=temp_dir, check=True)
 
             manager = GitRollbackManager(temp_dir)
-            assert manager.repo_path == Path(temp_dir).resolve()
-            assert len(manager.operations_history) == 0
+            assert (
+                manager.repo_path == Path(temp_dir).resolve()
+            )  # nosec: B101 - Test assertion
+            assert len(manager.operations_history) == 0  # nosec: B101 - Test assertion
 
     def test_get_current_commit_and_branch(self):
         """Test getting current commit and branch."""
@@ -473,8 +493,10 @@ class TestGitOperations:
             commit_hash = manager.get_current_commit()
             branch_name = manager.get_current_branch()
 
-            assert len(commit_hash) == 40  # SHA-1 hash
-            assert branch_name == "main" or branch_name == "master"
+            assert len(commit_hash) == 40  # SHA-1 hash  # nosec: B101 - Test assertion
+            assert (
+                branch_name == "main" or branch_name == "master"
+            )  # nosec: B101 - Test assertion
 
     def test_stage_files(self):
         """Test file staging with rollback capability."""
@@ -521,9 +543,11 @@ class TestGitOperations:
             test_file2.write_text("# content 2")
 
             result = manager.stage_files(["test1.py", "test2.py"])
-            assert result.is_valid
-            assert len(manager.operations_history) == 1
-            assert manager.operations_history[0].operation_type == "stage"
+            assert result.is_valid  # nosec: B101 - Test assertion
+            assert len(manager.operations_history) == 1  # nosec: B101 - Test assertion
+            assert (
+                manager.operations_history[0].operation_type == "stage"
+            )  # nosec: B101 - Test assertion
 
     def test_create_branch(self):
         """Test branch creation."""
@@ -543,8 +567,10 @@ class TestGitOperations:
 
             # Create new branch
             result = manager.create_branch("test-branch")
-            assert result.is_valid
-            assert "Created and checked out branch: test-branch" in result.warnings[0]
+            assert result.is_valid  # nosec: B101 - Test assertion
+            assert (
+                "Created and checked out branch: test-branch" in result.warnings[0]
+            )  # nosec: B101 - Test assertion
 
 
 class TestProgressTracking:
@@ -554,12 +580,14 @@ class TestProgressTracking:
         """Test ProgressTracker initialization."""
         tracker = ProgressTracker("test_exp", "test_participant", 100)
 
-        assert tracker.experiment_name == "test_exp"
-        assert tracker.participant_id == "test_participant"
-        assert tracker.progress.total_trials == 100
-        assert tracker.progress.current_trial == 0
-        assert tracker.progress.completed_trials == 0
-        assert tracker.progress.status == "running"
+        assert tracker.experiment_name == "test_exp"  # nosec: B101 - Test assertion
+        assert (
+            tracker.participant_id == "test_participant"
+        )  # nosec: B101 - Test assertion
+        assert tracker.progress.total_trials == 100  # nosec: B101 - Test assertion
+        assert tracker.progress.current_trial == 0  # nosec: B101 - Test assertion
+        assert tracker.progress.completed_trials == 0  # nosec: B101 - Test assertion
+        assert tracker.progress.status == "running"  # nosec: B101 - Test assertion
 
     def test_trial_recording(self):
         """Test trial recording."""
@@ -576,9 +604,11 @@ class TestProgressTracking:
 
         tracker.complete_trial(trial_result)
 
-        assert tracker.progress.completed_trials == 1
-        assert len(tracker.progress.trials) == 1
-        assert tracker.progress.trials[0].trial_number == 1
+        assert tracker.progress.completed_trials == 1  # nosec: B101 - Test assertion
+        assert len(tracker.progress.trials) == 1  # nosec: B101 - Test assertion
+        assert (
+            tracker.progress.trials[0].trial_number == 1
+        )  # nosec: B101 - Test assertion
 
     def test_progress_calculations(self):
         """Test progress calculations."""
@@ -595,13 +625,17 @@ class TestProgressTracking:
             tracker.complete_trial(trial_result)
 
         # Test progress percentage
-        assert tracker.get_progress_percentage() == 50.0  # 5/10
+        assert (
+            tracker.get_progress_percentage() == 50.0
+        )  # 5/10  # nosec: B101 - Test assertion
 
         # Test trial statistics
         stats = tracker.get_trial_statistics()
-        assert stats["completed_trials"] == 5
-        assert stats["avg_response_time"] == 520.0  # (500 + 510 + 520 + 530 + 540) / 5
-        assert stats["avg_accuracy"] == pytest.approx(
+        assert stats["completed_trials"] == 5  # nosec: B101 - Test assertion
+        assert (
+            stats["avg_response_time"] == 520.0
+        )  # (500 + 510 + 520 + 530 + 540) / 5  # nosec: B101 - Test assertion
+        assert stats["avg_accuracy"] == pytest.approx(  # nosec: B101 - Test assertion
             0.84
         )  # (0.80 + 0.82 + 0.84 + 0.86 + 0.88) / 5
 
@@ -611,9 +645,9 @@ class TestProgressTracking:
 
         tracker.complete_experiment("completed")
 
-        assert tracker.progress.status == "completed"
-        assert tracker.progress.end_time is not None
-        assert tracker.get_elapsed_time() > 0
+        assert tracker.progress.status == "completed"  # nosec: B101 - Test assertion
+        assert tracker.progress.end_time is not None  # nosec: B101 - Test assertion
+        assert tracker.get_elapsed_time() > 0  # nosec: B101 - Test assertion
 
     def test_export_summary(self):
         """Test summary export."""
@@ -639,10 +673,12 @@ class TestProgressTracking:
             "errors",
         ]
         for section in expected_sections:
-            assert section in summary
+            assert section in summary  # nosec: B101 - Test assertion
 
-        assert summary["progress"]["total_trials"] == 10
-        assert summary["progress"]["completed_trials"] == 1
+        assert summary["progress"]["total_trials"] == 10  # nosec: B101 - Test assertion
+        assert (
+            summary["progress"]["completed_trials"] == 1
+        )  # nosec: B101 - Test assertion
 
 
 class TestPerformanceMonitoring:
@@ -652,11 +688,11 @@ class TestPerformanceMonitoring:
         """Test PerformanceMonitor initialization."""
         monitor = PerformanceMonitor()
 
-        assert monitor.output_dir.exists()
-        assert not monitor.is_monitoring
-        assert len(monitor.memory_history) == 0
-        assert len(monitor.cpu_history) == 0
-        assert len(monitor.operation_metrics) == 0
+        assert monitor.output_dir.exists()  # nosec: B101 - Test assertion
+        assert not monitor.is_monitoring  # nosec: B101 - Test assertion
+        assert len(monitor.memory_history) == 0  # nosec: B101 - Test assertion
+        assert len(monitor.cpu_history) == 0  # nosec: B101 - Test assertion
+        assert len(monitor.operation_metrics) == 0  # nosec: B101 - Test assertion
 
     def test_memory_snapshot(self):
         """Test memory snapshot creation."""
@@ -664,12 +700,16 @@ class TestPerformanceMonitoring:
 
         snapshot = monitor._take_memory_snapshot()
 
-        assert isinstance(snapshot.rss_mb, (int, float))
-        assert isinstance(snapshot.vms_mb, (int, float))
-        assert isinstance(snapshot.percent, (int, float))
-        assert isinstance(snapshot.available_mb, (int, float))
-        assert isinstance(snapshot.gc_objects, int)
-        assert isinstance(snapshot.gc_stats, dict)
+        assert isinstance(snapshot.rss_mb, (int, float))  # nosec: B101 - Test assertion
+        assert isinstance(snapshot.vms_mb, (int, float))  # nosec: B101 - Test assertion
+        assert isinstance(
+            snapshot.percent, (int, float)
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            snapshot.available_mb, (int, float)
+        )  # nosec: B101 - Test assertion
+        assert isinstance(snapshot.gc_objects, int)  # nosec: B101 - Test assertion
+        assert isinstance(snapshot.gc_stats, dict)  # nosec: B101 - Test assertion
 
     def test_cpu_snapshot(self):
         """Test CPU snapshot creation."""
@@ -677,10 +717,14 @@ class TestPerformanceMonitoring:
 
         snapshot = monitor._take_cpu_snapshot()
 
-        assert isinstance(snapshot.percent, (int, float))
-        assert isinstance(snapshot.count, int)
-        assert isinstance(snapshot.freq_mhz, (int, float))
-        assert isinstance(snapshot.load_avg, list)
+        assert isinstance(
+            snapshot.percent, (int, float)
+        )  # nosec: B101 - Test assertion
+        assert isinstance(snapshot.count, int)  # nosec: B101 - Test assertion
+        assert isinstance(
+            snapshot.freq_mhz, (int, float)
+        )  # nosec: B101 - Test assertion
+        assert isinstance(snapshot.load_avg, list)  # nosec: B101 - Test assertion
 
     def test_operation_monitoring(self):
         """Test operation monitoring."""
@@ -689,11 +733,13 @@ class TestPerformanceMonitoring:
         # Start operation
         metrics = monitor.start_operation("test_operation")
 
-        assert metrics.operation_name == "test_operation"
-        assert metrics.start_time > 0
-        assert metrics.end_time is None
-        assert metrics.memory_before is not None
-        assert metrics.cpu_before is not None
+        assert (
+            metrics.operation_name == "test_operation"
+        )  # nosec: B101 - Test assertion
+        assert metrics.start_time > 0  # nosec: B101 - Test assertion
+        assert metrics.end_time is None  # nosec: B101 - Test assertion
+        assert metrics.memory_before is not None  # nosec: B101 - Test assertion
+        assert metrics.cpu_before is not None  # nosec: B101 - Test assertion
 
         # Simulate some work
         time.sleep(0.01)
@@ -701,10 +747,10 @@ class TestPerformanceMonitoring:
         # End operation
         monitor.end_operation(metrics, success=True)
 
-        assert metrics.end_time is not None
-        assert metrics.duration is not None  # type: ignore[unreachable]
-        assert metrics.duration > 0
-        assert metrics.success is True
+        assert metrics.end_time is not None  # nosec: B101 - Test assertion
+        assert metrics.duration is not None  # type: ignore[unreachable]  # nosec: B101 - Test assertion
+        assert metrics.duration > 0  # nosec: B101 - Test assertion
+        assert metrics.success is True  # nosec: B101 - Test assertion
 
     def test_performance_summary(self):
         """Test performance summary generation."""
@@ -718,11 +764,11 @@ class TestPerformanceMonitoring:
 
         summary = monitor.get_performance_summary()
 
-        assert summary["total_operations"] == 5
-        assert summary["successful_operations"] == 5
-        assert summary["failed_operations"] == 0
-        assert summary["success_rate"] == 1.0
-        assert "avg_duration" in summary
+        assert summary["total_operations"] == 5  # nosec: B101 - Test assertion
+        assert summary["successful_operations"] == 5  # nosec: B101 - Test assertion
+        assert summary["failed_operations"] == 0  # nosec: B101 - Test assertion
+        assert summary["success_rate"] == 1.0  # nosec: B101 - Test assertion
+        assert "avg_duration" in summary  # nosec: B101 - Test assertion
 
     def test_memory_trend(self):
         """Test memory trend analysis."""
@@ -744,10 +790,10 @@ class TestPerformanceMonitoring:
 
         trend = monitor.get_memory_trend()
 
-        assert "current_mb" in trend
-        assert "trend_direction" in trend
-        assert trend["trend_direction"] == "increasing"
-        assert trend["samples"] == 10
+        assert "current_mb" in trend  # nosec: B101 - Test assertion
+        assert "trend_direction" in trend  # nosec: B101 - Test assertion
+        assert trend["trend_direction"] == "increasing"  # nosec: B101 - Test assertion
+        assert trend["samples"] == 10  # nosec: B101 - Test assertion
 
     def test_performance_regression_detection(self):
         """Test performance regression detection."""
@@ -770,9 +816,11 @@ class TestPerformanceMonitoring:
             baseline_window=15, current_window=10
         )
 
-        assert regression["status"] == "detected"
-        assert regression["regression_percent"] > 30  # Allow for timing variability
-        assert regression["significance"] in [
+        assert regression["status"] == "detected"  # nosec: B101 - Test assertion
+        assert (
+            regression["regression_percent"] > 30
+        )  # Allow for timing variability  # nosec: B101 - Test assertion
+        assert regression["significance"] in [  # nosec: B101 - Test assertion
             "moderate_regression",
             "significant_regression",
         ]

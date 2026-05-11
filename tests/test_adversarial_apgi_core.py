@@ -62,11 +62,15 @@ class TestFoundationalEquations:
         """Test prediction_error with boundary values."""
         result = FoundationalEquations.prediction_error(observed, predicted)
         if math.isnan(expected):
-            assert math.isnan(result)
+            assert math.isnan(result)  # nosec: B101 - Test assertion
         elif math.isinf(expected):
-            assert math.isinf(result) and (result > 0) == (expected > 0)
+            assert math.isinf(result) and (result > 0) == (
+                expected > 0
+            )  # nosec: B101 - Test assertion
         else:
-            assert result == pytest.approx(expected, rel=1e-10)
+            assert result == pytest.approx(
+                expected, rel=1e-10
+            )  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "error,mean,std,expected",
@@ -86,9 +90,11 @@ class TestFoundationalEquations:
         """Test z_score with boundary values including protection for near-zero std."""
         result = FoundationalEquations.z_score(error, mean, std)
         if math.isinf(expected):
-            assert math.isinf(result)
+            assert math.isinf(result)  # nosec: B101 - Test assertion
         else:
-            assert result == pytest.approx(expected, rel=1e-6)
+            assert result == pytest.approx(
+                expected, rel=1e-6
+            )  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_z_score_adversarial_near_zero_std(self) -> None:
@@ -97,7 +103,9 @@ class TestFoundationalEquations:
         tiny_values = [0.0, 1e-15, 1e-20, sys.float_info.min, -1e-15]
         for tiny in tiny_values:
             result = FoundationalEquations.z_score(10.0, 5.0, tiny)
-            assert result == 0.0, f"Failed for std={tiny}"
+            assert (
+                result == 0.0
+            ), f"Failed for std={tiny}"  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "variance,expected",
@@ -116,7 +124,9 @@ class TestFoundationalEquations:
     def test_precision_boundary_values(self, variance: float, expected: float) -> None:
         """Test precision with boundary values including protection for invalid inputs."""
         result = FoundationalEquations.precision(variance)
-        assert result == pytest.approx(expected, rel=1e-6)
+        assert result == pytest.approx(
+            expected, rel=1e-6
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_precision_adversarial_invalid_inputs(self) -> None:
@@ -128,8 +138,12 @@ class TestFoundationalEquations:
         ]
         for invalid in invalid_inputs:
             result = FoundationalEquations.precision(invalid)
-            assert result == 1e6, f"Failed for variance={invalid}"
-            assert result > 0, f"Precision should always be positive, got {result}"
+            assert (
+                result == 1e6
+            ), f"Failed for variance={invalid}"  # nosec: B101 - Test assertion
+            assert (
+                result > 0
+            ), f"Precision should always be positive, got {result}"  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -164,7 +178,9 @@ class TestCoreIgnitionSystem:
     ) -> None:
         """Test accumulated_signal with boundary values."""
         result = CoreIgnitionSystem.accumulated_signal(Pi_e, eps_e, Pi_i_eff, eps_i)
-        assert result == pytest.approx(expected, rel=1e-6)
+        assert result == pytest.approx(
+            expected, rel=1e-6
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_accumulated_signal_adversarial_large_values(self) -> None:
@@ -177,10 +193,12 @@ class TestCoreIgnitionSystem:
         ]
         for Pi_e, eps_e, Pi_i_eff, eps_i in large_inputs:
             result = CoreIgnitionSystem.accumulated_signal(Pi_e, eps_e, Pi_i_eff, eps_i)
-            assert not math.isinf(
+            assert not math.isinf(  # nosec: B101 - Test assertion
                 result
             ), f"Overflow for inputs {(Pi_e, eps_e, Pi_i_eff, eps_i)}"
-            assert result >= 0, f"Signal should be non-negative, got {result}"
+            assert (
+                result >= 0
+            ), f"Signal should be non-negative, got {result}"  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "Pi_i_baseline,M,M_0,beta_som,expected_range",
@@ -205,8 +223,12 @@ class TestCoreIgnitionSystem:
         result = CoreIgnitionSystem.effective_interoceptive_precision(
             Pi_i_baseline, M, M_0, beta_som
         )
-        assert expected_range[0] <= result <= expected_range[1]
-        assert result > 0, "Effective precision must be positive"
+        assert (
+            expected_range[0] <= result <= expected_range[1]
+        )  # nosec: B101 - Test assertion
+        assert (
+            result > 0
+        ), "Effective precision must be positive"  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_effective_interoceptive_precision_sigmoid_clipping(self) -> None:
@@ -217,9 +239,13 @@ class TestCoreIgnitionSystem:
             result = CoreIgnitionSystem.effective_interoceptive_precision(
                 1.0, M, 0.0, 1.0
             )
-            assert not math.isnan(result), f"NaN for M={M}"
-            assert not math.isinf(result), f"Inf for M={M}"
-            assert (
+            assert not math.isnan(
+                result
+            ), f"NaN for M={M}"  # nosec: B101 - Test assertion
+            assert not math.isinf(
+                result
+            ), f"Inf for M={M}"  # nosec: B101 - Test assertion
+            assert (  # nosec: B101 - Test assertion
                 1.0 <= result <= 2.0
             ), f"Result {result} out of expected range for M={M}"
 
@@ -238,8 +264,12 @@ class TestCoreIgnitionSystem:
     ) -> None:
         """Test ignition_probability returns values in expected ranges."""
         result = CoreIgnitionSystem.ignition_probability(S, theta, alpha)
-        assert 0.0 <= result <= 1.0, f"Probability {result} out of [0,1] range"
-        assert expected_range[0] <= result <= expected_range[1]
+        assert (
+            0.0 <= result <= 1.0
+        ), f"Probability {result} out of [0,1] range"  # nosec: B101 - Test assertion
+        assert (
+            expected_range[0] <= result <= expected_range[1]
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_ignition_probability_numerical_stability(self) -> None:
@@ -252,8 +282,10 @@ class TestCoreIgnitionSystem:
         ]
         for S, theta, alpha in extreme_cases:
             result = CoreIgnitionSystem.ignition_probability(S, theta, alpha)
-            assert not math.isnan(result), f"NaN for ({S}, {theta}, {alpha})"
-            assert (
+            assert not math.isnan(
+                result
+            ), f"NaN for ({S}, {theta}, {alpha})"  # nosec: B101 - Test assertion
+            assert (  # nosec: B101 - Test assertion
                 0.0 <= result <= 1.0
             ), f"Probability out of range for ({S}, {theta}, {alpha})"
 
@@ -291,7 +323,9 @@ class TestDynamicalSystemEquations:
             dt=dt,
             rng=np.random.default_rng(42),
         )
-        assert expected_constraint(result), f"Constraint failed for S={S}, dt={dt}"
+        assert expected_constraint(
+            result
+        ), f"Constraint failed for S={S}, dt={dt}"  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_signal_dynamics_extreme_inputs(self) -> None:
@@ -319,8 +353,12 @@ class TestDynamicalSystemEquations:
                 result = DynamicalSystemEquations.signal_dynamics(
                     S, Pi_e, eps_e, Pi_i_eff, eps_i, tau_S, sigma_S, dt
                 )
-                assert not math.isnan(result), f"NaN for case {case}"
-                assert result >= 0, f"Negative result for case {case}"
+                assert not math.isnan(
+                    result
+                ), f"NaN for case {case}"  # nosec: B101 - Test assertion
+                assert (
+                    result >= 0
+                ), f"Negative result for case {case}"  # nosec: B101 - Test assertion
             except (OverflowError, FloatingPointError):
                 # These are acceptable for truly extreme inputs
                 pass
@@ -351,7 +389,9 @@ class TestDynamicalSystemEquations:
             dt=dt,
             rng=np.random.default_rng(42),
         )
-        assert result > 0, f"Threshold should stay positive, got {result}"
+        assert (
+            result > 0
+        ), f"Threshold should stay positive, got {result}"  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "A,expected_range",
@@ -372,7 +412,7 @@ class TestDynamicalSystemEquations:
             dt=0.01,
             rng=np.random.default_rng(42),
         )
-        assert (
+        assert (  # nosec: B101 - Test assertion
             expected_range[0] <= result <= expected_range[1]
         ), f"Arousal {result} out of range for A={A}"
 
@@ -401,7 +441,7 @@ class TestDynamicalSystemEquations:
             dt=0.01,
             rng=np.random.default_rng(42),
         )
-        assert (
+        assert (  # nosec: B101 - Test assertion
             expected_range[0] <= result <= expected_range[1]
         ), f"Somatic marker {result} out of range for M={M}"
 
@@ -426,7 +466,7 @@ class TestDynamicalSystemEquations:
         result = DynamicalSystemEquations.compute_arousal_target(
             t=t, max_eps=max_eps, eps_i_history=eps_i_history
         )
-        assert (
+        assert (  # nosec: B101 - Test assertion
             expected_range[0] <= result <= expected_range[1]
         ), f"Target arousal {result} out of range"
 
@@ -442,9 +482,9 @@ class TestRunningStatistics:
     def test_initialization(self) -> None:
         """Test proper initialization of RunningStatistics."""
         stats = RunningStatistics()
-        assert stats.mu == 0.0
-        assert stats.variance == 1.0
-        assert stats._n_updates == 0
+        assert stats.mu == 0.0  # nosec: B101 - Test assertion
+        assert stats.variance == 1.0  # nosec: B101 - Test assertion
+        assert stats._n_updates == 0  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "errors,expected_mu_range,expected_std_range",
@@ -464,8 +504,12 @@ class TestRunningStatistics:
         stats = RunningStatistics(alpha_mu=0.1, alpha_sigma=0.05)
         for error in errors * 100:  # Repeat to allow convergence
             mu, std = stats.update(error)
-        assert expected_mu_range[0] <= mu <= expected_mu_range[1]
-        assert expected_std_range[0] <= std <= expected_std_range[1]
+        assert (
+            expected_mu_range[0] <= mu <= expected_mu_range[1]
+        )  # nosec: B101 - Test assertion
+        assert (
+            expected_std_range[0] <= std <= expected_std_range[1]
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_update_adversarial_values(self) -> None:
@@ -483,14 +527,18 @@ class TestRunningStatistics:
         for val in adversarial_values:
             # Should not crash
             mu, std = stats.update(val)
-            assert not math.isnan(std), f"std is NaN for error={val}"
-            assert std >= 0, f"std should be non-negative, got {std}"
+            assert not math.isnan(
+                std
+            ), f"std is NaN for error={val}"  # nosec: B101 - Test assertion
+            assert (
+                std >= 0
+            ), f"std should be non-negative, got {std}"  # nosec: B101 - Test assertion
 
     def test_get_z_score_before_updates(self) -> None:
         """Test get_z_score returns 0 before any updates."""
         stats = RunningStatistics()
         result = stats.get_z_score(10.0)
-        assert result == 0.0
+        assert result == 0.0  # nosec: B101 - Test assertion
 
     def test_variance_positive_constraint(self) -> None:
         """Test that variance is always kept positive."""
@@ -499,7 +547,9 @@ class TestRunningStatistics:
         for _ in range(1000):
             stats.update(5.0)
         # After updates with identical values, variance should be at minimum
-        assert stats.variance >= 0.01, f"Variance {stats.variance} below minimum"
+        assert (
+            stats.variance >= 0.01
+        ), f"Variance {stats.variance} below minimum"  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -544,10 +594,10 @@ class TestDerivedQuantities:
         result = DerivedQuantities.latency_to_ignition(S_0, theta, input_I, tau_S)
         # Check if expected is infinity
         if isinstance(expected, float) and math.isinf(expected):
-            assert math.isinf(result)
+            assert math.isinf(result)  # nosec: B101 - Test assertion
         else:
             # expected is either a pytest.approx or a regular value
-            assert result == expected
+            assert result == expected  # nosec: B101 - Test assertion
 
     def test_latency_to_ignition_no_solution(self) -> None:
         """Test latency_to_ignition when no ignition is possible."""
@@ -555,7 +605,7 @@ class TestDerivedQuantities:
         result = DerivedQuantities.latency_to_ignition(
             S_0=1.0, theta=10.0, I=1.0, tau_S=2.0
         )
-        assert math.isinf(result)
+        assert math.isinf(result)  # nosec: B101 - Test assertion
 
     def test_metabolic_cost_basic(self) -> None:
         """Test metabolic_cost with basic input."""
@@ -563,14 +613,18 @@ class TestDerivedQuantities:
         result = DerivedQuantities.metabolic_cost(S_history, dt=0.1)
         # Trapezoidal integration of linear function
         expected = np.trapezoid(S_history, dx=0.1)
-        assert result == pytest.approx(expected, rel=1e-10)
+        assert result == pytest.approx(
+            expected, rel=1e-10
+        )  # nosec: B101 - Test assertion
 
     def test_metabolic_cost_with_truncation(self) -> None:
         """Test metabolic_cost with T_ignition truncation."""
         S_history = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         result = DerivedQuantities.metabolic_cost(S_history, dt=0.1, T_ignition=0.2)
         # Should only use first 2 steps
-        assert result < float(np.trapezoid(S_history, dx=0.1))
+        assert result < float(
+            np.trapezoid(S_history, dx=0.1)
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_metabolic_cost_edge_cases(self) -> None:
@@ -585,7 +639,7 @@ class TestDerivedQuantities:
         for arr in edge_cases:
             # Should not crash
             result = DerivedQuantities.metabolic_cost(arr, dt=0.01)
-            assert isinstance(
+            assert isinstance(  # nosec: B101 - Test assertion
                 result, (float, np.floating)
             ), f"Result type {type(result)} for input {arr[:5]}"
 
@@ -604,11 +658,13 @@ class TestDerivedQuantities:
             beta_cross=0.1,
             B_higher=0.5,
         )
-        assert len(result) == 3  # Returns tuple of 3 values
+        assert (
+            len(result) == 3
+        )  # Returns tuple of 3 values  # nosec: B101 - Test assertion
         S_new, theta_new, Pi_modulated = result
-        assert S_new >= 0
-        assert theta_new > 0
-        assert Pi_modulated > 0
+        assert S_new >= 0  # nosec: B101 - Test assertion
+        assert theta_new > 0  # nosec: B101 - Test assertion
+        assert Pi_modulated > 0  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize("invalid_level", [0, -1, 6, 100, -100])
     def test_hierarchical_level_dynamics_invalid_levels(
@@ -628,7 +684,9 @@ class TestDerivedQuantities:
                 beta_cross=0.1,
                 B_higher=0.5,
             )
-        assert "out of range" in str(exc_info.value).lower()
+        assert (
+            "out of range" in str(exc_info.value).lower()
+        )  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -642,17 +700,17 @@ class TestAPGIParameters:
     def test_default_initialization(self) -> None:
         """Test APGIParameters with default values."""
         params = APGIParameters()
-        assert params.tau_S == 0.35
-        assert params.beta == 1.5
-        assert params.theta_0 == 0.5
+        assert params.tau_S == 0.35  # nosec: B101 - Test assertion
+        assert params.beta == 1.5  # nosec: B101 - Test assertion
+        assert params.theta_0 == 0.5  # nosec: B101 - Test assertion
 
     def test_validate_with_valid_params(self) -> None:
         """Test validate returns empty list for valid parameters."""
         params = APGIParameters()
         violations = params.validate()
-        assert isinstance(violations, list)
+        assert isinstance(violations, list)  # nosec: B101 - Test assertion
         # Default values should be valid
-        assert len(violations) == 0
+        assert len(violations) == 0  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "param_name,invalid_value",
@@ -682,10 +740,10 @@ class TestAPGIParameters:
         params = APGIParameters()
         setattr(params, param_name, invalid_value)
         violations = params.validate()
-        assert (
+        assert (  # nosec: B101 - Test assertion
             len(violations) > 0
         ), f"Should detect violation for {param_name}={invalid_value}"
-        assert any(
+        assert any(  # nosec: B101 - Test assertion
             param_name.lower() in v.lower()
             or param_name.lower().replace("_", "") in v.lower().replace("_", "")
             for v in violations
@@ -694,18 +752,24 @@ class TestAPGIParameters:
     def test_get_domain_threshold(self) -> None:
         """Test get_domain_threshold returns correct values."""
         params = APGIParameters(theta_survival=0.3, theta_neutral=0.7, theta_0=0.5)
-        assert params.get_domain_threshold("survival") == 0.3
-        assert params.get_domain_threshold("neutral") == 0.7
-        assert params.get_domain_threshold("unknown") == 0.5  # Default
+        assert (
+            params.get_domain_threshold("survival") == 0.3
+        )  # nosec: B101 - Test assertion
+        assert (
+            params.get_domain_threshold("neutral") == 0.7
+        )  # nosec: B101 - Test assertion
+        assert (
+            params.get_domain_threshold("unknown") == 0.5
+        )  # Default  # nosec: B101 - Test assertion
 
     def test_apply_neuromodulator_effects(self) -> None:
         """Test apply_neuromodulator_effects returns modulation dict."""
         params = APGIParameters(ACh=1.0, NE=1.0, DA=1.0, HT5=1.0)
         effects = params.apply_neuromodulator_effects()
-        assert "Pi_e_mod" in effects
-        assert "theta_mod" in effects
-        assert "beta_mod" in effects
-        assert "Pi_i_mod" in effects
+        assert "Pi_e_mod" in effects  # nosec: B101 - Test assertion
+        assert "theta_mod" in effects  # nosec: B101 - Test assertion
+        assert "beta_mod" in effects  # nosec: B101 - Test assertion
+        assert "Pi_i_mod" in effects  # nosec: B101 - Test assertion
 
     def test_compute_precision_expectation_gap(self) -> None:
         """Test compute_precision_expectation_gap calculation."""
@@ -714,7 +778,7 @@ class TestAPGIParameters:
         # Expected = ACh*0.5 + NE*0.3 = 1.0 + 0.6 = 1.6
         # Actual = (1.0 + 1.0)/2 = 1.0
         # Gap = 1.6 - 1.0 = 0.6
-        assert gap == pytest.approx(0.6, abs=0.01)
+        assert gap == pytest.approx(0.6, abs=0.01)  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -729,7 +793,9 @@ class TestSnapshotRegression:
     def test_prediction_error_deterministic(self, snapshot_manager: Any) -> None:
         """Snapshot test for prediction_error function."""
         result = FoundationalEquations.prediction_error(5.0, 3.0)
-        assert snapshot_manager.assert_match("prediction_error_basic", result)
+        assert snapshot_manager.assert_match(
+            "prediction_error_basic", result
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.snapshot
     def test_accumulated_signal_deterministic(self, snapshot_manager: Any) -> None:
@@ -737,13 +803,17 @@ class TestSnapshotRegression:
         result = CoreIgnitionSystem.accumulated_signal(
             Pi_e=1.0, eps_e=2.0, Pi_i_eff=1.0, eps_i=2.0
         )
-        assert snapshot_manager.assert_match("accumulated_signal_basic", result)
+        assert snapshot_manager.assert_match(
+            "accumulated_signal_basic", result
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.snapshot
     def test_ignition_probability_deterministic(self, snapshot_manager: Any) -> None:
         """Snapshot test for ignition_probability function."""
         result = CoreIgnitionSystem.ignition_probability(S=1.0, theta=0.5, alpha=5.5)
-        assert snapshot_manager.assert_match("ignition_probability_basic", result)
+        assert snapshot_manager.assert_match(
+            "ignition_probability_basic", result
+        )  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -797,7 +867,9 @@ class TestPerformance:
                     sigma_S=0.05,
                     dt=0.01,
                 )
-        assert len(metrics.errors) == 0, f"Performance issues: {metrics.errors}"
+        assert (
+            len(metrics.errors) == 0
+        ), f"Performance issues: {metrics.errors}"  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_ignition_probability_performance(
@@ -809,4 +881,6 @@ class TestPerformance:
         ) as metrics:  # Increased threshold for CI stability
             for _ in range(100000):
                 CoreIgnitionSystem.ignition_probability(S=1.0, theta=0.5, alpha=5.5)
-        assert len(metrics.errors) == 0, f"Performance issues: {metrics.errors}"
+        assert (
+            len(metrics.errors) == 0
+        ), f"Performance issues: {metrics.errors}"  # nosec: B101 - Test assertion

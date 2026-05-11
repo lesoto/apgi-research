@@ -181,14 +181,18 @@ if __name__ == "__main__":
         self.agent.optimize_experiment("masked_task", iterations=2)
 
         # Check that best results were updated
-        assert "masked_task" in self.agent.git_tracker.best_results
-        assert self.agent.git_tracker.best_results["masked_task"].primary_metric == 0.8
+        assert (
+            "masked_task" in self.agent.git_tracker.best_results
+        )  # nosec: B101 - Test assertion
+        assert (
+            self.agent.git_tracker.best_results["masked_task"].primary_metric == 0.8
+        )  # nosec: B101 - Test assertion
 
     def test_parameter_extraction_safeguard(self):
         """Ensure the loop can correctly read parameters from modified files."""
         params = self.agent._get_current_parameters("masked_task")
-        assert params["TARGET_DURATION"] == 50
-        assert params["NOISE_LEVEL"] == 0.5
+        assert params["TARGET_DURATION"] == 50  # nosec: B101 - Test assertion
+        assert params["NOISE_LEVEL"] == 0.5  # nosec: B101 - Test assertion
 
         # Modify file manually and check
         content = self.run_file.read_text()
@@ -196,7 +200,7 @@ if __name__ == "__main__":
             content.replace("TARGET_DURATION = 50", "TARGET_DURATION = 80")
         )
         params_updated = self.agent._get_current_parameters("masked_task")
-        assert params_updated["TARGET_DURATION"] == 80
+        assert params_updated["TARGET_DURATION"] == 80  # nosec: B101 - Test assertion
 
     @patch("autonomous_agent.AutonomousAgent.run_experiment")
     def test_guardrail_breakout(self, mock_run):
@@ -227,7 +231,7 @@ if __name__ == "__main__":
         results = self.agent.optimize_experiment("masked_task", iterations=10)
 
         # Should NOT have reached 10 iterations if guardrail worked
-        assert len(results) < 10
+        assert len(results) < 10  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

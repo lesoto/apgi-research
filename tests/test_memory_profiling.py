@@ -136,14 +136,16 @@ class TestMemoryBasics:
 
     def test_memory_tracking_available(self) -> None:
         """Test that memory tracking is available."""
-        assert tracemalloc is not None
+        assert tracemalloc is not None  # nosec: B101 - Test assertion
 
     def test_memory_snapshot_fixture(
         self, memory_snapshot: tracemalloc.Snapshot
     ) -> None:
         """Test memory snapshot fixture works."""
-        assert memory_snapshot is not None
-        assert isinstance(memory_snapshot, tracemalloc.Snapshot)
+        assert memory_snapshot is not None  # nosec: B101 - Test assertion
+        assert isinstance(
+            memory_snapshot, tracemalloc.Snapshot
+        )  # nosec: B101 - Test assertion
 
     def test_memory_tracker(self, memory_tracker: MemoryTracker) -> None:
         """Test memory tracker functionality."""
@@ -155,8 +157,8 @@ class TestMemoryBasics:
         memory_tracker.snapshot("after_allocation")
 
         # Check we have snapshots
-        assert len(memory_tracker.snapshots) == 2
-        assert len(memory_tracker.allocations) == 2
+        assert len(memory_tracker.snapshots) == 2  # nosec: B101 - Test assertion
+        assert len(memory_tracker.allocations) == 2  # nosec: B101 - Test assertion
 
         del data
         gc.collect()
@@ -170,8 +172,8 @@ class TestMemoryBasics:
 
         current, peak = tracemalloc.get_traced_memory()
 
-        assert current > 0
-        assert peak >= current
+        assert current > 0  # nosec: B101 - Test assertion
+        assert peak >= current  # nosec: B101 - Test assertion
 
         del data
         tracemalloc.stop()
@@ -210,7 +212,7 @@ class TestMemoryIntegration:
         mem_increase = mem_after - mem_before
 
         # Should not exceed memory limit
-        assert (
+        assert (  # nosec: B101 - Test assertion
             mem_increase < memory_limit
         ), f"Memory increase {mem_increase:.1f}MB exceeds limit {memory_limit}MB"
 
@@ -228,7 +230,9 @@ class TestMemoryIntegration:
         memory_tracker.snapshot("after_large_arrays")
 
         # Check peak memory
-        assert memory_tracker.peak_memory < 200  # Should be under 200MB
+        assert (
+            memory_tracker.peak_memory < 200
+        )  # Should be under 200MB  # nosec: B101 - Test assertion
 
         del large_1d, large_2d
         gc.collect()
@@ -253,7 +257,9 @@ class TestMemoryIntegration:
         memory_tracker.snapshot("end")
 
         # Verify reasonable memory usage
-        assert memory_tracker.peak_memory < 100  # Should stay under 100MB
+        assert (
+            memory_tracker.peak_memory < 100
+        )  # Should stay under 100MB  # nosec: B101 - Test assertion
 
         del results
 
@@ -286,7 +292,7 @@ class TestMemoryStress:
         leak_report = memory_tracker.get_leak_report(initial_snap, -1)
         # Allow some growth for test infrastructure
         total_growth = sum(stat.size_diff for stat in leak_report[:10])
-        assert (
+        assert (  # nosec: B101 - Test assertion
             total_growth < 10 * 1024 * 1024
         ), f"Possible memory leak detected: {total_growth / 1024 / 1024:.1f}MB"
 
@@ -323,7 +329,7 @@ class TestMemoryStress:
         gc.collect()
 
         # Should not have excessive memory usage
-        assert memory_tracker.peak_memory < 200
+        assert memory_tracker.peak_memory < 200  # nosec: B101 - Test assertion
 
     def test_memory_fragmentation(self, memory_tracker: MemoryTracker) -> None:
         """Test memory fragmentation handling."""
@@ -378,7 +384,7 @@ class TestMemoryPerformance:
         allocate_arrays()
         duration = time.perf_counter() - start
         # Should complete in reasonable time
-        assert duration < 1.0  # Less than 1 second
+        assert duration < 1.0  # Less than 1 second  # nosec: B101 - Test assertion
 
     def test_gc_impact(self, memory_tracker: MemoryTracker) -> None:
         """Test garbage collection impact on performance."""
@@ -408,8 +414,12 @@ class TestMemoryPerformance:
 
         # GC timing is highly variable across environments
         # Just verify both operations completed without error
-        assert duration_no_gc > 0, "No-GC operations should take some time"
-        assert duration_with_gc > 0, "With-GC operations should take some time"
+        assert (
+            duration_no_gc > 0
+        ), "No-GC operations should take some time"  # nosec: B101 - Test assertion
+        assert (
+            duration_with_gc > 0
+        ), "With-GC operations should take some time"  # nosec: B101 - Test assertion
 
 
 @pytest.mark.memory
@@ -448,7 +458,7 @@ class TestMemoryWithAPGI:
         memory_tracker.snapshot("after_metrics")
 
         # Memory should be reasonable
-        assert memory_tracker.peak_memory < 100
+        assert memory_tracker.peak_memory < 100  # nosec: B101 - Test assertion
 
         del experiment_data
 
@@ -484,7 +494,7 @@ class TestMemoryWithAPGI:
 
         # Should not leak significant memory
         final_alloc = memory_tracker.allocations[-1]
-        assert final_alloc["current_mb"] < 50
+        assert final_alloc["current_mb"] < 50  # nosec: B101 - Test assertion
 
 
 # =============================================================================

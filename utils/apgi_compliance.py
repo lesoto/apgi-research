@@ -237,7 +237,13 @@ class ComplianceManager:
                 continue
 
             created_at_str = record.get("created_at", current_time.isoformat())
-            created_at = datetime.fromisoformat(created_at_str)
+            try:
+                created_at = datetime.fromisoformat(created_at_str)
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=current_time.tzinfo)
+            except ValueError:
+                # Handle case where timezone info is embedded in string
+                created_at = datetime.fromisoformat(created_at_str)
 
             if current_time - created_at <= policy.get_retention_period():
                 valid_records.append(record)

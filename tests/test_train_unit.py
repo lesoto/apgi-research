@@ -71,7 +71,7 @@ def apply_rotary_emb(
     x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
 ) -> torch.Tensor:
     """Apply rotary embeddings."""
-    assert x.ndim == 4
+    assert x.ndim == 4  # nosec: B101 - Test assertion
     d = x.shape[3] // 2
     x1, x2 = x[..., :d], x[..., d:]
     y1 = x1 * cos + x2 * sin
@@ -86,13 +86,13 @@ class TestGPTConfig:
     def test_default_values(self):
         """Test default GPTConfig values."""
         config = GPTConfig()
-        assert config.sequence_len == 2048
-        assert config.vocab_size == 32768
-        assert config.n_layer == 12
-        assert config.n_head == 6
-        assert config.n_kv_head == 6
-        assert config.n_embd == 768
-        assert config.window_pattern == "SSSL"
+        assert config.sequence_len == 2048  # nosec: B101 - Test assertion
+        assert config.vocab_size == 32768  # nosec: B101 - Test assertion
+        assert config.n_layer == 12  # nosec: B101 - Test assertion
+        assert config.n_head == 6  # nosec: B101 - Test assertion
+        assert config.n_kv_head == 6  # nosec: B101 - Test assertion
+        assert config.n_embd == 768  # nosec: B101 - Test assertion
+        assert config.window_pattern == "SSSL"  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom GPTConfig values."""
@@ -105,13 +105,13 @@ class TestGPTConfig:
             n_embd=512,
             window_pattern="LLLL",
         )
-        assert config.sequence_len == 1024
-        assert config.vocab_size == 50000
-        assert config.n_layer == 8
-        assert config.n_head == 8
-        assert config.n_kv_head == 4
-        assert config.n_embd == 512
-        assert config.window_pattern == "LLLL"
+        assert config.sequence_len == 1024  # nosec: B101 - Test assertion
+        assert config.vocab_size == 50000  # nosec: B101 - Test assertion
+        assert config.n_layer == 8  # nosec: B101 - Test assertion
+        assert config.n_head == 8  # nosec: B101 - Test assertion
+        assert config.n_kv_head == 4  # nosec: B101 - Test assertion
+        assert config.n_embd == 512  # nosec: B101 - Test assertion
+        assert config.window_pattern == "LLLL"  # nosec: B101 - Test assertion
 
 
 class TestHelperFunctions:
@@ -121,30 +121,36 @@ class TestHelperFunctions:
         """Test norm function (RMS normalization)."""
         x = torch.tensor([[1.0, 2.0, 3.0]])
         result = norm(x)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_norm_batch(self):
         """Test norm function with batch."""
         x = torch.randn(2, 10, 128)
         result = norm(x)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_has_ve(self):
         """Test has_ve function (Value Embedding condition)."""
         # For n_layer=12: (n_layer - 1) % 2 = 11 % 2 = 1
         # Layer 0: 0 % 2 = 0, so 0 == 1 is False
-        assert has_ve(0, 12) is False
+        assert has_ve(0, 12) is False  # nosec: B101 - Test assertion
         # Layer 1: 1 % 2 = 1, so 1 == 1 is True
-        assert has_ve(1, 12) is True
+        assert has_ve(1, 12) is True  # nosec: B101 - Test assertion
         # Layer 11: 11 % 2 = 1, so 1 == 1 is True
-        assert has_ve(11, 12) is True
+        assert has_ve(11, 12) is True  # nosec: B101 - Test assertion
 
     def test_has_ve_different_layers(self):
         """Test has_ve with different layer counts."""
         # n_layer=8: (n_layer - 1) % 2 = 7 % 2 = 1
-        assert has_ve(0, 8) is False  # 0 % 2 = 0, 0 == 1 is False
-        assert has_ve(1, 8) is True  # 1 % 2 = 1, 1 == 1 is True
-        assert has_ve(7, 8) is True  # 7 % 2 = 1, 1 == 1 is True
+        assert (
+            has_ve(0, 8) is False
+        )  # 0 % 2 = 0, 0 == 1 is False  # nosec: B101 - Test assertion
+        assert (
+            has_ve(1, 8) is True
+        )  # 1 % 2 = 1, 1 == 1 is True  # nosec: B101 - Test assertion
+        assert (
+            has_ve(7, 8) is True
+        )  # 7 % 2 = 1, 1 == 1 is True  # nosec: B101 - Test assertion
 
     def test_apply_rotary_emb(self):
         """Test apply_rotary_emb function."""
@@ -156,7 +162,7 @@ class TestHelperFunctions:
         sin = torch.randn(1, seq_len, 1, head_dim // 2)
 
         result = apply_rotary_emb(x, cos, sin)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_apply_rotary_emb_assertion(self):
         """Test apply_rotary_emb raises assertion for wrong dimensions."""
@@ -204,56 +210,56 @@ class TestScheduleFunctions:
         warmup_ratio = 0.1
         # At 50% of warmup
         lrm = get_lr_multiplier(0.05, warmup_ratio=warmup_ratio)
-        assert 0 < lrm < 1
+        assert 0 < lrm < 1  # nosec: B101 - Test assertion
         # At end of warmup
         lrm = get_lr_multiplier(warmup_ratio, warmup_ratio=warmup_ratio)
-        assert lrm == 1.0
+        assert lrm == 1.0  # nosec: B101 - Test assertion
 
     def test_get_lr_multiplier_steady(self):
         """Test LR multiplier during steady state."""
         # In steady state (after warmup, before warmdown)
         progress = 0.3
         lrm = get_lr_multiplier(progress, warmup_ratio=0.1, warmdown_ratio=0.5)
-        assert lrm == 1.0
+        assert lrm == 1.0  # nosec: B101 - Test assertion
 
     def test_get_lr_multiplier_warmdown(self):
         """Test LR multiplier during warmdown."""
         # At start of warmdown (assuming warmdown_ratio is 0.5)
         progress = 0.5
         lrm = get_lr_multiplier(progress, warmdown_ratio=0.5)
-        assert lrm == 1.0
+        assert lrm == 1.0  # nosec: B101 - Test assertion
         # At end of warmdown
         lrm = get_lr_multiplier(1.0, warmdown_ratio=0.5)
-        assert lrm == 0.0
+        assert lrm == 0.0  # nosec: B101 - Test assertion
 
     def test_get_lr_multiplier_zero_warmup(self):
         """Test LR multiplier with zero warmup."""
         lrm = get_lr_multiplier(0.0, warmup_ratio=0.0)
-        assert lrm == 1.0
+        assert lrm == 1.0  # nosec: B101 - Test assertion
 
     def test_get_muon_momentum(self):
         """Test Muon momentum schedule."""
         # At step 0
         momentum = get_muon_momentum(0)
-        assert momentum == 0.85
+        assert momentum == 0.85  # nosec: B101 - Test assertion
         # At step 150 (halfway)
         momentum = get_muon_momentum(150)
-        assert 0.85 < momentum < 0.95
+        assert 0.85 < momentum < 0.95  # nosec: B101 - Test assertion
         # At step 300+ (capped)
         momentum = get_muon_momentum(500)
-        assert momentum == 0.95
+        assert momentum == 0.95  # nosec: B101 - Test assertion
 
     def test_get_weight_decay(self):
         """Test weight decay schedule."""
         # At start
         wd = get_weight_decay(0.0, weight_decay=0.2)
-        assert wd == 0.2
+        assert wd == 0.2  # nosec: B101 - Test assertion
         # At 50% progress
         wd = get_weight_decay(0.5, weight_decay=0.2)
-        assert wd == 0.1
+        assert wd == 0.1  # nosec: B101 - Test assertion
         # At end
         wd = get_weight_decay(1.0, weight_decay=0.2)
-        assert wd == 0.0
+        assert wd == 0.0  # nosec: B101 - Test assertion
 
 
 class TestPyTorchOperations:
@@ -263,24 +269,26 @@ class TestPyTorchOperations:
         """Test PyTorch RMS normalization."""
         x = torch.tensor([[1.0, 2.0, 3.0, 4.0]])
         result = F.rms_norm(x, (x.size(-1),))
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
         # RMS norm should normalize
         rms = torch.sqrt(torch.mean(result**2))
-        assert torch.allclose(rms, torch.tensor(1.0), atol=0.01)
+        assert torch.allclose(
+            rms, torch.tensor(1.0), atol=0.01
+        )  # nosec: B101 - Test assertion
 
     def test_relu_square(self):
         """Test ReLU squared activation used in MLP."""
         x = torch.tensor([-1.0, 0.0, 1.0, 2.0])
         result = F.relu(x).square()
         expected = torch.tensor([0.0, 0.0, 1.0, 4.0])
-        assert torch.allclose(result, expected)
+        assert torch.allclose(result, expected)  # nosec: B101 - Test assertion
 
     def test_cross_entropy(self):
         """Test cross entropy loss used in training."""
         logits = torch.randn(2, 10, 100)  # batch=2, seq=10, vocab=100
         targets = torch.randint(0, 100, (2, 10))
         loss = F.cross_entropy(logits.view(-1, 100), targets.view(-1))
-        assert loss.dim() == 0  # Scalar
+        assert loss.dim() == 0  # Scalar  # nosec: B101 - Test assertion
 
     def test_scaled_dot_product_attention(self):
         """Test scaled dot product attention."""
@@ -294,7 +302,12 @@ class TestPyTorchOperations:
         v = torch.randn(batch, n_heads, seq_len, head_dim)
 
         result = F.scaled_dot_product_attention(q, k, v, is_causal=True)
-        assert result.shape == (batch, n_heads, seq_len, head_dim)
+        assert result.shape == (
+            batch,
+            n_heads,
+            seq_len,
+            head_dim,
+        )  # nosec: B101 - Test assertion
 
     def test_tanh_softcap(self):
         """Test tanh softcapping used in logits."""
@@ -302,7 +315,7 @@ class TestPyTorchOperations:
         softcap = 15
         capped = softcap * torch.tanh(logits / softcap)
         # Values should be bounded by softcap
-        assert capped.abs().max() <= softcap
+        assert capped.abs().max() <= softcap  # nosec: B101 - Test assertion
 
 
 class TestWindowPatternComputation:
@@ -311,7 +324,7 @@ class TestWindowPatternComputation:
     def _compute_window_sizes(self, config: GPTConfig) -> list:
         """Replicate _compute_window_sizes from train.py."""
         pattern = config.window_pattern.upper()
-        assert all(c in "SL" for c in pattern)
+        assert all(c in "SL" for c in pattern)  # nosec: B101 - Test assertion
         long_window = config.sequence_len
         short_window = long_window // 2
         char_to_window = {"L": (long_window, 0), "S": (short_window, 0)}
@@ -326,26 +339,41 @@ class TestWindowPatternComputation:
         """Test SSSL window pattern."""
         config = GPTConfig(sequence_len=32, n_layer=4, window_pattern="SSSL")
         window_sizes = self._compute_window_sizes(config)
-        assert len(window_sizes) == 4
-        assert window_sizes[0] == (16, 0)  # S
-        assert window_sizes[1] == (16, 0)  # S
-        assert window_sizes[2] == (16, 0)  # S
-        assert window_sizes[3] == (32, 0)  # L (last layer always long)
+        assert len(window_sizes) == 4  # nosec: B101 - Test assertion
+        assert window_sizes[0] == (16, 0)  # S  # nosec: B101 - Test assertion
+        assert window_sizes[1] == (16, 0)  # S  # nosec: B101 - Test assertion
+        assert window_sizes[2] == (16, 0)  # S  # nosec: B101 - Test assertion
+        assert window_sizes[3] == (
+            32,
+            0,
+        )  # L (last layer always long)  # nosec: B101 - Test assertion
 
     def test_all_long_pattern(self):
         """Test all long window pattern."""
         config = GPTConfig(sequence_len=32, n_layer=3, window_pattern="LLL")
         window_sizes = self._compute_window_sizes(config)
-        assert all(ws == (32, 0) for ws in window_sizes)
+        assert all(ws == (32, 0) for ws in window_sizes)  # nosec: B101 - Test assertion
 
     def test_alternating_pattern(self):
         """Test alternating SL pattern."""
         config = GPTConfig(sequence_len=32, n_layer=4, window_pattern="SL")
         window_sizes = self._compute_window_sizes(config)
-        assert window_sizes[0] == (16, 0)  # S (pattern[0 % 2] = pattern[0] = S)
-        assert window_sizes[1] == (32, 0)  # L (pattern[1 % 2] = pattern[1] = L)
-        assert window_sizes[2] == (16, 0)  # S (pattern[2 % 2] = pattern[0] = S)
-        assert window_sizes[3] == (32, 0)  # L (last layer always long)
+        assert window_sizes[0] == (
+            16,
+            0,
+        )  # S (pattern[0 % 2] = pattern[0] = S)  # nosec: B101 - Test assertion
+        assert window_sizes[1] == (
+            32,
+            0,
+        )  # L (pattern[1 % 2] = pattern[1] = L)  # nosec: B101 - Test assertion
+        assert window_sizes[2] == (
+            16,
+            0,
+        )  # S (pattern[2 % 2] = pattern[0] = S)  # nosec: B101 - Test assertion
+        assert window_sizes[3] == (
+            32,
+            0,
+        )  # L (last layer always long)  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

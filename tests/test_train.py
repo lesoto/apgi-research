@@ -23,13 +23,13 @@ class TestGPTConfig:
         from train import GPTConfig
 
         config = GPTConfig()
-        assert config.sequence_len == 2048
-        assert config.vocab_size == 32768
-        assert config.n_layer == 12
-        assert config.n_head == 6
-        assert config.n_kv_head == 6
-        assert config.n_embd == 768
-        assert config.window_pattern == "SSSL"
+        assert config.sequence_len == 2048  # nosec: B101 - Test assertion
+        assert config.vocab_size == 32768  # nosec: B101 - Test assertion
+        assert config.n_layer == 12  # nosec: B101 - Test assertion
+        assert config.n_head == 6  # nosec: B101 - Test assertion
+        assert config.n_kv_head == 6  # nosec: B101 - Test assertion
+        assert config.n_embd == 768  # nosec: B101 - Test assertion
+        assert config.window_pattern == "SSSL"  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom GPTConfig values."""
@@ -44,13 +44,13 @@ class TestGPTConfig:
             n_embd=512,
             window_pattern="LLLL",
         )
-        assert config.sequence_len == 1024
-        assert config.vocab_size == 50000
-        assert config.n_layer == 8
-        assert config.n_head == 8
-        assert config.n_kv_head == 4
-        assert config.n_embd == 512
-        assert config.window_pattern == "LLLL"
+        assert config.sequence_len == 1024  # nosec: B101 - Test assertion
+        assert config.vocab_size == 50000  # nosec: B101 - Test assertion
+        assert config.n_layer == 8  # nosec: B101 - Test assertion
+        assert config.n_head == 8  # nosec: B101 - Test assertion
+        assert config.n_kv_head == 4  # nosec: B101 - Test assertion
+        assert config.n_embd == 512  # nosec: B101 - Test assertion
+        assert config.window_pattern == "LLLL"  # nosec: B101 - Test assertion
 
 
 class TestHelperFunctions:
@@ -63,7 +63,7 @@ class TestHelperFunctions:
         x = torch.tensor([[1.0, 2.0, 3.0]])
         result = norm(x)
         # RMS norm should normalize to unit variance
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_norm_batch(self):
         """Test norm function with batch."""
@@ -71,27 +71,29 @@ class TestHelperFunctions:
 
         x = torch.randn(2, 10, 128)
         result = norm(x)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_has_ve(self):
         """Test has_ve function (Value Embedding condition)."""
         from train import has_ve
 
         # For n_layer=12, layer 0 should have VE (0 % 2 == 11 % 2 = 1)
-        assert has_ve(0, 12) is True
+        assert has_ve(0, 12) is True  # nosec: B101 - Test assertion
         # Layer 1 should not have VE (1 % 2 == 0)
-        assert has_ve(1, 12) is False
+        assert has_ve(1, 12) is False  # nosec: B101 - Test assertion
         # Layer 11 should have VE (11 % 2 == 11 % 2 = 1)
-        assert has_ve(11, 12) is True
+        assert has_ve(11, 12) is True  # nosec: B101 - Test assertion
 
     def test_has_ve_different_layers(self):
         """Test has_ve with different layer counts."""
         from train import has_ve
 
         # n_layer=8
-        assert has_ve(0, 8) is True  # 0 % 2 == 7 % 2 = 1
-        assert has_ve(1, 8) is False
-        assert has_ve(7, 8) is True
+        assert (
+            has_ve(0, 8) is True
+        )  # 0 % 2 == 7 % 2 = 1  # nosec: B101 - Test assertion
+        assert has_ve(1, 8) is False  # nosec: B101 - Test assertion
+        assert has_ve(7, 8) is True  # nosec: B101 - Test assertion
 
     def test_apply_rotary_emb(self):
         """Test apply_rotary_emb function."""
@@ -105,7 +107,7 @@ class TestHelperFunctions:
         sin = torch.randn(1, seq_len, 1, head_dim // 2)
 
         result = apply_rotary_emb(x, cos, sin)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_apply_rotary_emb_assertion(self):
         """Test apply_rotary_emb raises assertion for wrong dimensions."""
@@ -128,10 +130,10 @@ class TestMLP:
 
         config = GPTConfig(n_embd=128)
         mlp = MLP(config)
-        assert mlp.c_fc.in_features == 128
-        assert mlp.c_fc.out_features == 512
-        assert mlp.c_proj.in_features == 512
-        assert mlp.c_proj.out_features == 128
+        assert mlp.c_fc.in_features == 128  # nosec: B101 - Test assertion
+        assert mlp.c_fc.out_features == 512  # nosec: B101 - Test assertion
+        assert mlp.c_proj.in_features == 512  # nosec: B101 - Test assertion
+        assert mlp.c_proj.out_features == 128  # nosec: B101 - Test assertion
 
     def test_mlp_forward(self):
         """Test MLP forward pass."""
@@ -141,7 +143,7 @@ class TestMLP:
         mlp = MLP(config)
         x = torch.randn(2, 10, 128)
         result = mlp(x)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
 
 class TestCausalSelfAttention:
@@ -153,10 +155,10 @@ class TestCausalSelfAttention:
 
         config = GPTConfig(n_embd=128, n_head=4, n_kv_head=4)
         attn = CausalSelfAttention(config, layer_idx=0)
-        assert attn.n_head == 4
-        assert attn.n_kv_head == 4
-        assert attn.n_embd == 128
-        assert attn.head_dim == 32
+        assert attn.n_head == 4  # nosec: B101 - Test assertion
+        assert attn.n_kv_head == 4  # nosec: B101 - Test assertion
+        assert attn.n_embd == 128  # nosec: B101 - Test assertion
+        assert attn.head_dim == 32  # nosec: B101 - Test assertion
 
     def test_attention_init_gqa(self):
         """Test CausalSelfAttention with Grouped Query Attention."""
@@ -164,8 +166,8 @@ class TestCausalSelfAttention:
 
         config = GPTConfig(n_embd=128, n_head=4, n_kv_head=2)
         attn = CausalSelfAttention(config, layer_idx=0)
-        assert attn.n_head == 4
-        assert attn.n_kv_head == 2
+        assert attn.n_head == 4  # nosec: B101 - Test assertion
+        assert attn.n_kv_head == 2  # nosec: B101 - Test assertion
 
     def test_attention_forward_no_ve(self):
         """Test attention forward without value embedding."""
@@ -179,7 +181,7 @@ class TestCausalSelfAttention:
         window_size = (32, 0)
 
         result = attn(x, None, (cos, sin), window_size)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
     def test_attention_forward_with_ve(self):
         """Test attention forward with value embedding."""
@@ -194,7 +196,7 @@ class TestCausalSelfAttention:
         window_size = (32, 0)
 
         result = attn(x, ve, (cos, sin), window_size)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
 
 class TestBlock:
@@ -206,10 +208,10 @@ class TestBlock:
 
         config = GPTConfig(n_embd=128, n_head=4, n_kv_head=4)
         block = Block(config, layer_idx=0)
-        assert isinstance(
+        assert isinstance(  # nosec: B101 - Test assertion
             block.attn, type(config).__bases__[0].__bases__[0]
         )  # nn.Module
-        assert isinstance(
+        assert isinstance(  # nosec: B101 - Test assertion
             block.mlp, type(config).__bases__[0].__bases__[0]
         )  # nn.Module
 
@@ -225,7 +227,7 @@ class TestBlock:
         window_size = (32, 0)
 
         result = block(x, None, (cos, sin), window_size)
-        assert result.shape == x.shape
+        assert result.shape == x.shape  # nosec: B101 - Test assertion
 
 
 class TestGPT:
@@ -245,11 +247,15 @@ class TestGPT:
             n_embd=128,
         )
         model = GPT(config)
-        assert model.config == config
+        assert model.config == config  # nosec: B101 - Test assertion
         transformer_h = model.transformer.h
-        assert isinstance(transformer_h, torch.nn.ModuleList)
-        assert len(transformer_h) == 2
-        assert len(model.value_embeds) == 1  # Only layer 0 has VE for n_layer=2
+        assert isinstance(
+            transformer_h, torch.nn.ModuleList
+        )  # nosec: B101 - Test assertion
+        assert len(transformer_h) == 2  # nosec: B101 - Test assertion
+        assert (
+            len(model.value_embeds) == 1
+        )  # Only layer 0 has VE for n_layer=2  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_forward_no_targets(self):
@@ -269,7 +275,7 @@ class TestGPT:
         idx = torch.randint(0, 1000, (2, 10))
 
         result = model(idx)
-        assert result.shape == (2, 10, 1000)
+        assert result.shape == (2, 10, 1000)  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_forward_with_targets(self):
@@ -289,8 +295,10 @@ class TestGPT:
         targets = torch.randint(0, 1000, (2, 10))
 
         result = model(idx, targets)
-        assert isinstance(result, torch.Tensor)  # Loss scalar
-        assert result.dim() == 0
+        assert isinstance(
+            result, torch.Tensor
+        )  # Loss scalar  # nosec: B101 - Test assertion
+        assert result.dim() == 0  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_forward_reduction_sum(self):
@@ -310,7 +318,7 @@ class TestGPT:
         targets = torch.randint(0, 1000, (2, 10))
 
         result = model(idx, targets, reduction="sum")
-        assert isinstance(result, torch.Tensor)
+        assert isinstance(result, torch.Tensor)  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_forward_reduction_none(self):
@@ -330,7 +338,7 @@ class TestGPT:
         targets = torch.randint(0, 1000, (2, 10))
 
         result = model(idx, targets, reduction="none")
-        assert result.shape == (20,)  # 2 * 10 flattened
+        assert result.shape == (20,)  # 2 * 10 flattened  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_estimate_flops(self):
@@ -347,8 +355,8 @@ class TestGPT:
         )
         model = GPT(config)
         flops = model.estimate_flops()
-        assert isinstance(flops, int)
-        assert flops > 0
+        assert isinstance(flops, int)  # nosec: B101 - Test assertion
+        assert flops > 0  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_num_scaling_params(self):
@@ -365,13 +373,13 @@ class TestGPT:
         )
         model = GPT(config)
         params = model.num_scaling_params()
-        assert "wte" in params
-        assert "value_embeds" in params
-        assert "lm_head" in params
-        assert "transformer_matrices" in params
-        assert "scalars" in params
-        assert "total" in params
-        assert params["total"] > 0
+        assert "wte" in params  # nosec: B101 - Test assertion
+        assert "value_embeds" in params  # nosec: B101 - Test assertion
+        assert "lm_head" in params  # nosec: B101 - Test assertion
+        assert "transformer_matrices" in params  # nosec: B101 - Test assertion
+        assert "scalars" in params  # nosec: B101 - Test assertion
+        assert "total" in params  # nosec: B101 - Test assertion
+        assert params["total"] > 0  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_compute_window_sizes(self):
@@ -389,12 +397,15 @@ class TestGPT:
         )
         model = GPT(config)
         window_sizes = model.window_sizes
-        assert len(window_sizes) == 4
+        assert len(window_sizes) == 4  # nosec: B101 - Test assertion
         # Pattern SSSL: S=16, S=16, S=16, L=32
-        assert window_sizes[0] == (16, 0)
-        assert window_sizes[1] == (16, 0)
-        assert window_sizes[2] == (16, 0)
-        assert window_sizes[3] == (32, 0)  # Last layer always long
+        assert window_sizes[0] == (16, 0)  # nosec: B101 - Test assertion
+        assert window_sizes[1] == (16, 0)  # nosec: B101 - Test assertion
+        assert window_sizes[2] == (16, 0)  # nosec: B101 - Test assertion
+        assert window_sizes[3] == (
+            32,
+            0,
+        )  # Last layer always long  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_window_pattern_all_long(self):
@@ -412,7 +423,7 @@ class TestGPT:
         )
         model = GPT(config)
         window_sizes = model.window_sizes
-        assert all(ws == (32, 0) for ws in window_sizes)
+        assert all(ws == (32, 0) for ws in window_sizes)  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_precompute_rotary_embeddings(self):
@@ -428,8 +439,10 @@ class TestGPT:
             n_embd=128,
         )
         model = GPT(config)
-        assert model.cos.shape[1] == 320  # sequence_len * 10
-        assert model.sin.shape[1] == 320
+        assert (
+            model.cos.shape[1] == 320
+        )  # sequence_len * 10  # nosec: B101 - Test assertion
+        assert model.sin.shape[1] == 320  # nosec: B101 - Test assertion
 
     @patch("train.use_flash_attn", False)
     def test_gpt_init_weights(self):
@@ -448,8 +461,8 @@ class TestGPT:
         model.init_weights()
         # Check that weights are initialized (not zeros)
         wte = model.transformer.wte
-        assert isinstance(wte, torch.nn.Embedding)
-        assert wte.weight.abs().sum() > 0
+        assert isinstance(wte, torch.nn.Embedding)  # nosec: B101 - Test assertion
+        assert wte.weight.abs().sum() > 0  # nosec: B101 - Test assertion
 
 
 class TestMuonAdamW:
@@ -471,7 +484,7 @@ class TestMuonAdamW:
             }
         ]
         optimizer = MuonAdamW(param_groups)
-        assert len(optimizer.param_groups) == 1
+        assert len(optimizer.param_groups) == 1  # nosec: B101 - Test assertion
 
     def test_muon_adamw_step_adamw(self):
         """Test AdamW step."""
@@ -492,7 +505,9 @@ class TestMuonAdamW:
         optimizer = MuonAdamW(param_groups)
         optimizer.step()
         # Parameter should have changed
-        assert not torch.equal(param, torch.zeros(10, 10))
+        assert not torch.equal(
+            param, torch.zeros(10, 10)
+        )  # nosec: B101 - Test assertion
 
     def test_muon_adamw_step_no_grad(self):
         """Test step with no gradient (should skip)."""
@@ -513,7 +528,7 @@ class TestMuonAdamW:
         original_param = param.clone()
         optimizer.step()
         # Parameter should not have changed (no grad)
-        assert torch.equal(param, original_param)
+        assert torch.equal(param, original_param)  # nosec: B101 - Test assertion
 
     def test_muon_adamw_step_muon(self):
         """Test Muon step for matrix parameters."""
@@ -537,7 +552,9 @@ class TestMuonAdamW:
         optimizer.step()
         # Parameters should have changed
         for p in params:
-            assert not torch.equal(p, torch.zeros(10, 10))
+            assert not torch.equal(
+                p, torch.zeros(10, 10)
+            )  # nosec: B101 - Test assertion
 
     def test_muon_adamw_closure(self):
         """Test step with closure (should be ignored)."""
@@ -573,10 +590,10 @@ class TestScheduleFunctions:
         if WARMUP_RATIO > 0:
             # At 50% of warmup
             lrm = get_lr_multiplier(WARMUP_RATIO * 0.5)
-            assert 0 < lrm < 1
+            assert 0 < lrm < 1  # nosec: B101 - Test assertion
             # At end of warmup
             lrm = get_lr_multiplier(WARMUP_RATIO)
-            assert lrm == 1.0
+            assert lrm == 1.0  # nosec: B101 - Test assertion
 
     def test_get_lr_multiplier_steady(self):
         """Test LR multiplier during steady state."""
@@ -585,7 +602,7 @@ class TestScheduleFunctions:
         # In steady state (after warmup, before warmdown)
         progress = 0.3
         lrm = get_lr_multiplier(progress)
-        assert lrm == 1.0
+        assert lrm == 1.0  # nosec: B101 - Test assertion
 
     def test_get_lr_multiplier_warmdown(self):
         """Test LR multiplier during warmdown."""
@@ -594,10 +611,10 @@ class TestScheduleFunctions:
         # At start of warmdown (assuming WARMDOWN_RATIO is 0.5)
         progress = 0.5
         lrm = get_lr_multiplier(progress)
-        assert lrm == 1.0
+        assert lrm == 1.0  # nosec: B101 - Test assertion
         # At end of warmdown
         lrm = get_lr_multiplier(1.0)
-        assert lrm == FINAL_LR_FRAC
+        assert lrm == FINAL_LR_FRAC  # nosec: B101 - Test assertion
 
     def test_get_lr_multiplier_zero_warmup(self):
         """Test LR multiplier with zero warmup."""
@@ -609,7 +626,7 @@ class TestScheduleFunctions:
         train.WARMUP_RATIO = 0.0
         try:
             lrm = get_lr_multiplier(0.0)
-            assert lrm == 1.0
+            assert lrm == 1.0  # nosec: B101 - Test assertion
         finally:
             train.WARMUP_RATIO = original_warmup
 
@@ -619,13 +636,13 @@ class TestScheduleFunctions:
 
         # At step 0
         momentum = get_muon_momentum(0)
-        assert momentum == 0.85
+        assert momentum == 0.85  # nosec: B101 - Test assertion
         # At step 150 (halfway)
         momentum = get_muon_momentum(150)
-        assert 0.85 < momentum < 0.95
+        assert 0.85 < momentum < 0.95  # nosec: B101 - Test assertion
         # At step 300+ (capped)
         momentum = get_muon_momentum(500)
-        assert momentum == 0.95
+        assert momentum == 0.95  # nosec: B101 - Test assertion
 
     def test_get_weight_decay(self):
         """Test weight decay schedule."""
@@ -633,13 +650,13 @@ class TestScheduleFunctions:
 
         # At start
         wd = get_weight_decay(0.0)
-        assert wd == WEIGHT_DECAY
+        assert wd == WEIGHT_DECAY  # nosec: B101 - Test assertion
         # At 50% progress
         wd = get_weight_decay(0.5)
-        assert wd == WEIGHT_DECAY * 0.5
+        assert wd == WEIGHT_DECAY * 0.5  # nosec: B101 - Test assertion
         # At end
         wd = get_weight_decay(1.0)
-        assert wd == 0.0
+        assert wd == 0.0  # nosec: B101 - Test assertion
 
 
 class TestBuildModelConfig:
@@ -655,13 +672,13 @@ class TestBuildModelConfig:
         from train import build_model_config
 
         config = build_model_config(depth=8)
-        assert config.sequence_len == 2048
-        assert config.vocab_size == 1000
-        assert config.n_layer == 8
-        assert config.window_pattern == "SSSL"
+        assert config.sequence_len == 2048  # nosec: B101 - Test assertion
+        assert config.vocab_size == 1000  # nosec: B101 - Test assertion
+        assert config.n_layer == 8  # nosec: B101 - Test assertion
+        assert config.window_pattern == "SSSL"  # nosec: B101 - Test assertion
         # Model dim should be depth * ASPECT_RATIO, rounded to HEAD_DIM multiple
-        assert config.n_embd % 128 == 0
-        assert config.n_head == config.n_embd // 128
+        assert config.n_embd % 128 == 0  # nosec: B101 - Test assertion
+        assert config.n_head == config.n_embd // 128  # nosec: B101 - Test assertion
 
     @patch("train.ASPECT_RATIO", 64)
     @patch("train.HEAD_DIM", 128)
@@ -673,8 +690,8 @@ class TestBuildModelConfig:
         from train import build_model_config
 
         config = build_model_config(depth=4)
-        assert config.n_layer == 4
-        assert config.n_embd % 128 == 0
+        assert config.n_layer == 4  # nosec: B101 - Test assertion
+        assert config.n_embd % 128 == 0  # nosec: B101 - Test assertion
 
 
 class TestConstants:
@@ -684,39 +701,39 @@ class TestConstants:
         """Test ASPECT_RATIO constant."""
         from train import ASPECT_RATIO
 
-        assert isinstance(ASPECT_RATIO, int)
-        assert ASPECT_RATIO > 0
+        assert isinstance(ASPECT_RATIO, int)  # nosec: B101 - Test assertion
+        assert ASPECT_RATIO > 0  # nosec: B101 - Test assertion
 
     def test_head_dim(self):
         """Test HEAD_DIM constant."""
         from train import HEAD_DIM
 
-        assert isinstance(HEAD_DIM, int)
-        assert HEAD_DIM > 0
+        assert isinstance(HEAD_DIM, int)  # nosec: B101 - Test assertion
+        assert HEAD_DIM > 0  # nosec: B101 - Test assertion
 
     def test_window_pattern(self):
         """Test WINDOW_PATTERN constant."""
         from train import WINDOW_PATTERN
 
-        assert isinstance(WINDOW_PATTERN, str)
-        assert all(c in "SL" for c in WINDOW_PATTERN)
+        assert isinstance(WINDOW_PATTERN, str)  # nosec: B101 - Test assertion
+        assert all(c in "SL" for c in WINDOW_PATTERN)  # nosec: B101 - Test assertion
 
     def test_total_batch_size(self):
         """Test TOTAL_BATCH_SIZE constant."""
         from train import TOTAL_BATCH_SIZE
 
-        assert isinstance(TOTAL_BATCH_SIZE, int)
-        assert TOTAL_BATCH_SIZE > 0
+        assert isinstance(TOTAL_BATCH_SIZE, int)  # nosec: B101 - Test assertion
+        assert TOTAL_BATCH_SIZE > 0  # nosec: B101 - Test assertion
 
     def test_learning_rates(self):
         """Test learning rate constants."""
         from train import EMBEDDING_LR, MATRIX_LR, SCALAR_LR, UNEMBEDDING_LR
 
-        assert isinstance(EMBEDDING_LR, float)
-        assert isinstance(MATRIX_LR, float)
-        assert isinstance(SCALAR_LR, float)
-        assert isinstance(UNEMBEDDING_LR, float)
-        assert all(
+        assert isinstance(EMBEDDING_LR, float)  # nosec: B101 - Test assertion
+        assert isinstance(MATRIX_LR, float)  # nosec: B101 - Test assertion
+        assert isinstance(SCALAR_LR, float)  # nosec: B101 - Test assertion
+        assert isinstance(UNEMBEDDING_LR, float)  # nosec: B101 - Test assertion
+        assert all(  # nosec: B101 - Test assertion
             lr > 0 for lr in [EMBEDDING_LR, MATRIX_LR, SCALAR_LR, UNEMBEDDING_LR]
         )
 
@@ -724,8 +741,8 @@ class TestConstants:
         """Test DEPTH constant."""
         from train import DEPTH
 
-        assert isinstance(DEPTH, int)
-        assert DEPTH > 0
+        assert isinstance(DEPTH, int)  # nosec: B101 - Test assertion
+        assert DEPTH > 0  # nosec: B101 - Test assertion
 
 
 class TestPolarExpressCoeffs:
@@ -735,9 +752,11 @@ class TestPolarExpressCoeffs:
         """Test polar_express_coeffs structure."""
         from train import polar_express_coeffs
 
-        assert isinstance(polar_express_coeffs, list)
-        assert len(polar_express_coeffs) > 0
+        assert isinstance(polar_express_coeffs, list)  # nosec: B101 - Test assertion
+        assert len(polar_express_coeffs) > 0  # nosec: B101 - Test assertion
         for coeff in polar_express_coeffs:
-            assert isinstance(coeff, tuple)
-            assert len(coeff) == 3
-            assert all(isinstance(c, float) for c in coeff)
+            assert isinstance(coeff, tuple)  # nosec: B101 - Test assertion
+            assert len(coeff) == 3  # nosec: B101 - Test assertion
+            assert all(
+                isinstance(c, float) for c in coeff
+            )  # nosec: B101 - Test assertion

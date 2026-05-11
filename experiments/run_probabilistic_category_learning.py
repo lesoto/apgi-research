@@ -93,8 +93,14 @@ class SimulatedParticipant:
     def process_trial(self, correct_category: str, feedback: bool) -> tuple:
         # Update beliefs based on feedback
         if feedback:
-            # Simple belief update (not using category.value since it's now a string)
-            category_idx = ord(correct_category[0].upper()) % len(self.category_beliefs)
+            # Simple belief update - map category to index
+            if correct_category == "A":
+                category_idx = 0
+            elif correct_category == "B":
+                category_idx = 1
+            else:
+                category_idx = 0  # Default to A
+
             likelihood = self.category_beliefs[category_idx]
             self.category_beliefs[category_idx] += likelihood * self.learning_rate
             self.category_beliefs /= np.sum(self.category_beliefs)

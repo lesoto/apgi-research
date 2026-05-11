@@ -999,9 +999,9 @@ class TestXPRAgentEngineEnhanced:
         if not result.success:
             raise AssertionError("Result should be successful")
         if isinstance(result.result, dict):
-            assert "experiment_name" in result.result
-            assert "severity" in result.result
-            assert "recommendations" in result.result
+            assert "experiment_name" in result.result  # nosec: B101 - Test assertion
+            assert "severity" in result.result  # nosec: B101 - Test assertion
+            assert "recommendations" in result.result  # nosec: B101 - Test assertion
 
     def test_xpr_issue_report_exception_handling(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -1050,7 +1050,7 @@ class TestXPRAgentEngineEnhanced:
         self, enhanced_engine: XPRAgentEngineEnhanced
     ) -> None:
         """Test severity assessment for medium severity."""
-        assert (
+        assert (  # nosec: B101 - Test assertion
             enhanced_engine._assess_severity("Warning: something happened") == "medium"
         )
         if enhanced_engine._assess_severity("Notice") != "medium":
@@ -1214,10 +1214,12 @@ class TestXPRAgentEngineEnhanced:
 
         summary = enhanced_engine.get_performance_summary()
 
-        assert "avg_confidence" in summary
-        assert "skill_success_rate" in summary
-        assert "adaptive_optimizations" in summary
-        assert summary["adaptive_optimizations"] == 2  # i=0,3
+        assert "avg_confidence" in summary  # nosec: B101 - Test assertion
+        assert "skill_success_rate" in summary  # nosec: B101 - Test assertion
+        assert "adaptive_optimizations" in summary  # nosec: B101 - Test assertion
+        assert (
+            summary["adaptive_optimizations"] == 2
+        )  # i=0,3  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -1234,13 +1236,21 @@ class TestRegisterXPRSkills:
         """Test registering XPR skills on enhanced engine."""
         register_xpr_skills(enhanced_engine)
         # Should register plan_experiment
-        assert "plan_experiment" in enhanced_engine.skills
+        assert (
+            "plan_experiment" in enhanced_engine.skills
+        )  # nosec: B101 - Test assertion
         # XPRAgentEngineEnhanced has xpr_* methods, so they should be registered
-        assert "xpr_job_debug" in enhanced_engine.skills
-        assert "xpr_issue_fix" in enhanced_engine.skills
-        assert "xpr_issue_report" in enhanced_engine.skills
-        assert "xpr_skill_chain" in enhanced_engine.skills
-        assert "xpr_plan_experiment" in enhanced_engine.skills
+        assert "xpr_job_debug" in enhanced_engine.skills  # nosec: B101 - Test assertion
+        assert "xpr_issue_fix" in enhanced_engine.skills  # nosec: B101 - Test assertion
+        assert (
+            "xpr_issue_report" in enhanced_engine.skills
+        )  # nosec: B101 - Test assertion
+        assert (
+            "xpr_skill_chain" in enhanced_engine.skills
+        )  # nosec: B101 - Test assertion
+        assert (
+            "xpr_plan_experiment" in enhanced_engine.skills
+        )  # nosec: B101 - Test assertion
 
     def test_register_skills_on_base_engine(self, engine: XPRAgentEngine) -> None:
         """Test registering on base engine without xpr methods."""
@@ -1250,17 +1260,19 @@ class TestRegisterXPRSkills:
         if "plan_experiment" not in engine.skills:
             raise AssertionError("Expected 'plan_experiment' in engine.skills")
         # These should not be registered on base engine
-        assert "xpr_job_debug" not in engine.skills
-        assert "xpr_issue_fix" not in engine.skills
-        assert "xpr_issue_report" not in engine.skills
-        assert "xpr_skill_chain" not in engine.skills
-        assert "xpr_plan_experiment" not in engine.skills
+        assert "xpr_job_debug" not in engine.skills  # nosec: B101 - Test assertion
+        assert "xpr_issue_fix" not in engine.skills  # nosec: B101 - Test assertion
+        assert "xpr_issue_report" not in engine.skills  # nosec: B101 - Test assertion
+        assert "xpr_skill_chain" not in engine.skills  # nosec: B101 - Test assertion
+        assert (
+            "xpr_plan_experiment" not in engine.skills
+        )  # nosec: B101 - Test assertion
 
         # Should only register plan_experiment
         if "plan_experiment" not in engine.skills:
             raise AssertionError("Expected 'plan_experiment' in engine.skills")
         # These should not be registered on base engine
-        assert "xpr_job_debug" not in engine.skills
+        assert "xpr_job_debug" not in engine.skills  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -1273,12 +1285,22 @@ class TestXPRSkillType:
 
     def test_skill_type_values(self) -> None:
         """Test all skill type enum values."""
-        assert XPRSkillType.PLAN_GENERATION.value == "plan_generation"
-        assert XPRSkillType.EXECUTION.value == "execution"
-        assert XPRSkillType.ANALYSIS.value == "analysis"
-        assert XPRSkillType.JOB_DEBUG.value == "job_debug"
-        assert XPRSkillType.ISSUE_FIX.value == "issue_fix"
-        assert XPRSkillType.ISSUE_REPORT.value == "issue_report"
+        assert (
+            XPRSkillType.PLAN_GENERATION.value == "plan_generation"
+        )  # nosec: B101 - Test assertion
+        assert (
+            XPRSkillType.EXECUTION.value == "execution"
+        )  # nosec: B101 - Test assertion
+        assert XPRSkillType.ANALYSIS.value == "analysis"  # nosec: B101 - Test assertion
+        assert (
+            XPRSkillType.JOB_DEBUG.value == "job_debug"
+        )  # nosec: B101 - Test assertion
+        assert (
+            XPRSkillType.ISSUE_FIX.value == "issue_fix"
+        )  # nosec: B101 - Test assertion
+        assert (
+            XPRSkillType.ISSUE_REPORT.value == "issue_report"
+        )  # nosec: B101 - Test assertion
 
     def test_xpr_skill_result_with_skill_type(self) -> None:
         """Test XPRSkillResult using enum."""
@@ -1348,7 +1370,9 @@ class TestEdgeCases:
 
         # With single value, volatility is 0 and trend depends on implementation
         # Implementation requires >= 2 values for non-zero trend calculation
-        assert result["volatility"] == pytest.approx(0.0, abs=1e-3)
+        assert result["volatility"] == pytest.approx(
+            0.0, abs=1e-3
+        )  # nosec: B101 - Test assertion
 
     def test_skill_result_with_complex_metadata(self) -> None:
         """Test SkillResult with nested metadata."""
@@ -1365,15 +1389,15 @@ class TestEdgeCases:
         if result.metadata and isinstance(result.metadata, dict):
             nested = result.metadata.get("nested")
             if isinstance(nested, dict):
-                assert nested["key"] == "value"
+                assert nested["key"] == "value"  # nosec: B101 - Test assertion
 
     def test_xpr_skill_result_post_init(self) -> None:
         """Test XPRSkillResult __post_init__ with None values."""
         result = XPRSkillResult(success=True, skill_type="test")
 
-        assert result.metadata == {}
-        assert result.dependencies == []
-        assert result.recommendations == []
+        assert result.metadata == {}  # nosec: B101 - Test assertion
+        assert result.dependencies == []  # nosec: B101 - Test assertion
+        assert result.recommendations == []  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "error_msg,expected_type",
@@ -1401,7 +1425,9 @@ class TestEdgeCases:
 
         if not result.success:
             raise AssertionError("Result should be successful")
-        assert result.result["error_type"] == expected_type
+        assert (
+            result.result["error_type"] == expected_type
+        )  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -1506,7 +1532,7 @@ class TestXPRIntegration:
         plan_result = engine.xpr_plan_experiment(
             "training", {"lr": 0.01, "epochs": 100}
         )
-        assert plan_result.success is True
+        assert plan_result.success is True  # nosec: B101 - Test assertion
 
         # Simulate execution and add report
         report = ExecutionReport(
@@ -1524,7 +1550,7 @@ class TestXPRIntegration:
                 f"Expected total_experiments 1, got: {summary['total_experiments']}"
             )
         # avg_confidence should be 0 since we didn't set confidence on the report
-        assert "avg_confidence" in summary
+        assert "avg_confidence" in summary  # nosec: B101 - Test assertion
 
     def test_error_recovery_workflow(
         self, enhanced_engine: XPRAgentEngineEnhanced
@@ -1539,17 +1565,21 @@ class TestXPRIntegration:
 
         # Debug the error
         debug_result = enhanced_engine.xpr_job_debug(error_data)
-        assert debug_result.success is True
-        assert debug_result.result["error_type"] == "import_error"
+        assert debug_result.success is True  # nosec: B101 - Test assertion
+        assert (
+            debug_result.result["error_type"] == "import_error"
+        )  # nosec: B101 - Test assertion
 
         # Generate fix
         fix_result = enhanced_engine.xpr_issue_fix(error_data)
-        assert fix_result.success is True
+        assert fix_result.success is True  # nosec: B101 - Test assertion
 
         # Generate report
         report_result = enhanced_engine.xpr_issue_report(error_data)
-        assert report_result.success is True
-        assert report_result.result["severity"] == "high"
+        assert report_result.success is True  # nosec: B101 - Test assertion
+        assert (
+            report_result.result["severity"] == "high"
+        )  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

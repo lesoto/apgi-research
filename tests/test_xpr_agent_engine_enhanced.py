@@ -83,14 +83,14 @@ class TestExecutionReport(unittest.TestCase):
         report = ExecutionReport(
             experiment_name="test", success=False, execution_time=0.0
         )
-        assert report.metadata == {}
+        assert report.metadata == {}  # nosec: B101 - Test assertion
 
     def test_execution_report_with_none_metadata(self):
         """Test ExecutionReport with explicit None metadata."""
         report = ExecutionReport(
             experiment_name="test", success=True, execution_time=1.0, metadata=None
         )
-        assert report.metadata == {}
+        assert report.metadata == {}  # nosec: B101 - Test assertion
 
 
 class TestSkillType(unittest.TestCase):
@@ -290,7 +290,7 @@ class TestXPRAgentEngine(unittest.TestCase):
         result = engine.execute_skill("slow")
         end_time = time.time()
 
-        assert result.success is True
+        assert result.success is True  # nosec: B101 - Test assertion
         self.assertGreaterEqual(result.execution_time, 0.1)
         self.assertGreaterEqual(end_time - start_time, 0.1)
 

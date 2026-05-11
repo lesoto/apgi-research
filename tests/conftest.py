@@ -703,14 +703,14 @@ class AdversarialAssertions:
         arr: np.ndarray, msg: str = "Array contains NaN values"
     ) -> None:
         """Assert array has no NaN values."""
-        assert not np.any(np.isnan(arr)), msg
+        assert not np.any(np.isnan(arr)), msg  # nosec: B101 - Test assertion
 
     @staticmethod
     def assert_finite(
         arr: np.ndarray, msg: str = "Array contains infinite values"
     ) -> None:
         """Assert array has no infinite values."""
-        assert np.all(np.isfinite(arr)), msg
+        assert np.all(np.isfinite(arr)), msg  # nosec: B101 - Test assertion
 
     @staticmethod
     def assert_shape(
@@ -719,7 +719,7 @@ class AdversarialAssertions:
         """Assert array has expected shape."""
         if msg is None:
             msg = f"Expected shape {expected}, got {arr.shape}"
-        assert arr.shape == expected, msg
+        assert arr.shape == expected, msg  # nosec: B101 - Test assertion
 
     @staticmethod
     def assert_dtype(

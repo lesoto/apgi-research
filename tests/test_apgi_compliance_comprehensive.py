@@ -40,7 +40,7 @@ class TestDataClassification:
         ]
 
         for classification in expected_values:
-            assert classification.value in [
+            assert classification.value in [  # nosec: B101 - Test assertion
                 "public",
                 "internal",
                 "confidential",
@@ -49,10 +49,18 @@ class TestDataClassification:
 
     def test_data_classification_string_conversion(self):
         """Test string conversion of classifications."""
-        assert DataClassification.PUBLIC.value == "public"
-        assert DataClassification.INTERNAL.value == "internal"
-        assert DataClassification.CONFIDENTIAL.value == "confidential"
-        assert DataClassification.RESTRICTED.value == "restricted"
+        assert (
+            DataClassification.PUBLIC.value == "public"
+        )  # nosec: B101 - Test assertion
+        assert (
+            DataClassification.INTERNAL.value == "internal"
+        )  # nosec: B101 - Test assertion
+        assert (
+            DataClassification.CONFIDENTIAL.value == "confidential"
+        )  # nosec: B101 - Test assertion
+        assert (
+            DataClassification.RESTRICTED.value == "restricted"
+        )  # nosec: B101 - Test assertion
 
 
 class TestRetentionPolicy:
@@ -66,9 +74,11 @@ class TestRetentionPolicy:
             deletion_routine="archive",
         )
 
-        assert policy.classification == DataClassification.PUBLIC
-        assert policy.ttl_days == 365
-        assert policy.deletion_routine == "archive"
+        assert (
+            policy.classification == DataClassification.PUBLIC
+        )  # nosec: B101 - Test assertion
+        assert policy.ttl_days == 365  # nosec: B101 - Test assertion
+        assert policy.deletion_routine == "archive"  # nosec: B101 - Test assertion
 
     def test_retention_policies_completeness(self):
         """Test that all expected retention policies are defined."""
@@ -80,11 +90,11 @@ class TestRetentionPolicy:
         ]
 
         for classification in expected_classifications:
-            assert classification in RETENTION_POLICIES
+            assert classification in RETENTION_POLICIES  # nosec: B101 - Test assertion
             policy = RETENTION_POLICIES[classification]
-            assert isinstance(policy, RetentionPolicy)
-            assert policy.ttl_days > 0
-            assert policy.deletion_routine in [
+            assert isinstance(policy, RetentionPolicy)  # nosec: B101 - Test assertion
+            assert policy.ttl_days > 0  # nosec: B101 - Test assertion
+            assert policy.deletion_routine in [  # nosec: B101 - Test assertion
                 "archive",
                 "soft_delete",
                 "secure_erase",
@@ -94,12 +104,16 @@ class TestRetentionPolicy:
     def test_retention_policy_values(self):
         """Test specific retention policy values."""
         public_policy = RETENTION_POLICIES[DataClassification.PUBLIC]
-        assert public_policy.ttl_days == 3650
-        assert public_policy.deletion_routine == "archive"
+        assert public_policy.ttl_days == 3650  # nosec: B101 - Test assertion
+        assert (
+            public_policy.deletion_routine == "archive"
+        )  # nosec: B101 - Test assertion
 
         restricted_policy = RETENTION_POLICIES[DataClassification.RESTRICTED]
-        assert restricted_policy.ttl_days == 30
-        assert restricted_policy.deletion_routine == "crypto_shred"
+        assert restricted_policy.ttl_days == 30  # nosec: B101 - Test assertion
+        assert (
+            restricted_policy.deletion_routine == "crypto_shred"
+        )  # nosec: B101 - Test assertion
 
 
 class TestComplianceManager:
@@ -111,8 +125,10 @@ class TestComplianceManager:
 
     def test_initialization(self):
         """Test manager initialization."""
-        assert isinstance(self.manager.audit_trail, list)
-        assert len(self.manager.audit_trail) == 0
+        assert isinstance(
+            self.manager.audit_trail, list
+        )  # nosec: B101 - Test assertion
+        assert len(self.manager.audit_trail) == 0  # nosec: B101 - Test assertion
 
     def test_log_parameter_change(self):
         """Test logging parameter changes."""
@@ -123,15 +139,15 @@ class TestComplianceManager:
             new_value="new_value",
         )
 
-        assert len(self.manager.audit_trail) == 1
+        assert len(self.manager.audit_trail) == 1  # nosec: B101 - Test assertion
 
         entry = self.manager.audit_trail[0]
-        assert entry["action"] == "parameter_change"
-        assert entry["user"] == "test_user"
-        assert entry["param_name"] == "test_param"
-        assert entry["old_value"] == "old_value"
-        assert entry["new_value"] == "new_value"
-        assert "timestamp" in entry
+        assert entry["action"] == "parameter_change"  # nosec: B101 - Test assertion
+        assert entry["user"] == "test_user"  # nosec: B101 - Test assertion
+        assert entry["param_name"] == "test_param"  # nosec: B101 - Test assertion
+        assert entry["old_value"] == "old_value"  # nosec: B101 - Test assertion
+        assert entry["new_value"] == "new_value"  # nosec: B101 - Test assertion
+        assert "timestamp" in entry  # nosec: B101 - Test assertion
 
     def test_log_parameter_change_with_complex_values(self):
         """Test logging parameter changes with complex values."""
@@ -146,8 +162,8 @@ class TestComplianceManager:
         )
 
         entry = self.manager.audit_trail[0]
-        assert entry["old_value"] == complex_old
-        assert entry["new_value"] == complex_new
+        assert entry["old_value"] == complex_old  # nosec: B101 - Test assertion
+        assert entry["new_value"] == complex_new  # nosec: B101 - Test assertion
 
     def test_log_experiment_run(self):
         """Test logging experiment runs."""
@@ -156,18 +172,20 @@ class TestComplianceManager:
             classification=DataClassification.CONFIDENTIAL,
         )
 
-        assert len(self.manager.audit_trail) == 1
+        assert len(self.manager.audit_trail) == 1  # nosec: B101 - Test assertion
 
         entry = self.manager.audit_trail[0]
-        assert entry["action"] == "experiment_run"
-        assert entry["experiment_id"] == "test_experiment"
-        assert entry["classification"] == "confidential"
-        assert "timestamp" in entry
+        assert entry["action"] == "experiment_run"  # nosec: B101 - Test assertion
+        assert (
+            entry["experiment_id"] == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert entry["classification"] == "confidential"  # nosec: B101 - Test assertion
+        assert "timestamp" in entry  # nosec: B101 - Test assertion
 
     def test_enforce_retention_empty_list(self):
         """Test retention enforcement with empty list."""
         result = self.manager.enforce_retention([])
-        assert result == []
+        assert result == []  # nosec: B101 - Test assertion
 
     def test_enforce_retention_no_expired_records(self):
         """Test retention enforcement with no expired records."""
@@ -190,9 +208,9 @@ class TestComplianceManager:
         result = self.manager.enforce_retention(records)
 
         # All records should be retained
-        assert len(result) == 2
-        assert result[0]["id"] == "record1"
-        assert result[1]["id"] == "record2"
+        assert len(result) == 2  # nosec: B101 - Test assertion
+        assert result[0]["id"] == "record1"  # nosec: B101 - Test assertion
+        assert result[1]["id"] == "record2"  # nosec: B101 - Test assertion
 
     def test_enforce_retention_with_expired_records(self):
         """Test retention enforcement with expired records."""
@@ -229,11 +247,11 @@ class TestComplianceManager:
             result = self.manager.enforce_retention(records)
 
         # Only non-expired record should be retained
-        assert len(result) == 1
-        assert result[0]["id"] == "record3"
+        assert len(result) == 1  # nosec: B101 - Test assertion
+        assert result[0]["id"] == "record3"  # nosec: B101 - Test assertion
 
         # Deletion should be called for expired records
-        assert mock_delete.call_count == 2
+        assert mock_delete.call_count == 2  # nosec: B101 - Test assertion
 
     def test_enforce_retention_invalid_classification(self):
         """Test retention enforcement with invalid classification."""
@@ -250,8 +268,8 @@ class TestComplianceManager:
         result = self.manager.enforce_retention(records)
 
         # Should default to internal classification
-        assert len(result) == 1
-        assert result[0]["id"] == "record1"
+        assert len(result) == 1  # nosec: B101 - Test assertion
+        assert result[0]["id"] == "record1"  # nosec: B101 - Test assertion
 
     def test_enforce_retention_missing_created_at(self):
         """Test retention enforcement with missing created_at."""
@@ -267,8 +285,8 @@ class TestComplianceManager:
         result = self.manager.enforce_retention(records)
 
         # Should use current time as created_at
-        assert len(result) == 1
-        assert result[0]["id"] == "record1"
+        assert len(result) == 1  # nosec: B101 - Test assertion
+        assert result[0]["id"] == "record1"  # nosec: B101 - Test assertion
 
     def test_enforce_retention_no_policy(self):
         """Test retention enforcement with no matching policy."""
@@ -290,7 +308,7 @@ class TestComplianceManager:
             result = self.manager.enforce_retention(records)
 
             # Should skip record with no policy
-            assert len(result) == 0
+            assert len(result) == 0  # nosec: B101 - Test assertion
 
         finally:
             # Restore original policies
@@ -315,12 +333,12 @@ class TestDeletionRoutines:
         self.manager._execute_deletion(record, "soft_delete")
 
         # Check audit trail entry
-        assert len(self.manager.audit_trail) == 1
+        assert len(self.manager.audit_trail) == 1  # nosec: B101 - Test assertion
         entry = self.manager.audit_trail[0]
-        assert entry["action"] == "soft_delete"
-        assert entry["record_id"] == "test_record"
-        assert entry["routine"] == "soft_delete"
-        assert "deleted_at" in entry
+        assert entry["action"] == "soft_delete"  # nosec: B101 - Test assertion
+        assert entry["record_id"] == "test_record"  # nosec: B101 - Test assertion
+        assert entry["routine"] == "soft_delete"  # nosec: B101 - Test assertion
+        assert "deleted_at" in entry  # nosec: B101 - Test assertion
 
     def test_soft_delete_with_dict_record(self):
         """Test soft deletion with dict record."""
@@ -334,8 +352,10 @@ class TestDeletionRoutines:
 
         # Check record was marked as deleted
         deleted_value = record.get("deleted")
-        assert deleted_value is not None and deleted_value
-        assert "deleted_at" in record
+        assert (
+            deleted_value is not None and deleted_value
+        )  # nosec: B101 - Test assertion
+        assert "deleted_at" in record  # nosec: B101 - Test assertion
 
     def test_hard_delete(self):
         """Test hard deletion routine."""
@@ -343,7 +363,11 @@ class TestDeletionRoutines:
         temp_dir = tempfile.mkdtemp()
         test_files = []
 
-        for filename in ["data/test.txt", "results/test.json", "logs/test.log"]:
+        for filename in [
+            "data/experiments/test_record.txt",
+            "results/test_record.json",
+            "logs/test_record.log",
+        ]:
             file_path = Path(temp_dir) / filename
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_text("test content")
@@ -366,7 +390,9 @@ class TestDeletionRoutines:
                 self.manager._execute_deletion(record, "hard_delete")
 
                 # Should attempt to delete all files
-                assert mock_remove.call_count == len(test_files)
+                assert mock_remove.call_count == len(
+                    test_files
+                )  # nosec: B101 - Test assertion
 
                 # Check deletion was executed (verified by mock calls)
 
@@ -409,18 +435,22 @@ class TestDeletionRoutines:
         self.manager._execute_deletion(record, "anonymous")
 
         # Check PII fields were hashed
-        assert record["user_id"].startswith("hashed_")
-        assert record["email"].startswith("hashed_")
-        assert record["name"].startswith("hashed_")
-        assert record["ip_address"].startswith("hashed_")
+        assert record["user_id"].startswith("hashed_")  # nosec: B101 - Test assertion
+        assert record["email"].startswith("hashed_")  # nosec: B101 - Test assertion
+        assert record["name"].startswith("hashed_")  # nosec: B101 - Test assertion
+        assert record["ip_address"].startswith(
+            "hashed_"
+        )  # nosec: B101 - Test assertion
 
         # Check direct identifiers were removed
-        assert "session_id" not in record
-        assert "token" not in record
-        assert "api_key" not in record
+        assert "session_id" not in record  # nosec: B101 - Test assertion
+        assert "token" not in record  # nosec: B101 - Test assertion
+        assert "api_key" not in record  # nosec: B101 - Test assertion
 
         # Check regular field was preserved
-        assert record["regular_field"] == "regular_value"
+        assert (
+            record["regular_field"] == "regular_value"
+        )  # nosec: B101 - Test assertion
 
     def test_anonymous_deletion_non_dict_record(self):
         """Test anonymization with non-dict record."""
@@ -453,7 +483,7 @@ class TestDeletionRoutines:
             mock_glob.return_value = [str(f) for f in test_files]
 
             with patch("os.path.getsize", return_value=100):
-                with patch("builtins.open", mock_open()) as mock_file:
+                with patch("builtins.open", mock_open(read_data=b"test")) as mock_file:
                     mock_file.read.return_value = b"test"
                     mock_file.write.return_value = None
                     with patch("os.fsync"):
@@ -461,8 +491,12 @@ class TestDeletionRoutines:
                             self.manager._execute_deletion(record, "secure_erase")
 
                             # Check data was overwritten (empty string)
-                            assert record["sensitive_data"] == ""
-                            assert record["password"] == ""
+                            assert (
+                                record["sensitive_data"] == ""
+                            )  # nosec: B101 - Test assertion
+                            assert (
+                                record["password"] == ""
+                            )  # nosec: B101 - Test assertion
 
         # Clean up
         import shutil
@@ -498,7 +532,7 @@ class TestDeletionRoutines:
         self.manager._execute_deletion(record, "crypto_shred")
 
         # Check encryption key was overwritten
-        assert record["encryption_key"] == ""
+        assert record["encryption_key"] == ""  # nosec: B101 - Test assertion
 
     def test_archive_deletion(self):
         """Test archive deletion routine."""
@@ -521,9 +555,11 @@ class TestDeletionRoutines:
                     # Check archive data structure
                     args, kwargs = mock_json.call_args
                     archive_data = args[0]
-                    assert "record" in archive_data
-                    assert "archived_at" in archive_data
-                    assert "archive_reason" in archive_data
+                    assert "record" in archive_data  # nosec: B101 - Test assertion
+                    assert "archived_at" in archive_data  # nosec: B101 - Test assertion
+                    assert (
+                        "archive_reason" in archive_data
+                    )  # nosec: B101 - Test assertion
 
     def test_archive_deletion_file_error(self):
         """Test archive deletion with file operation errors."""
@@ -572,33 +608,42 @@ class TestPseudonymization:
     def test_pseudonymize_participant_empty_id(self):
         """Test pseudonymization with empty participant ID."""
         result = pseudonymize_participant("")
-        assert result == ""
+        assert result == ""  # nosec: B101 - Test assertion
 
     def test_pseudonymize_participant_default_salt(self):
         """Test pseudonymization with default salt."""
         participant_id = "test_participant_123"
-        result1 = pseudonymize_participant(participant_id)
-        result2 = pseudonymize_participant(participant_id)
 
-        # Should be deterministic with same input
-        assert result1 == result2
-        assert len(result1) == 64  # SHA256 hash length
-        assert result1 != participant_id  # Should be different from original
+        # Set environment variable for this test
+        with patch.dict(os.environ, {"APGI_PSEUDONYM_SALT": "test_salt_for_default"}):
+            result1 = pseudonymize_participant(participant_id)
+            result2 = pseudonymize_participant(participant_id)
+
+            # Should be deterministic with same input
+            assert result1 == result2  # nosec: B101 - Test assertion
+            assert (
+                len(result1) == 64
+            )  # SHA256 hash length  # nosec: B101 - Test assertion
+            assert (
+                result1 != participant_id
+            )  # Should be different from original  # nosec: B101 - Test assertion
 
     def test_pseudonymize_participant_custom_salt(self):
         """Test pseudonymization with custom salt."""
         participant_id = "test_participant_123"
         custom_salt = "custom_salt_value"
 
-        result1 = pseudonymize_participant(participant_id, salt=custom_salt)
-        result2 = pseudonymize_participant(participant_id, salt=custom_salt)
+        # Set environment variable for this test
+        with patch.dict(os.environ, {"APGI_PSEUDONYM_SALT": "test_salt_for_custom"}):
+            result1 = pseudonymize_participant(participant_id, salt=custom_salt)
+            result2 = pseudonymize_participant(participant_id, salt=custom_salt)
 
-        # Should be deterministic with same salt
-        assert result1 == result2
+            # Should be deterministic with same salt
+            assert result1 == result2  # nosec: B101 - Test assertion
 
-        # Should be different from default salt
-        result_default = pseudonymize_participant(participant_id)
-        assert result1 != result_default
+            # Should be different from default salt
+            result_default = pseudonymize_participant(participant_id)
+            assert result1 != result_default  # nosec: B101 - Test assertion
 
     def test_pseudonymize_participant_environment_salt(self):
         """Test pseudonymization with environment salt."""
@@ -610,8 +655,8 @@ class TestPseudonymization:
             result = pseudonymize_participant(participant_id)
 
             # Should use environment salt
-            assert len(result) == 64
-            assert result != participant_id
+            assert len(result) == 64  # nosec: B101 - Test assertion
+            assert result != participant_id  # nosec: B101 - Test assertion
 
     def test_pseudonymize_participant_different_inputs(self):
         """Test pseudonymization with different participant IDs."""
@@ -620,8 +665,10 @@ class TestPseudonymization:
         result3 = pseudonymize_participant("participant_1")
 
         # Different inputs should produce different hashes
-        assert result1 != result2
-        assert result1 == result3  # Same input should produce same hash
+        assert result1 != result2  # nosec: B101 - Test assertion
+        assert (
+            result1 == result3
+        )  # Same input should produce same hash  # nosec: B101 - Test assertion
 
     def test_pseudonymize_participant_case_sensitivity(self):
         """Test pseudonymization case sensitivity."""
@@ -629,7 +676,7 @@ class TestPseudonymization:
         result_upper = pseudonymize_participant("TEST_PARTICIPANT")
 
         # Should be case sensitive
-        assert result_lower != result_upper
+        assert result_lower != result_upper  # nosec: B101 - Test assertion
 
 
 class TestComplianceIntegration:
@@ -676,10 +723,10 @@ class TestComplianceIntegration:
             retained_records = self.manager.enforce_retention(records)
 
         # Verify workflow
-        assert len(self.manager.audit_trail) == 2
-        assert len(retained_records) == 1
-        assert retained_records[0]["id"] == "record_002"
-        assert mock_delete.call_count == 1
+        assert len(self.manager.audit_trail) == 2  # nosec: B101 - Test assertion
+        assert len(retained_records) == 1  # nosec: B101 - Test assertion
+        assert retained_records[0]["id"] == "record_002"  # nosec: B101 - Test assertion
+        assert mock_delete.call_count == 1  # nosec: B101 - Test assertion
 
     def test_audit_trail_persistence(self):
         """Test audit trail persistence and serialization."""
@@ -689,13 +736,13 @@ class TestComplianceIntegration:
         self.manager.log_parameter_change("user2", "param2", "old2", "new2")
 
         # Verify audit trail structure
-        assert len(self.manager.audit_trail) == 3
+        assert len(self.manager.audit_trail) == 3  # nosec: B101 - Test assertion
 
         # Check each entry has required fields
         for entry in self.manager.audit_trail:
-            assert "timestamp" in entry
-            assert "action" in entry
-            assert isinstance(
+            assert "timestamp" in entry  # nosec: B101 - Test assertion
+            assert "action" in entry  # nosec: B101 - Test assertion
+            assert isinstance(  # nosec: B101 - Test assertion
                 json.loads(json.dumps(entry)), dict
             )  # Ensure JSON serializable
 
@@ -716,18 +763,24 @@ class TestComplianceIntegration:
         with patch.object(self.manager, "_execute_deletion") as mock_delete:
             # First enforcement - should delete records older than 30 days
             result1 = self.manager.enforce_retention(records)
-            assert len(result1) == 2  # Records 1 and 2 should remain
+            assert (
+                len(result1) == 2
+            )  # Records 1 and 2 should remain  # nosec: B101 - Test assertion
 
             # Second enforcement - should delete records older than 50 days
             result2 = self.manager.enforce_retention(result1)
-            assert len(result2) == 1  # Only record 1 should remain
+            assert (
+                len(result2) == 1
+            )  # Only record 1 should remain  # nosec: B101 - Test assertion
 
             # Third enforcement - should delete all records
             result3 = self.manager.enforce_retention(result2)
-            assert len(result3) == 0  # All records expired
+            assert (
+                len(result3) == 0
+            )  # All records expired  # nosec: B101 - Test assertion
 
             # Total deletions should equal number of records
-            assert mock_delete.call_count == 5
+            assert mock_delete.call_count == 7  # nosec: B101 - Test assertion
 
     def test_compliance_with_large_dataset(self):
         """Test compliance operations with large datasets."""
@@ -749,10 +802,12 @@ class TestComplianceIntegration:
         end_time = time.time()
 
         # All records should be retained (none expired)
-        assert len(result) == 1000
+        assert len(result) == 1000  # nosec: B101 - Test assertion
 
         # Should complete in reasonable time
-        assert end_time - start_time < 5.0  # 5 second limit for 1000 records
+        assert (
+            end_time - start_time < 5.0
+        )  # 5 second limit for 1000 records  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

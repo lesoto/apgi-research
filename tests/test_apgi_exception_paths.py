@@ -52,41 +52,41 @@ class TestFoundationalEquationsExceptionPaths:
         """Test z_score handles zero/near-zero std via exception-like path."""
         # Near-zero std triggers special handling
         result = FoundationalEquations.z_score(10.0, 5.0, sys.float_info.epsilon)
-        assert result == 0.0  # Protected path
+        assert result == 0.0  # Protected path  # nosec: B101 - Test assertion
 
     def test_z_score_negative_std(self) -> None:
         """Test z_score with negative std (mathematically invalid but handled)."""
         result = FoundationalEquations.z_score(10.0, 5.0, -1.0)
         # Should not crash - implementation may handle or compute
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
     def test_precision_zero_variance_handler(self) -> None:
         """Test precision handles zero variance via exception-like path."""
         result = FoundationalEquations.precision(0.0)
         # Zero variance should return max precision (capped at 1e6)
-        assert result == 1e6
+        assert result == 1e6  # nosec: B101 - Test assertion
 
     def test_precision_negative_variance(self) -> None:
         """Test precision with negative variance."""
         result = FoundationalEquations.precision(-5.0)
         # Negative variance triggers protection path
-        assert result == 1e6
+        assert result == 1e6  # nosec: B101 - Test assertion
 
     def test_prediction_error_overflow(self) -> None:
         """Test prediction_error with values near float overflow."""
         max_val = sys.float_info.max
         result = FoundationalEquations.prediction_error(max_val, 0.0)
-        assert result == max_val
+        assert result == max_val  # nosec: B101 - Test assertion
 
     def test_prediction_error_infinity(self) -> None:
         """Test prediction_error with infinity values."""
         result = FoundationalEquations.prediction_error(float("inf"), 100.0)
-        assert math.isinf(result)
+        assert math.isinf(result)  # nosec: B101 - Test assertion
 
     def test_prediction_error_nan(self) -> None:
         """Test prediction_error with NaN values."""
         result = FoundationalEquations.prediction_error(float("nan"), 0.0)
-        assert math.isnan(result)
+        assert math.isnan(result)  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -103,8 +103,8 @@ class TestCoreIgnitionExceptionPaths:
             Pi_e=1e308, eps_e=1e308, Pi_i_eff=1e308, eps_i=1e308
         )
         # Should handle without overflow
-        assert not math.isnan(result)
-        assert not math.isinf(result) or abs(result) > 0
+        assert not math.isnan(result)  # nosec: B101 - Test assertion
+        assert not math.isinf(result) or abs(result) > 0  # nosec: B101 - Test assertion
 
     def test_accumulated_signal_very_small_values(self) -> None:
         """Test accumulated_signal with very small values."""
@@ -112,7 +112,7 @@ class TestCoreIgnitionExceptionPaths:
             Pi_e=1e-308, eps_e=1e-308, Pi_i_eff=1e-308, eps_i=1e-308
         )
         # Should handle underflow gracefully
-        assert isinstance(result, float)
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
 
     def test_ignition_probability_extreme_params(self) -> None:
         """Test ignition_probability with extreme parameter values."""
@@ -120,15 +120,19 @@ class TestCoreIgnitionExceptionPaths:
             S=1e308, theta=-1e308, alpha=1e308
         )
         # Should handle extreme values
-        assert 0.0 <= result <= 1.0 or math.isnan(result) or math.isinf(result)
+        assert (
+            0.0 <= result <= 1.0 or math.isnan(result) or math.isinf(result)
+        )  # nosec: B101 - Test assertion
 
     def test_effective_interoceptive_precision_zero_inputs(self) -> None:
         """Test effective_interoceptive_precision with zero inputs."""
         result = CoreIgnitionSystem.effective_interoceptive_precision(
             Pi_i_baseline=0.0, M=0.0, M_0=0.0, beta_som=0.0
         )
-        assert isinstance(result, float)
-        assert result >= 0.0  # Precision should be non-negative
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
+        assert (
+            result >= 0.0
+        )  # Precision should be non-negative  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -153,7 +157,7 @@ class TestDynamicalSystemExceptionPaths:
             dt=1.0,
         )
         # Should return finite value or handle gracefully
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
     def test_signal_dynamics_very_small_tau(self) -> None:
         """Test signal_dynamics with very small tau (division issues)."""
@@ -168,7 +172,7 @@ class TestDynamicalSystemExceptionPaths:
             dt=0.01,
         )
         # Very small tau could cause division by near-zero
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
     def test_threshold_dynamics_extreme_values(self) -> None:
         """Test threshold_dynamics with extreme values."""
@@ -185,7 +189,7 @@ class TestDynamicalSystemExceptionPaths:
             sigma_theta=0.1,
             dt=0.01,
         )
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
     def test_somatic_marker_evolution_edge_cases(self) -> None:
         """Test somatic_marker_dynamics with edge cases."""
@@ -199,7 +203,7 @@ class TestDynamicalSystemExceptionPaths:
             sigma_M=0.01,
             dt=0.01,
         )
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -218,8 +222,8 @@ class TestRunningStatisticsExceptionPaths:
 
         # Should handle infinity gracefully
         mean, std = stats.mu, np.sqrt(stats.variance)
-        assert isinstance(mean, float)
-        assert isinstance(std, float)
+        assert isinstance(mean, float)  # nosec: B101 - Test assertion
+        assert isinstance(std, float)  # nosec: B101 - Test assertion
 
     def test_statistics_with_nan_values(self) -> None:
         """Test RunningStatistics with NaN values."""
@@ -227,7 +231,7 @@ class TestRunningStatisticsExceptionPaths:
         stats.update(float("nan"))
 
         mean = stats.mu  # std not used in this test
-        assert isinstance(mean, float)
+        assert isinstance(mean, float)  # nosec: B101 - Test assertion
 
     def test_statistics_single_value(self) -> None:
         """Test RunningStatistics with single value (std edge case)."""
@@ -239,9 +243,11 @@ class TestRunningStatisticsExceptionPaths:
 
         mean, std = stats.mu, np.sqrt(stats.variance)
         # After many updates, mean should be close to 5.0
-        assert 4.5 <= mean <= 5.5, f"Expected mean near 5.0, got {mean}"
+        assert (
+            4.5 <= mean <= 5.5
+        ), f"Expected mean near 5.0, got {mean}"  # nosec: B101 - Test assertion
         # Std with single repeated value should be small
-        assert std >= 0.0
+        assert std >= 0.0  # nosec: B101 - Test assertion
 
     def test_statistics_empty(self) -> None:
         """Test RunningStatistics with no updates."""
@@ -249,8 +255,8 @@ class TestRunningStatisticsExceptionPaths:
 
         mean, std = stats.mu, np.sqrt(stats.variance)
         # Should handle empty state
-        assert isinstance(mean, float)
-        assert isinstance(std, float)
+        assert isinstance(mean, float)  # nosec: B101 - Test assertion
+        assert isinstance(std, float)  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -265,7 +271,7 @@ class TestMeasurementEquationsExceptionPaths:
         """Test compute_HEP with extreme precision values."""
         result = MeasurementEquations.compute_HEP(Pi_i_eff=1e308, M_ca=2.0, beta=2.0)
         # Should handle extreme inputs
-        assert isinstance(result, float)
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
 
     def test_compute_P3b_latency_extreme_surprise(self) -> None:
         """Test compute_P3b_latency with extreme surprise."""
@@ -273,7 +279,7 @@ class TestMeasurementEquationsExceptionPaths:
             S_t=1e308, theta_t=-1e308, Pi_e=1e308
         )
         # Should return within bounds or handle
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
     def test_compute_detection_threshold_zero_theta(self) -> None:
         """Test compute_detection_threshold with near-zero theta."""
@@ -281,8 +287,8 @@ class TestMeasurementEquationsExceptionPaths:
             theta_t=1e-10, content_domain="survival"
         )
         # Near-zero theta would cause large d'
-        assert isinstance(result, float)
-        assert result > 0.0
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
+        assert result > 0.0  # nosec: B101 - Test assertion
 
     def test_compute_ignition_duration_extreme_probability(self) -> None:
         """Test compute_ignition_duration with extreme probability."""
@@ -290,7 +296,7 @@ class TestMeasurementEquationsExceptionPaths:
             P_ignition=1e308, S_t=1e308
         )
         # Should clamp to bounds or handle
-        assert isinstance(result, (int, float))
+        assert isinstance(result, (int, float))  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -330,7 +336,7 @@ class TestAPGIParametersExceptionPaths:
             sigma_S=0.001,
             sigma_theta=0.001,
         )
-        assert params is not None
+        assert params is not None  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -392,8 +398,8 @@ class TestConcurrencyExceptionPaths:
         # Should handle concurrent access (may have race conditions)
         # Just verify it doesn't crash
         mean, std = stats.get_mean_std()
-        assert isinstance(mean, float)
-        assert isinstance(std, float)
+        assert isinstance(mean, float)  # nosec: B101 - Test assertion
+        assert isinstance(std, float)  # nosec: B101 - Test assertion
 
     def test_skill_registration_race_condition(self) -> None:
         """Test skill registration with concurrent access."""
@@ -416,7 +422,9 @@ class TestConcurrencyExceptionPaths:
             t.join()
 
         # Should not crash
-        assert len(errors) == 0 or True  # Allow for race conditions
+        assert (
+            len(errors) == 0 or True
+        )  # Allow for race conditions  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -434,7 +442,7 @@ class TestMemoryPressurePaths:
 
         # Use in calculations
         result = np.sum(large_array)
-        assert result == 0.0
+        assert result == 0.0  # nosec: B101 - Test assertion
 
     def test_many_state_library_initializations(self) -> None:
         """Test creating multiple APGIStateLibrary instances."""
@@ -444,8 +452,10 @@ class TestMemoryPressurePaths:
             libraries.append(lib)
 
         # All should be independent
-        assert len(libraries) == 10
-        assert all(isinstance(lib, APGIStateLibrary) for lib in libraries)
+        assert len(libraries) == 10  # nosec: B101 - Test assertion
+        assert all(
+            isinstance(lib, APGIStateLibrary) for lib in libraries
+        )  # nosec: B101 - Test assertion
 
     def test_measurement_repeated_calls(self) -> None:
         """Test measurement functions with many repeated calls."""
@@ -455,7 +465,9 @@ class TestMemoryPressurePaths:
             results.append(result)
 
         # All results should be finite
-        assert all(isinstance(r, float) for r in results)
+        assert all(
+            isinstance(r, float) for r in results
+        )  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -483,7 +495,7 @@ class TestNumericalStability:
                 dt=dt,
             )
             # Result should be finite for all dt values
-            assert isinstance(result, float)
+            assert isinstance(result, float)  # nosec: B101 - Test assertion
 
     def test_sigmoid_clipping(self) -> None:
         """Test sigmoid function clipping for extreme inputs."""
@@ -493,7 +505,7 @@ class TestNumericalStability:
         extreme_values = [-1000, -100, -10, 10, 100, 1000]
         for val in extreme_values:
             result = 1.0 / (1.0 + np.exp(-np.clip(val, -500, 500)))
-            assert 0.0 <= result <= 1.0
+            assert 0.0 <= result <= 1.0  # nosec: B101 - Test assertion
 
     def test_precision_computation_stability(self) -> None:
         """Test precision computation numerical stability."""
@@ -502,8 +514,8 @@ class TestNumericalStability:
 
         for var in small_variances:
             result = FoundationalEquations.precision(var)
-            assert result >= 0.0
-            assert not math.isnan(result)
+            assert result >= 0.0  # nosec: B101 - Test assertion
+            assert not math.isnan(result)  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -525,8 +537,8 @@ class TestNeuromodulatorExceptionPaths:
             content_domain="survival",
         )
         # Should handle extreme values
-        assert "NE" in result
-        assert "ACh" in result
+        assert "NE" in result  # nosec: B101 - Test assertion
+        assert "ACh" in result  # nosec: B101 - Test assertion
 
     def test_neuromodulator_invalid_domain(self) -> None:
         """Test neuromodulator with invalid content domain."""
@@ -539,7 +551,7 @@ class TestNeuromodulatorExceptionPaths:
             content_domain="neutral",
         )
         # Should handle gracefully
-        assert isinstance(result, dict)
+        assert isinstance(result, dict)  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -563,7 +575,7 @@ class TestParameterBoundaries:
             sigma_S=0.05,
             dt=0.01,
         )
-        assert isinstance(result, float)
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize("beta", [0.1, 0.5, 1.0, 1.5, 2.0, 2.5])
     def test_effective_precision_beta_boundaries(self, beta: float) -> None:
@@ -571,8 +583,8 @@ class TestParameterBoundaries:
         result = CoreIgnitionSystem.effective_interoceptive_precision(
             Pi_i_baseline=1.0, M=0.5, M_0=0.0, beta_som=beta
         )
-        assert isinstance(result, float)
-        assert result >= 0.0
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
+        assert result >= 0.0  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize("theta_0", [0.1, 0.5, 1.0, 2.0, 5.0])
     def test_threshold_dynamics_theta_boundaries(self, theta_0: float) -> None:
@@ -590,7 +602,7 @@ class TestParameterBoundaries:
             sigma_theta=0.02,
             dt=0.01,
         )
-        assert isinstance(result, float)
+        assert isinstance(result, float)  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -647,8 +659,8 @@ class TestIntegrationExceptionPaths:
                 # Should not raise exceptions for valid parameters
                 pytest.fail(f"Exception during simulation: {e}")
 
-        assert isinstance(S, float)
-        assert isinstance(theta, float)
+        assert isinstance(S, float)  # nosec: B101 - Test assertion
+        assert isinstance(theta, float)  # nosec: B101 - Test assertion
 
     def test_state_library_and_measurement_integration(self) -> None:
         """Test APGIStateLibrary and MeasurementEquations integration."""
@@ -658,8 +670,8 @@ class TestIntegrationExceptionPaths:
             state = library.get_state("anxiety")
             measurements = MeasurementEquations.compute_all_measurements(state)
 
-            assert isinstance(measurements, dict)
-            assert "HEP_amplitude" in measurements
+            assert isinstance(measurements, dict)  # nosec: B101 - Test assertion
+            assert "HEP_amplitude" in measurements  # nosec: B101 - Test assertion
         except Exception as e:
             pytest.fail(f"Exception during integration: {e}")
 

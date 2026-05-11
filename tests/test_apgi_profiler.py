@@ -27,7 +27,7 @@ class TestPerformanceBudget:
             return 42
 
         result = fast_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
     def test_enforce_budget_exceeded(self):
         """Test that function exceeding budget raises exception."""
@@ -49,7 +49,7 @@ class TestPerformanceBudget:
             return a + b
 
         result = add(5, 3)
-        assert result == 8
+        assert result == 8  # nosec: B101 - Test assertion
 
 
 class TestCProfileHotPath:
@@ -67,11 +67,13 @@ class TestCProfileHotPath:
             return total
 
         result = sample_function()
-        assert result == 4950
+        assert result == 4950  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "cProfile for sample_function" in captured.out
-        assert "function calls" in captured.out.lower()
+        assert (
+            "cProfile for sample_function" in captured.out
+        )  # nosec: B101 - Test assertion
+        assert "function calls" in captured.out.lower()  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_with_args(self, capsys, monkeypatch):
         """Test profiling with function arguments."""
@@ -82,10 +84,10 @@ class TestCProfileHotPath:
             return a * b
 
         result = multiply(5, 3)
-        assert result == 15
+        assert result == 15  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "cProfile for multiply" in captured.out
+        assert "cProfile for multiply" in captured.out  # nosec: B101 - Test assertion
 
 
 class TestLineProfilerHotPath:
@@ -106,11 +108,15 @@ class TestLineProfilerHotPath:
             return total
 
         result = sample_function()
-        assert result == 4950
+        assert result == 4950  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "Line Profiler for sample_function" in captured.out
-        assert "Timer unit" in captured.out or "Total time" in captured.out
+        assert (
+            "Line Profiler for sample_function" in captured.out
+        )  # nosec: B101 - Test assertion
+        assert (
+            "Timer unit" in captured.out or "Total time" in captured.out
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
@@ -124,10 +130,12 @@ class TestLineProfilerHotPath:
             return a * b
 
         result = multiply(5, 3)
-        assert result == 15
+        assert result == 15  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "Line Profiler for multiply" in captured.out
+        assert (
+            "Line Profiler for multiply" in captured.out
+        )  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_line_fallback(self, capsys):
         """Test that line profiler falls back to cProfile when unavailable."""
@@ -139,11 +147,13 @@ class TestLineProfilerHotPath:
             return 42
 
         result = sample_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should fall back to cProfile
-        assert "cProfile for sample_function" in captured.out
+        assert (
+            "cProfile for sample_function" in captured.out
+        )  # nosec: B101 - Test assertion
 
 
 class TestCombinedProfiler:
@@ -164,12 +174,16 @@ class TestCombinedProfiler:
             return total
 
         result = sample_function()
-        assert result == 4950
+        assert result == 4950  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should show both profilers
-        assert "cProfile for sample_function" in captured.out
-        assert "Line Profiler for sample_function" in captured.out
+        assert (
+            "cProfile for sample_function" in captured.out
+        )  # nosec: B101 - Test assertion
+        assert (
+            "Line Profiler for sample_function" in captured.out
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
@@ -183,11 +197,13 @@ class TestCombinedProfiler:
             return a * b
 
         result = multiply(5, 3)
-        assert result == 15
+        assert result == 15  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "cProfile for multiply" in captured.out
-        assert "Line Profiler for multiply" in captured.out
+        assert "cProfile for multiply" in captured.out  # nosec: B101 - Test assertion
+        assert (
+            "Line Profiler for multiply" in captured.out
+        )  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_combined_without_line_profiler(self, capsys):
         """Test combined profiling when line_profiler is unavailable."""
@@ -199,12 +215,14 @@ class TestCombinedProfiler:
             return 42
 
         result = sample_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should only show cProfile
-        assert "cProfile for sample_function" in captured.out
-        assert "Line Profiler" not in captured.out
+        assert (
+            "cProfile for sample_function" in captured.out
+        )  # nosec: B101 - Test assertion
+        assert "Line Profiler" not in captured.out  # nosec: B101 - Test assertion
 
 
 class TestProfilerIntegration:
@@ -222,10 +240,12 @@ class TestProfilerIntegration:
             return np.sum(arr)
 
         result = numpy_operation()
-        assert isinstance(result, (float, np.floating))
+        assert isinstance(result, (float, np.floating))  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "cProfile for numpy_operation" in captured.out
+        assert (
+            "cProfile for numpy_operation" in captured.out
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.skipif(
         not LINE_PROFILER_AVAILABLE, reason="line_profiler package not installed"
@@ -245,10 +265,12 @@ class TestProfilerIntegration:
             return total
 
         result = numpy_operation()
-        assert isinstance(result, (float, np.floating))
+        assert isinstance(result, (float, np.floating))  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "Line Profiler for numpy_operation" in captured.out
+        assert (
+            "Line Profiler for numpy_operation" in captured.out
+        )  # nosec: B101 - Test assertion
 
 
 class TestIsProfilingEnabled:
@@ -257,77 +279,77 @@ class TestIsProfilingEnabled:
     def test_profiling_enabled_with_1(self, monkeypatch):
         """Test profiling enabled with '1'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "1")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_true(self, monkeypatch):
         """Test profiling enabled with 'true'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "true")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_True(self, monkeypatch):
         """Test profiling enabled with 'True'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "True")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_TRUE(self, monkeypatch):
         """Test profiling enabled with 'TRUE'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "TRUE")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_yes(self, monkeypatch):
         """Test profiling enabled with 'yes'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "yes")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_YES(self, monkeypatch):
         """Test profiling enabled with 'YES'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "YES")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_on(self, monkeypatch):
         """Test profiling enabled with 'on'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "on")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_enabled_with_ON(self, monkeypatch):
         """Test profiling enabled with 'ON'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "ON")
-        assert _is_profiling_enabled() is True
+        assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_empty(self, monkeypatch):
         """Test profiling disabled with empty string."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "")
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_unset(self, monkeypatch):
         """Test profiling disabled when env var not set."""
         monkeypatch.delenv("APGI_ENABLE_PROFILING", raising=False)
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_with_0(self, monkeypatch):
         """Test profiling disabled with '0'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "0")
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_with_false(self, monkeypatch):
         """Test profiling disabled with 'false'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "false")
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_with_no(self, monkeypatch):
         """Test profiling disabled with 'no'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "no")
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_with_off(self, monkeypatch):
         """Test profiling disabled with 'off'."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "off")
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     def test_profiling_disabled_with_random(self, monkeypatch):
         """Test profiling disabled with random value."""
         monkeypatch.setenv("APGI_ENABLE_PROFILING", "random_value")
-        assert _is_profiling_enabled() is False
+        assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
 
 class TestProfilingDisabledMessage:
@@ -351,11 +373,11 @@ class TestProfilingDisabledScenarios:
             return 42
 
         result = sample_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should not print profiling output
-        assert "cProfile" not in captured.out
+        assert "cProfile" not in captured.out  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_line_disabled(self, capsys, monkeypatch):
         """Test profile_hot_path_line when profiling is disabled."""
@@ -366,12 +388,12 @@ class TestProfilingDisabledScenarios:
             return 42
 
         result = sample_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should not print profiling output
-        assert "cProfile" not in captured.out
-        assert "Line Profiler" not in captured.out
+        assert "cProfile" not in captured.out  # nosec: B101 - Test assertion
+        assert "Line Profiler" not in captured.out  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_combined_disabled(self, capsys, monkeypatch):
         """Test profile_hot_path_combined when profiling is disabled."""
@@ -382,12 +404,12 @@ class TestProfilingDisabledScenarios:
             return 42
 
         result = sample_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should not print profiling output
-        assert "cProfile" not in captured.out
-        assert "Line Profiler" not in captured.out
+        assert "cProfile" not in captured.out  # nosec: B101 - Test assertion
+        assert "Line Profiler" not in captured.out  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_with_exception_disabled(self, monkeypatch):
         """Test profile_hot_path propagates exceptions when disabled."""
@@ -433,7 +455,7 @@ class TestPerformanceBudgetEdgeCases:
             return 42
 
         result = fast_function()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
     def test_enforce_budget_with_exception(self):
         """Test that exceptions propagate through enforce_budget."""
@@ -453,7 +475,7 @@ class TestPerformanceBudgetEdgeCases:
             return {"key": "value", "number": 42}
 
         result = return_dict()
-        assert result == {"key": "value", "number": 42}
+        assert result == {"key": "value", "number": 42}  # nosec: B101 - Test assertion
 
     def test_enforce_budget_with_none_return(self):
         """Test that None return value is preserved."""
@@ -463,7 +485,7 @@ class TestPerformanceBudgetEdgeCases:
             return None
 
         result = return_none()
-        assert result is None
+        assert result is None  # nosec: B101 - Test assertion
 
 
 class TestProfilerEdgeCases:
@@ -488,12 +510,16 @@ class TestProfilerEdgeCases:
                 pytest.skip("cProfile already active from another test")
             raise
 
-        assert result == 30
+        assert result == 30  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
         # Should show both functions
-        assert "cProfile for inner_function" in captured.out
-        assert "cProfile for outer_function" in captured.out
+        assert (
+            "cProfile for inner_function" in captured.out
+        )  # nosec: B101 - Test assertion
+        assert (
+            "cProfile for outer_function" in captured.out
+        )  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_with_kwargs(self, capsys, monkeypatch):
         """Test profile_hot_path with keyword arguments."""
@@ -510,10 +536,12 @@ class TestProfilerEdgeCases:
                 pytest.skip("cProfile already active from another test")
             raise
 
-        assert result == 6
+        assert result == 6  # nosec: B101 - Test assertion
 
         captured = capsys.readouterr()
-        assert "cProfile for function_with_kwargs" in captured.out
+        assert (
+            "cProfile for function_with_kwargs" in captured.out
+        )  # nosec: B101 - Test assertion
 
     def test_profile_hot_path_preserves_function_name(self, monkeypatch):
         """Test that decorator preserves function metadata."""
@@ -524,8 +552,12 @@ class TestProfilerEdgeCases:
             """My docstring."""
             return 42
 
-        assert my_named_function.__name__ == "my_named_function"
-        assert my_named_function.__doc__ == "My docstring."
+        assert (
+            my_named_function.__name__ == "my_named_function"
+        )  # nosec: B101 - Test assertion
+        assert (
+            my_named_function.__doc__ == "My docstring."
+        )  # nosec: B101 - Test assertion
 
 
 class TestLineProfilerAvailableFlag:
@@ -533,4 +565,4 @@ class TestLineProfilerAvailableFlag:
 
     def test_line_profiler_available_is_bool(self):
         """Test that LINE_PROFILER_AVAILABLE is a boolean."""
-        assert isinstance(LINE_PROFILER_AVAILABLE, bool)
+        assert isinstance(LINE_PROFILER_AVAILABLE, bool)  # nosec: B101 - Test assertion

@@ -40,13 +40,13 @@ class TestTaskProgressPostInit:
     def test_post_init_sets_start_time_in_progress(self):
         """Test that start_time is set when status is IN_PROGRESS."""
         task = TaskProgress(task_id="test", status=ProgressStatus.IN_PROGRESS)
-        assert task.start_time is not None
-        assert task.start_time > 0
+        assert task.start_time is not None  # nosec: B101 - Test assertion
+        assert task.start_time > 0  # nosec: B101 - Test assertion
 
     def test_post_init_no_start_time_pending(self):
         """Test that start_time is not set when status is PENDING."""
         task = TaskProgress(task_id="test", status=ProgressStatus.PENDING)
-        assert task.start_time is None
+        assert task.start_time is None  # nosec: B101 - Test assertion
 
     def test_post_init_existing_start_time_preserved(self):
         """Test that existing start_time is preserved."""
@@ -54,7 +54,7 @@ class TestTaskProgressPostInit:
         task = TaskProgress(
             task_id="test", status=ProgressStatus.IN_PROGRESS, start_time=start
         )
-        assert task.start_time == start
+        assert task.start_time == start  # nosec: B101 - Test assertion
 
 
 class TestTaskProgressDuration:
@@ -65,13 +65,15 @@ class TestTaskProgressDuration:
         start = time.time() - 10
         end = time.time()
         task = TaskProgress(task_id="test", start_time=start, end_time=end)
-        assert task.duration_seconds is not None
-        assert abs(task.duration_seconds - 10) < 1  # Allow 1 second tolerance
+        assert task.duration_seconds is not None  # nosec: B101 - Test assertion
+        assert (
+            abs(task.duration_seconds - 10) < 1
+        )  # Allow 1 second tolerance  # nosec: B101 - Test assertion
 
     def test_duration_no_start_time(self):
         """Test duration returns None when no start_time."""
         task = TaskProgress(task_id="test")
-        assert task.duration_seconds is None
+        assert task.duration_seconds is None  # nosec: B101 - Test assertion
 
 
 class TestProgressReportCalculate:
@@ -91,14 +93,14 @@ class TestProgressReportCalculate:
             ),
         ]
         report = ProgressReport.calculate(tasks)
-        assert report.failed_tasks == 1
-        assert report.completed_tasks == 1
+        assert report.failed_tasks == 1  # nosec: B101 - Test assertion
+        assert report.completed_tasks == 1  # nosec: B101 - Test assertion
 
     def test_calculate_empty_tasks(self):
         """Test calculation with empty task list."""
         report = ProgressReport.calculate([])
-        assert report.total_tasks == 0
-        assert report.overall_progress == 0.0
+        assert report.total_tasks == 0  # nosec: B101 - Test assertion
+        assert report.overall_progress == 0.0  # nosec: B101 - Test assertion
 
     def test_calculate_only_pending(self):
         """Test calculation with only pending tasks."""
@@ -111,8 +113,8 @@ class TestProgressReportCalculate:
             ),
         ]
         report = ProgressReport.calculate(tasks)
-        assert report.pending_tasks == 2
-        assert report.overall_progress == 0.0
+        assert report.pending_tasks == 2  # nosec: B101 - Test assertion
+        assert report.overall_progress == 0.0  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerAdvanced:
@@ -122,8 +124,8 @@ class TestProgressTrackerAdvanced:
         """Test getting report with no tasks."""
         tracker = ProgressTracker()
         report = tracker.get_report()
-        assert report.total_tasks == 0
-        assert report.overall_progress == 0.0
+        assert report.total_tasks == 0  # nosec: B101 - Test assertion
+        assert report.overall_progress == 0.0  # nosec: B101 - Test assertion
 
     def test_get_report_with_failed_tasks(self):
         """Test report with failed tasks."""
@@ -131,7 +133,7 @@ class TestProgressTrackerAdvanced:
         tracker.add_task("task-1")
         tracker.fail_task("task-1")
         report = tracker.get_report()
-        assert report.failed_tasks == 1
+        assert report.failed_tasks == 1  # nosec: B101 - Test assertion
 
     def test_get_report_with_cancelled_tasks(self):
         """Test report with cancelled tasks."""
@@ -146,20 +148,20 @@ class TestProgressTrackerAdvanced:
         """Test getting elapsed time when not started."""
         tracker = ProgressTracker()
         elapsed = tracker.get_elapsed_time()
-        assert elapsed == 0.0
+        assert elapsed == 0.0  # nosec: B101 - Test assertion
 
     def test_get_elapsed_time_with_start_time(self):
         """Test getting elapsed time with start time set."""
         tracker = ProgressTracker()
         tracker._start_time = time.time() - 5
         elapsed = tracker.get_elapsed_time()
-        assert elapsed >= 5.0
+        assert elapsed >= 5.0  # nosec: B101 - Test assertion
 
     def test_get_estimated_remaining_time_no_tasks(self):
         """Test estimated time with no tasks."""
         tracker = ProgressTracker()
         remaining = tracker.get_estimated_remaining_time()
-        assert remaining is None
+        assert remaining is None  # nosec: B101 - Test assertion
 
     def test_get_estimated_remaining_time_zero_progress(self):
         """Test estimated time with zero progress."""
@@ -168,7 +170,7 @@ class TestProgressTrackerAdvanced:
         tracker._start_time = time.time()
         remaining = tracker.get_estimated_remaining_time()
         # Should handle gracefully
-        assert remaining is None or remaining >= 0
+        assert remaining is None or remaining >= 0  # nosec: B101 - Test assertion
 
     def test_get_estimated_remaining_time_with_progress(self):
         """Test estimated time with some progress."""
@@ -180,7 +182,7 @@ class TestProgressTrackerAdvanced:
         remaining = tracker.get_estimated_remaining_time()
         # Should estimate roughly 10 more seconds
         if remaining is not None:
-            assert remaining >= 0
+            assert remaining >= 0  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerCallbacks:
@@ -199,7 +201,7 @@ class TestProgressTrackerCallbacks:
         tracker.update_task("task-1", progress_percent=50)
 
         # Callback should have been called
-        assert len(callback_calls) > 0
+        assert len(callback_calls) > 0  # nosec: B101 - Test assertion
 
     def test_add_trial_callback(self):
         """Test adding trial callback."""
@@ -216,7 +218,7 @@ class TestProgressTrackerCallbacks:
         tracker.complete_trial(0.95, {"accuracy": 0.95})
 
         # Callback should have been called
-        assert len(callback_calls) == 1
+        assert len(callback_calls) == 1  # nosec: B101 - Test assertion
 
     def test_callback_error_handling(self):
         """Test that callback errors are handled gracefully."""
@@ -246,7 +248,9 @@ class TestProgressTrackerAPGI:
         )
 
         report = tracker.get_report()
-        assert "apgi_params" in report.metadata or hasattr(report, "metadata")
+        assert "apgi_params" in report.metadata or hasattr(
+            report, "metadata"
+        )  # nosec: B101 - Test assertion
 
     def test_update_apgi_metrics_with_errors(self):
         """Test updating APGI metrics with errors."""
@@ -262,7 +266,7 @@ class TestProgressTrackerAPGI:
         """Test getting APGI statistics."""
         tracker = ProgressTracker()
         stats = tracker.get_apgi_statistics()
-        assert isinstance(stats, dict)
+        assert isinstance(stats, dict)  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerTrials:
@@ -272,9 +276,9 @@ class TestProgressTrackerTrials:
         """Test starting a trial."""
         tracker = ProgressTracker()
         result = tracker.start_trial({"param": "value"})
-        assert result.trial_id is not None
-        assert result.trial_num == 1
-        assert result.params == {"param": "value"}
+        assert result.trial_id is not None  # nosec: B101 - Test assertion
+        assert result.trial_num == 1  # nosec: B101 - Test assertion
+        assert result.params == {"param": "value"}  # nosec: B101 - Test assertion
 
     def test_complete_trial(self):
         """Test completing a trial."""
@@ -282,9 +286,9 @@ class TestProgressTrackerTrials:
         _ = tracker.start_trial({"param": "value"})
         tracker.complete_trial(0.95, {"accuracy": 0.95})
 
-        assert len(tracker.trials) == 1
-        assert tracker.trials[0].success is True
-        assert tracker.trials[0].outcome == 0.95
+        assert len(tracker.trials) == 1  # nosec: B101 - Test assertion
+        assert tracker.trials[0].success is True  # nosec: B101 - Test assertion
+        assert tracker.trials[0].outcome == 0.95  # nosec: B101 - Test assertion
 
     def test_complete_trial_with_metadata(self):
         """Test completing a trial with additional metadata."""
@@ -292,7 +296,9 @@ class TestProgressTrackerTrials:
         _ = tracker.start_trial({"param": "value"})
         tracker.complete_trial(0.95, {"accuracy": 0.95}, metadata={"note": "success"})
 
-        assert tracker.trials[0].metadata.get("note") == "success"
+        assert (
+            tracker.trials[0].metadata.get("note") == "success"
+        )  # nosec: B101 - Test assertion
 
     def test_get_trial_statistics(self):
         """Test getting trial statistics."""
@@ -304,8 +310,8 @@ class TestProgressTrackerTrials:
             tracker.complete_trial(0.8 + i * 0.05)
 
         stats = tracker.get_trial_statistics()
-        assert stats["total_trials"] == 3
-        assert stats["successful_trials"] == 3
+        assert stats["total_trials"] == 3  # nosec: B101 - Test assertion
+        assert stats["successful_trials"] == 3  # nosec: B101 - Test assertion
 
     def test_get_trial_statistics_with_failures(self):
         """Test trial statistics with failed trials."""
@@ -318,8 +324,8 @@ class TestProgressTrackerTrials:
         tracker.start_trial({"param": 3})  # Incomplete
 
         stats = tracker.get_trial_statistics()
-        assert stats["successful_trials"] == 1
-        assert stats["incomplete_trials"] == 1
+        assert stats["successful_trials"] == 1  # nosec: B101 - Test assertion
+        assert stats["incomplete_trials"] == 1  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerExperimentLifecycle:
@@ -333,15 +339,17 @@ class TestProgressTrackerExperimentLifecycle:
 
         tracker.complete_experiment()
 
-        assert tracker._experiment_complete is True
-        assert tracker._end_time is not None
+        assert tracker._experiment_complete is True  # nosec: B101 - Test assertion
+        assert tracker._end_time is not None  # nosec: B101 - Test assertion
 
     def test_complete_experiment_with_summary(self):
         """Test completing experiment with summary."""
         tracker = ProgressTracker()
         tracker.complete_experiment(final_metrics={"accuracy": 0.95})
 
-        assert tracker._final_metrics.get("accuracy") == 0.95
+        assert (
+            tracker._final_metrics.get("accuracy") == 0.95
+        )  # nosec: B101 - Test assertion
 
     def test_pause_and_resume_experiment(self):
         """Test pausing and resuming experiment."""
@@ -349,16 +357,16 @@ class TestProgressTrackerExperimentLifecycle:
         tracker._start_time = time.time()
 
         tracker.pause_experiment()
-        assert tracker._paused is True
+        assert tracker._paused is True  # nosec: B101 - Test assertion
 
         tracker.resume_experiment()
-        assert tracker._paused is False
+        assert tracker._paused is False  # nosec: B101 - Test assertion
 
     def test_resume_experiment_not_paused(self):
         """Test resuming when not paused."""
         tracker = ProgressTracker()
         tracker.resume_experiment()  # Should handle gracefully
-        assert tracker._paused is False
+        assert tracker._paused is False  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerAutoSave:
@@ -406,7 +414,7 @@ class TestProgressTrackerSaveAndLoad:
 
         # Check file was created
         progress_files = list(tmp_path.glob("*_progress.json"))
-        assert len(progress_files) > 0
+        assert len(progress_files) > 0  # nosec: B101 - Test assertion
 
     def test_save_progress_failure(self, tmp_path):
         """Test save progress failure."""
@@ -438,7 +446,7 @@ class TestProgressTrackerSaveAndLoad:
 
         result = tracker1.load_progress()
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_load_progress_no_file(self, tmp_path):
         """Test loading progress when no file exists."""
@@ -450,7 +458,7 @@ class TestProgressTrackerSaveAndLoad:
         )
 
         result = tracker.load_progress()
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_load_progress_invalid_pickle(self, tmp_path):
         """Test loading progress with invalid pickle file."""
@@ -465,7 +473,7 @@ class TestProgressTrackerSaveAndLoad:
         (tmp_path / "test-exp_p1_progress.pkl").write_bytes(b"invalid pickle data")
 
         result = tracker.load_progress()
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerExportSummary:
@@ -483,11 +491,11 @@ class TestProgressTrackerExportSummary:
         tracker.complete_task("task-1")
 
         result = tracker.export_summary()
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         # Check summary file was created
         summary_files = list(tmp_path.glob("*summary*.json"))
-        assert len(summary_files) > 0
+        assert len(summary_files) > 0  # nosec: B101 - Test assertion
 
     def test_save_summary_report(self, tmp_path):
         """Test saving summary report."""
@@ -496,7 +504,7 @@ class TestProgressTrackerExportSummary:
         tracker.add_task("task-1")
 
         result = tracker.save_summary_report()
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
 
 class TestProgressTrackerErrorHandling:
@@ -507,9 +515,13 @@ class TestProgressTrackerErrorHandling:
         tracker = ProgressTracker()
         tracker.log_error("test_task", "Test error message")
 
-        assert len(tracker.errors) == 1
-        assert tracker.errors[0]["task_id"] == "test_task"
-        assert tracker.errors[0]["error"] == "Test error message"
+        assert len(tracker.errors) == 1  # nosec: B101 - Test assertion
+        assert (
+            tracker.errors[0]["task_id"] == "test_task"
+        )  # nosec: B101 - Test assertion
+        assert (
+            tracker.errors[0]["error"] == "Test error message"
+        )  # nosec: B101 - Test assertion
 
     def test_update_nonexistent_task_creates(self):
         """Test that updating nonexistent task creates it."""
@@ -518,9 +530,13 @@ class TestProgressTrackerErrorHandling:
             "new-task", progress_percent=75, message="Created and updated"
         )
 
-        assert "new-task" in tracker.tasks
-        assert tracker.tasks["new-task"].progress_percent == 75
-        assert tracker.tasks["new-task"].message == "Created and updated"
+        assert "new-task" in tracker.tasks  # nosec: B101 - Test assertion
+        assert (
+            tracker.tasks["new-task"].progress_percent == 75
+        )  # nosec: B101 - Test assertion
+        assert (
+            tracker.tasks["new-task"].message == "Created and updated"
+        )  # nosec: B101 - Test assertion
 
 
 class TestExperimentProgress:
@@ -534,8 +550,10 @@ class TestExperimentProgress:
             status="running",
             start_time=time.time(),
         )
-        assert progress.experiment_id == "exp-1"
-        assert progress.experiment_name == "Test Experiment"
+        assert progress.experiment_id == "exp-1"  # nosec: B101 - Test assertion
+        assert (
+            progress.experiment_name == "Test Experiment"
+        )  # nosec: B101 - Test assertion
 
     def test_experiment_progress_with_tasks(self):
         """Test ExperimentProgress with tasks."""
@@ -548,7 +566,7 @@ class TestExperimentProgress:
             experiment_name="Test",
             tasks=tasks,
         )
-        assert len(progress.tasks) == 2
+        assert len(progress.tasks) == 2  # nosec: B101 - Test assertion
 
 
 class TestProgressMonitor:
@@ -557,7 +575,7 @@ class TestProgressMonitor:
     def test_init(self):
         """Test ProgressMonitor initialization."""
         monitor = ProgressMonitor()
-        assert monitor._trackers == {}
+        assert monitor._trackers == {}  # nosec: B101 - Test assertion
 
     def test_register_experiment(self):
         """Test registering an experiment."""
@@ -565,8 +583,8 @@ class TestProgressMonitor:
         tracker = ProgressTracker()
         monitor.register_experiment("exp-1", tracker)
 
-        assert "exp-1" in monitor._trackers
-        assert monitor._trackers["exp-1"] is tracker
+        assert "exp-1" in monitor._trackers  # nosec: B101 - Test assertion
+        assert monitor._trackers["exp-1"] is tracker  # nosec: B101 - Test assertion
 
     def test_get_overall_status(self):
         """Test getting overall status."""
@@ -583,8 +601,8 @@ class TestProgressMonitor:
         monitor.register_experiment("exp-2", tracker2)
 
         status = monitor.get_overall_status()
-        assert "exp-1" in status
-        assert "exp-2" in status
+        assert "exp-1" in status  # nosec: B101 - Test assertion
+        assert "exp-2" in status  # nosec: B101 - Test assertion
 
     def test_get_experiment_tracker(self):
         """Test getting experiment tracker."""
@@ -593,13 +611,13 @@ class TestProgressMonitor:
         monitor.register_experiment("exp-1", tracker)
 
         result = monitor.get_experiment_tracker("exp-1")
-        assert result is tracker
+        assert result is tracker  # nosec: B101 - Test assertion
 
     def test_get_experiment_tracker_nonexistent(self):
         """Test getting nonexistent experiment tracker."""
         monitor = ProgressMonitor()
         result = monitor.get_experiment_tracker("nonexistent")
-        assert result is None
+        assert result is None  # nosec: B101 - Test assertion
 
 
 class TestTrialResult:
@@ -612,11 +630,11 @@ class TestTrialResult:
             trial_num=1,
             params={"param": "value"},
         )
-        assert trial.trial_id == "trial-1"
-        assert trial.trial_num == 1
-        assert trial.params == {"param": "value"}
-        assert trial.success is False
-        assert trial.outcome is None
+        assert trial.trial_id == "trial-1"  # nosec: B101 - Test assertion
+        assert trial.trial_num == 1  # nosec: B101 - Test assertion
+        assert trial.params == {"param": "value"}  # nosec: B101 - Test assertion
+        assert trial.success is False  # nosec: B101 - Test assertion
+        assert trial.outcome is None  # nosec: B101 - Test assertion
 
     def test_trial_result_completed(self):
         """Test completed TrialResult."""
@@ -628,9 +646,9 @@ class TestTrialResult:
             success=True,
             metrics={"accuracy": 0.95},
         )
-        assert trial.success is True
-        assert trial.outcome == 0.95
-        assert trial.metrics["accuracy"] == 0.95
+        assert trial.success is True  # nosec: B101 - Test assertion
+        assert trial.outcome == 0.95  # nosec: B101 - Test assertion
+        assert trial.metrics["accuracy"] == 0.95  # nosec: B101 - Test assertion
 
 
 class TestCheckpointEdgeCases:
@@ -645,8 +663,8 @@ class TestCheckpointEdgeCases:
             metadata={"version": "1.0"},
         )
         data = checkpoint.to_dict()
-        assert data["checkpoint_id"] == "cp-1"
-        assert "task_states" in data
+        assert data["checkpoint_id"] == "cp-1"  # nosec: B101 - Test assertion
+        assert "task_states" in data  # nosec: B101 - Test assertion
 
     def test_checkpoint_from_dict(self):
         """Test creating Checkpoint from dict."""
@@ -657,8 +675,10 @@ class TestCheckpointEdgeCases:
             "metadata": {"version": "1.0"},
         }
         checkpoint = Checkpoint.from_dict(data)
-        assert checkpoint.checkpoint_id == "cp-1"
-        assert checkpoint.task_states["task1"]["progress"] == 50
+        assert checkpoint.checkpoint_id == "cp-1"  # nosec: B101 - Test assertion
+        assert (
+            checkpoint.task_states["task1"]["progress"] == 50
+        )  # nosec: B101 - Test assertion
 
 
 class TestConvenienceFunctions:
@@ -670,7 +690,7 @@ class TestConvenienceFunctions:
             tracker = create_progress_tracker(
                 experiment_name="test-exp", participant_id="p1", total_trials=10
             )
-            assert tracker.experiment_name == "test-exp"
+            assert tracker.experiment_name == "test-exp"  # nosec: B101 - Test assertion
 
     def test_load_progress_tracker_exists(self, tmp_path):
         """Test load_progress_tracker when file exists."""
@@ -690,7 +710,7 @@ class TestConvenienceFunctions:
             total_trials=10,
             output_dir=str(tmp_path),
         )
-        assert tracker2 is not None
+        assert tracker2 is not None  # nosec: B101 - Test assertion
 
     def test_load_progress_tracker_not_exists(self, tmp_path):
         """Test load_progress_tracker when file doesn't exist."""
@@ -698,7 +718,7 @@ class TestConvenienceFunctions:
             tracker = load_progress_tracker(
                 experiment_name="nonexistent", participant_id="p1", total_trials=10
             )
-            assert tracker is None
+            assert tracker is None  # nosec: B101 - Test assertion
 
     def test_monitor_experiment_progress(self):
         """Test monitor_experiment_progress function."""

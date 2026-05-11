@@ -43,7 +43,7 @@ class TestRetentionPolicy:
         ]
 
         for policy in expected_policies:
-            assert policy.value in [
+            assert policy.value in [  # nosec: B101 - Test assertion
                 "permanent",
                 "gdpr_default",
                 "ccpa_default",
@@ -53,11 +53,19 @@ class TestRetentionPolicy:
 
     def test_retention_policy_string_conversion(self):
         """Test string conversion of policies."""
-        assert RetentionPolicy.PERMANENT.value == "permanent"
-        assert RetentionPolicy.GDPR_DEFAULT.value == "gdpr_default"
-        assert RetentionPolicy.CCPA_DEFAULT.value == "ccpa_default"
-        assert RetentionPolicy.HIPAA_DEFAULT.value == "hipaa_default"
-        assert RetentionPolicy.CUSTOM.value == "custom"
+        assert (
+            RetentionPolicy.PERMANENT.value == "permanent"
+        )  # nosec: B101 - Test assertion
+        assert (
+            RetentionPolicy.GDPR_DEFAULT.value == "gdpr_default"
+        )  # nosec: B101 - Test assertion
+        assert (
+            RetentionPolicy.CCPA_DEFAULT.value == "ccpa_default"
+        )  # nosec: B101 - Test assertion
+        assert (
+            RetentionPolicy.HIPAA_DEFAULT.value == "hipaa_default"
+        )  # nosec: B101 - Test assertion
+        assert RetentionPolicy.CUSTOM.value == "custom"  # nosec: B101 - Test assertion
 
 
 class TestRetentionConfig:
@@ -67,11 +75,17 @@ class TestRetentionConfig:
         """Test default configuration values."""
         config = RetentionConfig()
 
-        assert config.policy == RetentionPolicy.GDPR_DEFAULT
-        assert config.retention_days == 1095  # 3 years
-        assert config.auto_delete_enabled is True
-        assert config.deletion_verification_required is True
-        assert config.audit_trail_retention_days == 2555  # 7 years
+        assert (
+            config.policy == RetentionPolicy.GDPR_DEFAULT
+        )  # nosec: B101 - Test assertion
+        assert config.retention_days == 1095  # 3 years  # nosec: B101 - Test assertion
+        assert config.auto_delete_enabled is True  # nosec: B101 - Test assertion
+        assert (
+            config.deletion_verification_required is True
+        )  # nosec: B101 - Test assertion
+        assert (
+            config.audit_trail_retention_days == 2555
+        )  # 7 years  # nosec: B101 - Test assertion
 
     def test_custom_initialization(self):
         """Test custom configuration values."""
@@ -83,27 +97,31 @@ class TestRetentionConfig:
             audit_trail_retention_days=180,
         )
 
-        assert config.policy == RetentionPolicy.CCPA_DEFAULT
-        assert config.retention_days == 365
-        assert config.auto_delete_enabled is False
-        assert config.deletion_verification_required is False
-        assert config.audit_trail_retention_days == 180
+        assert (
+            config.policy == RetentionPolicy.CCPA_DEFAULT
+        )  # nosec: B101 - Test assertion
+        assert config.retention_days == 365  # nosec: B101 - Test assertion
+        assert config.auto_delete_enabled is False  # nosec: B101 - Test assertion
+        assert (
+            config.deletion_verification_required is False
+        )  # nosec: B101 - Test assertion
+        assert config.audit_trail_retention_days == 180  # nosec: B101 - Test assertion
 
     def test_get_retention_period(self):
         """Test retention period calculation."""
         config = RetentionConfig(retention_days=30)
         period = config.get_retention_period()
 
-        assert isinstance(period, timedelta)
-        assert period.days == 30
+        assert isinstance(period, timedelta)  # nosec: B101 - Test assertion
+        assert period.days == 30  # nosec: B101 - Test assertion
 
     def test_get_audit_retention_period(self):
         """Test audit retention period calculation."""
         config = RetentionConfig(audit_trail_retention_days=180)
         period = config.get_audit_retention_period()
 
-        assert isinstance(period, timedelta)
-        assert period.days == 180
+        assert isinstance(period, timedelta)  # nosec: B101 - Test assertion
+        assert period.days == 180  # nosec: B101 - Test assertion
 
 
 class TestDataSubjectRecord:
@@ -115,15 +133,19 @@ class TestDataSubjectRecord:
             subject_id="test_subject", subject_name="Test Subject"
         )
 
-        assert record.subject_id == "test_subject"
-        assert record.subject_name == "Test Subject"
-        assert record.retention_policy == RetentionPolicy.GDPR_DEFAULT
-        assert record.deletion_requested is False
-        assert record.deletion_completed is False
-        assert record.deletion_requested_at is None
-        assert record.deletion_completed_at is None
-        assert isinstance(record.created_at, datetime)
-        assert isinstance(record.last_accessed, datetime)
+        assert record.subject_id == "test_subject"  # nosec: B101 - Test assertion
+        assert record.subject_name == "Test Subject"  # nosec: B101 - Test assertion
+        assert (
+            record.retention_policy == RetentionPolicy.GDPR_DEFAULT
+        )  # nosec: B101 - Test assertion
+        assert record.deletion_requested is False  # nosec: B101 - Test assertion
+        assert record.deletion_completed is False  # nosec: B101 - Test assertion
+        assert record.deletion_requested_at is None  # nosec: B101 - Test assertion
+        assert record.deletion_completed_at is None  # nosec: B101 - Test assertion
+        assert isinstance(record.created_at, datetime)  # nosec: B101 - Test assertion
+        assert isinstance(
+            record.last_accessed, datetime
+        )  # nosec: B101 - Test assertion
 
     def test_custom_initialization(self):
         """Test custom record initialization."""
@@ -139,12 +161,21 @@ class TestDataSubjectRecord:
             deletion_completed_at=custom_time,
         )
 
-        assert record.data_categories == ["experiment", "config"]
-        assert record.retention_policy == RetentionPolicy.CCPA_DEFAULT
-        assert record.deletion_requested is True
-        assert record.deletion_completed is True
-        assert record.deletion_requested_at == custom_time
-        assert record.deletion_completed_at == custom_time
+        assert record.data_categories == [
+            "experiment",
+            "config",
+        ]  # nosec: B101 - Test assertion
+        assert (
+            record.retention_policy == RetentionPolicy.CCPA_DEFAULT
+        )  # nosec: B101 - Test assertion
+        assert record.deletion_requested is True  # nosec: B101 - Test assertion
+        assert record.deletion_completed is True  # nosec: B101 - Test assertion
+        assert (
+            record.deletion_requested_at == custom_time
+        )  # nosec: B101 - Test assertion
+        assert (
+            record.deletion_completed_at == custom_time
+        )  # nosec: B101 - Test assertion
 
     def test_is_retention_expired_permanent(self):
         """Test retention expiration for permanent policy."""
@@ -152,7 +183,9 @@ class TestDataSubjectRecord:
         record.retention_policy = RetentionPolicy.PERMANENT
 
         # Should never expire
-        assert record.is_retention_expired(RetentionConfig()) is False
+        assert (
+            record.is_retention_expired(RetentionConfig()) is False
+        )  # nosec: B101 - Test assertion
 
     def test_is_retention_expired_expired(self):
         """Test retention expiration for expired record."""
@@ -164,7 +197,9 @@ class TestDataSubjectRecord:
         record.retention_policy = RetentionPolicy.GDPR_DEFAULT
 
         # Should be expired
-        assert record.is_retention_expired(RetentionConfig()) is True
+        assert (
+            record.is_retention_expired(RetentionConfig()) is True
+        )  # nosec: B101 - Test assertion
 
     def test_is_retention_expired_not_expired(self):
         """Test retention expiration for non-expired record."""
@@ -176,22 +211,24 @@ class TestDataSubjectRecord:
         record.retention_policy = RetentionPolicy.GDPR_DEFAULT
 
         # Should not be expired
-        assert record.is_retention_expired(RetentionConfig()) is False
+        assert (
+            record.is_retention_expired(RetentionConfig()) is False
+        )  # nosec: B101 - Test assertion
 
     def test_mark_for_deletion(self):
         """Test marking record for deletion."""
         record = DataSubjectRecord(subject_id="test", subject_name="Test")
 
         # Test initial state
-        assert record.deletion_requested is False
-        assert record.deletion_requested_at is None
+        assert record.deletion_requested is False  # nosec: B101 - Test assertion
+        assert record.deletion_requested_at is None  # nosec: B101 - Test assertion
 
         # Mark for deletion and verify changes
         record.mark_for_deletion()
-        assert record.deletion_requested is True
-        assert record.deletion_requested_at is not None  # type: ignore[unreachable]
+        assert record.deletion_requested is True  # nosec: B101 - Test assertion
+        assert record.deletion_requested_at is not None  # type: ignore[unreachable]  # nosec: B101 - Test assertion
         time_diff = datetime.now(timezone.utc) - record.deletion_requested_at
-        assert time_diff.total_seconds() < 60
+        assert time_diff.total_seconds() < 60  # nosec: B101 - Test assertion
 
     def test_mark_deletion_complete(self):
         """Test marking deletion as complete."""
@@ -199,14 +236,16 @@ class TestDataSubjectRecord:
 
         # First mark for deletion
         record.mark_for_deletion()
-        assert record.deletion_requested is True
-        assert record.deletion_completed is False
+        assert record.deletion_requested is True  # nosec: B101 - Test assertion
+        assert record.deletion_completed is False  # nosec: B101 - Test assertion
 
         # Then mark as complete and verify changes
         record.mark_deletion_complete()
-        assert record.deletion_completed is True
-        assert record.deletion_completed_at is not None  # type: ignore[unreachable]
-        assert record.deletion_completed_at >= record.deletion_requested_at
+        assert record.deletion_completed is True  # nosec: B101 - Test assertion
+        assert record.deletion_completed_at is not None  # type: ignore[unreachable]  # nosec: B101 - Test assertion
+        assert (
+            record.deletion_completed_at >= record.deletion_requested_at
+        )  # nosec: B101 - Test assertion
 
 
 class TestDeletionExecutor:
@@ -219,9 +258,9 @@ class TestDeletionExecutor:
 
     def test_initialization(self):
         """Test executor initialization."""
-        assert self.executor.config == self.config
-        assert self.executor.logger is not None
-        assert self.executor.audit_sink is not None
+        assert self.executor.config == self.config  # nosec: B101 - Test assertion
+        assert self.executor.logger is not None  # nosec: B101 - Test assertion
+        assert self.executor.audit_sink is not None  # nosec: B101 - Test assertion
 
     def test_delete_experiment_data_success(self):
         """Test successful experiment data deletion."""
@@ -236,8 +275,8 @@ class TestDeletionExecutor:
             data_path=temp_file.name,
         )
 
-        assert result is True
-        assert not os.path.exists(temp_file.name)
+        assert result is True  # nosec: B101 - Test assertion
+        assert not os.path.exists(temp_file.name)  # nosec: B101 - Test assertion
 
     def test_delete_experiment_data_file_not_found(self):
         """Test experiment data deletion when file doesn't exist."""
@@ -249,7 +288,7 @@ class TestDeletionExecutor:
             data_path=nonexistent_file,
         )
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_delete_experiment_data_no_path(self):
         """Test experiment data deletion with no path specified."""
@@ -257,7 +296,7 @@ class TestDeletionExecutor:
             subject_id="test_subject", experiment_id="test_experiment", data_path=None
         )
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_delete_experiment_data_with_audit(self):
         """Test experiment data deletion with audit logging."""
@@ -275,14 +314,18 @@ class TestDeletionExecutor:
             data_path=temp_file.name,
         )
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         # Verify audit call
         mock_audit_sink.record_event.assert_called_once()
         call_args = mock_audit_sink.record_event.call_args
-        assert call_args[1]["operator_id"] == "test_subject"
-        assert call_args[1]["resource_id"] == "test_experiment"
-        assert call_args[1]["status"] == "success"
+        assert (
+            call_args[1]["operator_id"] == "test_subject"
+        )  # nosec: B101 - Test assertion
+        assert (
+            call_args[1]["resource_id"] == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert call_args[1]["status"] == "success"  # nosec: B101 - Test assertion
 
     def test_delete_experiment_data_failure_with_audit(self):
         """Test experiment data deletion failure with audit logging."""
@@ -298,12 +341,12 @@ class TestDeletionExecutor:
             data_path=nonexistent_file,
         )
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
         # Verify audit call
         mock_audit_sink.record_event.assert_called_once()
         call_args = mock_audit_sink.record_event.call_args
-        assert call_args[1]["status"] == "failure"
+        assert call_args[1]["status"] == "failure"  # nosec: B101 - Test assertion
 
     def test_delete_config_data_success(self):
         """Test successful config data deletion."""
@@ -316,8 +359,8 @@ class TestDeletionExecutor:
             subject_id="test_subject", config_id="test_config"
         )
 
-        assert result is True
-        assert not config_file.exists()
+        assert result is True  # nosec: B101 - Test assertion
+        assert not config_file.exists()  # nosec: B101 - Test assertion
 
         # Clean up
         import shutil
@@ -330,7 +373,9 @@ class TestDeletionExecutor:
             subject_id="test_subject", config_id="nonexistent_config"
         )
 
-        assert result is True  # Should succeed even if file doesn't exist
+        assert (
+            result is True
+        )  # Should succeed even if file doesn't exist  # nosec: B101 - Test assertion
 
     def test_delete_config_data_with_audit(self):
         """Test config data deletion with audit logging."""
@@ -347,14 +392,18 @@ class TestDeletionExecutor:
             subject_id="test_subject", config_id="test_config"
         )
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         # Verify audit call
         mock_audit_sink.record_event.assert_called_once()
         call_args = mock_audit_sink.record_event.call_args
-        assert call_args[1]["operator_id"] == "test_subject"
-        assert call_args[1]["resource_id"] == "test_config"
-        assert call_args[1]["status"] == "success"
+        assert (
+            call_args[1]["operator_id"] == "test_subject"
+        )  # nosec: B101 - Test assertion
+        assert (
+            call_args[1]["resource_id"] == "test_config"
+        )  # nosec: B101 - Test assertion
+        assert call_args[1]["status"] == "success"  # nosec: B101 - Test assertion
 
     def test_destroy_kms_key_success(self):
         """Test successful KMS key destruction."""
@@ -364,7 +413,7 @@ class TestDeletionExecutor:
             subject_id="test_subject", key_id="test_key", kms_callback=mock_callback
         )
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         mock_callback.assert_called_once_with("test_key")
 
     def test_destroy_kms_key_failure(self):
@@ -375,7 +424,7 @@ class TestDeletionExecutor:
             subject_id="test_subject", key_id="test_key", kms_callback=mock_callback
         )
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_destroy_kms_key_no_callback(self):
         """Test KMS key destruction without callback."""
@@ -383,7 +432,9 @@ class TestDeletionExecutor:
             subject_id="test_subject", key_id="test_key", kms_callback=None
         )
 
-        assert result is True  # Should succeed without external callback
+        assert (
+            result is True
+        )  # Should succeed without external callback  # nosec: B101 - Test assertion
 
     def test_destroy_kms_key_with_audit(self):
         """Test KMS key destruction with audit logging."""
@@ -395,14 +446,16 @@ class TestDeletionExecutor:
             subject_id="test_subject", key_id="test_key", kms_callback=mock_callback
         )
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         # Verify audit call
         mock_audit_sink.record_event.assert_called_once()
         call_args = mock_audit_sink.record_event.call_args
-        assert call_args[1]["operator_id"] == "test_subject"
-        assert call_args[1]["resource_id"] == "test_key"
-        assert call_args[1]["status"] == "success"
+        assert (
+            call_args[1]["operator_id"] == "test_subject"
+        )  # nosec: B101 - Test assertion
+        assert call_args[1]["resource_id"] == "test_key"  # nosec: B101 - Test assertion
+        assert call_args[1]["status"] == "success"  # nosec: B101 - Test assertion
 
 
 class TestRetentionJobScheduler:
@@ -415,10 +468,14 @@ class TestRetentionJobScheduler:
 
     def test_initialization(self):
         """Test scheduler initialization."""
-        assert self.scheduler.config == self.config
-        assert self.scheduler.deletion_executor is not None
-        assert isinstance(self.scheduler.data_subjects, dict)
-        assert len(self.scheduler.data_subjects) == 0
+        assert self.scheduler.config == self.config  # nosec: B101 - Test assertion
+        assert (
+            self.scheduler.deletion_executor is not None
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            self.scheduler.data_subjects, dict
+        )  # nosec: B101 - Test assertion
+        assert len(self.scheduler.data_subjects) == 0  # nosec: B101 - Test assertion
 
     def test_register_data_subject(self):
         """Test registering a data subject."""
@@ -429,12 +486,22 @@ class TestRetentionJobScheduler:
             retention_policy=RetentionPolicy.GDPR_DEFAULT,
         )
 
-        assert record.subject_id == "test_subject"
-        assert record.subject_name == "Test Subject"
-        assert record.data_categories == ["experiment", "config", "audit"]
-        assert record.retention_policy == RetentionPolicy.GDPR_DEFAULT
-        assert "test_subject" in self.scheduler.data_subjects
-        assert self.scheduler.data_subjects["test_subject"] is record
+        assert record.subject_id == "test_subject"  # nosec: B101 - Test assertion
+        assert record.subject_name == "Test Subject"  # nosec: B101 - Test assertion
+        assert record.data_categories == [
+            "experiment",
+            "config",
+            "audit",
+        ]  # nosec: B101 - Test assertion
+        assert (
+            record.retention_policy == RetentionPolicy.GDPR_DEFAULT
+        )  # nosec: B101 - Test assertion
+        assert (
+            "test_subject" in self.scheduler.data_subjects
+        )  # nosec: B101 - Test assertion
+        assert (
+            self.scheduler.data_subjects["test_subject"] is record
+        )  # nosec: B101 - Test assertion
 
     def test_register_data_subject_custom_policy(self):
         """Test registering data subject with custom policy."""
@@ -445,7 +512,9 @@ class TestRetentionJobScheduler:
             retention_policy=RetentionPolicy.CCPA_DEFAULT,
         )
 
-        assert record.retention_policy == RetentionPolicy.CCPA_DEFAULT
+        assert (
+            record.retention_policy == RetentionPolicy.CCPA_DEFAULT
+        )  # nosec: B101 - Test assertion
 
     def test_request_deletion_success(self):
         """Test successful deletion request."""
@@ -457,25 +526,25 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler.request_deletion("test_subject")
 
-        assert result is True
-        assert record.deletion_requested is True
-        assert record.deletion_requested_at is not None
+        assert result is True  # nosec: B101 - Test assertion
+        assert record.deletion_requested is True  # nosec: B101 - Test assertion
+        assert record.deletion_requested_at is not None  # nosec: B101 - Test assertion
 
     def test_request_deletion_nonexistent_subject(self):
         """Test deletion request for nonexistent subject."""
         result = self.scheduler.request_deletion("nonexistent_subject")
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_execute_retention_jobs_empty(self):
         """Test retention job execution with no subjects."""
         results = self.scheduler.execute_retention_jobs()
 
-        assert results["total_subjects"] == 0
-        assert results["expired_subjects"] == 0
-        assert results["deletion_requested"] == 0
-        assert results["deletions_completed"] == 0
-        assert results["deletions_failed"] == 0
+        assert results["total_subjects"] == 0  # nosec: B101 - Test assertion
+        assert results["expired_subjects"] == 0  # nosec: B101 - Test assertion
+        assert results["deletion_requested"] == 0  # nosec: B101 - Test assertion
+        assert results["deletions_completed"] == 0  # nosec: B101 - Test assertion
+        assert results["deletions_failed"] == 0  # nosec: B101 - Test assertion
 
     def test_execute_retention_jobs_with_deletion_requests(self):
         """Test retention job execution with deletion requests."""
@@ -501,10 +570,10 @@ class TestRetentionJobScheduler:
 
         results = self.scheduler.execute_retention_jobs()
 
-        assert results["total_subjects"] == 2
-        assert results["deletion_requested"] == 2
-        assert results["deletions_completed"] == 2
-        assert results["deletions_failed"] == 0
+        assert results["total_subjects"] == 2  # nosec: B101 - Test assertion
+        assert results["deletion_requested"] == 2  # nosec: B101 - Test assertion
+        assert results["deletions_completed"] == 2  # nosec: B101 - Test assertion
+        assert results["deletions_failed"] == 0  # nosec: B101 - Test assertion
 
     def test_execute_retention_jobs_with_expired_records(self):
         """Test retention job execution with expired records."""
@@ -532,10 +601,10 @@ class TestRetentionJobScheduler:
 
         results = self.scheduler.execute_retention_jobs()
 
-        assert results["total_subjects"] == 2
-        assert results["expired_subjects"] == 1
-        assert results["deletions_completed"] == 1
-        assert results["deletions_failed"] == 0
+        assert results["total_subjects"] == 2  # nosec: B101 - Test assertion
+        assert results["expired_subjects"] == 1  # nosec: B101 - Test assertion
+        assert results["deletions_completed"] == 1  # nosec: B101 - Test assertion
+        assert results["deletions_failed"] == 0  # nosec: B101 - Test assertion
 
     def test_execute_retention_jobs_disabled_auto_delete(self):
         """Test retention job execution with auto-delete disabled."""
@@ -554,9 +623,9 @@ class TestRetentionJobScheduler:
         results = self.scheduler.execute_retention_jobs()
 
         # Should not delete expired records when auto-delete is disabled
-        assert results["total_subjects"] == 1
-        assert results["expired_subjects"] == 0
-        assert results["deletions_completed"] == 0
+        assert results["total_subjects"] == 1  # nosec: B101 - Test assertion
+        assert results["expired_subjects"] == 0  # nosec: B101 - Test assertion
+        assert results["deletions_completed"] == 0  # nosec: B101 - Test assertion
 
     def test_execute_retention_jobs_partial_failure(self):
         """Test retention job execution with partial failures."""
@@ -581,10 +650,10 @@ class TestRetentionJobScheduler:
 
         results = self.scheduler.execute_retention_jobs()
 
-        assert results["total_subjects"] == 2
-        assert results["deletion_requested"] == 2
-        assert results["deletions_completed"] == 1
-        assert results["deletions_failed"] == 1
+        assert results["total_subjects"] == 2  # nosec: B101 - Test assertion
+        assert results["deletion_requested"] == 2  # nosec: B101 - Test assertion
+        assert results["deletions_completed"] == 1  # nosec: B101 - Test assertion
+        assert results["deletions_failed"] == 1  # nosec: B101 - Test assertion
 
     def test_execute_subject_deletion_experiment_category(self):
         """Test subject deletion for experiment category."""
@@ -601,7 +670,7 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler._execute_subject_deletion(record)
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         mock_executor.delete_experiment_data.assert_called_once_with(
             "test_subject", "experiment_test_subject"
         )
@@ -621,7 +690,7 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler._execute_subject_deletion(record)
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         mock_executor.delete_config_data.assert_called_once_with(
             "test_subject", "config_test_subject"
         )
@@ -641,7 +710,7 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler._execute_subject_deletion(record)
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         mock_executor.destroy_kms_key.assert_called_once_with(
             "test_subject", "key_test_subject"
         )
@@ -661,7 +730,7 @@ class TestRetentionJobScheduler:
         result = self.scheduler._execute_subject_deletion(record)
 
         # Should succeed even with unknown category
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_execute_subject_deletion_exception(self):
         """Test subject deletion with exception."""
@@ -678,7 +747,7 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler._execute_subject_deletion(record)
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_export_subject_data_success(self):
         """Test successful subject data export."""
@@ -696,17 +765,26 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler.export_subject_data("test_subject", temp_file_path)
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         # Verify exported data
         with open(temp_file_path, "r") as f:
             exported_data = json.load(f)
 
-        assert exported_data["subject_id"] == "test_subject"
-        assert exported_data["subject_name"] == "Test Subject"
-        assert exported_data["data_categories"] == ["experiment", "config"]
-        assert exported_data["retention_policy"] == "gdpr_default"
-        assert "created_at" in exported_data
+        assert (
+            exported_data["subject_id"] == "test_subject"
+        )  # nosec: B101 - Test assertion
+        assert (
+            exported_data["subject_name"] == "Test Subject"
+        )  # nosec: B101 - Test assertion
+        assert exported_data["data_categories"] == [
+            "experiment",
+            "config",
+        ]  # nosec: B101 - Test assertion
+        assert (
+            exported_data["retention_policy"] == "gdpr_default"
+        )  # nosec: B101 - Test assertion
+        assert "created_at" in exported_data  # nosec: B101 - Test assertion
 
         # Clean up
         os.unlink(temp_file_path)
@@ -721,7 +799,7 @@ class TestRetentionJobScheduler:
             "nonexistent_subject", temp_file_path
         )
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
         # Clean up
         os.unlink(temp_file_path)
@@ -739,7 +817,7 @@ class TestRetentionJobScheduler:
 
         result = self.scheduler.export_subject_data("test_subject", invalid_path)
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_get_retention_statistics(self):
         """Test retention statistics calculation."""
@@ -786,21 +864,21 @@ class TestRetentionJobScheduler:
 
         stats = self.scheduler.get_retention_statistics()
 
-        assert stats["total_subjects"] == 4
-        assert stats["expired_records"] == 1
-        assert stats["deletion_requested"] == 1
-        assert stats["deletion_completed"] == 1
-        assert stats["pending_deletion"] == 0
+        assert stats["total_subjects"] == 4  # nosec: B101 - Test assertion
+        assert stats["expired_records"] == 1  # nosec: B101 - Test assertion
+        assert stats["deletion_requested"] == 1  # nosec: B101 - Test assertion
+        assert stats["deletion_completed"] == 1  # nosec: B101 - Test assertion
+        assert stats["pending_deletion"] == 0  # nosec: B101 - Test assertion
 
     def test_get_retention_statistics_empty(self):
         """Test retention statistics with no subjects."""
         stats = self.scheduler.get_retention_statistics()
 
-        assert stats["total_subjects"] == 0
-        assert stats["expired_records"] == 0
-        assert stats["deletion_requested"] == 0
-        assert stats["deletion_completed"] == 0
-        assert stats["pending_deletion"] == 0
+        assert stats["total_subjects"] == 0  # nosec: B101 - Test assertion
+        assert stats["expired_records"] == 0  # nosec: B101 - Test assertion
+        assert stats["deletion_requested"] == 0  # nosec: B101 - Test assertion
+        assert stats["deletion_completed"] == 0  # nosec: B101 - Test assertion
+        assert stats["pending_deletion"] == 0  # nosec: B101 - Test assertion
 
 
 class TestGlobalScheduler:
@@ -814,11 +892,13 @@ class TestGlobalScheduler:
 
         # First call should create new instance
         scheduler1 = get_retention_scheduler()
-        assert isinstance(scheduler1, RetentionJobScheduler)
+        assert isinstance(
+            scheduler1, RetentionJobScheduler
+        )  # nosec: B101 - Test assertion
 
         # Second call should return same instance
         scheduler2 = get_retention_scheduler()
-        assert scheduler1 is scheduler2
+        assert scheduler1 is scheduler2  # nosec: B101 - Test assertion
 
     def test_set_retention_scheduler(self):
         """Test setting global scheduler."""
@@ -828,7 +908,7 @@ class TestGlobalScheduler:
 
         # Should return the custom scheduler
         retrieved = get_retention_scheduler()
-        assert retrieved is custom_scheduler
+        assert retrieved is custom_scheduler  # nosec: B101 - Test assertion
 
     def test_set_retention_scheduler_none(self):
         """Test setting global scheduler to None."""
@@ -838,7 +918,7 @@ class TestGlobalScheduler:
 
         # Should return the new scheduler
         new_scheduler = get_retention_scheduler()
-        assert new_scheduler is temp_scheduler
+        assert new_scheduler is temp_scheduler  # nosec: B101 - Test assertion
 
 
 class TestRetentionIntegration:
@@ -884,12 +964,16 @@ class TestRetentionIntegration:
         results = self.scheduler.execute_retention_jobs()
 
         # Verify results
-        assert results["total_subjects"] == 2
-        assert results["expired_subjects"] == 1  # subject2 should be expired
-        assert results["deletions_completed"] == 1
+        assert results["total_subjects"] == 2  # nosec: B101 - Test assertion
+        assert (
+            results["expired_subjects"] == 1
+        )  # subject2 should be expired  # nosec: B101 - Test assertion
+        assert results["deletions_completed"] == 1  # nosec: B101 - Test assertion
 
         # Verify audit trail
-        assert len(mock_executor.audit_sink.record_event.call_args_list) == 2
+        assert (
+            len(mock_executor.audit_sink.record_event.call_args_list) == 2
+        )  # nosec: B101 - Test assertion
 
     def test_compliance_workflow_with_audit(self):
         """Test compliance workflow with complete audit trail."""
@@ -917,7 +1001,7 @@ class TestRetentionIntegration:
 
         # Request deletion for CCPA user (right to erasure)
         deletion_requested = self.scheduler.request_deletion("ccpa_user")
-        assert deletion_requested is True
+        assert deletion_requested is True  # nosec: B101 - Test assertion
 
         # Mock deletion executor
         mock_executor = Mock()
@@ -934,7 +1018,7 @@ class TestRetentionIntegration:
             for r in mock_executor.audit_sink.record_event.call_args_list
             if r[1]["resource_id"] == "ccpa_user"
         ]
-        assert len(ccca_results) == 1
+        assert len(ccca_results) == 1  # nosec: B101 - Test assertion
 
     def test_error_handling_and_recovery(self):
         """Test error handling and recovery mechanisms."""
@@ -956,7 +1040,7 @@ class TestRetentionIntegration:
 
         # First execution should fail
         results1 = self.scheduler.execute_retention_jobs()
-        assert results1["deletions_failed"] == 1
+        assert results1["deletions_failed"] == 1  # nosec: B101 - Test assertion
 
         # Fix the mock to succeed
         mock_executor.delete_experiment_data.side_effect = None
@@ -964,7 +1048,7 @@ class TestRetentionIntegration:
 
         # Second execution should succeed
         results2 = self.scheduler.execute_retention_jobs()
-        assert results2["deletions_completed"] == 1
+        assert results2["deletions_completed"] == 1  # nosec: B101 - Test assertion
 
     def test_performance_with_large_dataset(self):
         """Test performance with large dataset."""
@@ -988,8 +1072,10 @@ class TestRetentionIntegration:
         end_time = time.time()
 
         # Should complete efficiently
-        assert end_time - start_time < 10.0  # 10 second limit
-        assert results["total_subjects"] == 100
+        assert (
+            end_time - start_time < 10.0
+        )  # 10 second limit  # nosec: B101 - Test assertion
+        assert results["total_subjects"] == 100  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

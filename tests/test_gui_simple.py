@@ -53,7 +53,7 @@ class TestGUIComponents:
             else:
                 pytest.skip("Could not load GUI module spec")
 
-            assert GUI_module is not None
+            assert GUI_module is not None  # nosec: B101 - Test assertion
         except ImportError:
             pytest.skip("GUI module not available")
 
@@ -63,10 +63,10 @@ class TestGUIComponents:
             import customtkinter as ctk
 
             # Test basic CustomTkinter components
-            assert ctk.CTk is not None
-            assert ctk.CTkFrame is not None
-            assert ctk.CTkButton is not None
-            assert ctk.CTkLabel is not None
+            assert ctk.CTk is not None  # nosec: B101 - Test assertion
+            assert ctk.CTkFrame is not None  # nosec: B101 - Test assertion
+            assert ctk.CTkButton is not None  # nosec: B101 - Test assertion
+            assert ctk.CTkLabel is not None  # nosec: B101 - Test assertion
         except ImportError:
             pytest.skip("CustomTkinter not available")
 
@@ -89,7 +89,7 @@ class TestGUIComponents:
                 available = False
 
             # Just verify the check works, don't require all deps
-            assert isinstance(available, bool)
+            assert isinstance(available, bool)  # nosec: B101 - Test assertion
 
     def test_experiment_discovery(self):
         """Test that experiment discovery finds run files."""
@@ -99,12 +99,18 @@ class TestGUIComponents:
         run_files = list(experiments_dir.glob("run_*.py"))
 
         # Should find at least some experiment files
-        assert len(run_files) > 0, "No run_*.py files found"
+        assert (
+            len(run_files) > 0
+        ), "No run_*.py files found"  # nosec: B101 - Test assertion
 
         # Verify file naming pattern
         for file in run_files:
-            assert file.stem.startswith("run_"), f"Invalid experiment file: {file}"
-            assert file.suffix == ".py", f"Invalid file extension: {file}"
+            assert file.stem.startswith(
+                "run_"
+            ), f"Invalid experiment file: {file}"  # nosec: B101 - Test assertion
+            assert (
+                file.suffix == ".py"
+            ), f"Invalid file extension: {file}"  # nosec: B101 - Test assertion
 
     def test_experiment_card_creation(self):
         """Test experiment card data structure."""
@@ -116,24 +122,31 @@ class TestGUIComponents:
             "color": "#3498db",
         }
 
-        assert card_data["name"] is not None
-        assert card_data["script"].endswith(".py")
-        assert card_data["status"] in ["Ready", "Running", "Success", "Failed"]
+        assert card_data["name"] is not None  # nosec: B101 - Test assertion
+        assert card_data["script"].endswith(".py")  # nosec: B101 - Test assertion
+        assert card_data["status"] in [
+            "Ready",
+            "Running",
+            "Success",
+            "Failed",
+        ]  # nosec: B101 - Test assertion
 
     def test_menu_structure(self):
         """Test that menu structure is properly defined."""
         menu_items = ["File", "Edit", "View", "Help"]
 
         # Verify menu structure
-        assert len(menu_items) == 4
-        assert all(isinstance(item, str) for item in menu_items)
+        assert len(menu_items) == 4  # nosec: B101 - Test assertion
+        assert all(
+            isinstance(item, str) for item in menu_items
+        )  # nosec: B101 - Test assertion
 
     def test_console_output_format(self):
         """Test console output formatting."""
         # Test log format
         log_message = "[STARTING] Test Experiment (run_test.py)"
-        assert log_message.startswith("[")
-        assert "]" in log_message
+        assert log_message.startswith("[")  # nosec: B101 - Test assertion
+        assert "]" in log_message  # nosec: B101 - Test assertion
 
     def test_dependency_validation(self):
         """Test dependency validation logic."""
@@ -147,15 +160,17 @@ class TestGUIComponents:
             except ImportError:
                 missing_core.append(f"  - {module}: {description}")
 
-        assert len(missing_core) == 1
-        assert "nonexistent_module" in missing_core[0]
+        assert len(missing_core) == 1  # nosec: B101 - Test assertion
+        assert "nonexistent_module" in missing_core[0]  # nosec: B101 - Test assertion
 
     def test_path_handling(self):
         """Test cross-platform path handling."""
         # Test pathlib usage
         test_path = Path.home() / ".cache" / "test"
-        assert isinstance(test_path, Path)
-        assert str(test_path).replace("\\", "/").count("/") >= 2
+        assert isinstance(test_path, Path)  # nosec: B101 - Test assertion
+        assert (
+            str(test_path).replace("\\", "/").count("/") >= 2
+        )  # nosec: B101 - Test assertion
 
     def test_results_parsing(self):
         """Test experiment results parsing patterns."""
@@ -167,12 +182,12 @@ class TestGUIComponents:
         ]
 
         for line in test_lines:
-            assert ":" in line
+            assert ":" in line  # nosec: B101 - Test assertion
             parts = line.split(":")
-            assert len(parts) == 2
+            assert len(parts) == 2  # nosec: B101 - Test assertion
             try:
                 value = float(parts[1].strip().rstrip("%"))
-                assert isinstance(value, float)
+                assert isinstance(value, float)  # nosec: B101 - Test assertion
             except ValueError:
                 pass  # Some values might not be numeric
 
@@ -184,7 +199,7 @@ class TestGUISecurity:
         """Test script path validation."""
         # Test valid script path
         valid_script = "run_experiment.py"
-        assert valid_script.endswith(".py")
+        assert valid_script.endswith(".py")  # nosec: B101 - Test assertion
 
         # Test invalid script paths
         invalid_scripts = [
@@ -194,7 +209,9 @@ class TestGUISecurity:
         ]
 
         for script in invalid_scripts:
-            assert not script.endswith(".py") or ".." in script
+            assert (
+                not script.endswith(".py") or ".." in script
+            )  # nosec: B101 - Test assertion
 
     def test_subprocess_command_validation(self):
         """Test subprocess command validation."""
@@ -203,7 +220,9 @@ class TestGUISecurity:
         test_cmd = "python run_test.py"
 
         cmd_parts = test_cmd.split()
-        assert cmd_parts[0] in allowed or any(cmd_parts[0].endswith(a) for a in allowed)
+        assert cmd_parts[0] in allowed or any(
+            cmd_parts[0].endswith(a) for a in allowed
+        )  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

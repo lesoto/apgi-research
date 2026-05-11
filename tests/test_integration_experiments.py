@@ -138,16 +138,18 @@ class TestBaseExperimentIntegration:
                 return {"accuracy": 1.0}
 
         exp = MockExperiment(experiment_config)
-        assert exp.config["experiment_name"] == "integration_test"
-        assert exp.config["n_trials"] == 10
+        assert (
+            exp.config["experiment_name"] == "integration_test"
+        )  # nosec: B101 - Test assertion
+        assert exp.config["n_trials"] == 10  # nosec: B101 - Test assertion
 
     def test_experiment_run_lifecycle(self, experiment_config: Dict[str, Any]) -> None:
         """Test complete experiment run lifecycle."""
         exp = create_mock_experiment(experiment_config)
 
         # Pre-run checks
-        assert not exp.is_running
-        assert exp.current_trial == 0
+        assert not exp.is_running  # nosec: B101 - Test assertion
+        assert exp.current_trial == 0  # nosec: B101 - Test assertion
 
         # Run experiment (will use default implementations)
         with pytest.raises(NotImplementedError):
@@ -169,13 +171,13 @@ class TestBaseExperimentIntegration:
             mode="w", delete=False, suffix=".json"
         ) as temp_file:
             exp.save_results(temp_file.name)
-            assert Path(temp_file.name).exists()
+            assert Path(temp_file.name).exists()  # nosec: B101 - Test assertion
 
             # Verify saved data
             with open(temp_file.name) as f:
                 loaded = json.load(f)
             # Check that we have the expected number of trials
-            assert len(loaded) == 5
+            assert len(loaded) == 5  # nosec: B101 - Test assertion
 
     @pytest.mark.parametrize(
         "config_modification,expected_error",
@@ -232,8 +234,12 @@ class TestAPGIIntegration:
         }
 
         # Verify parameters are accessible
-        assert getattr(config["apgi_params"], "tau_S", None) == 0.35
-        assert getattr(config["apgi_params"], "beta", None) == 1.5
+        assert (
+            getattr(config["apgi_params"], "tau_S", None) == 0.35
+        )  # nosec: B101 - Test assertion
+        assert (
+            getattr(config["apgi_params"], "beta", None) == 1.5
+        )  # nosec: B101 - Test assertion
 
     def test_apgi_params_validation_in_integration(
         self, apgi_params: APGIParameters
@@ -241,12 +247,12 @@ class TestAPGIIntegration:
         """Test APGI parameter validation within integrated workflow."""
         # Valid parameters should pass
         violations = apgi_params.validate()
-        assert len(violations) == 0
+        assert len(violations) == 0  # nosec: B101 - Test assertion
 
         # Modify to create invalid params
         apgi_params.tau_S = 2.0  # Out of range
         violations = apgi_params.validate()
-        assert len(violations) > 0
+        assert len(violations) > 0  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -276,7 +282,7 @@ class TestFileIOIntegration:
         with open(file_path) as f:
             loaded = json.load(f)
 
-        assert loaded == data
+        assert loaded == data  # nosec: B101 - Test assertion
 
     def test_numpy_array_save_load(self, temp_dir: Path) -> None:
         """Test numpy array save/load integration."""
@@ -300,8 +306,8 @@ class TestFileIOIntegration:
             json.dump(large_data, f)
 
         # Verify file was created and has content
-        assert file_path.exists()
-        assert file_path.stat().st_size > 0
+        assert file_path.exists()  # nosec: B101 - Test assertion
+        assert file_path.stat().st_size > 0  # nosec: B101 - Test assertion
 
     @pytest.mark.adversarial
     def test_corrupted_file_handling(self, temp_dir: Path) -> None:
@@ -344,8 +350,10 @@ class TestConfigurationIntegration:
 
     def test_environment_variable_access(self, env_vars: Dict[str, str]) -> None:
         """Test environment variable access in integration."""
-        assert os.environ.get("TEST_VAR") == "test_value"
-        assert os.environ.get("APGI_SEED") == "12345"
+        assert (
+            os.environ.get("TEST_VAR") == "test_value"
+        )  # nosec: B101 - Test assertion
+        assert os.environ.get("APGI_SEED") == "12345"  # nosec: B101 - Test assertion
 
     def test_configuration_from_env(self, env_vars: Dict[str, str]) -> None:
         """Test building configuration from environment variables."""
@@ -354,8 +362,8 @@ class TestConfigurationIntegration:
             "test_mode": os.environ.get("TEST_VAR") == "test_value",
         }
 
-        assert config["random_seed"] == 12345
-        assert config["test_mode"] is True
+        assert config["random_seed"] == 12345  # nosec: B101 - Test assertion
+        assert config["test_mode"] is True  # nosec: B101 - Test assertion
 
     def test_configuration_priority(self) -> None:
         """Test configuration priority (env vars vs defaults vs explicit)."""
@@ -370,7 +378,7 @@ class TestConfigurationIntegration:
 
         # Merge with priority: explicit > env > default
         final_config = {**default_config, **env_config, **explicit_config}
-        assert final_config["value"] == 3
+        assert final_config["value"] == 3  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -404,8 +412,8 @@ class TestExternalServiceMocking:
         # Simulate API call
         response = mock_requests.get("http://test.api/data")
 
-        assert response.status_code == 200
-        assert response.json()["status"] == "ok"
+        assert response.status_code == 200  # nosec: B101 - Test assertion
+        assert response.json()["status"] == "ok"  # nosec: B101 - Test assertion
 
     def test_database_mocking(self, mock_factory: MockFactory) -> None:
         """Test database mocking in integration."""
@@ -440,7 +448,7 @@ class TestErrorHandlingIntegration:
             import APGI_System
 
             importlib.reload(APGI_System)
-            assert not APGI_System.PLOTLY_AVAILABLE
+            assert not APGI_System.PLOTLY_AVAILABLE  # nosec: B101 - Test assertion
 
     def test_exception_chain_handling(self) -> None:
         """Test handling of exception chains."""
@@ -454,8 +462,8 @@ class TestErrorHandlingIntegration:
         with pytest.raises(RuntimeError) as exc_info:
             failing_operation()
 
-        assert "Outer error" in str(exc_info.value)
-        assert exc_info.value.__cause__ is not None
+        assert "Outer error" in str(exc_info.value)  # nosec: B101 - Test assertion
+        assert exc_info.value.__cause__ is not None  # nosec: B101 - Test assertion
 
     def test_retry_logic_pattern(self) -> None:
         """Test retry logic pattern for transient failures."""
@@ -479,8 +487,8 @@ class TestErrorHandlingIntegration:
                     raise
                 continue
 
-        assert result == "success"
-        assert attempts == max_retries
+        assert result == "success"  # nosec: B101 - Test assertion
+        assert attempts == max_retries  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -502,8 +510,10 @@ class TestStatePersistenceIntegration:
             stats.update(float(i))
 
         # State should be preserved
-        assert stats._n_updates == 100
-        assert stats.mu > 0  # Should have converged toward mean
+        assert stats._n_updates == 100  # nosec: B101 - Test assertion
+        assert (
+            stats.mu > 0
+        )  # Should have converged toward mean  # nosec: B101 - Test assertion
 
     def test_checkpoint_save_restore(self, temp_dir: Path) -> None:
         """Test checkpoint save and restore functionality."""
@@ -532,8 +542,8 @@ class TestStatePersistenceIntegration:
             theta_0=restored_data["theta_0"],
         )
 
-        assert restored_params.tau_S == params.tau_S
-        assert restored_params.beta == params.beta
+        assert restored_params.tau_S == params.tau_S  # nosec: B101 - Test assertion
+        assert restored_params.beta == params.beta  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -620,14 +630,18 @@ class TestEndToEndSimulation:
             ignition_probs.append(prob)
 
         # Verify simulation completed
-        assert len(S_history) == n_steps
-        assert len(theta_history) == n_steps
-        assert len(ignition_probs) == n_steps
+        assert len(S_history) == n_steps  # nosec: B101 - Test assertion
+        assert len(theta_history) == n_steps  # nosec: B101 - Test assertion
+        assert len(ignition_probs) == n_steps  # nosec: B101 - Test assertion
 
         # Verify state constraints were maintained
-        assert all(s >= 0 for s in S_history), "S should stay non-negative"
-        assert all(t > 0 for t in theta_history), "theta should stay positive"
         assert all(
+            s >= 0 for s in S_history
+        ), "S should stay non-negative"  # nosec: B101 - Test assertion
+        assert all(
+            t > 0 for t in theta_history
+        ), "theta should stay positive"  # nosec: B101 - Test assertion
+        assert all(  # nosec: B101 - Test assertion
             0 <= p <= 1 for p in ignition_probs
         ), "probabilities should be in [0,1]"
 
@@ -647,6 +661,6 @@ class TestEndToEndSimulation:
             results[beta] = Pi_i_eff
 
         # Verify sweep completed
-        assert len(results) == len(beta_values)
+        assert len(results) == len(beta_values)  # nosec: B101 - Test assertion
         # Higher beta should generally lead to higher effective precision
-        assert results[2.5] > results[0.5]
+        assert results[2.5] > results[0.5]  # nosec: B101 - Test assertion

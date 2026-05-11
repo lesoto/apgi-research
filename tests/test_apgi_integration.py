@@ -26,11 +26,11 @@ class TestAPGIParameters:
     def test_default_parameters(self):
         """Test default parameter values."""
         params = APGIParameters()
-        assert params.tau_S == 0.35
-        assert params.beta == 1.5
-        assert params.theta_0 == 0.5
-        assert params.alpha == 5.5
-        assert params.rho == 0.7
+        assert params.tau_S == 0.35  # nosec: B101 - Test assertion
+        assert params.beta == 1.5  # nosec: B101 - Test assertion
+        assert params.theta_0 == 0.5  # nosec: B101 - Test assertion
+        assert params.alpha == 5.5  # nosec: B101 - Test assertion
+        assert params.rho == 0.7  # nosec: B101 - Test assertion
 
     def test_custom_parameters(self):
         """Test custom parameter values."""
@@ -40,50 +40,50 @@ class TestAPGIParameters:
             theta_0=0.3,
             alpha=6.0,
         )
-        assert params.tau_S == 0.4
-        assert params.beta == 2.0
-        assert params.theta_0 == 0.3
-        assert params.alpha == 6.0
+        assert params.tau_S == 0.4  # nosec: B101 - Test assertion
+        assert params.beta == 2.0  # nosec: B101 - Test assertion
+        assert params.theta_0 == 0.3  # nosec: B101 - Test assertion
+        assert params.alpha == 6.0  # nosec: B101 - Test assertion
 
     def test_parameter_validation_valid(self):
         """Test validation with valid parameters."""
         params = APGIParameters()
         violations = params.validate()
-        assert len(violations) == 0
+        assert len(violations) == 0  # nosec: B101 - Test assertion
 
     def test_parameter_validation_invalid_tau_S(self):
         """Test validation with invalid tau_S."""
         params = APGIParameters(tau_S=0.1)  # Too low
         violations = params.validate()
-        assert len(violations) == 1
-        assert "tau_S" in violations[0]
+        assert len(violations) == 1  # nosec: B101 - Test assertion
+        assert "tau_S" in violations[0]  # nosec: B101 - Test assertion
 
     def test_parameter_validation_invalid_beta(self):
         """Test validation with invalid beta."""
         params = APGIParameters(beta=3.0)  # Too high
         violations = params.validate()
-        assert len(violations) == 1
-        assert "beta" in violations[0]
+        assert len(violations) == 1  # nosec: B101 - Test assertion
+        assert "beta" in violations[0]  # nosec: B101 - Test assertion
 
     def test_parameter_validation_invalid_alpha(self):
         """Test validation with invalid alpha."""
         params = APGIParameters(alpha=2.0)  # Too low
         violations = params.validate()
-        assert len(violations) == 1
-        assert "alpha" in violations[0]
+        assert len(violations) == 1  # nosec: B101 - Test assertion
+        assert "alpha" in violations[0]  # nosec: B101 - Test assertion
 
     def test_parameter_validation_invalid_rho(self):
         """Test validation with invalid rho."""
         params = APGIParameters(rho=0.1)  # Too low
         violations = params.validate()
-        assert len(violations) == 1
-        assert "rho" in violations[0]
+        assert len(violations) == 1  # nosec: B101 - Test assertion
+        assert "rho" in violations[0]  # nosec: B101 - Test assertion
 
     def test_parameter_validation_multiple_violations(self):
         """Test validation with multiple invalid parameters."""
         params = APGIParameters(tau_S=0.1, beta=3.0, alpha=2.0)
         violations = params.validate()
-        assert len(violations) == 3
+        assert len(violations) == 3  # nosec: B101 - Test assertion
 
 
 class TestRunningStatistics:
@@ -92,17 +92,19 @@ class TestRunningStatistics:
     def test_initialization(self):
         """Test initialization with default values."""
         stats = RunningStatistics()
-        assert stats.mean == 0.0
-        assert stats.var == 1.0
-        assert stats.count == 0
+        assert stats.mean == 0.0  # nosec: B101 - Test assertion
+        assert stats.var == 1.0  # nosec: B101 - Test assertion
+        assert stats.count == 0  # nosec: B101 - Test assertion
 
     def test_update_single_value(self):
         """Test updating with a single value."""
         stats = RunningStatistics()
         stats.update(1.0)
-        assert stats.count == 1
-        assert stats.mean == 1.0
-        assert stats.var == 0.0  # Single value has zero variance
+        assert stats.count == 1  # nosec: B101 - Test assertion
+        assert stats.mean == 1.0  # nosec: B101 - Test assertion
+        assert (
+            stats.var == 0.0
+        )  # Single value has zero variance  # nosec: B101 - Test assertion
 
     def test_update_multiple_values(self):
         """Test updating with multiple values."""
@@ -110,10 +112,10 @@ class TestRunningStatistics:
         for val in [1.0, 2.0, 3.0, 4.0, 5.0]:
             stats.update(val)
 
-        assert stats.count == 5
-        assert abs(stats.mean - 3.0) < 0.01
+        assert stats.count == 5  # nosec: B101 - Test assertion
+        assert abs(stats.mean - 3.0) < 0.01  # nosec: B101 - Test assertion
         # Variance should be approximately 2.0 for [1,2,3,4,5]
-        assert abs(stats.var - 2.0) < 0.5
+        assert abs(stats.var - 2.0) < 0.5  # nosec: B101 - Test assertion
 
     def test_z_score_calculation(self):
         """Test z-score calculation."""
@@ -122,7 +124,7 @@ class TestRunningStatistics:
         stats.var = 4.0  # std = 2.0
 
         z = stats.z_score(7.0)
-        assert abs(z - 1.0) < 0.01  # (7-5)/2 = 1.0
+        assert abs(z - 1.0) < 0.01  # (7-5)/2 = 1.0  # nosec: B101 - Test assertion
 
     def test_z_score_zero_variance(self):
         """Test z-score with zero variance."""
@@ -131,7 +133,9 @@ class TestRunningStatistics:
         stats.var = 0.0
 
         z = stats.z_score(5.0)
-        assert z == 0.0  # Should return 0 for zero variance
+        assert (
+            z == 0.0
+        )  # Should return 0 for zero variance  # nosec: B101 - Test assertion
 
 
 class TestAPGIIntegration:
@@ -146,32 +150,38 @@ class TestAPGIIntegration:
 
     def test_initialization(self):
         """Test APGI integration initialization."""
-        assert self.apgi.params is not None
-        assert self.apgi.S == 0.0  # Initial surprise
-        assert self.apgi.theta == self.params.theta_0  # Initial threshold
-        assert self.apgi.M == 0.0  # Initial somatic marker
+        assert self.apgi.params is not None  # nosec: B101 - Test assertion
+        assert self.apgi.S == 0.0  # Initial surprise  # nosec: B101 - Test assertion
+        assert (
+            self.apgi.theta == self.params.theta_0
+        )  # Initial threshold  # nosec: B101 - Test assertion
+        assert (
+            self.apgi.M == 0.0
+        )  # Initial somatic marker  # nosec: B101 - Test assertion
 
     def test_compute_prediction_error(self):
         """Test prediction error computation."""
         error = self.apgi.compute_prediction_error(observed=0.8, predicted=0.5)
-        assert abs(error - 0.3) < 0.01
+        assert abs(error - 0.3) < 0.01  # nosec: B101 - Test assertion
 
     def test_compute_precision(self):
         """Test precision computation."""
         precision = self.apgi.compute_precision(variance=0.25)
-        assert abs(precision - 2.0) < 0.01  # 1/0.25 = 4, but may have adjustments
+        assert (
+            abs(precision - 2.0) < 0.01
+        )  # 1/0.25 = 4, but may have adjustments  # nosec: B101 - Test assertion
 
     def test_compute_surprise(self):
         """Test surprise computation."""
         surprise = self.apgi.compute_surprise(prediction_error=0.5, precision=2.0)
-        assert surprise >= 0.0
+        assert surprise >= 0.0  # nosec: B101 - Test assertion
 
     def test_compute_ignition_probability(self):
         """Test ignition probability computation."""
         prob = self.apgi.compute_ignition_probability(
             prediction_error=0.5, precision=1.0, somatic_marker=0.0
         )
-        assert 0.0 <= prob <= 1.0
+        assert 0.0 <= prob <= 1.0  # nosec: B101 - Test assertion
 
     def test_process_trial(self):
         """Test processing a single trial."""
@@ -183,10 +193,12 @@ class TestAPGIIntegration:
             precision_int=1.0,
         )
 
-        assert "S" in result  # Surprise
-        assert "theta" in result  # Threshold
-        assert "M" in result  # Somatic marker
-        assert "ignition_prob" in result  # Ignition probability
+        assert "S" in result  # Surprise  # nosec: B101 - Test assertion
+        assert "theta" in result  # Threshold  # nosec: B101 - Test assertion
+        assert "M" in result  # Somatic marker  # nosec: B101 - Test assertion
+        assert (
+            "ignition_prob" in result
+        )  # Ignition probability  # nosec: B101 - Test assertion
 
     def test_process_trial_survival(self):
         """Test processing a survival-relevant trial."""
@@ -200,7 +212,7 @@ class TestAPGIIntegration:
 
         # Survival trials should have lower threshold due to positive outcomes
         # and gamma_M < 0 causing threshold to decrease
-        assert result["theta"] <= self.params.theta_0
+        assert result["theta"] <= self.params.theta_0  # nosec: B101 - Test assertion
 
     def test_update_dynamics(self):
         """Test dynamics update."""
@@ -213,7 +225,9 @@ class TestAPGIIntegration:
 
         # S should change after update
         # Note: may not always increase due to noise
-        assert self.apgi.S != initial_S or initial_S == 0.0
+        assert (
+            self.apgi.S != initial_S or initial_S == 0.0
+        )  # nosec: B101 - Test assertion
 
     def test_reset_after_ignition(self):
         """Test reset after ignition."""
@@ -221,7 +235,9 @@ class TestAPGIIntegration:
         self.apgi.reset_after_ignition()
 
         # S should be reduced by rho factor
-        assert abs(self.apgi.S - (1.0 * (1 - self.params.rho))) < 0.01
+        assert (
+            abs(self.apgi.S - (1.0 * (1 - self.params.rho))) < 0.01
+        )  # nosec: B101 - Test assertion
 
     def test_get_trial_metrics(self):
         """Test getting trial metrics."""
@@ -234,9 +250,9 @@ class TestAPGIIntegration:
         )
 
         metrics = self.apgi.get_trial_metrics()
-        assert "surprise" in metrics
-        assert "threshold" in metrics
-        assert "somatic_marker" in metrics
+        assert "surprise" in metrics  # nosec: B101 - Test assertion
+        assert "threshold" in metrics  # nosec: B101 - Test assertion
+        assert "somatic_marker" in metrics  # nosec: B101 - Test assertion
 
     def test_finalize(self):
         """Test finalization and summary."""
@@ -251,9 +267,9 @@ class TestAPGIIntegration:
             )
 
         summary = self.apgi.finalize()
-        assert "ignition_rate" in summary
-        assert "mean_surprise" in summary
-        assert "metabolic_cost" in summary
+        assert "ignition_rate" in summary  # nosec: B101 - Test assertion
+        assert "mean_surprise" in summary  # nosec: B101 - Test assertion
+        assert "metabolic_cost" in summary  # nosec: B101 - Test assertion
 
     def test_ignition_rate_calculation(self):
         """Test ignition rate calculation."""
@@ -269,7 +285,7 @@ class TestAPGIIntegration:
 
         summary = self.apgi.finalize()
         # Should have some ignitions with high prediction error
-        assert summary["ignition_rate"] >= 0.0
+        assert summary["ignition_rate"] >= 0.0  # nosec: B101 - Test assertion
 
 
 class TestAPGIEquations:
@@ -297,7 +313,7 @@ class TestAPGIEquations:
             )
 
         # S should decay towards 0
-        assert self.apgi.S < initial_S
+        assert self.apgi.S < initial_S  # nosec: B101 - Test assertion
 
     def test_threshold_adaptation_equation(self):
         """Test threshold adaptation: dtheta/dt = adaptation dynamics."""
@@ -315,7 +331,7 @@ class TestAPGIEquations:
 
         # Threshold may adapt (increase or decrease depending on dynamics)
         # Just check it's still in valid range
-        assert 0.0 <= self.apgi.theta <= 1.0
+        assert 0.0 <= self.apgi.theta <= 1.0  # nosec: B101 - Test assertion
 
     def test_somatic_marker_equation(self):
         """Test somatic marker dynamics: dM/dt = -M/tau_M + beta * f(outcome)."""
@@ -333,7 +349,7 @@ class TestAPGIEquations:
 
         # M should change
         # Just check it's still in valid range
-        assert -1.0 <= self.apgi.M <= 1.0
+        assert -1.0 <= self.apgi.M <= 1.0  # nosec: B101 - Test assertion
 
     def test_ignition_probability_sigmoid(self):
         """Test ignition probability sigmoid: P(ignition) = sigmoid(alpha * (S - theta))."""
@@ -362,8 +378,8 @@ class TestAPGIEquations:
         )
 
         # Probability above threshold should be higher
-        assert prob_above >= prob_at_threshold
-        assert prob_at_threshold >= prob_below
+        assert prob_above >= prob_at_threshold  # nosec: B101 - Test assertion
+        assert prob_at_threshold >= prob_below  # nosec: B101 - Test assertion
 
     def test_metabolic_cost_calculation(self):
         """Test metabolic cost calculation."""
@@ -379,7 +395,7 @@ class TestAPGIEquations:
 
         summary = self.apgi.finalize()
         # Metabolic cost should be non-negative
-        assert summary["metabolic_cost"] >= 0.0
+        assert summary["metabolic_cost"] >= 0.0  # nosec: B101 - Test assertion
 
 
 class TestFormatAPGIOutput:
@@ -388,7 +404,7 @@ class TestFormatAPGIOutput:
     def test_format_empty_summary(self):
         """Test formatting empty summary."""
         output = format_apgi_output({})
-        assert isinstance(output, str)
+        assert isinstance(output, str)  # nosec: B101 - Test assertion
 
     def test_format_full_summary(self):
         """Test formatting full summary."""
@@ -401,8 +417,10 @@ class TestFormatAPGIOutput:
         }
 
         output = format_apgi_output(summary)
-        assert "ignition_rate" in output.lower() or "ignition" in output.lower()
-        assert isinstance(output, str)
+        assert (
+            "ignition_rate" in output.lower() or "ignition" in output.lower()
+        )  # nosec: B101 - Test assertion
+        assert isinstance(output, str)  # nosec: B101 - Test assertion
 
 
 class TestAPGIEdgeCases:
@@ -425,7 +443,9 @@ class TestAPGIEdgeCases:
             precision_int=1.0,
         )
 
-        assert result["S"] >= 0.0  # Should still have some surprise from noise
+        assert (
+            result["S"] >= 0.0
+        )  # Should still have some surprise from noise  # nosec: B101 - Test assertion
 
     def test_maximum_prediction_error(self):
         """Test with maximum prediction error."""
@@ -437,7 +457,9 @@ class TestAPGIEdgeCases:
             precision_int=1.0,
         )
 
-        assert result["S"] > 0.0  # Should have high surprise
+        assert (
+            result["S"] > 0.0
+        )  # Should have high surprise  # nosec: B101 - Test assertion
 
     def test_very_high_precision(self):
         """Test with very high precision."""
@@ -450,7 +472,7 @@ class TestAPGIEdgeCases:
         )
 
         # Should handle high precision without errors
-        assert "S" in result
+        assert "S" in result  # nosec: B101 - Test assertion
 
     def test_very_low_precision(self):
         """Test with very low precision."""
@@ -463,7 +485,7 @@ class TestAPGIEdgeCases:
         )
 
         # Should handle low precision without errors
-        assert "S" in result
+        assert "S" in result  # nosec: B101 - Test assertion
 
     def test_negative_somatic_marker(self):
         """Test with negative somatic marker."""
@@ -475,7 +497,7 @@ class TestAPGIEdgeCases:
             somatic_marker=-0.5,
         )
 
-        assert 0.0 <= prob <= 1.0
+        assert 0.0 <= prob <= 1.0  # nosec: B101 - Test assertion
 
     def test_positive_somatic_marker(self):
         """Test with positive somatic marker."""
@@ -487,7 +509,7 @@ class TestAPGIEdgeCases:
             somatic_marker=0.5,
         )
 
-        assert 0.0 <= prob <= 1.0
+        assert 0.0 <= prob <= 1.0  # nosec: B101 - Test assertion
 
     def test_multiple_ignitions(self):
         """Test multiple ignition events."""
@@ -506,7 +528,7 @@ class TestAPGIEdgeCases:
                 ignition_count += 1
 
         # Should have some ignitions with high prediction error
-        assert ignition_count > 0
+        assert ignition_count > 0  # nosec: B101 - Test assertion
 
 
 class TestAPGIIntegrationWithExperiments:
@@ -534,8 +556,8 @@ class TestAPGIIntegrationWithExperiments:
             )
 
         summary = self.apgi.finalize()
-        assert "ignition_rate" in summary
-        assert "mean_somatic_marker" in summary
+        assert "ignition_rate" in summary  # nosec: B101 - Test assertion
+        assert "mean_somatic_marker" in summary  # nosec: B101 - Test assertion
 
     def test_attentional_blink_scenario(self):
         """Test APGI with attentional blink-like trials."""
@@ -561,7 +583,7 @@ class TestAPGIIntegrationWithExperiments:
             )
 
         summary = self.apgi.finalize()
-        assert "mean_surprise" in summary
+        assert "mean_surprise" in summary  # nosec: B101 - Test assertion
 
     def test_stroop_effect_scenario(self):
         """Test APGI with Stroop-like interference."""
@@ -586,7 +608,7 @@ class TestAPGIIntegrationWithExperiments:
             )
 
         summary = self.apgi.finalize()
-        assert "mean_surprise" in summary
+        assert "mean_surprise" in summary  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

@@ -269,10 +269,42 @@ class EnhancedFlankerRunner:
         summary = self.experiment.get_summary()
         completion_time = time.time() - (self.start_time or 0.0)
 
+        # Calculate d' from hit rate and false alarm rate
+        trials = self.experiment.trials
+        if trials:
+            # Hit rate: proportion of correct responses
+            hit_rate = np.mean([t.correct for t in trials])
+
+            # False alarm rate: proportion of incorrect responses on neutral trials
+            neutral_trials = [t for t in trials if t.trial_type == TrialType.NEUTRAL]
+            false_alarm_rate = (
+                1.0 - np.mean([t.correct for t in neutral_trials])
+                if neutral_trials
+                else 0.0
+            )
+
+            # Calculate d' from hit rate and false alarm rate
+            # Avoid log(0) by using small epsilon
+            epsilon = 1e-10
+            hit_rate_safe = max(epsilon, hit_rate)
+            fa_rate_safe = max(epsilon, false_alarm_rate)
+            # Use scipy.stats.norm.ppf for inverse normal distribution
+            try:
+                from scipy.stats import norm
+
+                z_hit = norm.ppf(hit_rate_safe)
+                z_fa = norm.ppf(fa_rate_safe)
+                d_prime = z_hit - z_fa
+            except ImportError:
+                # Fallback if scipy not available
+                d_prime = 0.0
+        else:
+            d_prime = 0.0
+
         results = {
             "num_trials": len(self.experiment.trials),
             "completion_time_s": completion_time,
-            "d_prime": summary.get("d_prime", 0.0),
+            "d_prime": d_prime,
             "accuracy": summary.get("accuracy", 0.0),
             "congruent_rt_ms": summary.get("congruent_rt_ms", 0.0),
             "incongruent_rt_ms": summary.get("incongruent_rt_ms", 0.0),

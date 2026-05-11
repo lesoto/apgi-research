@@ -13,34 +13,33 @@ Targets uncovered areas:
 from pathlib import Path
 from typing import List
 from unittest.mock import Mock, patch
-from tqdm import tqdm as mock_tqdm
 
 import pytest
 import torch
+from tqdm import tqdm as mock_tqdm
 
 from prepare import (
-    TOKENIZER_DIR,
     CACHE_DIR,
     DATA_DIR,
+    TOKENIZER_DIR,
     VOCAB_SIZE,
-    train_tokenizer,
-    get_token_bytes,
-    make_dataloader,
-    evaluate_bpb,
-    text_iterator,
-    get_cache_info,
     cleanup_cache,
     download_data,
     download_file,
     download_single_shard,
     download_worker,
+    evaluate_bpb,
+    get_cache_info,
+    get_token_bytes,
+    main,
+    make_dataloader,
     parse_args,
     read_shard,
+    text_iterator,
+    train_tokenizer,
     validate_data_format,
     validate_tokenizer,
 )
-
-from prepare import main
 
 
 class TestDownloadFunctions:
@@ -55,14 +54,14 @@ class TestDownloadFunctions:
 
             result = download_single_shard(1)
 
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_download_single_shard_exists(self):
         """Test shard download when file exists."""
         with patch("prepare.Path.exists", return_value=True):
             result = download_single_shard(1)
 
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_download_single_shard_failure(self):
         """Test shard download failure handling."""
@@ -72,7 +71,7 @@ class TestDownloadFunctions:
 
             result = download_single_shard(1)
 
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_download_single_shard_retry_logic(self):
         """Test retry logic with exponential backoff."""
@@ -88,8 +87,8 @@ class TestDownloadFunctions:
                 result = download_single_shard(1)
 
                 # Should have called sleep twice
-                assert mock_sleep.call_count == 2
-                assert result is True
+                assert mock_sleep.call_count == 2  # nosec: B101 - Test assertion
+                assert result is True  # nosec: B101 - Test assertion
 
     def test_download_data_parallel(self):
         """Test parallel download functionality."""
@@ -137,7 +136,7 @@ class TestDownloadFunctions:
                     "http://example.com/file", Path("/tmp/test_file")
                 )
 
-                assert result is True
+                assert result is True  # nosec: B101 - Test assertion
                 mock_tqdm.assert_called_once()
 
     def test_download_shard_worker_function(self):
@@ -187,7 +186,7 @@ class TestTokenizerTraining:
                                     (256,), dtype=torch.uint8
                                 )
                                 mock_torch_save.assert_called_once()
-                                assert result is True
+                                assert result is True  # nosec: B101 - Test assertion
 
     def test_train_tokenizer_failure(self):
         """Test tokenizer training failure handling."""
@@ -196,14 +195,14 @@ class TestTokenizerTraining:
 
             result = train_tokenizer()
 
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_train_tokenizer_already_exists(self):
         """Test training when tokenizer already exists."""
         with patch("prepare.Path.exists", return_value=True):
             result = train_tokenizer()
 
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_tokenizer_files_creation(self):
         """Test tokenizer file creation and paths."""
@@ -213,7 +212,7 @@ class TestTokenizerTraining:
                 train_tokenizer()
 
                 mock_makedirs.assert_called_once_with(TOKENIZER_DIR, exist_ok=True)
-                assert True
+                assert True  # nosec: B101 - Test assertion
 
     def test_get_token_bytes_device_handling(self):
         """Test token bytes loading with different devices."""
@@ -225,7 +224,7 @@ class TestTokenizerTraining:
 
             # Test CPU device
             result_cpu = get_token_bytes("cpu")
-            assert torch.equal(result_cpu, cpu_tensor)
+            assert torch.equal(result_cpu, cpu_tensor)  # nosec: B101 - Test assertion
             mock_load.assert_called_once_with(
                 TOKENIZER_DIR / "token_bytes.pt", map_location="cpu"
             )
@@ -233,7 +232,7 @@ class TestTokenizerTraining:
             # Test CUDA device
             mock_load.return_value = gpu_tensor
             result_gpu = get_token_bytes("cuda")
-            assert torch.equal(result_gpu, gpu_tensor)
+            assert torch.equal(result_gpu, gpu_tensor)  # nosec: B101 - Test assertion
             mock_load.assert_called_once_with(
                 TOKENIZER_DIR / "token_bytes.pt", map_location="cuda"
             )
@@ -260,7 +259,9 @@ class TestDataLoading:
                     for doc in text_iterator():
                         mock_docs.append(doc)
 
-                    assert len(mock_docs) == 6  # 2 groups × 3 texts each
+                    assert (
+                        len(mock_docs) == 6
+                    )  # 2 groups × 3 texts each  # nosec: B101 - Test assertion
                     mock_read.assert_called()
 
     def test_text_iterator_doc_cap(self):
@@ -280,9 +281,11 @@ class TestDataLoading:
                     docs = list(text_iterator(doc_cap=100))
 
                     # Should stop after reaching cap
-                    assert len(docs) == 10  # 10 documents capped at 100 chars
+                    assert (
+                        len(docs) == 10
+                    )  # 10 documents capped at 100 chars  # nosec: B101 - Test assertion
                     for doc in docs:
-                        assert len(doc) <= 100
+                        assert len(doc) <= 100  # nosec: B101 - Test assertion
 
     def test_text_iterator_no_files(self):
         """Test text iterator with no parquet files."""
@@ -300,7 +303,7 @@ class TestDataLoading:
                 with patch("prepare.torch.empty") as mock_empty:
                     make_dataloader(mock_tokenizer, B=4, T=8, split="train")
 
-                assert True
+                assert True  # nosec: B101 - Test assertion
                 mock_empty.assert_called()
                 mock_tokenizer.get_bos_token_id.assert_called_once()
 
@@ -320,7 +323,7 @@ class TestDataLoading:
                         with patch("prepare.torch.empty") as mock_empty:
                             make_dataloader(mock_tokenizer, B=2, T=4, split="train")
 
-                            assert True
+                            assert True  # nosec: B101 - Test assertion
                             mock_tokenizer.get_bos_token_id.assert_called_once()
                             mock_empty.assert_called()
 
@@ -335,7 +338,7 @@ class TestDataLoading:
                     train_tokenizer()
                     evaluate_bpb(mock_model, mock_tokenizer, batch_size=2)
 
-                    assert True
+                    assert True  # nosec: B101 - Test assertion
                     mock_tqdm.assert_called_once()
 
 
@@ -347,11 +350,11 @@ class TestUtilityFunctions:
         with patch("prepare.sys.argv", return_value=["prepare.py"]):
             args = parse_args()
 
-            assert args.num_shards == 10
-            assert args.skip_download is False
-            assert args.skip_tokenizer is False
-            assert args.download_workers == 8
-            assert args.force is False
+            assert args.num_shards == 10  # nosec: B101 - Test assertion
+            assert args.skip_download is False  # nosec: B101 - Test assertion
+            assert args.skip_tokenizer is False  # nosec: B101 - Test assertion
+            assert args.download_workers == 8  # nosec: B101 - Test assertion
+            assert args.force is False  # nosec: B101 - Test assertion
 
     def test_parse_args_custom(self):
         """Test argument parsing with custom values."""
@@ -368,9 +371,9 @@ class TestUtilityFunctions:
         ):
             args = parse_args()
 
-            assert args.num_shards == 5
-            assert args.skip_download is True
-            assert args.download_workers == 4
+            assert args.num_shards == 5  # nosec: B101 - Test assertion
+            assert args.skip_download is True  # nosec: B101 - Test assertion
+            assert args.download_workers == 4  # nosec: B101 - Test assertion
 
     def test_get_cache_info(self):
         """Test cache information retrieval."""
@@ -381,15 +384,17 @@ class TestUtilityFunctions:
 
                 result = get_cache_info()
 
-                assert result["size_bytes"] == 1000000
-                assert result["last_modified"] == 1640995200
+                assert result["size_bytes"] == 1000000  # nosec: B101 - Test assertion
+                assert (
+                    result["last_modified"] == 1640995200
+                )  # nosec: B101 - Test assertion
 
     def test_cleanup_cache_success(self):
         """Test successful cache cleanup."""
         with patch("prepare.shutil.rmtree") as mock_rmtree:
             result = cleanup_cache()
 
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
             mock_rmtree.assert_called_once_with(CACHE_DIR)
 
     def test_cleanup_cache_no_directory(self):
@@ -399,7 +404,7 @@ class TestUtilityFunctions:
 
             result = cleanup_cache()
 
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
             mock_rmtree.assert_called_once_with(CACHE_DIR)
 
     def test_validate_tokenizer_basic(self):
@@ -410,7 +415,7 @@ class TestUtilityFunctions:
 
         result = validate_tokenizer(mock_tokenizer)
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         mock_tokenizer.encode.assert_called_once_with("Hello, world!")
         mock_tokenizer.decode.assert_called_once_with([1, 2, 3])
 
@@ -421,7 +426,7 @@ class TestUtilityFunctions:
 
         result = validate_tokenizer(mock_tokenizer)
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_validate_data_format_valid(self):
         """Test valid data format validation."""
@@ -429,7 +434,7 @@ class TestUtilityFunctions:
 
         result = validate_data_format(valid_data)
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_validate_data_format_invalid(self):
         """Test invalid data format validation."""
@@ -437,7 +442,7 @@ class TestUtilityFunctions:
 
         result = validate_data_format(invalid_data)
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_validate_data_format_missing_fields(self):
         """Test data format with missing required fields."""
@@ -445,7 +450,7 @@ class TestUtilityFunctions:
 
         result = validate_data_format(invalid_data)
 
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
 
 class TestEdgeCases:
@@ -460,7 +465,9 @@ class TestEdgeCases:
                     result = main(["prepare.py"])
 
                     mock_set.assert_called_once_with("spawn", force=True)
-                    assert result == 1  # Should fail due to missing data
+                    assert (
+                        result == 1
+                    )  # Should fail due to missing data  # nosec: B101 - Test assertion
 
     def test_network_timeout_handling(self):
         """Test network timeout handling."""
@@ -470,7 +477,7 @@ class TestEdgeCases:
 
             result = download_single_shard(1)
 
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_insufficient_disk_space(self):
         """Test handling of insufficient disk space."""
@@ -478,7 +485,7 @@ class TestEdgeCases:
             mock_makedirs.side_effect = OSError("No space left on device")
             train_tokenizer()
 
-            assert True
+            assert True  # nosec: B101 - Test assertion
 
     def test_corrupted_file_handling(self):
         """Test handling of corrupted files."""
@@ -487,7 +494,7 @@ class TestEdgeCases:
 
             result = read_shard(1, DATA_DIR)
 
-            assert result is None
+            assert result is None  # nosec: B101 - Test assertion
 
     def test_memory_efficiency_large_dataset(self):
         """Test memory efficiency with large datasets."""
@@ -497,8 +504,10 @@ class TestEdgeCases:
         # Should not crash or use excessive memory
         result = len(list(text_iterator(doc_cap=1000)))  # Small cap
 
-        assert result > 0  # Should process some data
-        assert result < 1000  # But not try to process all at once
+        assert result > 0  # Should process some data  # nosec: B101 - Test assertion
+        assert (
+            result < 1000
+        )  # But not try to process all at once  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

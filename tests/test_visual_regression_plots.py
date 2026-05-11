@@ -144,10 +144,15 @@ class PlotComparator:
                 baseline_img.size, Image.Resampling.LANCZOS
             )
 
+        # Convert to numpy arrays for pixelmatch
+        width, height = baseline_img.size
+        baseline_arr = np.array(baseline_img).flatten().tolist()
+        current_arr = np.array(current_img).flatten().tolist()
+
         # Compare
         try:
             diff_pixels = pixelmatch.pixelmatch(
-                baseline_img, current_img, threshold=self.threshold, include_aa=True
+                baseline_arr, current_arr, width, height, includeAA=True
             )
 
             # Create diff image if pixels differ
@@ -155,10 +160,10 @@ class PlotComparator:
             if diff_pixels > 0:
                 diff_path = self.output_dir / f"{name}_diff.png"
                 # Simple diff visualization
-                baseline_arr = np.array(baseline_img)
-                current_arr = np.array(current_img)
+                baseline_vis_arr = np.array(baseline_img)
+                current_vis_arr = np.array(current_img)
                 diff_arr = np.abs(
-                    baseline_arr.astype(float) - current_arr.astype(float)
+                    baseline_vis_arr.astype(float) - current_vis_arr.astype(float)
                 )
                 diff_img = Image.fromarray(diff_arr.astype(np.uint8))
                 diff_img.save(diff_path)
@@ -183,7 +188,7 @@ class PlotComparator:
             msg = f"Visual regression detected: {diff_count} pixels differ"
             if diff_path:
                 msg += f"\nDiff saved to: {diff_path}"
-            assert diff_count <= max_diff_pixels, msg
+            assert diff_count <= max_diff_pixels, msg  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -198,7 +203,9 @@ class TestBasicPlotRendering:
 
     def test_matplotlib_available(self) -> None:
         """Test matplotlib is available."""
-        assert HAS_MATPLOTLIB, "matplotlib not installed"
+        assert (
+            HAS_MATPLOTLIB
+        ), "matplotlib not installed"  # nosec: B101 - Test assertion
 
     def test_simple_line_plot(self, plot_comparator: PlotComparator) -> None:
         """Test simple line plot rendering."""
@@ -482,7 +489,7 @@ class TestPlotErrorHandling:
         # Should still be able to save
         buf = io.BytesIO()
         fig.savefig(buf, format="png")
-        assert buf.tell() > 0
+        assert buf.tell() > 0  # nosec: B101 - Test assertion
 
         plt.close(fig)
 
@@ -501,7 +508,7 @@ class TestPlotErrorHandling:
 
         buf = io.BytesIO()
         fig.savefig(buf, format="png")
-        assert buf.tell() > 0
+        assert buf.tell() > 0  # nosec: B101 - Test assertion
 
         plt.close(fig)
 

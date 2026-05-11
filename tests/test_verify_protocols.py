@@ -27,31 +27,31 @@ class TestCheckReadOnlyMarker:
         test_file = tmp_path / "prepare_test.py"
         test_file.write_text('"""\nREAD-ONLY file.\nDo not modify.\n"""\n')
         ok, msg = check_read_only_marker(test_file)
-        assert ok is True
-        assert "✅" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
 
     def test_partial_marker(self, tmp_path):
         """Test when READ-ONLY present but missing Do not modify."""
         test_file = tmp_path / "prepare_test.py"
         test_file.write_text('"""\nREAD-ONLY file.\n"""\n')
         ok, msg = check_read_only_marker(test_file)
-        assert ok is True
-        assert "⚠️" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "⚠️" in msg  # nosec: B101 - Test assertion
 
     def test_missing_marker(self, tmp_path):
         """Test when READ-ONLY marker is missing."""
         test_file = tmp_path / "prepare_test.py"
         test_file.write_text('"""\nSome other docstring.\n"""\n')
         ok, msg = check_read_only_marker(test_file)
-        assert ok is False
-        assert "❌" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "❌" in msg  # nosec: B101 - Test assertion
 
     def test_error_handling(self, tmp_path):
         """Test error handling when file can't be read."""
         test_file = tmp_path / "nonexistent.py"
         ok, msg = check_read_only_marker(test_file)
-        assert ok is False
-        assert "Error" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "Error" in msg  # nosec: B101 - Test assertion
 
 
 class TestCheckAgentEditableMarker:
@@ -62,31 +62,31 @@ class TestCheckAgentEditableMarker:
         test_file = tmp_path / "run_test.py"
         test_file.write_text('"""\nAGENT-EDITABLE file.\nModify this file.\n"""\n')
         ok, msg = check_agent_editable_marker(test_file)
-        assert ok is True
-        assert "✅" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
 
     def test_alternative_marker(self, tmp_path):
         """Test when modifiable hint is present."""
         test_file = tmp_path / "run_test.py"
         test_file.write_text('"""\nThis file is modifiable.\n"""\n')
         ok, msg = check_agent_editable_marker(test_file)
-        assert ok is True
-        assert "⚠️" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "⚠️" in msg  # nosec: B101 - Test assertion
 
     def test_missing_marker(self, tmp_path):
         """Test when AGENT-EDITABLE marker is missing."""
         test_file = tmp_path / "run_test.py"
         test_file.write_text('"""\nSome other docstring.\n"""\n')
         ok, msg = check_agent_editable_marker(test_file)
-        assert ok is False
-        assert "❌" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "❌" in msg  # nosec: B101 - Test assertion
 
     def test_error_handling(self, tmp_path):
         """Test error handling when file can't be read."""
         test_file = tmp_path / "nonexistent.py"
         ok, msg = check_agent_editable_marker(test_file)
-        assert ok is False
-        assert "Error" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "Error" in msg  # nosec: B101 - Test assertion
 
 
 class TestCheckTimeBudget:
@@ -97,48 +97,50 @@ class TestCheckTimeBudget:
         test_file = tmp_path / "test.py"
         test_file.write_text("TIME_BUDGET = 600\n")
         ok, msg = check_time_budget(test_file, "prepare")
-        assert ok is True
-        assert "✅" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
 
     def test_incorrect_time_budget(self, tmp_path):
         """Test when TIME_BUDGET is wrong."""
         test_file = tmp_path / "test.py"
         test_file.write_text("TIME_BUDGET = 300\n")
         ok, msg = check_time_budget(test_file, "prepare")
-        assert ok is False
-        assert "❌" in msg
-        assert "300" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "❌" in msg  # nosec: B101 - Test assertion
+        assert "300" in msg  # nosec: B101 - Test assertion
 
     def test_assertion_present(self, tmp_path):
         """Test when TIME_BUDGET assertion is present."""
         test_file = tmp_path / "test.py"
-        test_file.write_text("assert TIME_BUDGET == 600\n")
+        test_file.write_text(
+            "assert TIME_BUDGET == 600\n"
+        )  # nosec: B101 - Test assertion
         ok, msg = check_time_budget(test_file, "prepare")
-        assert ok is True
-        assert "✅" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
 
     def test_mentioned_in_comments(self, tmp_path):
         """Test when 600 is mentioned but not as constant."""
         test_file = tmp_path / "test.py"
         test_file.write_text("# Time budget: 600 seconds\n")
         ok, msg = check_time_budget(test_file, "prepare")
-        assert ok is True
-        assert "⚠️" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "⚠️" in msg  # nosec: B101 - Test assertion
 
     def test_missing_time_budget(self, tmp_path):
         """Test when TIME_BUDGET is missing."""
         test_file = tmp_path / "test.py"
         test_file.write_text("# No time budget here\n")
         ok, msg = check_time_budget(test_file, "prepare")
-        assert ok is False
-        assert "❌" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "❌" in msg  # nosec: B101 - Test assertion
 
     def test_error_handling(self, tmp_path):
         """Test error handling when file can't be read."""
         test_file = tmp_path / "nonexistent.py"
         ok, msg = check_time_budget(test_file, "prepare")
-        assert ok is False
-        assert "Error" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "Error" in msg  # nosec: B101 - Test assertion
 
 
 class TestCheckPrimaryMetric:
@@ -149,39 +151,39 @@ class TestCheckPrimaryMetric:
         test_file = tmp_path / "run_test.py"
         test_file.write_text('print("primary_metric: 0.5")\n')
         ok, msg = check_primary_metric(test_file, "stroop_effect")
-        assert ok is True
-        assert "✅" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
 
     def test_expected_metric_present(self, tmp_path):
         """Test when expected metric is present."""
         test_file = tmp_path / "run_test.py"
         test_file.write_text('print("interference_effect_ms: 50")\n')
         ok, msg = check_primary_metric(test_file, "stroop_effect")
-        assert ok is True
-        assert "interference_effect_ms" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "interference_effect_ms" in msg  # nosec: B101 - Test assertion
 
     def test_common_metric_present(self, tmp_path):
         """Test when common metric is present."""
         test_file = tmp_path / "run_test.py"
         test_file.write_text('print("accuracy: 0.95")\n')
         ok, msg = check_primary_metric(test_file, "unknown_experiment")
-        assert ok is True
-        assert "⚠️" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "⚠️" in msg  # nosec: B101 - Test assertion
 
     def test_missing_metric(self, tmp_path):
         """Test when no metric is present."""
         test_file = tmp_path / "run_test.py"
         test_file.write_text('print("hello")\n')
         ok, msg = check_primary_metric(test_file, "stroop_effect")
-        assert ok is False
-        assert "❌" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "❌" in msg  # nosec: B101 - Test assertion
 
     def test_error_handling(self, tmp_path):
         """Test error handling when file can't be read."""
         test_file = tmp_path / "nonexistent.py"
         ok, msg = check_primary_metric(test_file, "stroop_effect")
-        assert ok is False
-        assert "Error" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "Error" in msg  # nosec: B101 - Test assertion
 
 
 class TestCheckImportStructure:
@@ -192,40 +194,40 @@ class TestCheckImportStructure:
         test_file = tmp_path / "run_stroop_effect.py"
         test_file.write_text("from prepare_stroop_effect import TIME_BUDGET\n")
         ok, msg = check_import_structure(test_file, "stroop_effect")
-        assert ok is True
-        assert "✅" in msg
-        assert "TIME_BUDGET" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
+        assert "TIME_BUDGET" in msg  # nosec: B101 - Test assertion
 
     def test_direct_import(self, tmp_path):
         """Test when direct import is present."""
         test_file = tmp_path / "run_stroop_effect.py"
         test_file.write_text("import prepare_stroop_effect\n")
         ok, msg = check_import_structure(test_file, "stroop_effect")
-        assert ok is True
-        assert "✅" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "✅" in msg  # nosec: B101 - Test assertion
 
     def test_missing_import(self, tmp_path):
         """Test when import is missing."""
         test_file = tmp_path / "run_stroop_effect.py"
         test_file.write_text("print('hello')\n")
         ok, msg = check_import_structure(test_file, "stroop_effect")
-        assert ok is False
-        assert "❌" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "❌" in msg  # nosec: B101 - Test assertion
 
     def test_igt_special_case(self, tmp_path):
         """Test IGT special case handling."""
         test_file = tmp_path / "run_igt.py"
         test_file.write_text("from prepare_igt import TIME_BUDGET\n")
         ok, msg = check_import_structure(test_file, "igt")
-        assert ok is True
-        assert "prepare_igt" in msg
+        assert ok is True  # nosec: B101 - Test assertion
+        assert "prepare_igt" in msg  # nosec: B101 - Test assertion
 
     def test_error_handling(self, tmp_path):
         """Test error handling when file can't be read."""
         test_file = tmp_path / "nonexistent.py"
         ok, msg = check_import_structure(test_file, "stroop_effect")
-        assert ok is False
-        assert "Error" in msg
+        assert ok is False  # nosec: B101 - Test assertion
+        assert "Error" in msg  # nosec: B101 - Test assertion
 
 
 class TestVerifyExperiment:
@@ -234,8 +236,8 @@ class TestVerifyExperiment:
     def test_missing_files(self, tmp_path):
         """Test when experiment files don't exist."""
         result = verify_experiment("nonexistent", tmp_path)
-        assert len(result.failed) > 0
-        assert "Missing" in result.failed[0]
+        assert len(result.failed) > 0  # nosec: B101 - Test assertion
+        assert "Missing" in result.failed[0]  # nosec: B101 - Test assertion
 
     def test_existing_files_no_markers(self, tmp_path):
         """Test with existing files but missing markers."""
@@ -245,7 +247,9 @@ class TestVerifyExperiment:
         run_file.write_text('"""Test."""\n')
 
         result = verify_experiment("test", tmp_path)
-        assert len(result.failed) > 0  # Should fail markers
+        assert (
+            len(result.failed) > 0
+        )  # Should fail markers  # nosec: B101 - Test assertion
 
     def test_complete_protocol(self, tmp_path):
         """Test with complete valid protocol."""
@@ -263,8 +267,8 @@ class TestVerifyExperiment:
         )
 
         result = verify_experiment("test", tmp_path)
-        assert len(result.passed) >= 5
-        assert len(result.failed) == 0
+        assert len(result.passed) >= 5  # nosec: B101 - Test assertion
+        assert len(result.failed) == 0  # nosec: B101 - Test assertion
 
     def test_igt_experiment(self, tmp_path):
         """Test IGT experiment special case."""
@@ -280,7 +284,7 @@ class TestVerifyExperiment:
         )
 
         result = verify_experiment("igt", tmp_path)
-        assert len(result.passed) >= 5
+        assert len(result.passed) >= 5  # nosec: B101 - Test assertion
 
 
 class TestVerificationResult:
@@ -294,10 +298,10 @@ class TestVerificationResult:
             failed=["2. Test failed"],
             warnings=["3. Warning"],
         )
-        assert result.experiment == "test"
-        assert len(result.passed) == 1
-        assert len(result.failed) == 1
-        assert len(result.warnings) == 1
+        assert result.experiment == "test"  # nosec: B101 - Test assertion
+        assert len(result.passed) == 1  # nosec: B101 - Test assertion
+        assert len(result.failed) == 1  # nosec: B101 - Test assertion
+        assert len(result.warnings) == 1  # nosec: B101 - Test assertion
 
 
 class TestExperimentsList:
@@ -305,14 +309,14 @@ class TestExperimentsList:
 
     def test_experiments_list(self):
         """Test that EXPERIMENTS contains expected experiments."""
-        assert "stroop_effect" in EXPERIMENTS
-        assert "ai_benchmarking" in EXPERIMENTS
-        assert "change_blindness" in EXPERIMENTS
-        assert len(EXPERIMENTS) == 28
+        assert "stroop_effect" in EXPERIMENTS  # nosec: B101 - Test assertion
+        assert "ai_benchmarking" in EXPERIMENTS  # nosec: B101 - Test assertion
+        assert "change_blindness" in EXPERIMENTS  # nosec: B101 - Test assertion
+        assert len(EXPERIMENTS) == 28  # nosec: B101 - Test assertion
 
     def test_additional_experiments(self):
         """Test that ADDITIONAL_EXPERIMENTS contains expected items."""
-        assert "igt" in ADDITIONAL_EXPERIMENTS
+        assert "igt" in ADDITIONAL_EXPERIMENTS  # nosec: B101 - Test assertion
 
 
 class TestMain:
@@ -329,7 +333,9 @@ class TestMain:
             )
             main()
             captured = capsys.readouterr()
-            assert "APGI Experiment Protocol Verification Report" in captured.out
+            assert (
+                "APGI Experiment Protocol Verification Report" in captured.out
+            )  # nosec: B101 - Test assertion
 
     @patch("experiments.verify_protocols.Path")
     def test_main_summary_output(self, mock_path, capsys):
@@ -345,8 +351,8 @@ class TestMain:
             )
             main()
             captured = capsys.readouterr()
-            assert "SUMMARY" in captured.out
-            assert "Total experiments:" in captured.out
+            assert "SUMMARY" in captured.out  # nosec: B101 - Test assertion
+            assert "Total experiments:" in captured.out  # nosec: B101 - Test assertion
 
     @patch("experiments.verify_protocols.Path")
     def test_main_lists_incomplete(self, mock_path, capsys):
@@ -362,4 +368,6 @@ class TestMain:
             )
             main()
             captured = capsys.readouterr()
-            assert "Experiments needing attention" in captured.out
+            assert (
+                "Experiments needing attention" in captured.out
+            )  # nosec: B101 - Test assertion

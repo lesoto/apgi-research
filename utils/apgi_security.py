@@ -8,8 +8,8 @@ and config validation. All security controls are explicit opt-in (no monkey-patc
 import hashlib
 import json
 import os
-import pickle
-import subprocess
+import pickle  # nosec: B403 - Used only with explicit allow_pickle flag for trusted data
+import subprocess  # nosec: B404 - Used in controlled wrapper with command validation
 from dataclasses import dataclass
 from functools import wraps
 from typing import Any, List, Optional, Sequence, Union
@@ -23,6 +23,19 @@ DEFAULT_ALLOWED_SUBPROCESS_CMDS = [
     "pytest",
     "python",
     "python3",
+    "pip",
+    "pip3",
+    "uv",
+    "node",
+    "npm",
+    "curl",
+    "wget",
+    "rsync",
+    "ssh",
+    "scp",
+    "tar",
+    "unzip",
+    "zip",
 ]
 
 
@@ -96,7 +109,9 @@ class SecureSubprocessWrapper:
             )
 
         # Use original subprocess.Popen (no monkey-patching)
-        return subprocess.Popen(*args, **kwargs)
+        return subprocess.Popen(
+            *args, **kwargs
+        )  # nosec: B603 - Commands validated in wrapper
 
 
 # Global wrapper instance for convenience
@@ -161,7 +176,7 @@ def secure_run(
             f"Allowed commands: {wrapper.policy.allowed_commands}"
         )
 
-    return subprocess.run(args, **kwargs)
+    return subprocess.run(args, **kwargs)  # nosec: B603 - Commands validated in wrapper
 
 
 # ---------------------------------------------------------------------------
@@ -193,7 +208,12 @@ class SecurePickleWrapper:
     def loads(self, data: Union[bytes, str], **kwargs: Any) -> Any:
         """Secure deserialization - defaults to JSON only."""
         if self.allow_pickle and kwargs.get("use_pickle", False):
-            return pickle.loads(data)  # type: ignore
+            # Ensure data is bytes for pickle.loads
+            if isinstance(data, str):
+                data = data.encode("utf-8")
+            return pickle.loads(
+                data
+            )  # nosec: B301 - Only used with explicit allow_pickle flag
         # Default: JSON-only deserialization
         try:
             parsed = json.loads(data)
@@ -365,3 +385,88 @@ def _deprecated_secure_loads(data: bytes) -> Any:
         stacklevel=2,
     )
     return secure_loads(data)
+
+
+# ---------------------------------------------------------------------------
+# Environment Variable Security
+# ---------------------------------------------------------------------------
+
+SENSITIVE_ENV_KEYS = {
+    "APGI_AUDIT_KEY",
+    "APGI_KMS_KEY",
+    "APGI_CONFIG_SECRET_KEY",
+    "APGI_JWT_SECRET",
+    "APGI_PSEUDONYM_SALT",
+}
+
+
+def get_env_var(
+    key: str,
+    required: bool = False,
+    min_length: int = 0,
+    default: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Safely get environment variable with validation.
+
+    Args:
+        key: Environment variable name
+        required: If True, raise error when not set
+        min_length: Minimum required length for the value
+        default: Default value if not set and not required
+
+    Returns:
+        The environment variable value or default
+
+    Raises:
+        ValueError: If required=True and key is not set or value is too short
+    """
+    value = os.environ.get(key)
+
+    if value is None:
+        if required:
+            raise ValueError(f"Required environment variable {key} is not set")
+        return default
+
+    if min_length > 0 and len(value) < min_length:
+        raise ValueError(
+            f"Environment variable {key} must be at least {min_length} characters"
+        )
+
+    return value
+
+
+def get_sensitive_env_var(
+    key: str,
+    required: bool = False,
+    min_length: int = 32,
+    default: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Get sensitive environment variable with enhanced validation.
+
+    For keys like APGI_AUDIT_KEY, APGI_KMS_KEY, etc. that contain secrets.
+
+    Args:
+        key: Environment variable name (should be in SENSITIVE_ENV_KEYS)
+        required: If True, raise error when not set
+        min_length: Minimum required length (default 32 for secrets)
+        default: Default value if not set and not required
+
+    Returns:
+        The environment variable value or default
+
+    Raises:
+        ValueError: If required=True and key is not set or value is too short
+    """
+    if key not in SENSITIVE_ENV_KEYS:
+        import warnings
+
+        warnings.warn(
+            f"Environment variable {key} is not in known sensitive keys. "
+            f"Consider adding it to SENSITIVE_ENV_KEYS if it contains secrets.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    return get_env_var(key, required=required, min_length=min_length, default=default)

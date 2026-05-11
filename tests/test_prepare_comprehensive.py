@@ -36,8 +36,8 @@ class TestTokenizer:
         """Test tokenizer initialization."""
         tokenizer = Tokenizer("test_enc")
 
-        assert hasattr(tokenizer, "tokenizer")
-        assert hasattr(tokenizer, "vocab_size")
+        assert hasattr(tokenizer, "tokenizer")  # nosec: B101 - Test assertion
+        assert hasattr(tokenizer, "vocab_size")  # nosec: B101 - Test assertion
 
     def test_bpe_evaluation(self):
         """Test BPE evaluation."""
@@ -49,8 +49,8 @@ class TestTokenizer:
 
             vocab_size, compression = evaluate_bpb(None, tokenizer, 16)  # type: ignore
 
-            assert vocab_size == 1000  # type: ignore[has-type]
-            assert compression == 50.0  # type: ignore[has-type]
+            assert vocab_size == 1000  # type: ignore[has-type]  # nosec: B101 - Test assertion
+            assert compression == 50.0  # type: ignore[has-type]  # nosec: B101 - Test assertion
 
     def test_encoding_decoding(self):
         """Test encoding and decoding."""
@@ -67,11 +67,11 @@ class TestTokenizer:
 
             # Test encoding
             encoded = tokenizer.encode("test string")
-            assert isinstance(encoded, list)
+            assert isinstance(encoded, list)  # nosec: B101 - Test assertion
 
             # Test decoding
             decoded = tokenizer.decode(encoded)
-            assert decoded == "test decoded"
+            assert decoded == "test decoded"  # nosec: B101 - Test assertion
 
 
 class TestDataPreparation:
@@ -102,7 +102,7 @@ class TestDataPreparation:
         result = make_dataloader(Tokenizer("test_enc"), 32, 512, "train")
 
         mock_dataloader.assert_called_once()
-        assert result is not None
+        assert result is not None  # nosec: B101 - Test assertion
 
     def test_integration(self):
         """Test complete data preparation workflow."""
@@ -148,25 +148,25 @@ class TestConstants:
 
     def test_max_seq_len(self):
         """Test MAX_SEQ_LEN constant."""
-        assert MAX_SEQ_LEN == 2048
+        assert MAX_SEQ_LEN == 2048  # nosec: B101 - Test assertion
 
     def test_time_budget(self):
         """Test TIME_BUDGET constant."""
-        assert TIME_BUDGET == 600  # 10 minutes
+        assert TIME_BUDGET == 600  # 10 minutes  # nosec: B101 - Test assertion
 
     def test_eval_tokens(self):
         """Test EVAL_TOKENS constant."""
-        assert EVAL_TOKENS == 40 * 524288
+        assert EVAL_TOKENS == 40 * 524288  # nosec: B101 - Test assertion
 
     def test_constant_values(self):
         """Test that constants have expected values."""
         # Verify constants are reasonable
-        assert MAX_SEQ_LEN > 0
-        assert TIME_BUDGET > 0
-        assert EVAL_TOKENS > 0
+        assert MAX_SEQ_LEN > 0  # nosec: B101 - Test assertion
+        assert TIME_BUDGET > 0  # nosec: B101 - Test assertion
+        assert EVAL_TOKENS > 0  # nosec: B101 - Test assertion
 
         # Verify relationships
-        assert (
+        assert (  # nosec: B101 - Test assertion
             EVAL_TOKENS > MAX_SEQ_LEN
         )  # Should evaluate more tokens than sequence length
 
@@ -214,14 +214,14 @@ class TestErrorHandling:
 
             # First call finds existing data
             # result1 = prepare_data(data_dir="existing_data")
-            # assert result1 is not None  # Should use existing
+            # assert result1 is not None  # Should use existing  # nosec: B101 - Test assertion
 
             # Second call with corrupted data
             mock_download.side_effect = Exception("Data corrupted")
             # result2 = prepare_data(data_dir="corrupted_data")
 
             # Should handle corruption gracefully
-            # assert result2 is not None
+            # assert result2 is not None  # nosec: B101 - Test assertion
 
 
 class TestParameterValidation:
@@ -328,7 +328,7 @@ class TestIntegration:
                 mock_makedirs.assert_called()
 
                 # Verify result is successful
-                assert temp_path.exists()
+                assert temp_path.exists()  # nosec: B101 - Test assertion
 
     def test_preparation_with_tokenizer(self):
         """Test data preparation with custom tokenizer."""
@@ -349,8 +349,8 @@ class TestIntegration:
         #     # Verify tokenizer was used
         #     mock_dataloader.assert_called_once()
         #     args, kwargs = mock_dataloader.call_args
-        #     assert "tokenizer" in kwargs
-        #     assert kwargs["tokenizer"] == custom_tokenizer
+        #     assert "tokenizer" in kwargs  # nosec: B101 - Test assertion
+        #     assert kwargs["tokenizer"] == custom_tokenizer  # nosec: B101 - Test assertion
         pass
 
     def test_error_recovery_workflow(self):
@@ -364,14 +364,14 @@ class TestIntegration:
                 download_data(num_shards=1)
             except Exception as e:
                 # Verify error was caught
-                assert "Network error" in str(e)
+                assert "Network error" in str(e)  # nosec: B101 - Test assertion
 
                 # Retry should succeed
                 mock_download.side_effect = None
                 download_data(num_shards=1)
 
                 # Verify retry succeeded
-                assert mock_download.call_count == 2
+                assert mock_download.call_count == 2  # nosec: B101 - Test assertion
 
     def test_concurrent_preparation(self):
         """Test concurrent data preparation."""
@@ -383,7 +383,7 @@ class TestIntegration:
             download_data(num_shards=1)
 
             # Should handle concurrent access gracefully
-            assert mock_download.call_count >= 1
+            assert mock_download.call_count >= 1  # nosec: B101 - Test assertion
 
 
 class TestPerformanceAndScalability:
@@ -413,7 +413,7 @@ class TestPerformanceAndScalability:
 
             mock_dataloader.assert_called_once()
             args, kwargs = mock_dataloader.call_args
-            assert kwargs.get("num_workers", 1) == 4
+            assert kwargs.get("num_workers", 1) == 4  # nosec: B101 - Test assertion
 
     def test_checkpoint_resumption(self):
         """Test resumption from checkpoints."""
@@ -433,7 +433,7 @@ class TestPerformanceAndScalability:
 
                 # Verify checkpoint was used
                 mock_download.assert_called_once()
-                assert checkpoint_file.exists()
+                assert checkpoint_file.exists()  # nosec: B101 - Test assertion
 
     def test_data_integrity_checks(self):
         """Test data integrity checks."""
@@ -468,4 +468,4 @@ class TestPerformanceAndScalability:
 
             # Verify config was preserved
             # mock_prepare.assert_called_once()
-            # assert config_file.exists()
+            # assert config_file.exists()  # nosec: B101 - Test assertion

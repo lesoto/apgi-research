@@ -44,7 +44,7 @@ class TestFoundationalEquations:
         observed = 0.5
         predicted = 0.3
         error = FoundationalEquations.prediction_error(observed, predicted)
-        assert error == 0.2
+        assert error == 0.2  # nosec: B101 - Test assertion
 
     def test_z_score(self):
         """Test z-score calculation."""
@@ -52,7 +52,7 @@ class TestFoundationalEquations:
         mean = 1.0
         std = 0.5
         z = FoundationalEquations.z_score(error, mean, std)
-        assert z == 1.0
+        assert z == 1.0  # nosec: B101 - Test assertion
 
     def test_z_score_zero_std(self):
         """Test z-score with zero standard deviation."""
@@ -60,13 +60,13 @@ class TestFoundationalEquations:
         mean = 0.0
         std = 0.0
         z = FoundationalEquations.z_score(error, mean, std)
-        assert z == 0.0
+        assert z == 0.0  # nosec: B101 - Test assertion
 
     def test_precision(self):
         """Test precision calculation."""
         variance = 0.25
         precision = FoundationalEquations.precision(variance)
-        assert precision == 4.0
+        assert precision == 4.0  # nosec: B101 - Test assertion
 
 
 class TestCoreIgnitionSystem:
@@ -82,7 +82,7 @@ class TestCoreIgnitionSystem:
             Pi_e, eps_e, Pi_i_eff, eps_i
         )
         # Should return a positive value
-        assert accumulated > 0
+        assert accumulated > 0  # nosec: B101 - Test assertion
 
     def test_effective_interoceptive_precision(self):
         """Test effective interoceptive precision."""
@@ -93,7 +93,7 @@ class TestCoreIgnitionSystem:
         effective_pi = CoreIgnitionSystem.effective_interoceptive_precision(
             Pi_i_baseline, M, M_0, beta_som
         )
-        assert effective_pi > 0
+        assert effective_pi > 0  # nosec: B101 - Test assertion
 
     def test_ignition_probability(self):
         """Test ignition probability calculation."""
@@ -101,7 +101,7 @@ class TestCoreIgnitionSystem:
         theta = 2.0
         alpha = 1.0
         prob = CoreIgnitionSystem.ignition_probability(S, theta, alpha)
-        assert 0 <= prob <= 1
+        assert 0 <= prob <= 1  # nosec: B101 - Test assertion
 
 
 class TestDynamicalSystemEquations:
@@ -120,7 +120,7 @@ class TestDynamicalSystemEquations:
         S_new = DynamicalSystemEquations.signal_dynamics(
             S, Pi_e, eps_e, Pi_i_eff, eps_i, tau_S, sigma_S, dt
         )
-        assert S_new >= 0  # Should be non-negative
+        assert S_new >= 0  # Should be non-negative  # nosec: B101 - Test assertion
 
     def test_threshold_dynamics(self):
         """Test threshold dynamics."""
@@ -148,7 +148,7 @@ class TestDynamicalSystemEquations:
             sigma_theta,
             dt,
         )
-        assert theta_new > 0  # Should be positive
+        assert theta_new > 0  # Should be positive  # nosec: B101 - Test assertion
 
     def test_somatic_marker_dynamics(self):
         """Test somatic marker dynamics."""
@@ -163,7 +163,7 @@ class TestDynamicalSystemEquations:
         M_new = DynamicalSystemEquations.somatic_marker_dynamics(
             M, eps_i, beta_M, gamma_context, C, tau_M, sigma_M, dt
         )
-        assert M_new >= 0  # Should be non-negative
+        assert M_new >= 0  # Should be non-negative  # nosec: B101 - Test assertion
 
     def test_precision_dynamics(self):
         """Test precision dynamics."""
@@ -175,7 +175,7 @@ class TestDynamicalSystemEquations:
         Pi_new = DynamicalSystemEquations.precision_dynamics(
             Pi, Pi_target, alpha_Pi, sigma_Pi, dt
         )
-        assert Pi_new > 0  # Should be positive
+        assert Pi_new > 0  # Should be positive  # nosec: B101 - Test assertion
 
 
 class TestRunningStatistics:
@@ -184,24 +184,24 @@ class TestRunningStatistics:
     def test_initialization(self):
         """Test RunningStatistics initialization."""
         stats = RunningStatistics(alpha_mu=0.02, alpha_sigma=0.01)
-        assert stats.alpha_mu == 0.02
-        assert stats.alpha_sigma == 0.01
-        assert stats.mu == 0.0
-        assert stats.variance == 1.0
+        assert stats.alpha_mu == 0.02  # nosec: B101 - Test assertion
+        assert stats.alpha_sigma == 0.01  # nosec: B101 - Test assertion
+        assert stats.mu == 0.0  # nosec: B101 - Test assertion
+        assert stats.variance == 1.0  # nosec: B101 - Test assertion
 
     def test_initialization_default(self):
         """Test RunningStatistics initialization with defaults."""
         stats = RunningStatistics()
-        assert stats.alpha_mu == 0.01
-        assert stats.alpha_sigma == 0.005
+        assert stats.alpha_mu == 0.01  # nosec: B101 - Test assertion
+        assert stats.alpha_sigma == 0.005  # nosec: B101 - Test assertion
 
     def test_update(self):
         """Test updating statistics."""
         stats = RunningStatistics()
         mu, std = stats.update(1.0)
-        assert isinstance(mu, float)
-        assert isinstance(std, float)
-        assert std >= 0
+        assert isinstance(mu, float)  # nosec: B101 - Test assertion
+        assert isinstance(std, float)  # nosec: B101 - Test assertion
+        assert std >= 0  # nosec: B101 - Test assertion
 
     def test_get_z_score(self):
         """Test z-score calculation."""
@@ -211,7 +211,7 @@ class TestRunningStatistics:
         stats.update(2.0)
 
         z = stats.get_z_score(1.5)
-        assert isinstance(z, float)
+        assert isinstance(z, float)  # nosec: B101 - Test assertion
 
 
 class TestDerivedQuantities:
@@ -224,14 +224,14 @@ class TestDerivedQuantities:
         intensity = 2.0
         tau_S = 0.3
         latency = DerivedQuantities.latency_to_ignition(S_0, theta, intensity, tau_S)
-        assert latency >= 0
+        assert latency >= 0  # nosec: B101 - Test assertion
 
     def test_metabolic_cost(self):
         """Test metabolic cost calculation."""
         S_history = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
         dt = 0.1
         cost = DerivedQuantities.metabolic_cost(S_history, dt)
-        assert cost > 0
+        assert cost > 0  # nosec: B101 - Test assertion
 
     def test_hierarchical_level_dynamics(self):
         """Test hierarchical level dynamics."""
@@ -248,11 +248,11 @@ class TestDerivedQuantities:
         result = DerivedQuantities.hierarchical_level_dynamics(
             level, S, theta, Pi_e, Pi_i, eps_e, eps_i, tau, beta_cross, B_higher
         )
-        assert isinstance(result, tuple)
-        assert len(result) >= 1
+        assert isinstance(result, tuple)  # nosec: B101 - Test assertion
+        assert len(result) >= 1  # nosec: B101 - Test assertion
         # Check that the first element (S_l) is non-negative
         S_l = result[0] if isinstance(result, tuple) else result
-        assert S_l >= 0
+        assert S_l >= 0  # nosec: B101 - Test assertion
 
 
 class TestAPGIParameters:
@@ -261,13 +261,13 @@ class TestAPGIParameters:
     def test_initialization_default(self):
         """Test APGIParameters initialization with defaults."""
         params = APGIParameters()
-        assert params.beta == 1.5
-        assert params.alpha == 5.5
-        assert params.gamma_M == -0.3
-        assert params.gamma_A == 0.1
-        assert params.M_0 == 0.0
-        assert params.A_0 == 0.5
-        assert params.theta_0 == 0.5
+        assert params.beta == 1.5  # nosec: B101 - Test assertion
+        assert params.alpha == 5.5  # nosec: B101 - Test assertion
+        assert params.gamma_M == -0.3  # nosec: B101 - Test assertion
+        assert params.gamma_A == 0.1  # nosec: B101 - Test assertion
+        assert params.M_0 == 0.0  # nosec: B101 - Test assertion
+        assert params.A_0 == 0.5  # nosec: B101 - Test assertion
+        assert params.theta_0 == 0.5  # nosec: B101 - Test assertion
 
     def test_initialization_custom(self):
         """Test APGIParameters initialization with custom values."""
@@ -280,40 +280,40 @@ class TestAPGIParameters:
             A_0=0.6,
             theta_0=4.0,
         )
-        assert params.beta == 0.7
-        assert params.alpha == 6.0
-        assert params.gamma_M == -0.2
-        assert params.gamma_A == 0.15
-        assert params.M_0 == 0.1
-        assert params.A_0 == 0.6
-        assert params.theta_0 == 4.0
+        assert params.beta == 0.7  # nosec: B101 - Test assertion
+        assert params.alpha == 6.0  # nosec: B101 - Test assertion
+        assert params.gamma_M == -0.2  # nosec: B101 - Test assertion
+        assert params.gamma_A == 0.15  # nosec: B101 - Test assertion
+        assert params.M_0 == 0.1  # nosec: B101 - Test assertion
+        assert params.A_0 == 0.6  # nosec: B101 - Test assertion
+        assert params.theta_0 == 4.0  # nosec: B101 - Test assertion
 
     def test_validate(self):
         """Test parameter validation."""
         params = APGIParameters()
         violations = params.validate()
-        assert isinstance(violations, list)
+        assert isinstance(violations, list)  # nosec: B101 - Test assertion
 
     def test_get_domain_threshold(self):
         """Test getting domain-specific threshold."""
         params = APGIParameters()
         threshold = params.get_domain_threshold("survival")
-        assert isinstance(threshold, float)
-        assert threshold > 0
+        assert isinstance(threshold, float)  # nosec: B101 - Test assertion
+        assert threshold > 0  # nosec: B101 - Test assertion
 
     def test_apply_neuromodulator_effects(self):
         """Test applying neuromodulator effects."""
         params = APGIParameters()
         effects = params.apply_neuromodulator_effects()
-        assert isinstance(effects, dict)
-        assert "Pi_e_mod" in effects
-        assert "Pi_i_mod" in effects
+        assert isinstance(effects, dict)  # nosec: B101 - Test assertion
+        assert "Pi_e_mod" in effects  # nosec: B101 - Test assertion
+        assert "Pi_i_mod" in effects  # nosec: B101 - Test assertion
 
     def test_compute_precision_expectation_gap(self):
         """Test precision expectation gap."""
         params = APGIParameters()
         gap = params.compute_precision_expectation_gap(2.0, 1.5)
-        assert isinstance(gap, float)
+        assert isinstance(gap, float)  # nosec: B101 - Test assertion
 
 
 class TestPsychologicalState:
@@ -334,10 +334,10 @@ class TestPsychologicalState:
             z_i=0.2,
             theta_t=3.5,
         )
-        assert state.name == "test_state"
-        assert state.beta_som == 0.6
-        assert state.Pi_e_actual == 2.5
-        assert state.theta_t == 3.5
+        assert state.name == "test_state"  # nosec: B101 - Test assertion
+        assert state.beta_som == 0.6  # nosec: B101 - Test assertion
+        assert state.Pi_e_actual == 2.5  # nosec: B101 - Test assertion
+        assert state.theta_t == 3.5  # nosec: B101 - Test assertion
 
     def test_compute_ignition_probability(self):
         """Test computing ignition probability."""
@@ -355,7 +355,7 @@ class TestPsychologicalState:
             z_i=0.2,
         )
         prob = state.compute_ignition_probability()
-        assert 0 <= prob <= 1
+        assert 0 <= prob <= 1  # nosec: B101 - Test assertion
 
     def test_get_anxiety_index(self):
         """Test getting anxiety index."""
@@ -373,7 +373,7 @@ class TestPsychologicalState:
             z_i=0.2,
         )
         anxiety = state.get_anxiety_index()
-        assert anxiety >= 0
+        assert anxiety >= 0  # nosec: B101 - Test assertion
 
     def test_to_dynamical_inputs(self):
         """Test converting to dynamical inputs."""
@@ -391,8 +391,8 @@ class TestPsychologicalState:
             z_i=0.2,
         )
         inputs = state.to_dynamical_inputs()
-        assert isinstance(inputs, dict)
-        assert "beta_som" in inputs
+        assert isinstance(inputs, dict)  # nosec: B101 - Test assertion
+        assert "beta_som" in inputs  # nosec: B101 - Test assertion
 
 
 class TestStateCategory:
@@ -401,17 +401,19 @@ class TestStateCategory:
     def test_optimal_functioning(self):
         """Test OPTIMAL_FUNCTIONING category."""
         category = StateCategory.OPTIMAL_FUNCTIONING
-        assert category.color == "#2E86AB"
-        assert category.display_name == "Optimal Functioning"
-        assert "Normal range" in category.description
+        assert category.color == "#2E86AB"  # nosec: B101 - Test assertion
+        assert (
+            category.display_name == "Optimal Functioning"
+        )  # nosec: B101 - Test assertion
+        assert "Normal range" in category.description  # nosec: B101 - Test assertion
 
     def test_all_categories_have_attributes(self):
         """Test that all categories have required attributes."""
         for category in StateCategory:
-            assert hasattr(category, "color")
-            assert hasattr(category, "display_name")
-            assert hasattr(category, "description")
-            assert category.color.startswith("#")
+            assert hasattr(category, "color")  # nosec: B101 - Test assertion
+            assert hasattr(category, "display_name")  # nosec: B101 - Test assertion
+            assert hasattr(category, "description")  # nosec: B101 - Test assertion
+            assert category.color.startswith("#")  # nosec: B101 - Test assertion
 
 
 class TestAPGIStateLibrary:
@@ -420,15 +422,15 @@ class TestAPGIStateLibrary:
     def test_initialization(self):
         """Test APGIStateLibrary initialization."""
         library = APGIStateLibrary()
-        assert len(library.states) > 0
-        assert "anxiety" in library.states
+        assert len(library.states) > 0  # nosec: B101 - Test assertion
+        assert "anxiety" in library.states  # nosec: B101 - Test assertion
 
     def test_get_state_existing(self):
         """Test getting an existing state."""
         library = APGIStateLibrary()
         anxiety = library.get_state("anxiety")
-        assert anxiety is not None
-        assert anxiety.name == "anxiety"
+        assert anxiety is not None  # nosec: B101 - Test assertion
+        assert anxiety.name == "anxiety"  # nosec: B101 - Test assertion
 
     def test_get_state_nonexistent(self):
         """Test getting a nonexistent state."""
@@ -440,9 +442,9 @@ class TestAPGIStateLibrary:
         """Test getting all state names."""
         library = APGIStateLibrary()
         names = list(library.states.keys())
-        assert isinstance(names, list)
-        assert len(names) > 0
-        assert "anxiety" in names
+        assert isinstance(names, list)  # nosec: B101 - Test assertion
+        assert len(names) > 0  # nosec: B101 - Test assertion
+        assert "anxiety" in names  # nosec: B101 - Test assertion
 
 
 class TestMeasurementEquations:
@@ -454,7 +456,7 @@ class TestMeasurementEquations:
         M_ca = 1.5
         beta = 1.0
         hep = MeasurementEquations.compute_HEP(Pi_i_eff, M_ca, beta)
-        assert isinstance(hep, float)
+        assert isinstance(hep, float)  # nosec: B101 - Test assertion
 
     def test_p3b_latency(self):
         """Test P3b latency calculation."""
@@ -462,7 +464,7 @@ class TestMeasurementEquations:
         theta_t = 3.0
         Pi_e = 1.5
         latency = MeasurementEquations.compute_P3b_latency(S_t, theta_t, Pi_e)
-        assert latency > 0
+        assert latency > 0  # nosec: B101 - Test assertion
 
     def test_detection_threshold(self):
         """Test detection threshold calculation."""
@@ -472,21 +474,21 @@ class TestMeasurementEquations:
         threshold = MeasurementEquations.compute_detection_threshold(
             theta_t, content_domain, neuromodulators
         )
-        assert threshold > 0
+        assert threshold > 0  # nosec: B101 - Test assertion
 
     def test_confidence_rating(self):
         """Test confidence rating calculation."""
         P_ignition = 0.8
         S_t = 2.0
         duration = MeasurementEquations.compute_ignition_duration(P_ignition, S_t)
-        assert duration > 0
+        assert duration > 0  # nosec: B101 - Test assertion
 
     def test_reaction_time(self):
         """Test reaction time calculation."""
         P_ignition = 0.7
         S_t = 1.5
         rt = MeasurementEquations.compute_ignition_duration(P_ignition, S_t)
-        assert rt > 0
+        assert rt > 0  # nosec: B101 - Test assertion
 
 
 class TestNeuromodulatorSystem:
@@ -495,29 +497,29 @@ class TestNeuromodulatorSystem:
     def test_initialization(self):
         """Test NeuromodulatorSystem initialization."""
         neuro = NeuromodulatorSystem()
-        assert hasattr(neuro, "baseline_levels")
-        assert hasattr(neuro, "modulation_functions")
+        assert hasattr(neuro, "baseline_levels")  # nosec: B101 - Test assertion
+        assert hasattr(neuro, "modulation_functions")  # nosec: B101 - Test assertion
 
     def test_get_neuromodulator_level(self):
         """Test getting neuromodulator level."""
         neuro = NeuromodulatorSystem()
         level = neuro.get_neuromodulator_level("ACh")
-        assert isinstance(level, float)
-        assert level >= 0
+        assert isinstance(level, float)  # nosec: B101 - Test assertion
+        assert level >= 0  # nosec: B101 - Test assertion
 
     def test_modulate_parameters(self):
         """Test parameter modulation by neuromodulators."""
         neuro = NeuromodulatorSystem()
         params = APGIParameters()
         modulated = neuro.modulate_parameters(params, {"ACh": 1.5})
-        assert isinstance(modulated, APGIParameters)
+        assert isinstance(modulated, APGIParameters)  # nosec: B101 - Test assertion
 
     def test_get_neuromodulator_profile(self):
         """Test getting neuromodulator profile."""
         neuro = NeuromodulatorSystem()
         profile = neuro.get_neuromodulator_profile()
-        assert isinstance(profile, dict)
-        assert "ACh" in profile
+        assert isinstance(profile, dict)  # nosec: B101 - Test assertion
+        assert "ACh" in profile  # nosec: B101 - Test assertion
 
 
 class TestEnhancedSurpriseIgnitionSystem:
@@ -527,7 +529,7 @@ class TestEnhancedSurpriseIgnitionSystem:
         """Test system initialization."""
         params = APGIParameters()
         system = EnhancedSurpriseIgnitionSystem(params)
-        assert system.parameters == params
+        assert system.parameters == params  # nosec: B101 - Test assertion
 
     def test_step(self):
         """Test system step."""
@@ -537,9 +539,9 @@ class TestEnhancedSurpriseIgnitionSystem:
         observation = 1.0
         state = system.step(observation)
 
-        assert isinstance(state, dict)
-        assert "S" in state
-        assert "theta" in state
+        assert isinstance(state, dict)  # nosec: B101 - Test assertion
+        assert "S" in state  # nosec: B101 - Test assertion
+        assert "theta" in state  # nosec: B101 - Test assertion
 
     def test_reset(self):
         """Test system reset."""
@@ -551,7 +553,7 @@ class TestEnhancedSurpriseIgnitionSystem:
 
         # Reset
         system.reset()
-        assert len(system.state_history) == 0
+        assert len(system.state_history) == 0  # nosec: B101 - Test assertion
 
     def test_get_system_state(self):
         """Test getting current system state."""
@@ -559,9 +561,9 @@ class TestEnhancedSurpriseIgnitionSystem:
         system = EnhancedSurpriseIgnitionSystem(params)
 
         state = system.get_system_state()
-        assert isinstance(state, dict)
-        assert "S" in state
-        assert "theta" in state
+        assert isinstance(state, dict)  # nosec: B101 - Test assertion
+        assert "S" in state  # nosec: B101 - Test assertion
+        assert "theta" in state  # nosec: B101 - Test assertion
 
 
 class TestCompleteAPGIVisualizer:
@@ -571,7 +573,7 @@ class TestCompleteAPGIVisualizer:
         """Test visualizer initialization."""
         library = APGIStateLibrary()
         viz = CompleteAPGIVisualizer(library)
-        assert viz.state_library == library
+        assert viz.state_library == library  # nosec: B101 - Test assertion
 
         # Clean up matplotlib state
         import matplotlib.pyplot as plt
@@ -629,15 +631,21 @@ class TestModuleFunctions:
                 tau_S=0.35, alpha=5.5, beta=1.5, theta_survival=0.3, theta_neutral=0.7
             )
             violations = params.validate()
-            assert not violations, f"Parameter validation failed: {violations}"
+            assert (
+                not violations
+            ), f"Parameter validation failed: {violations}"  # nosec: B101 - Test assertion
 
             # Test state library
             library = APGIStateLibrary()
-            assert len(library.states) > 0, "State library should have states"
+            assert (
+                len(library.states) > 0
+            ), "State library should have states"  # nosec: B101 - Test assertion
 
             # Test system initialization
             system = EnhancedSurpriseIgnitionSystem(params)
-            assert system is not None, "System should initialize"
+            assert (
+                system is not None
+            ), "System should initialize"  # nosec: B101 - Test assertion
 
             # Test measurement equations
             measurement_system = MeasurementEquations()
@@ -648,7 +656,9 @@ class TestModuleFunctions:
             measurements = measurement_system.compute_all_measurements(
                 anxiety_state, neuromodulators.levels
             )
-            assert isinstance(measurements, dict), "Measurements should be a dictionary"
+            assert isinstance(
+                measurements, dict
+            ), "Measurements should be a dictionary"  # nosec: B101 - Test assertion
 
             demo_success = True
 
@@ -656,17 +666,19 @@ class TestModuleFunctions:
             demo_success = False
             exception_msg = f"{type(e).__name__}: {e}"
 
-        assert demo_success, f"Demo failed with: {exception_msg}"
+        assert (
+            demo_success
+        ), f"Demo failed with: {exception_msg}"  # nosec: B101 - Test assertion
 
     def test_verify_all_equations(self):
         """Test equation verification."""
         # This should run without errors
         try:
             result = verify_all_equations()
-            assert isinstance(result, bool)
+            assert isinstance(result, bool)  # nosec: B101 - Test assertion
         except Exception:
             # If there are import issues, at least check it tries to run
-            assert True
+            assert True  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

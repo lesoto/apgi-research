@@ -67,17 +67,17 @@ class TestHierarchicalState:
         )
 
         # Check that original values are preserved
-        assert state.level_1["sensory"] == 0.5
-        assert state.level_2["feature"] == 0.6
-        assert state.level_3["pattern"] == 0.7
-        assert state.level_4["semantic"] == 0.8
-        assert state.level_5["executive"] == 0.9
+        assert state.level_1["sensory"] == 0.5  # nosec: B101 - Test assertion
+        assert state.level_2["feature"] == 0.6  # nosec: B101 - Test assertion
+        assert state.level_3["pattern"] == 0.7  # nosec: B101 - Test assertion
+        assert state.level_4["semantic"] == 0.8  # nosec: B101 - Test assertion
+        assert state.level_5["executive"] == 0.9  # nosec: B101 - Test assertion
 
         # Check that default values are added via __post_init__
-        assert "S" in state.level_1
-        assert "theta" in state.level_1
-        assert "M" in state.level_1
-        assert "ignition_prob" in state.level_1
+        assert "S" in state.level_1  # nosec: B101 - Test assertion
+        assert "theta" in state.level_1  # nosec: B101 - Test assertion
+        assert "M" in state.level_1  # nosec: B101 - Test assertion
+        assert "ignition_prob" in state.level_1  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -89,15 +89,15 @@ class TestHierarchicalState:
         )
 
         # All levels should be initialized as dicts with defaults
-        assert isinstance(state.level_1, dict)
-        assert isinstance(state.level_2, dict)
-        assert isinstance(state.level_3, dict)
-        assert isinstance(state.level_4, dict)
-        assert isinstance(state.level_5, dict)
+        assert isinstance(state.level_1, dict)  # nosec: B101 - Test assertion
+        assert isinstance(state.level_2, dict)  # nosec: B101 - Test assertion
+        assert isinstance(state.level_3, dict)  # nosec: B101 - Test assertion
+        assert isinstance(state.level_4, dict)  # nosec: B101 - Test assertion
+        assert isinstance(state.level_5, dict)  # nosec: B101 - Test assertion
 
         # Check defaults are set
-        assert state.level_1["S"] == 0.0
-        assert state.level_1["theta"] == 0.5
+        assert state.level_1["S"] == 0.0  # nosec: B101 - Test assertion
+        assert state.level_1["theta"] == 0.5  # nosec: B101 - Test assertion
 
 
 class TestStandardAPGIRunner:
@@ -127,10 +127,12 @@ class TestStandardAPGIRunner:
             apgi_params=mock_apgi_params,
         )
 
-        assert runner.base_runner is mock_base_runner
-        assert runner.experiment_name == "test_experiment"
-        assert runner.enable_hierarchical
-        assert runner.enable_precision_gap
+        assert runner.base_runner is mock_base_runner  # nosec: B101 - Test assertion
+        assert (
+            runner.experiment_name == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert runner.enable_hierarchical  # nosec: B101 - Test assertion
+        assert runner.enable_precision_gap  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -155,8 +157,10 @@ class TestStandardAPGIRunner:
             base_runner=mock_base_runner, experiment_name="test_experiment"
         )
 
-        assert runner.base_runner is mock_base_runner
-        assert runner.experiment_name == "test_experiment"
+        assert runner.base_runner is mock_base_runner  # nosec: B101 - Test assertion
+        assert (
+            runner.experiment_name == "test_experiment"
+        )  # nosec: B101 - Test assertion
         # Note: get_experiment_apgi_config is called when apgi_params is None
         # The mock verification is skipped due to import patching complexity
 
@@ -174,12 +178,12 @@ class TestStandardAPGIRunner:
             level_5={"executive": 0.9},
         )
 
-        assert isinstance(state, sar.HierarchicalState)
-        assert state.level_1["sensory"] == 0.5
-        assert state.level_2["feature"] == 0.6
-        assert state.level_3["pattern"] == 0.7
-        assert state.level_4["semantic"] == 0.8
-        assert state.level_5["executive"] == 0.9
+        assert isinstance(state, sar.HierarchicalState)  # nosec: B101 - Test assertion
+        assert state.level_1["sensory"] == 0.5  # nosec: B101 - Test assertion
+        assert state.level_2["feature"] == 0.6  # nosec: B101 - Test assertion
+        assert state.level_3["pattern"] == 0.7  # nosec: B101 - Test assertion
+        assert state.level_4["semantic"] == 0.8  # nosec: B101 - Test assertion
+        assert state.level_5["executive"] == 0.9  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration", autospec=True)
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -208,7 +212,7 @@ class TestStandardAPGIRunner:
         # Verify APGIIntegration was never called (since enabled=False)
         mock_apgi.assert_not_called()
         # Verify APGI is disabled (None)
-        assert (
+        assert (  # nosec: B101 - Test assertion
             runner.apgi is None
         ), f"Expected runner.apgi to be None, got {runner.apgi}"
 
@@ -218,7 +222,7 @@ class TestStandardAPGIRunner:
         )
 
         # Should return empty dict when APGI is disabled
-        assert result == {}
+        assert result == {}  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -246,9 +250,9 @@ class TestStandardAPGIRunner:
         basic_metrics = {"accuracy": 0.8, "response_time": 0.5}
         result = runner._process_hierarchical_level(basic_metrics, 1)
 
-        assert isinstance(result, dict)
+        assert isinstance(result, dict)  # nosec: B101 - Test assertion
         # Check that hierarchical level keys are present
-        assert "level_1_S" in result or len(result) == 0
+        assert "level_1_S" in result or len(result) == 0  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -271,9 +275,11 @@ class TestStandardAPGIRunner:
         # Test hierarchical summary
         metrics = runner._get_hierarchical_summary()
 
-        assert isinstance(metrics, dict)
+        assert isinstance(metrics, dict)  # nosec: B101 - Test assertion
         # Should have hierarchical level keys
-        assert len(metrics) >= 0  # Can be empty if no metrics history
+        assert (
+            len(metrics) >= 0
+        )  # Can be empty if no metrics history  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -325,8 +331,10 @@ class TestStandardAPGIRunner:
                     with patch.object(runner, "_check_timeout", return_value=False):
                         result = runner.run_experiment()
 
-                        assert "apgi_enabled" in result
-                        assert result["apgi_enabled"] is True
+                        assert "apgi_enabled" in result  # nosec: B101 - Test assertion
+                        assert (
+                            result["apgi_enabled"] is True
+                        )  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -375,8 +383,10 @@ class TestStandardAPGIRunner:
                     with patch.object(runner, "_check_timeout", return_value=False):
                         result = runner.run_experiment()
 
-                        assert "apgi_enabled" in result
-                        assert result["apgi_enabled"] is True
+                        assert "apgi_enabled" in result  # nosec: B101 - Test assertion
+                        assert (
+                            result["apgi_enabled"] is True
+                        )  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -398,7 +408,7 @@ class TestStandardAPGIRunner:
 
         # Test timeout setup
         runner._setup_timeout_handler()
-        assert hasattr(runner, "timeout_handler")
+        assert hasattr(runner, "timeout_handler")  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration")
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -419,7 +429,9 @@ class TestStandardAPGIRunner:
         )
 
         # Test basic processing
-        assert hasattr(runner, "process_trial_with_full_apgi")
+        assert hasattr(
+            runner, "process_trial_with_full_apgi"
+        )  # nosec: B101 - Test assertion
 
     @patch("experiments.standard_apgi_runner.APGIIntegration", autospec=True)
     @patch("experiments.standard_apgi_runner.get_experiment_apgi_config")
@@ -452,7 +464,9 @@ class TestStandardAPGIRunner:
         )
 
         # Verify APGI was initialized
-        assert runner.apgi is not None, "APGI should be initialized when enabled=True"
+        assert (
+            runner.apgi is not None
+        ), "APGI should be initialized when enabled=True"  # nosec: B101 - Test assertion
         mock_apgi.assert_called_once_with(mock_apgi_params.to_apgi_parameters())
 
         # Test trial processing - exception should propagate from APGIIntegration.process_trial

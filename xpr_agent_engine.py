@@ -25,7 +25,7 @@ try:
     import litellm
 except ImportError:
     logger.warning("litellm not available, using mock LLM integration")
-    litellm = None
+    litellm = None  # type: ignore
 
 # Type hint for when litellm is not available
 LLMClient = Any
@@ -269,11 +269,10 @@ class LLMIntegration:
         """Get configuration for specific LLM provider."""
         return LLM_PROVIDERS.get(provider, {})
 
-    def _initialize_client(self, provider: str) -> bool:
+    def _initialize_client(self, provider: Optional[str] = None) -> bool:
         """Validate that a provider can be used (API key present, etc.)."""
         if provider not in LLM_PROVIDERS:
             raise ValueError(f"Unsupported LLM provider: {provider}")
-
         config = self._get_provider_config(provider)
 
         if provider == "openai":
@@ -281,21 +280,21 @@ class LLMIntegration:
             if not api_key and litellm is None:
                 logger.warning("OpenAI: no API key and litellm unavailable")
                 return False
+
             logger.info(f"Initialized OpenAI provider with model {config.get('model')}")
             self._initialized[provider] = True
             return True
-
         elif provider == "anthropic":
             api_key = os.getenv("ANTHROPIC_API_KEY")
             if not api_key and litellm is None:
                 logger.warning("Anthropic: no API key and litellm unavailable")
                 return False
+
             logger.info(
                 f"Initialized Anthropic provider with model {config.get('model', 'claude-3-5-sonnet-20241022')}"
             )
             self._initialized[provider] = True
             return True
-
         elif provider == "local":
             logger.info("Local LLM provider configured")
             self._initialized[provider] = True

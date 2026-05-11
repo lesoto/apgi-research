@@ -25,18 +25,28 @@ class TestUtilityFunctions:
 
     def test_matches_any_positive(self):
         """Test matches_any with matching patterns."""
-        assert dp.matches_any("test.py", ["*.py", "*.txt"])
-        assert dp.matches_any("__pycache__", ["__pycache__", "*.egg-info"])
-        assert dp.matches_any("debug_test.py", ["debug_*.py"])
+        assert dp.matches_any(
+            "test.py", ["*.py", "*.txt"]
+        )  # nosec: B101 - Test assertion
+        assert dp.matches_any(
+            "__pycache__", ["__pycache__", "*.egg-info"]
+        )  # nosec: B101 - Test assertion
+        assert dp.matches_any(
+            "debug_test.py", ["debug_*.py"]
+        )  # nosec: B101 - Test assertion
 
     def test_matches_any_negative(self):
         """Test matches_any with non-matching patterns."""
-        assert not dp.matches_any("test.py", ["*.txt", "*.md"])
-        assert not dp.matches_any("normal_file", ["debug_*", "temp_*"])
+        assert not dp.matches_any(
+            "test.py", ["*.txt", "*.md"]
+        )  # nosec: B101 - Test assertion
+        assert not dp.matches_any(
+            "normal_file", ["debug_*", "temp_*"]
+        )  # nosec: B101 - Test assertion
 
     def test_matches_any_empty_patterns(self):
         """Test matches_any with empty patterns."""
-        assert not dp.matches_any("anything", [])
+        assert not dp.matches_any("anything", [])  # nosec: B101 - Test assertion
 
 
 class TestDirectoryRemoval:
@@ -44,7 +54,7 @@ class TestDirectoryRemoval:
 
     def test_should_remove_directory_default_names(self):
         """Test directory removal with default names."""
-        assert dp._should_remove_directory(
+        assert dp._should_remove_directory(  # nosec: B101 - Test assertion
             "__pycache__",
             dp.DEFAULT_DIR_NAMES,
             dp.DEFAULT_DIR_PATTERNS,
@@ -53,7 +63,7 @@ class TestDirectoryRemoval:
             False,
             [],
         )
-        assert dp._should_remove_directory(
+        assert dp._should_remove_directory(  # nosec: B101 - Test assertion
             ".pytest_cache",
             dp.DEFAULT_DIR_NAMES,
             dp.DEFAULT_DIR_PATTERNS,
@@ -65,7 +75,7 @@ class TestDirectoryRemoval:
 
     def test_should_remove_directory_patterns(self):
         """Test directory removal with patterns."""
-        assert dp._should_remove_directory(
+        assert dp._should_remove_directory(  # nosec: B101 - Test assertion
             "test.egg-info",
             dp.DEFAULT_DIR_NAMES,
             dp.DEFAULT_DIR_PATTERNS,
@@ -77,25 +87,25 @@ class TestDirectoryRemoval:
 
     def test_should_remove_directory_custom_patterns(self):
         """Test directory removal with custom patterns."""
-        assert dp._should_remove_directory(
+        assert dp._should_remove_directory(  # nosec: B101 - Test assertion
             "custom_dir", set(), [], ["custom_*"], False, False, []
         )
 
     def test_should_remove_directory_node_modules(self):
         """Test node_modules removal."""
-        assert dp._should_remove_directory(
+        assert dp._should_remove_directory(  # nosec: B101 - Test assertion
             "node_modules", set(), [], [], True, False, []
         )
-        assert not dp._should_remove_directory(
+        assert not dp._should_remove_directory(  # nosec: B101 - Test assertion
             "node_modules", set(), [], [], False, False, []
         )
 
     def test_should_remove_directory_venvs(self):
         """Test virtual environment removal."""
-        assert dp._should_remove_directory(
+        assert dp._should_remove_directory(  # nosec: B101 - Test assertion
             ".venv", set(), [], [], False, True, [".venv", "venv"]
         )
-        assert not dp._should_remove_directory(
+        assert not dp._should_remove_directory(  # nosec: B101 - Test assertion
             ".venv", set(), [], [], False, True, ["env"]
         )
 
@@ -109,8 +119,8 @@ class TestDirectoryRemoval:
             dp._remove_directory(
                 temp_dir, "test_dir", dry_run=True, verbose=False, stats=stats
             )
-            assert stats["dirs_removed"] == 0
-            assert test_dir.exists()
+            assert stats["dirs_removed"] == 0  # nosec: B101 - Test assertion
+            assert test_dir.exists()  # nosec: B101 - Test assertion
 
     def test_remove_directory_actual_removal(self):
         """Test actual directory removal."""
@@ -122,8 +132,8 @@ class TestDirectoryRemoval:
             dp._remove_directory(
                 temp_dir, "test_dir", dry_run=False, verbose=False, stats=stats
             )
-            assert stats["dirs_removed"] == 1
-            assert not test_dir.exists()
+            assert stats["dirs_removed"] == 1  # nosec: B101 - Test assertion
+            assert not test_dir.exists()  # nosec: B101 - Test assertion
 
     def test_remove_directory_with_retry(self):
         """Test directory removal with retry logic."""
@@ -147,8 +157,8 @@ class TestDirectoryRemoval:
                     stats=stats,
                     max_retries=2,
                 )
-                assert stats["dirs_removed"] == 1
-                assert mock_rmtree.call_count == 2
+                assert stats["dirs_removed"] == 1  # nosec: B101 - Test assertion
+                assert mock_rmtree.call_count == 2  # nosec: B101 - Test assertion
 
     def test_remove_directory_max_retries_exceeded(self):
         """Test directory removal when max retries exceeded."""
@@ -168,8 +178,8 @@ class TestDirectoryRemoval:
                     stats=stats,
                     max_retries=2,
                 )
-                assert stats["dirs_removed"] == 0
-                assert stats["errors"] == 1
+                assert stats["dirs_removed"] == 0  # nosec: B101 - Test assertion
+                assert stats["errors"] == 1  # nosec: B101 - Test assertion
 
 
 class TestFileRemoval:
@@ -183,8 +193,8 @@ class TestFileRemoval:
 
             stats = {"files_removed": 0, "errors": 0}
             dp._remove_file(str(test_file), dry_run=True, verbose=False, stats=stats)
-            assert stats["files_removed"] == 0
-            assert test_file.exists()
+            assert stats["files_removed"] == 0  # nosec: B101 - Test assertion
+            assert test_file.exists()  # nosec: B101 - Test assertion
 
     def test_remove_file_actual_removal(self):
         """Test actual file removal."""
@@ -194,8 +204,8 @@ class TestFileRemoval:
 
             stats = {"files_removed": 0, "errors": 0}
             dp._remove_file(str(test_file), dry_run=False, verbose=False, stats=stats)
-            assert stats["files_removed"] == 1
-            assert not test_file.exists()
+            assert stats["files_removed"] == 1  # nosec: B101 - Test assertion
+            assert not test_file.exists()  # nosec: B101 - Test assertion
 
     def test_remove_file_with_retry(self):
         """Test file removal with retry logic."""
@@ -217,8 +227,8 @@ class TestFileRemoval:
                     stats=stats,
                     max_retries=2,
                 )
-                assert stats["files_removed"] == 1
-                assert mock_remove.call_count == 2
+                assert stats["files_removed"] == 1  # nosec: B101 - Test assertion
+                assert mock_remove.call_count == 2  # nosec: B101 - Test assertion
 
     def test_remove_file_not_found(self):
         """Test file removal when file doesn't exist."""
@@ -228,7 +238,7 @@ class TestFileRemoval:
             stats = {"files_removed": 0, "errors": 0}
             dp._remove_file(str(test_file), dry_run=False, verbose=False, stats=stats)
             # File not found should be counted as success (ENOENT handling)
-            assert stats["files_removed"] == 1
+            assert stats["files_removed"] == 1  # nosec: B101 - Test assertion
 
 
 class TestDirectoryProcessing:
@@ -261,9 +271,9 @@ class TestDirectoryProcessing:
                 stats=stats,
             )
 
-            assert stats["dirs_removed"] == 1
-            assert "__pycache__" not in dirnames
-            assert "normal" in dirnames
+            assert stats["dirs_removed"] == 1  # nosec: B101 - Test assertion
+            assert "__pycache__" not in dirnames  # nosec: B101 - Test assertion
+            assert "normal" in dirnames  # nosec: B101 - Test assertion
 
     def test_process_directories_exclude_patterns(self):
         """Test processing directories with exclude patterns."""
@@ -289,7 +299,7 @@ class TestDirectoryProcessing:
                 stats=stats,
             )
 
-            assert stats["dirs_removed"] == 0
+            assert stats["dirs_removed"] == 0  # nosec: B101 - Test assertion
 
 
 class TestFileProcessing:
@@ -318,9 +328,9 @@ class TestFileProcessing:
                 stats=stats,
             )
 
-            assert stats["files_removed"] == 1
-            assert not pyc_file.exists()
-            assert normal_file.exists()
+            assert stats["files_removed"] == 1  # nosec: B101 - Test assertion
+            assert not pyc_file.exists()  # nosec: B101 - Test assertion
+            assert normal_file.exists()  # nosec: B101 - Test assertion
 
     def test_process_files_exclude_patterns(self):
         """Test processing files with exclude patterns."""
@@ -342,7 +352,7 @@ class TestFileProcessing:
                 stats=stats,
             )
 
-            assert stats["files_removed"] == 0
+            assert stats["files_removed"] == 0  # nosec: B101 - Test assertion
 
 
 class TestDepthControl:
@@ -350,17 +360,27 @@ class TestDepthControl:
 
     def test_should_skip_directory_no_limit(self):
         """Test depth skipping with no limit."""
-        assert not dp._should_skip_directory("/a/b/c", "/a", None)
+        assert not dp._should_skip_directory(
+            "/a/b/c", "/a", None
+        )  # nosec: B101 - Test assertion
 
     def test_should_skip_directory_within_limit(self):
         """Test depth skipping within limit."""
-        assert not dp._should_skip_directory("/a/b", "/a", 2)
-        assert not dp._should_skip_directory("/a/b/c", "/a", 3)
+        assert not dp._should_skip_directory(
+            "/a/b", "/a", 2
+        )  # nosec: B101 - Test assertion
+        assert not dp._should_skip_directory(
+            "/a/b/c", "/a", 3
+        )  # nosec: B101 - Test assertion
 
     def test_should_skip_directory_exceeds_limit(self):
         """Test depth skipping when exceeds limit."""
-        assert dp._should_skip_directory("/a/b/c/d", "/a", 3) is False
-        assert dp._should_skip_directory("/a/b/c/d/e", "/a", 3) is True
+        assert (
+            dp._should_skip_directory("/a/b/c/d", "/a", 3) is False
+        )  # nosec: B101 - Test assertion
+        assert (
+            dp._should_skip_directory("/a/b/c/d/e", "/a", 3) is True
+        )  # nosec: B101 - Test assertion
 
 
 class TestPreviewFunctionality:
@@ -377,11 +397,11 @@ class TestPreviewFunctionality:
 
             stats = dp.preview_deletions(temp_dir)
 
-            assert len(stats["dirs_to_remove"]) == 1
-            assert len(stats["files_to_remove"]) == 1
-            assert stats["total_files"] >= 1
-            assert stats["total_size_bytes"] > 0
-            assert stats["errors"] == 0
+            assert len(stats["dirs_to_remove"]) == 1  # nosec: B101 - Test assertion
+            assert len(stats["files_to_remove"]) == 1  # nosec: B101 - Test assertion
+            assert stats["total_files"] >= 1  # nosec: B101 - Test assertion
+            assert stats["total_size_bytes"] > 0  # nosec: B101 - Test assertion
+            assert stats["errors"] == 0  # nosec: B101 - Test assertion
 
     def test_preview_deletions_with_patterns(self):
         """Test preview with custom patterns."""
@@ -398,8 +418,8 @@ class TestPreviewFunctionality:
                 include_file_patterns=["*.tmp"],
             )
 
-            assert len(stats["dirs_to_remove"]) == 1
-            assert len(stats["files_to_remove"]) == 1
+            assert len(stats["dirs_to_remove"]) == 1  # nosec: B101 - Test assertion
+            assert len(stats["files_to_remove"]) == 1  # nosec: B101 - Test assertion
 
     def test_preview_deletions_exclude_patterns(self):
         """Test preview with exclude patterns."""
@@ -416,8 +436,8 @@ class TestPreviewFunctionality:
                 exclude_file_patterns=["*.pyc"],
             )
 
-            assert len(stats["dirs_to_remove"]) == 0
-            assert len(stats["files_to_remove"]) == 0
+            assert len(stats["dirs_to_remove"]) == 0  # nosec: B101 - Test assertion
+            assert len(stats["files_to_remove"]) == 0  # nosec: B101 - Test assertion
 
 
 class TestMainFunctions:
@@ -434,8 +454,8 @@ class TestMainFunctions:
 
             stats = dp.delete_temporary_items(temp_dir, dry_run=False, verbose=False)
 
-            assert stats["dirs_removed"] >= 1
-            assert stats["files_removed"] >= 1
+            assert stats["dirs_removed"] >= 1  # nosec: B101 - Test assertion
+            assert stats["files_removed"] >= 1  # nosec: B101 - Test assertion
 
     def test_delete_temporary_items_dry_run(self):
         """Test temporary item deletion in dry run mode."""
@@ -448,10 +468,10 @@ class TestMainFunctions:
 
             stats = dp.delete_temporary_items(temp_dir, dry_run=True, verbose=False)
 
-            assert stats["dirs_removed"] == 0
-            assert stats["files_removed"] == 0
-            assert pycache_dir.exists()
-            assert pyc_file.exists()
+            assert stats["dirs_removed"] == 0  # nosec: B101 - Test assertion
+            assert stats["files_removed"] == 0  # nosec: B101 - Test assertion
+            assert pycache_dir.exists()  # nosec: B101 - Test assertion
+            assert pyc_file.exists()  # nosec: B101 - Test assertion
 
     def test_prune_empty_dirs(self):
         """Test empty directory pruning."""
@@ -467,8 +487,8 @@ class TestMainFunctions:
 
             dp.prune_empty_dirs(temp_dir, dry_run=False, verbose=False)
 
-            assert not empty_dir.exists()
-            assert keep_dir.exists()
+            assert not empty_dir.exists()  # nosec: B101 - Test assertion
+            assert keep_dir.exists()  # nosec: B101 - Test assertion
 
     def test_clear_log_files_truncate(self):
         """Test log file truncation."""
@@ -482,8 +502,8 @@ class TestMainFunctions:
                 temp_dir, delete_logs_dir=False, dry_run=False, verbose=False
             )
 
-            assert log_file.exists()
-            assert log_file.stat().st_size == 0
+            assert log_file.exists()  # nosec: B101 - Test assertion
+            assert log_file.stat().st_size == 0  # nosec: B101 - Test assertion
 
     def test_clear_log_files_delete_dir(self):
         """Test log directory deletion."""
@@ -497,7 +517,7 @@ class TestMainFunctions:
                 temp_dir, delete_logs_dir=True, dry_run=False, verbose=False
             )
 
-            assert not logs_dir.exists()
+            assert not logs_dir.exists()  # nosec: B101 - Test assertion
 
 
 class TestArgumentParsing:
@@ -506,11 +526,11 @@ class TestArgumentParsing:
     def test_parse_args_defaults(self):
         """Test default argument parsing."""
         args = dp.parse_args([])
-        assert args.root is None
-        assert args.dry_run is False
-        assert args.preview is False
-        assert args.yes is False
-        assert args.quiet is False
+        assert args.root is None  # nosec: B101 - Test assertion
+        assert args.dry_run is False  # nosec: B101 - Test assertion
+        assert args.preview is False  # nosec: B101 - Test assertion
+        assert args.yes is False  # nosec: B101 - Test assertion
+        assert args.quiet is False  # nosec: B101 - Test assertion
 
     def test_parse_args_custom_values(self):
         """Test custom argument parsing."""
@@ -529,17 +549,17 @@ class TestArgumentParsing:
                 "--prune-empty-dirs",
             ]
         )
-        assert args.root == "/path/to/root"
-        assert args.dry_run is True
-        assert args.yes is True
-        assert args.quiet is True
-        assert args.delete_logs is True
-        assert args.remove_node_modules is True
-        assert args.remove_venvs is True
-        assert args.apgi_only is True
-        assert args.keep_visualizations is True
-        assert args.keep_reports is True
-        assert args.prune_empty_dirs is True
+        assert args.root == "/path/to/root"  # nosec: B101 - Test assertion
+        assert args.dry_run is True  # nosec: B101 - Test assertion
+        assert args.yes is True  # nosec: B101 - Test assertion
+        assert args.quiet is True  # nosec: B101 - Test assertion
+        assert args.delete_logs is True  # nosec: B101 - Test assertion
+        assert args.remove_node_modules is True  # nosec: B101 - Test assertion
+        assert args.remove_venvs is True  # nosec: B101 - Test assertion
+        assert args.apgi_only is True  # nosec: B101 - Test assertion
+        assert args.keep_visualizations is True  # nosec: B101 - Test assertion
+        assert args.keep_reports is True  # nosec: B101 - Test assertion
+        assert args.prune_empty_dirs is True  # nosec: B101 - Test assertion
 
     def test_parse_args_include_exclude_patterns(self):
         """Test include/exclude pattern arguments."""
@@ -557,10 +577,13 @@ class TestArgumentParsing:
                 "*.keep",
             ]
         )
-        assert args.include_dir == ["custom_*", "temp_*"]
-        assert args.include_file == ["*.tmp"]
-        assert args.exclude_dir == ["important_*"]
-        assert args.exclude_file == ["*.keep"]
+        assert args.include_dir == [
+            "custom_*",
+            "temp_*",
+        ]  # nosec: B101 - Test assertion
+        assert args.include_file == ["*.tmp"]  # nosec: B101 - Test assertion
+        assert args.exclude_dir == ["important_*"]  # nosec: B101 - Test assertion
+        assert args.exclude_file == ["*.keep"]  # nosec: B101 - Test assertion
 
 
 class TestMainFunction:
@@ -574,18 +597,18 @@ class TestMainFunction:
             pycache_dir.mkdir()
 
             result = dp.main([temp_dir, "--dry-run", "--yes"])
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
 
     def test_main_preview(self):
         """Test main function with preview."""
         with tempfile.TemporaryDirectory() as temp_dir:
             result = dp.main([temp_dir, "--preview"])
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
 
     def test_main_invalid_directory(self):
         """Test main function with invalid directory."""
         result = dp.main(["/nonexistent/directory", "--yes"])
-        assert result == 1
+        assert result == 1  # nosec: B101 - Test assertion
 
     def test_main_apgi_only_mode(self):
         """Test main function in APGI-only mode."""
@@ -597,7 +620,7 @@ class TestMainFunction:
             debug_file.write_text("debug content")
 
             result = dp.main([temp_dir, "--apgi-only", "--yes"])
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
 
     def test_main_keep_visualizations(self):
         """Test main function keeping visualizations."""
@@ -611,10 +634,12 @@ class TestMainFunction:
             pyc_file.write_bytes(b"bytecode")
 
             result = dp.main([temp_dir, "--keep-visualizations", "--yes"])
-            assert result == 0
-            assert png_file.exists()  # Should be kept
-            assert html_file.exists()  # Should be kept
-            assert not pyc_file.exists()  # Should be removed
+            assert result == 0  # nosec: B101 - Test assertion
+            assert png_file.exists()  # Should be kept  # nosec: B101 - Test assertion
+            assert html_file.exists()  # Should be kept  # nosec: B101 - Test assertion
+            assert (
+                not pyc_file.exists()
+            )  # Should be removed  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

@@ -34,29 +34,29 @@ class TestAPGIDynamicalParameters:
     def test_default_values(self):
         """Test default parameter values."""
         params = APGIDynamicalParameters()
-        assert params.tau_s == 0.35
-        assert params.tau_theta == 30.0
-        assert params.tau_m == 1.5
-        assert params.theta_0 == 0.5
-        assert params.alpha == 5.5
-        assert params.beta_som == 1.5
-        assert params.beta_m == 1.0
-        assert params.m_0 == 0.0
-        assert params.gamma_m == -0.3
-        assert params.gamma_a == 0.1
-        assert params.lambda_s == 0.1
-        assert params.sigma_s == 0.05
-        assert params.sigma_theta == 0.02
-        assert params.sigma_m == 0.03
-        assert params.theta_survival == 0.3
-        assert params.theta_neutral == 0.7
-        assert params.rho == 0.7
+        assert params.tau_s == 0.35  # nosec: B101 - Test assertion
+        assert params.tau_theta == 30.0  # nosec: B101 - Test assertion
+        assert params.tau_m == 1.5  # nosec: B101 - Test assertion
+        assert params.theta_0 == 0.5  # nosec: B101 - Test assertion
+        assert params.alpha == 5.5  # nosec: B101 - Test assertion
+        assert params.beta_som == 1.5  # nosec: B101 - Test assertion
+        assert params.beta_m == 1.0  # nosec: B101 - Test assertion
+        assert params.m_0 == 0.0  # nosec: B101 - Test assertion
+        assert params.gamma_m == -0.3  # nosec: B101 - Test assertion
+        assert params.gamma_a == 0.1  # nosec: B101 - Test assertion
+        assert params.lambda_s == 0.1  # nosec: B101 - Test assertion
+        assert params.sigma_s == 0.05  # nosec: B101 - Test assertion
+        assert params.sigma_theta == 0.02  # nosec: B101 - Test assertion
+        assert params.sigma_m == 0.03  # nosec: B101 - Test assertion
+        assert params.theta_survival == 0.3  # nosec: B101 - Test assertion
+        assert params.theta_neutral == 0.7  # nosec: B101 - Test assertion
+        assert params.rho == 0.7  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom parameter values."""
         params = APGIDynamicalParameters(tau_s=0.5, theta_0=1.0)
-        assert params.tau_s == 0.5
-        assert params.theta_0 == 1.0
+        assert params.tau_s == 0.5  # nosec: B101 - Test assertion
+        assert params.theta_0 == 1.0  # nosec: B101 - Test assertion
 
     def test_tau_s_validation(self):
         """Test tau_s range validation."""
@@ -131,16 +131,16 @@ class TestAPGIPerceptualParameters:
     def test_default_values(self):
         """Test default perceptual parameter values."""
         params = APGIPerceptualParameters()
-        assert params.pi_i_expected == 0.5
-        assert params.pi_i_survival == 0.8
-        assert params.attentional_gain == 2.0
-        assert params.visual_acuity == 1.0
+        assert params.pi_i_expected == 0.5  # nosec: B101 - Test assertion
+        assert params.pi_i_survival == 0.8  # nosec: B101 - Test assertion
+        assert params.attentional_gain == 2.0  # nosec: B101 - Test assertion
+        assert params.visual_acuity == 1.0  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom perceptual parameter values."""
         params = APGIPerceptualParameters(pi_i_expected=0.7, attentional_gain=3.0)
-        assert params.pi_i_expected == 0.7
-        assert params.attentional_gain == 3.0
+        assert params.pi_i_expected == 0.7  # nosec: B101 - Test assertion
+        assert params.attentional_gain == 3.0  # nosec: B101 - Test assertion
 
     def test_pi_i_expected_validation(self):
         """Test pi_i_expected range validation."""
@@ -167,15 +167,15 @@ class TestAPGIMetabolicParameters:
     def test_default_values(self):
         """Test default metabolic parameter values."""
         params = APGIMetabolicParameters()
-        assert params.baseline_metabolic_rate == 1.0
-        assert params.effort_cost_coefficient == 0.1
-        assert params.glucose_impact_factor == 0.5
-        assert params.fatigue_recovery_rate == 0.05
+        assert params.baseline_metabolic_rate == 1.0  # nosec: B101 - Test assertion
+        assert params.effort_cost_coefficient == 0.1  # nosec: B101 - Test assertion
+        assert params.glucose_impact_factor == 0.5  # nosec: B101 - Test assertion
+        assert params.fatigue_recovery_rate == 0.05  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom metabolic parameter values."""
         params = APGIMetabolicParameters(baseline_metabolic_rate=2.0)
-        assert params.baseline_metabolic_rate == 2.0
+        assert params.baseline_metabolic_rate == 2.0  # nosec: B101 - Test assertion
 
     def test_baseline_metabolic_rate_validation(self):
         """Test baseline_metabolic_rate range validation."""
@@ -193,18 +193,18 @@ class TestAPGIPsychiatricProfiles:
     def test_default_values(self):
         """Test default psychiatric profiles are empty dicts."""
         profiles = APGIPsychiatricProfiles()
-        assert profiles.gad_profile == 0.0
-        assert profiles.depression_score == 0.0
-        assert profiles.anxiety_score == 0.0
+        assert profiles.gad_profile == 0.0  # nosec: B101 - Test assertion
+        assert profiles.depression_score == 0.0  # nosec: B101 - Test assertion
+        assert profiles.anxiety_score == 0.0  # nosec: B101 - Test assertion
 
     def test_custom_profiles(self):
         """Test custom psychiatric profiles."""
         profiles = APGIPsychiatricProfiles(
             gad_profile=0.8, depression_score=0.7, anxiety_score=0.6
         )
-        assert profiles.gad_profile == 0.8
-        assert profiles.depression_score == 0.7
-        assert profiles.anxiety_score == 0.6
+        assert profiles.gad_profile == 0.8  # nosec: B101 - Test assertion
+        assert profiles.depression_score == 0.7  # nosec: B101 - Test assertion
+        assert profiles.anxiety_score == 0.6  # nosec: B101 - Test assertion
 
 
 class TestSecurityConfig:
@@ -213,13 +213,18 @@ class TestSecurityConfig:
     def test_default_values(self):
         """Test default security config values."""
         config = SecurityConfig()
-        assert config.audit_key == ""
-        assert config.operator_role == "guest"
-        assert config.config_secret_key == ""
-        assert config.enable_profiling is False
-        assert config.allowed_subprocess_cmds == ["git", "pytest", "python", "echo"]
-        assert config.encryption_enabled is True
-        assert config.access_log_enabled is True
+        assert config.audit_key == ""  # nosec: B101 - Test assertion
+        assert config.operator_role == "guest"  # nosec: B101 - Test assertion
+        assert config.config_secret_key == ""  # nosec: B101 - Test assertion
+        assert config.enable_profiling is False  # nosec: B101 - Test assertion
+        assert config.allowed_subprocess_cmds == [
+            "git",
+            "pytest",
+            "python",
+            "echo",
+        ]  # nosec: B101 - Test assertion
+        assert config.encryption_enabled is True  # nosec: B101 - Test assertion
+        assert config.access_log_enabled is True  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom security config values."""
@@ -228,9 +233,9 @@ class TestSecurityConfig:
             operator_role="admin",
             enable_profiling=True,
         )
-        assert config.audit_key == "a" * 64
-        assert config.operator_role == "admin"
-        assert config.enable_profiling is True
+        assert config.audit_key == "a" * 64  # nosec: B101 - Test assertion
+        assert config.operator_role == "admin"  # nosec: B101 - Test assertion
+        assert config.enable_profiling is True  # nosec: B101 - Test assertion
 
     def test_audit_key_length_validation(self):
         """Test audit_key minimum length validation."""
@@ -271,9 +276,11 @@ class TestSecurityConfig:
     def test_allowed_subprocess_cmds_default(self):
         """Test default allowed subprocess commands."""
         config = SecurityConfig()
-        assert "git" in config.allowed_subprocess_cmds
-        assert "echo" in config.allowed_subprocess_cmds
-        assert "python" in config.allowed_subprocess_cmds
+        assert "git" in config.allowed_subprocess_cmds  # nosec: B101 - Test assertion
+        assert "echo" in config.allowed_subprocess_cmds  # nosec: B101 - Test assertion
+        assert (
+            "python" in config.allowed_subprocess_cmds
+        )  # nosec: B101 - Test assertion
 
     def test_custom_experiment_values(self):
         """Test custom experiment config values."""
@@ -284,11 +291,11 @@ class TestSecurityConfig:
             output_format="csv",
             checkpoint_interval=300,
         )
-        assert config.num_trials == 1000
-        assert config.time_budget_seconds == 1800
-        assert config.random_seed == 42
-        assert config.output_format == "csv"
-        assert config.checkpoint_interval == 300
+        assert config.num_trials == 1000  # nosec: B101 - Test assertion
+        assert config.time_budget_seconds == 1800  # nosec: B101 - Test assertion
+        assert config.random_seed == 42  # nosec: B101 - Test assertion
+        assert config.output_format == "csv"  # nosec: B101 - Test assertion
+        assert config.checkpoint_interval == 300  # nosec: B101 - Test assertion
 
     def test_num_trials_validation(self):
         """Test num_trials range validation."""
@@ -332,13 +339,25 @@ class TestAPGIGlobalConfig:
     def test_default_values(self):
         """Test default global config values."""
         config = APGIGlobalConfig()
-        assert config.version == CURRENT_CONFIG_VERSION
-        assert isinstance(config.dynamical, APGIDynamicalParameters)
-        assert isinstance(config.perceptual, APGIPerceptualParameters)
-        assert isinstance(config.metabolic, APGIMetabolicParameters)
-        assert isinstance(config.psychiatric, APGIPsychiatricProfiles)
-        assert isinstance(config.security, SecurityConfig)
-        assert isinstance(config.experiment, ExperimentConfig)
+        assert config.version == CURRENT_CONFIG_VERSION  # nosec: B101 - Test assertion
+        assert isinstance(
+            config.dynamical, APGIDynamicalParameters
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            config.perceptual, APGIPerceptualParameters
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            config.metabolic, APGIMetabolicParameters
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            config.psychiatric, APGIPsychiatricProfiles
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            config.security, SecurityConfig
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            config.experiment, ExperimentConfig
+        )  # nosec: B101 - Test assertion
 
         # Test that all expected attributes exist
         expected_attributes = [
@@ -391,7 +410,7 @@ class TestAPGIGlobalConfig:
     def test_custom_version(self):
         """Test custom version."""
         config = APGIGlobalConfig(version="2.0.0")
-        assert config.version == "2.0.0"
+        assert config.version == "2.0.0"  # nosec: B101 - Test assertion
 
     def test_version_pattern_validation(self):
         """Test version pattern validation."""
@@ -407,7 +426,9 @@ class TestAPGIGlobalConfig:
     def test_validate_consistency_valid(self):
         """Test cross-parameter consistency validation with valid config."""
         config = APGIGlobalConfig()
-        assert config.dynamical.theta_survival < config.dynamical.theta_neutral
+        assert (
+            config.dynamical.theta_survival < config.dynamical.theta_neutral
+        )  # nosec: B101 - Test assertion
         # Should not raise
         APGIGlobalConfig.model_validate(config.model_dump())
 
@@ -437,10 +458,16 @@ class TestLoadConfigFromEnv:
         """Test loading config with default environment values."""
         with patch.dict(os.environ, {}, clear=True):
             config = load_config_from_env()
-            assert config.security.audit_key == ""
-            assert config.security.operator_role == "guest"
-            assert config.security.config_secret_key == ""
-            assert config.security.enable_profiling is False
+            assert config.security.audit_key == ""  # nosec: B101 - Test assertion
+            assert (
+                config.security.operator_role == "guest"
+            )  # nosec: B101 - Test assertion
+            assert (
+                config.security.config_secret_key == ""
+            )  # nosec: B101 - Test assertion
+            assert (
+                config.security.enable_profiling is False
+            )  # nosec: B101 - Test assertion
 
     def test_load_config_from_env_with_values(self):
         """Test loading config with environment values."""
@@ -452,10 +479,16 @@ class TestLoadConfigFromEnv:
         }
         with patch.dict(os.environ, env_vars, clear=True):
             config = load_config_from_env()
-            assert config.security.audit_key == "a" * 64
-            assert config.security.operator_role == "admin"
-            assert config.security.config_secret_key == "secret123"
-            assert config.security.enable_profiling is True
+            assert config.security.audit_key == "a" * 64  # nosec: B101 - Test assertion
+            assert (
+                config.security.operator_role == "admin"
+            )  # nosec: B101 - Test assertion
+            assert (
+                config.security.config_secret_key == "secret123"
+            )  # nosec: B101 - Test assertion
+            assert (
+                config.security.enable_profiling is True
+            )  # nosec: B101 - Test assertion
 
     def test_enable_profiling_variations(self):
         """Test various enable_profiling environment values."""
@@ -463,13 +496,17 @@ class TestLoadConfigFromEnv:
         for val in true_values:
             with patch.dict(os.environ, {"APGI_ENABLE_PROFILING": val}, clear=True):
                 config = load_config_from_env()
-                assert config.security.enable_profiling is True
+                assert (
+                    config.security.enable_profiling is True
+                )  # nosec: B101 - Test assertion
 
         false_values = ["0", "false", "no", "FALSE", "NO", ""]
         for val in false_values:
             with patch.dict(os.environ, {"APGI_ENABLE_PROFILING": val}, clear=True):
                 config = load_config_from_env()
-                assert config.security.enable_profiling is False
+                assert (
+                    config.security.enable_profiling is False
+                )  # nosec: B101 - Test assertion
 
 
 class TestComputeConfigChecksum:
@@ -479,29 +516,29 @@ class TestComputeConfigChecksum:
         """Test checksum computation from APGIGlobalConfig."""
         config = APGIGlobalConfig()
         checksum = compute_config_checksum(config)
-        assert isinstance(checksum, str)
-        assert len(checksum) == 64  # SHA-256 hex length
+        assert isinstance(checksum, str)  # nosec: B101 - Test assertion
+        assert len(checksum) == 64  # SHA-256 hex length  # nosec: B101 - Test assertion
 
     def test_compute_checksum_from_dict(self):
         """Test checksum computation from dict."""
         config_dict = {"version": "1.0.0", "test": "value"}
         checksum = compute_config_checksum(config_dict)
-        assert isinstance(checksum, str)
-        assert len(checksum) == 64
+        assert isinstance(checksum, str)  # nosec: B101 - Test assertion
+        assert len(checksum) == 64  # nosec: B101 - Test assertion
 
     def test_compute_checksum_with_secret_key(self):
         """Test checksum computation with secret key."""
         config = APGIGlobalConfig()
         checksum1 = compute_config_checksum(config, secret_key="")
         checksum2 = compute_config_checksum(config, secret_key="secret")
-        assert checksum1 != checksum2
+        assert checksum1 != checksum2  # nosec: B101 - Test assertion
 
     def test_compute_checksum_deterministic(self):
         """Test checksum is deterministic for same input."""
         config = APGIGlobalConfig()
         checksum1 = compute_config_checksum(config)
         checksum2 = compute_config_checksum(config)
-        assert checksum1 == checksum2
+        assert checksum1 == checksum2  # nosec: B101 - Test assertion
 
     def test_compute_checksum_different_configs(self):
         """Test different configs produce different checksums."""
@@ -509,7 +546,7 @@ class TestComputeConfigChecksum:
         config2 = APGIGlobalConfig(dynamical=APGIDynamicalParameters(tau_s=0.5))
         checksum1 = compute_config_checksum(config1)
         checksum2 = compute_config_checksum(config2)
-        assert checksum1 != checksum2
+        assert checksum1 != checksum2  # nosec: B101 - Test assertion
 
 
 class TestValidateConfigIntegrity:
@@ -519,21 +556,27 @@ class TestValidateConfigIntegrity:
         """Test integrity validation with matching checksum."""
         config = APGIGlobalConfig()
         expected_checksum = compute_config_checksum(config)
-        assert validate_config_integrity(config, expected_checksum) is True
+        assert (
+            validate_config_integrity(config, expected_checksum) is True
+        )  # nosec: B101 - Test assertion
 
     def test_validate_integrity_invalid(self):
         """Test integrity validation with mismatched checksum."""
         config = APGIGlobalConfig()
         wrong_checksum = "a" * 64
-        assert validate_config_integrity(config, wrong_checksum) is False
+        assert (
+            validate_config_integrity(config, wrong_checksum) is False
+        )  # nosec: B101 - Test assertion
 
     def test_validate_integrity_with_secret_key(self):
         """Test integrity validation with secret key."""
         config = APGIGlobalConfig()
         secret = "my_secret"
         expected_checksum = compute_config_checksum(config, secret)
-        assert validate_config_integrity(config, expected_checksum, secret) is True
         assert (
+            validate_config_integrity(config, expected_checksum, secret) is True
+        )  # nosec: B101 - Test assertion
+        assert (  # nosec: B101 - Test assertion
             validate_config_integrity(config, expected_checksum, "wrong_secret")
             is False
         )
@@ -546,28 +589,30 @@ class TestMigrateConfig:
         """Test migration when already at current version."""
         config_dict = {"version": "1.0.0", "test": "value"}
         result = migrate_config(config_dict, "1.0.0", "1.0.0")
-        assert result["version"] == "1.0.0"
-        assert result["test"] == "value"
+        assert result["version"] == "1.0.0"  # nosec: B101 - Test assertion
+        assert result["test"] == "value"  # nosec: B101 - Test assertion
 
     def test_migrate_config_from_0_9_0(self):
         """Test migration from version 0.9.0 to 1.0.0."""
         config_dict = {"version": "0.9.0", "test": "value"}
         result = migrate_config(config_dict, "0.9.0", "1.0.0")
-        assert result["version"] == "1.0.0"
-        assert result["test"] == "value"
+        assert result["version"] == "1.0.0"  # nosec: B101 - Test assertion
+        assert result["test"] == "value"  # nosec: B101 - Test assertion
 
     def test_migrate_config_unknown_version(self):
         """Test migration from unknown version (no migration path)."""
         config_dict = {"version": "0.5.0", "test": "value"}
         result = migrate_config(config_dict, "0.5.0", "1.0.0")
         # Should return unchanged if no migration path exists
-        assert result["version"] == "0.5.0"
+        assert result["version"] == "0.5.0"  # nosec: B101 - Test assertion
 
     def test_config_migrations_constant(self):
         """Test CONFIG_MIGRATIONS constant structure."""
-        assert "0.9.0" in CONFIG_MIGRATIONS
-        assert CONFIG_MIGRATIONS["0.9.0"]["upgrade_to"] == "1.0.0"
-        assert "changes" in CONFIG_MIGRATIONS["0.9.0"]
+        assert "0.9.0" in CONFIG_MIGRATIONS  # nosec: B101 - Test assertion
+        assert (
+            CONFIG_MIGRATIONS["0.9.0"]["upgrade_to"] == "1.0.0"
+        )  # nosec: B101 - Test assertion
+        assert "changes" in CONFIG_MIGRATIONS["0.9.0"]  # nosec: B101 - Test assertion
 
 
 class TestValidateStartupConfig:
@@ -576,22 +621,28 @@ class TestValidateStartupConfig:
     def test_validate_startup_config_default(self):
         """Test startup validation with default config."""
         is_valid = validate_startup_config()
-        assert isinstance(is_valid, bool)  # Check it returns a boolean
-        assert is_valid is True
+        assert isinstance(
+            is_valid, bool
+        )  # Check it returns a boolean  # nosec: B101 - Test assertion
+        assert is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_startup_config_with_valid_config(self):
         """Test startup validation with provided valid config."""
         config = APGIGlobalConfig()
         is_valid = validate_startup_config(config)
-        assert isinstance(is_valid, bool)  # Check it returns a boolean
-        assert is_valid is True
+        assert isinstance(
+            is_valid, bool
+        )  # Check it returns a boolean  # nosec: B101 - Test assertion
+        assert is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_startup_config_with_none(self):
         """Test startup validation with None (loads from env)."""
         with patch.dict(os.environ, {}, clear=True):
             is_valid = validate_startup_config(None)
-            assert isinstance(is_valid, bool)  # Check it returns a boolean
-            assert is_valid is True
+            assert isinstance(
+                is_valid, bool
+            )  # Check it returns a boolean  # nosec: B101 - Test assertion
+            assert is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_startup_config_invalid_model(self):
         """Test startup validation with invalid model."""
@@ -619,7 +670,7 @@ class TestValidateStartupConfig:
         """Test startup validation with valid audit key."""
         with patch.dict(os.environ, {"APGI_AUDIT_KEY": "a" * 64}, clear=True):
             is_valid = validate_startup_config()
-            assert is_valid is True
+            assert is_valid is True  # nosec: B101 - Test assertion
 
 
 class TestCurrentConfigVersion:
@@ -628,9 +679,9 @@ class TestCurrentConfigVersion:
     def test_current_config_version_format(self):
         """Test CURRENT_CONFIG_VERSION follows semantic versioning."""
         parts = CURRENT_CONFIG_VERSION.split(".")
-        assert len(parts) == 3
-        assert all(part.isdigit() for part in parts)
+        assert len(parts) == 3  # nosec: B101 - Test assertion
+        assert all(part.isdigit() for part in parts)  # nosec: B101 - Test assertion
 
     def test_current_config_version_not_empty(self):
         """Test CURRENT_CONFIG_VERSION is not empty."""
-        assert CURRENT_CONFIG_VERSION != ""
+        assert CURRENT_CONFIG_VERSION != ""  # nosec: B101 - Test assertion

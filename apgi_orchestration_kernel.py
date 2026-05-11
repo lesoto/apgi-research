@@ -15,12 +15,12 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar
 
 from apgi_audit import AuditEventType, get_audit_sink
+from apgi_integration import APGIIntegration, APGIParameters
+from apgi_security_adapters import SecurityLevel, get_security_factory
 from utils.apgi_authz import get_authz_manager
 from utils.apgi_config import APGIExperimentConfigSchema
 from utils.apgi_errors import APGIIntegrationError, APGIRuntimeError, APGITimeoutError
-from apgi_integration import APGIIntegration, APGIParameters
 from utils.apgi_logging import APGIContextLogger, get_logger
-from apgi_security_adapters import SecurityLevel, get_security_factory
 
 T = TypeVar("T")  # Generic trial data type
 
@@ -225,7 +225,7 @@ class APGIOrchestrationKernel:
 
         # Create trial metrics
         trial_metrics = TrialMetrics(
-            trial_number=run_context["trial_count"],
+            trial_number=run_context["trial_count"] + 1,
             prediction_error=prediction_error,
             precision=precision,
             ignition_probability=ignition_prob,
@@ -245,8 +245,9 @@ class APGIOrchestrationKernel:
             except Exception as e:
                 logger.warning(f"Trial callback failed: {e}")
 
+        # Increment trial count in run context
+        run_context["trial_count"] += 1
         logger.debug(f"Processed trial {trial_metrics.trial_number}")
-
         return trial_metrics
 
     def finalize_run(

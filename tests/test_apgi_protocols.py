@@ -50,11 +50,15 @@ class TestExperimentRunnerProtocol:
 
     def test_runner_protocol_compliance(self):
         """Test that valid runner satisfies protocol."""
-        assert isinstance(ValidRunner(), ExperimentRunnerProtocol)
+        assert isinstance(
+            ValidRunner(), ExperimentRunnerProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_invalid_runner_not_protocol(self):
         """Test that invalid runner does not satisfy protocol."""
-        assert not isinstance(InvalidRunner(), ExperimentRunnerProtocol)
+        assert not isinstance(
+            InvalidRunner(), ExperimentRunnerProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_protocol_runtime_checkable(self):
         """Test that ExperimentRunnerProtocol is runtime checkable."""
@@ -71,17 +75,21 @@ class TestAPGIModelProtocol:
 
     def test_valid_model_protocol(self):
         """Test that valid model satisfies protocol."""
-        assert isinstance(ValidAPGIModel(), APGIModelProtocol)
+        assert isinstance(
+            ValidAPGIModel(), APGIModelProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_invalid_model_not_protocol(self):
         """Test that invalid model does not satisfy protocol."""
-        assert not isinstance(InvalidAPGIModel(), APGIModelProtocol)
+        assert not isinstance(
+            InvalidAPGIModel(), APGIModelProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_model_protocol_methods(self):
         """Test that protocol methods are accessible."""
         model = ValidAPGIModel()
         result = model.process_trial(1.0, 1.5)
-        assert "error" in result
+        assert "error" in result  # nosec: B101 - Test assertion
 
     def test_model_reset_method(self):
         """Test that reset method exists and is callable."""
@@ -109,7 +117,7 @@ class TestBaseAPGIRunner:
         runner = DummyRunner()
         with pytest.warns(DeprecationWarning, match="execute is deprecated"):
             res = runner.execute()
-            assert res["result"] == 42
+            assert res["result"] == 42  # nosec: B101 - Test assertion
 
     def test_execute_returns_run_experiment_result(self):
         """Test that execute() returns result from run_experiment()."""
@@ -121,7 +129,10 @@ class TestBaseAPGIRunner:
         runner = TestRunner()
         with pytest.warns(DeprecationWarning):
             result = runner.execute()
-            assert result == {"test": "data", "number": 123}
+            assert result == {
+                "test": "data",
+                "number": 123,
+            }  # nosec: B101 - Test assertion
 
 
 class TestDeprecatedDecorator:
@@ -136,7 +147,7 @@ class TestDeprecatedDecorator:
 
         with pytest.warns(DeprecationWarning, match="old_function is deprecated"):
             result = old_function()
-            assert result == "old"
+            assert result == "old"  # nosec: B101 - Test assertion
 
     def test_deprecated_includes_reason(self):
         """Test that deprecated decorator includes reason in warning."""
@@ -148,8 +159,10 @@ class TestDeprecatedDecorator:
         with pytest.warns(DeprecationWarning) as warning_list:
             obsolete_function()
 
-        assert len(warning_list) == 1
-        assert "obsolete" in str(warning_list[0].message)
+        assert len(warning_list) == 1  # nosec: B101 - Test assertion
+        assert "obsolete" in str(
+            warning_list[0].message
+        )  # nosec: B101 - Test assertion
 
     def test_deprecated_preserves_function(self):
         """Test that deprecated decorator preserves function behavior."""
@@ -161,11 +174,11 @@ class TestDeprecatedDecorator:
 
         with pytest.warns(DeprecationWarning):
             result = add(2, 3)
-            assert result == 5
+            assert result == 5  # nosec: B101 - Test assertion
 
         # Check that function metadata is preserved
-        assert add.__name__ == "add"
-        assert add.__doc__ == "Add two numbers."
+        assert add.__name__ == "add"  # nosec: B101 - Test assertion
+        assert add.__doc__ == "Add two numbers."  # nosec: B101 - Test assertion
 
     def test_deprecated_with_args(self):
         """Test deprecated decorator with function arguments."""
@@ -178,7 +191,7 @@ class TestDeprecatedDecorator:
 
         with pytest.warns(DeprecationWarning):
             result = calculate(5, 3, operation="subtract")
-            assert result == 2
+            assert result == 2  # nosec: B101 - Test assertion
 
 
 class TestProtocolEdgeCases:
@@ -186,11 +199,15 @@ class TestProtocolEdgeCases:
 
     def test_none_not_protocol(self):
         """Test that None is not a valid protocol implementation."""
-        assert not isinstance(None, ExperimentRunnerProtocol)
+        assert not isinstance(
+            None, ExperimentRunnerProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_object_not_protocol(self):
         """Test that plain object is not a valid protocol implementation."""
-        assert not isinstance(object(), ExperimentRunnerProtocol)
+        assert not isinstance(
+            object(), ExperimentRunnerProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_empty_class_not_protocol(self):
         """Test that empty class is not a valid protocol implementation."""
@@ -198,7 +215,9 @@ class TestProtocolEdgeCases:
         class Empty:
             pass
 
-        assert not isinstance(Empty(), ExperimentRunnerProtocol)
+        assert not isinstance(
+            Empty(), ExperimentRunnerProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_partial_model_not_protocol(self):
         """Test that partial model implementation is not valid."""
@@ -211,4 +230,6 @@ class TestProtocolEdgeCases:
 
             # Missing reset method
 
-        assert not isinstance(PartialModel(), APGIModelProtocol)
+        assert not isinstance(
+            PartialModel(), APGIModelProtocol
+        )  # nosec: B101 - Test assertion

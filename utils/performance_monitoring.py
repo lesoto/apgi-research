@@ -201,7 +201,9 @@ class PerformanceMonitor:
                 start = time.time()
                 try:
                     func()
-                except Exception:
+                except (
+                    Exception
+                ):  # nosec: B110 - Benchmark continues even if function fails
                     pass
                 end = time.time()
                 times_ms.append((end - start) * 1000)

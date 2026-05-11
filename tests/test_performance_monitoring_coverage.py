@@ -47,12 +47,12 @@ class TestMemorySnapshot:
             gc_objects=1000,
             gc_stats={"generation_0": 10, "generation_1": 5},
         )
-        assert snapshot.rss_mb == 100.0
-        assert snapshot.vms_mb == 200.0
-        assert snapshot.percent == 50.0
-        assert snapshot.available_mb == 1000.0
-        assert snapshot.gc_objects == 1000
-        assert snapshot.gc_stats["generation_0"] == 10
+        assert snapshot.rss_mb == 100.0  # nosec: B101 - Test assertion
+        assert snapshot.vms_mb == 200.0  # nosec: B101 - Test assertion
+        assert snapshot.percent == 50.0  # nosec: B101 - Test assertion
+        assert snapshot.available_mb == 1000.0  # nosec: B101 - Test assertion
+        assert snapshot.gc_objects == 1000  # nosec: B101 - Test assertion
+        assert snapshot.gc_stats["generation_0"] == 10  # nosec: B101 - Test assertion
 
 
 class TestCPUSnapshot:
@@ -67,10 +67,10 @@ class TestCPUSnapshot:
             freq_mhz=2400.0,
             load_avg=[1.0, 2.0, 3.0],
         )
-        assert snapshot.percent == 25.0
-        assert snapshot.count == 8
-        assert snapshot.freq_mhz == 2400.0
-        assert snapshot.load_avg == [1.0, 2.0, 3.0]
+        assert snapshot.percent == 25.0  # nosec: B101 - Test assertion
+        assert snapshot.count == 8  # nosec: B101 - Test assertion
+        assert snapshot.freq_mhz == 2400.0  # nosec: B101 - Test assertion
+        assert snapshot.load_avg == [1.0, 2.0, 3.0]  # nosec: B101 - Test assertion
 
 
 class TestPerformanceMetrics:
@@ -82,10 +82,10 @@ class TestPerformanceMetrics:
             operation_name="test_op",
             start_time=time.time(),
         )
-        assert metrics.operation_name == "test_op"
-        assert metrics.start_time > 0
-        assert metrics.end_time is None
-        assert metrics.duration is None
+        assert metrics.operation_name == "test_op"  # nosec: B101 - Test assertion
+        assert metrics.start_time > 0  # nosec: B101 - Test assertion
+        assert metrics.end_time is None  # nosec: B101 - Test assertion
+        assert metrics.duration is None  # nosec: B101 - Test assertion
 
 
 class TestPerformanceMonitorBackgroundMonitoring:
@@ -122,8 +122,8 @@ class TestPerformanceMonitorBackgroundMonitoring:
         # Stop monitoring
         monitor.stop_monitoring()
 
-        assert len(monitor.memory_history) > 0
-        assert len(monitor.cpu_history) > 0
+        assert len(monitor.memory_history) > 0  # nosec: B101 - Test assertion
+        assert len(monitor.cpu_history) > 0  # nosec: B101 - Test assertion
 
     def test_stop_monitoring_not_started(self):
         """Test stopping when not started."""
@@ -185,7 +185,7 @@ class TestPerformanceMonitorThresholds:
         monitor.stop_monitoring()
 
         # Should have detected threshold violation
-        assert len(callback_calls) > 0
+        assert len(callback_calls) > 0  # nosec: B101 - Test assertion
 
     @patch("performance_monitoring.psutil.Process")
     @patch("performance_monitoring.psutil.cpu_percent")
@@ -224,7 +224,7 @@ class TestPerformanceMonitorThresholds:
         monitor.stop_monitoring()
 
         # Should have detected threshold violation
-        assert len(callback_calls) > 0
+        assert len(callback_calls) > 0  # nosec: B101 - Test assertion
 
     @patch("performance_monitoring.psutil.Process")
     def test_memory_leak_detection(self, mock_process):
@@ -316,20 +316,20 @@ class TestPerformanceMonitorOperations:
 
         # Start operation
         metrics = monitor.start_operation("test_op")
-        assert metrics.operation_name == "test_op"
-        assert metrics.start_time > 0
-        assert metrics.memory_before is not None
-        assert metrics.cpu_before is not None
+        assert metrics.operation_name == "test_op"  # nosec: B101 - Test assertion
+        assert metrics.start_time > 0  # nosec: B101 - Test assertion
+        assert metrics.memory_before is not None  # nosec: B101 - Test assertion
+        assert metrics.cpu_before is not None  # nosec: B101 - Test assertion
 
         time.sleep(0.1)
 
         # End operation
         monitor.end_operation(metrics, success=True)
-        assert metrics.end_time is not None
-        assert metrics.duration is not None
-        assert metrics.memory_after is not None
-        assert metrics.cpu_after is not None
-        assert metrics.success is True
+        assert metrics.end_time is not None  # nosec: B101 - Test assertion
+        assert metrics.duration is not None  # nosec: B101 - Test assertion
+        assert metrics.memory_after is not None  # nosec: B101 - Test assertion
+        assert metrics.cpu_after is not None  # nosec: B101 - Test assertion
+        assert metrics.success is True  # nosec: B101 - Test assertion
 
     @patch("performance_monitoring.psutil.Process")
     def test_end_operation_with_error(self, mock_process):
@@ -347,8 +347,8 @@ class TestPerformanceMonitorOperations:
         time.sleep(0.05)
         monitor.end_operation(metrics, success=False, error="Test error")
 
-        assert metrics.success is False
-        assert metrics.error == "Test error"
+        assert metrics.success is False  # nosec: B101 - Test assertion
+        assert metrics.error == "Test error"  # nosec: B101 - Test assertion
 
 
 class TestPerformanceSummary:
@@ -376,8 +376,8 @@ class TestPerformanceSummary:
         monitor.end_operation(metrics2, success=True)
 
         summary = monitor.get_performance_summary()
-        assert "total_operations" in summary
-        assert summary["total_operations"] == 2
+        assert "total_operations" in summary  # nosec: B101 - Test assertion
+        assert summary["total_operations"] == 2  # nosec: B101 - Test assertion
 
     @patch("performance_monitoring.psutil.Process")
     def test_get_performance_summary_by_name(self, mock_process):
@@ -401,13 +401,13 @@ class TestPerformanceSummary:
         monitor.end_operation(metrics2, success=True)
 
         summary = monitor.get_performance_summary("op1")
-        assert summary["total_operations"] == 1
+        assert summary["total_operations"] == 1  # nosec: B101 - Test assertion
 
     def test_get_performance_summary_empty(self):
         """Test getting performance summary with no operations."""
         monitor = PerformanceMonitor()
         summary = monitor.get_performance_summary()
-        assert summary == {}
+        assert summary == {}  # nosec: B101 - Test assertion
 
 
 class TestTrendAnalysis:
@@ -433,9 +433,9 @@ class TestTrendAnalysis:
                 )
 
         trend = monitor.get_memory_trend()
-        assert "current_mb" in trend
-        assert "trend_direction" in trend
-        assert trend["trend_direction"] == "increasing"
+        assert "current_mb" in trend  # nosec: B101 - Test assertion
+        assert "trend_direction" in trend  # nosec: B101 - Test assertion
+        assert trend["trend_direction"] == "increasing"  # nosec: B101 - Test assertion
 
     def test_get_memory_trend_stable(self):
         """Test getting stable memory trend."""
@@ -457,13 +457,13 @@ class TestTrendAnalysis:
                 )
 
         trend = monitor.get_memory_trend()
-        assert trend["trend_direction"] == "stable"
+        assert trend["trend_direction"] == "stable"  # nosec: B101 - Test assertion
 
     def test_get_memory_trend_insufficient_data(self):
         """Test getting memory trend with insufficient data."""
         monitor = PerformanceMonitor()
         trend = monitor.get_memory_trend()
-        assert trend == {}
+        assert trend == {}  # nosec: B101 - Test assertion
 
     def test_get_cpu_trend(self):
         """Test getting CPU trend."""
@@ -483,15 +483,15 @@ class TestTrendAnalysis:
                 )
 
         trend = monitor.get_cpu_trend()
-        assert "current_percent" in trend
-        assert "trend_direction" in trend
-        assert trend["trend_direction"] == "increasing"
+        assert "current_percent" in trend  # nosec: B101 - Test assertion
+        assert "trend_direction" in trend  # nosec: B101 - Test assertion
+        assert trend["trend_direction"] == "increasing"  # nosec: B101 - Test assertion
 
     def test_get_cpu_trend_insufficient_data(self):
         """Test getting CPU trend with insufficient data."""
         monitor = PerformanceMonitor()
         trend = monitor.get_cpu_trend()
-        assert trend == {}
+        assert trend == {}  # nosec: B101 - Test assertion
 
 
 class TestPerformanceRegression:
@@ -510,7 +510,7 @@ class TestPerformanceRegression:
         monitor = PerformanceMonitor()
 
         result = monitor.detect_performance_regression()
-        assert result["status"] == "insufficient_data"
+        assert result["status"] == "insufficient_data"  # nosec: B101 - Test assertion
 
     @patch("performance_monitoring.psutil.Process")
     def test_detect_performance_regression_significant(self, mock_process):
@@ -542,8 +542,8 @@ class TestPerformanceRegression:
 
         # Should detect regression
         if result["status"] == "detected":
-            assert "regression_percent" in result
-            assert "significance" in result
+            assert "regression_percent" in result  # nosec: B101 - Test assertion
+            assert "significance" in result  # nosec: B101 - Test assertion
 
 
 class TestPlotGeneration:
@@ -571,7 +571,7 @@ class TestPlotGeneration:
         with patch("matplotlib.pyplot.savefig"):
             with patch("matplotlib.pyplot.close"):
                 plot_files = monitor.generate_performance_plots()
-                assert len(plot_files) > 0
+                assert len(plot_files) > 0  # nosec: B101 - Test assertion
 
     def test_generate_performance_plots_cpu(self, tmp_path):
         """Test generating CPU usage plots."""
@@ -593,7 +593,7 @@ class TestPlotGeneration:
         with patch("matplotlib.pyplot.savefig"):
             with patch("matplotlib.pyplot.close"):
                 plot_files = monitor.generate_performance_plots()
-                assert len(plot_files) > 0
+                assert len(plot_files) > 0  # nosec: B101 - Test assertion
 
 
 class TestSaveMonitoringData:
@@ -618,13 +618,13 @@ class TestSaveMonitoringData:
             )
 
         file_path = monitor.save_monitoring_data()
-        assert file_path.exists()
+        assert file_path.exists()  # nosec: B101 - Test assertion
 
         # Verify content
         with open(file_path) as f:
             data = json.load(f)
-            assert "memory_history" in data
-            assert "cpu_history" in data
+            assert "memory_history" in data  # nosec: B101 - Test assertion
+            assert "cpu_history" in data  # nosec: B101 - Test assertion
 
 
 class TestCallbackErrorHandling:
@@ -668,7 +668,7 @@ class TestBenchmarkEdgeCases:
     def test_benchmark_empty_times(self):
         """Test benchmark with empty times list."""
         result = benchmark(lambda: None, iterations=0)
-        assert result.iterations == 0
+        assert result.iterations == 0  # nosec: B101 - Test assertion
 
     def test_benchmark_func_raises_exception(self):
         """Test benchmark when function raises exception."""
@@ -678,7 +678,7 @@ class TestBenchmarkEdgeCases:
 
         # Should handle gracefully
         result = benchmark(failing_func, iterations=1)
-        assert result is not None
+        assert result is not None  # nosec: B101 - Test assertion
 
 
 class TestPerformanceContext:
@@ -695,7 +695,7 @@ class TestPerformanceContext:
             pass
 
         # Duration should still be recorded
-        assert context.end_time is not None
+        assert context.end_time is not None  # nosec: B101 - Test assertion
 
 
 class TestCreatePerformanceMonitor:
@@ -704,8 +704,8 @@ class TestCreatePerformanceMonitor:
     def test_create_performance_monitor(self, tmp_path):
         """Test creating a performance monitor."""
         monitor = create_performance_monitor(output_dir=str(tmp_path))
-        assert isinstance(monitor, PerformanceMonitor)
-        assert str(monitor.output_dir) == str(tmp_path)
+        assert isinstance(monitor, PerformanceMonitor)  # nosec: B101 - Test assertion
+        assert str(monitor.output_dir) == str(tmp_path)  # nosec: B101 - Test assertion
 
 
 class TestMonitorFunctionPerformance:
@@ -728,7 +728,7 @@ class TestMonitorFunctionPerformance:
             return 42
 
         result = test_func()
-        assert result == 42
+        assert result == 42  # nosec: B101 - Test assertion
 
     @patch("performance_monitoring.psutil.Process")
     def test_monitor_function_exception(self, mock_process):
@@ -763,8 +763,8 @@ class TestBenchmarkDecorator:
             return 42
 
         result = test_func()
-        assert isinstance(result, BenchmarkResult)
-        assert result.name == "test"
+        assert isinstance(result, BenchmarkResult)  # nosec: B101 - Test assertion
+        assert result.name == "test"  # nosec: B101 - Test assertion
 
 
 class TestMemoryUsageError:
@@ -776,7 +776,7 @@ class TestMemoryUsageError:
         mock_process.side_effect = Exception("Process error")
 
         memory = get_memory_usage()
-        assert memory == 0.0
+        assert memory == 0.0  # nosec: B101 - Test assertion
 
 
 class TestRegressionEdgeCases:
@@ -801,7 +801,7 @@ class TestRegressionEdgeCases:
             monitor.end_operation(metrics, success=False, error="Failed")
 
         result = monitor.detect_performance_regression()
-        assert result["status"] == "insufficient_data"
+        assert result["status"] == "insufficient_data"  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

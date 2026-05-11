@@ -43,16 +43,16 @@ class TestTrialMetrics:
         """Test default creation."""
         metrics = TrialMetrics()
 
-        assert metrics.trial_number == 0
-        assert metrics.prediction_error == 0.0
-        assert metrics.precision == 1.0
-        assert metrics.somatic_marker == 0.0
-        assert metrics.ignition_probability == 0.0
-        assert metrics.experiment_metrics == {}
-        assert metrics.operator_id == ""
-        assert metrics.experiment_name == ""
-        assert metrics.trial_id is not None
-        assert isinstance(metrics.timestamp, float)
+        assert metrics.trial_number == 0  # nosec: B101 - Test assertion
+        assert metrics.prediction_error == 0.0  # nosec: B101 - Test assertion
+        assert metrics.precision == 1.0  # nosec: B101 - Test assertion
+        assert metrics.somatic_marker == 0.0  # nosec: B101 - Test assertion
+        assert metrics.ignition_probability == 0.0  # nosec: B101 - Test assertion
+        assert metrics.experiment_metrics == {}  # nosec: B101 - Test assertion
+        assert metrics.operator_id == ""  # nosec: B101 - Test assertion
+        assert metrics.experiment_name == ""  # nosec: B101 - Test assertion
+        assert metrics.trial_id is not None  # nosec: B101 - Test assertion
+        assert isinstance(metrics.timestamp, float)  # nosec: B101 - Test assertion
 
     def test_custom_creation(self):
         """Test custom creation."""
@@ -66,20 +66,20 @@ class TestTrialMetrics:
             experiment_name="test_exp",
         )
 
-        assert metrics.trial_number == 5
-        assert metrics.prediction_error == 0.5
-        assert metrics.precision == 2.0
-        assert metrics.somatic_marker == 0.1
-        assert metrics.ignition_probability == 0.8
-        assert metrics.operator_id == "op_001"
-        assert metrics.experiment_name == "test_exp"
+        assert metrics.trial_number == 5  # nosec: B101 - Test assertion
+        assert metrics.prediction_error == 0.5  # nosec: B101 - Test assertion
+        assert metrics.precision == 2.0  # nosec: B101 - Test assertion
+        assert metrics.somatic_marker == 0.1  # nosec: B101 - Test assertion
+        assert metrics.ignition_probability == 0.8  # nosec: B101 - Test assertion
+        assert metrics.operator_id == "op_001"  # nosec: B101 - Test assertion
+        assert metrics.experiment_name == "test_exp"  # nosec: B101 - Test assertion
 
     def test_trial_id_unique(self):
         """Test that trial IDs are unique."""
         m1 = TrialMetrics()
         m2 = TrialMetrics()
 
-        assert m1.trial_id != m2.trial_id
+        assert m1.trial_id != m2.trial_id  # nosec: B101 - Test assertion
 
 
 class TestExperimentRunConfig:
@@ -100,16 +100,16 @@ class TestExperimentRunConfig:
             apgi_config=mock_config,
         )
 
-        assert config.experiment_name == "test_exp"
-        assert config.operator_id == "op_001"
-        assert config.operator_name == "Test Operator"
-        assert config.apgi_config == mock_config
-        assert config.timeout_seconds == 600
-        assert config.enable_hierarchical is True
-        assert config.enable_precision_gap is True
-        assert config.security_level == "standard"
-        assert config.trial_callback is None
-        assert config.completion_callback is None
+        assert config.experiment_name == "test_exp"  # nosec: B101 - Test assertion
+        assert config.operator_id == "op_001"  # nosec: B101 - Test assertion
+        assert config.operator_name == "Test Operator"  # nosec: B101 - Test assertion
+        assert config.apgi_config == mock_config  # nosec: B101 - Test assertion
+        assert config.timeout_seconds == 600  # nosec: B101 - Test assertion
+        assert config.enable_hierarchical is True  # nosec: B101 - Test assertion
+        assert config.enable_precision_gap is True  # nosec: B101 - Test assertion
+        assert config.security_level == "standard"  # nosec: B101 - Test assertion
+        assert config.trial_callback is None  # nosec: B101 - Test assertion
+        assert config.completion_callback is None  # nosec: B101 - Test assertion
 
     def test_custom_creation(self):
         """Test creation with custom values."""
@@ -129,10 +129,10 @@ class TestExperimentRunConfig:
             completion_callback=callback,
         )
 
-        assert config.timeout_seconds == 300
-        assert config.enable_hierarchical is False
-        assert config.security_level == "strict"
-        assert config.trial_callback == callback
+        assert config.timeout_seconds == 300  # nosec: B101 - Test assertion
+        assert config.enable_hierarchical is False  # nosec: B101 - Test assertion
+        assert config.security_level == "strict"  # nosec: B101 - Test assertion
+        assert config.trial_callback == callback  # nosec: B101 - Test assertion
 
 
 class TestAPGIOrchestrationKernel:
@@ -184,21 +184,21 @@ class TestAPGIOrchestrationKernel:
 
     def test_init(self, kernel):
         """Test initialization."""
-        assert kernel.active_runs == {}
-        assert kernel.completed_runs == []
+        assert kernel.active_runs == {}  # nosec: B101 - Test assertion
+        assert kernel.completed_runs == []  # nosec: B101 - Test assertion
 
     def test_create_run_context(self, kernel, run_config):
         """Test creating run context."""
         context = kernel.create_run_context(run_config)
 
-        assert "run_id" in context
-        assert context["config"] == run_config
-        assert "security_context" in context
-        assert "logger" in context
-        assert "apgi" in context
-        assert context["status"] == "running"
-        assert context["trial_count"] == 0
-        assert context["trial_metrics"] == []
+        assert "run_id" in context  # nosec: B101 - Test assertion
+        assert context["config"] == run_config  # nosec: B101 - Test assertion
+        assert "security_context" in context  # nosec: B101 - Test assertion
+        assert "logger" in context  # nosec: B101 - Test assertion
+        assert "apgi" in context  # nosec: B101 - Test assertion
+        assert context["status"] == "running"  # nosec: B101 - Test assertion
+        assert context["trial_count"] == 0  # nosec: B101 - Test assertion
+        assert context["trial_metrics"] == []  # nosec: B101 - Test assertion
 
         # Check audit was called
         kernel.audit_sink.record_event.assert_called_once()
@@ -212,7 +212,9 @@ class TestAPGIOrchestrationKernel:
 
             mock_create.assert_called_once()
             call_args = mock_create.call_args
-            assert call_args[1]["security_level"] == SecurityLevel.STRICT
+            assert (
+                call_args[1]["security_level"] == SecurityLevel.STRICT
+            )  # nosec: B101 - Test assertion
 
     def test_process_trial_success(self, kernel, run_config):
         """Test processing a trial successfully."""
@@ -227,15 +229,15 @@ class TestAPGIOrchestrationKernel:
 
         result = kernel.process_trial(run_context, trial_data, transformer)
 
-        assert isinstance(result, TrialMetrics)
-        assert result.trial_number == 0
-        assert result.prediction_error == 0.5
-        assert result.precision == 2.0
-        assert result.ignition_probability == 0.75
+        assert isinstance(result, TrialMetrics)  # nosec: B101 - Test assertion
+        assert result.trial_number == 0  # nosec: B101 - Test assertion
+        assert result.prediction_error == 0.5  # nosec: B101 - Test assertion
+        assert result.precision == 2.0  # nosec: B101 - Test assertion
+        assert result.ignition_probability == 0.75  # nosec: B101 - Test assertion
 
         # Check trial was recorded
-        assert len(run_context["trial_metrics"]) == 1
-        assert run_context["trial_count"] == 1
+        assert len(run_context["trial_metrics"]) == 1  # nosec: B101 - Test assertion
+        assert run_context["trial_count"] == 1  # nosec: B101 - Test assertion
 
     def test_process_trial_with_callback(self, kernel, run_config):
         """Test processing trial with callback."""
@@ -269,7 +271,7 @@ class TestAPGIOrchestrationKernel:
 
         # Should not raise
         result = kernel.process_trial(run_context, trial_data, transformer)
-        assert result is not None
+        assert result is not None  # nosec: B101 - Test assertion
 
     def test_process_trial_timeout(self, kernel, run_config):
         """Test processing trial that times out."""
@@ -286,7 +288,7 @@ class TestAPGIOrchestrationKernel:
         with pytest.raises(APGITimeoutError) as exc_info:
             kernel.process_trial(run_context, trial_data, transformer)
 
-        assert "exceeded timeout" in str(exc_info.value)
+        assert "exceeded timeout" in str(exc_info.value)  # nosec: B101 - Test assertion
 
     def test_process_trial_transform_failure(self, kernel, run_config):
         """Test processing trial with transform failure."""
@@ -302,7 +304,9 @@ class TestAPGIOrchestrationKernel:
         with pytest.raises(Exception) as exc_info:
             kernel.process_trial(run_context, trial_data, transformer)
 
-        assert "Failed to transform trial data" in str(exc_info.value)
+        assert "Failed to transform trial data" in str(
+            exc_info.value
+        )  # nosec: B101 - Test assertion
 
     def test_process_trial_apgi_failure(self, kernel, run_config):
         """Test processing trial with APGI failure."""
@@ -320,7 +324,9 @@ class TestAPGIOrchestrationKernel:
         with pytest.raises(APGIRuntimeError) as exc_info:
             kernel.process_trial(run_context, trial_data, transformer)
 
-        assert "APGI processing failed" in str(exc_info.value)
+        assert "APGI processing failed" in str(
+            exc_info.value
+        )  # nosec: B101 - Test assertion
 
     def test_finalize_run(self, kernel, run_config):
         """Test finalizing run."""
@@ -337,17 +343,21 @@ class TestAPGIOrchestrationKernel:
 
         result = kernel.finalize_run(run_context)
 
-        assert result["run_id"] == run_context["run_id"]
-        assert result["experiment_name"] == "test_experiment"
-        assert result["operator_id"] == "op_001"
-        assert result["status"] == "completed"
-        assert result["trial_count"] == 5
-        assert "elapsed_seconds" in result
-        assert "apgi_summary" in result
+        assert result["run_id"] == run_context["run_id"]  # nosec: B101 - Test assertion
+        assert (
+            result["experiment_name"] == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert result["operator_id"] == "op_001"  # nosec: B101 - Test assertion
+        assert result["status"] == "completed"  # nosec: B101 - Test assertion
+        assert result["trial_count"] == 5  # nosec: B101 - Test assertion
+        assert "elapsed_seconds" in result  # nosec: B101 - Test assertion
+        assert "apgi_summary" in result  # nosec: B101 - Test assertion
 
         # Check run moved to completed
-        assert run_context["run_id"] not in kernel.active_runs
-        assert len(kernel.completed_runs) == 1
+        assert (
+            run_context["run_id"] not in kernel.active_runs
+        )  # nosec: B101 - Test assertion
+        assert len(kernel.completed_runs) == 1  # nosec: B101 - Test assertion
 
     def test_finalize_run_with_callback(self, kernel, run_config):
         """Test finalizing run with callback."""
@@ -371,7 +381,7 @@ class TestAPGIOrchestrationKernel:
 
         # Should not raise
         result = kernel.finalize_run(run_context)
-        assert result is not None
+        assert result is not None  # nosec: B101 - Test assertion
 
     def test_get_run_status_running(self, kernel, run_config):
         """Test getting status of running run."""
@@ -379,10 +389,10 @@ class TestAPGIOrchestrationKernel:
 
         status = kernel.get_run_status(run_context["run_id"])
 
-        assert status is not None
-        assert status["status"] == "running"
-        assert status["trial_count"] == 0
-        assert "elapsed_seconds" in status
+        assert status is not None  # nosec: B101 - Test assertion
+        assert status["status"] == "running"  # nosec: B101 - Test assertion
+        assert status["trial_count"] == 0  # nosec: B101 - Test assertion
+        assert "elapsed_seconds" in status  # nosec: B101 - Test assertion
 
     def test_get_run_status_completed(self, kernel, run_config):
         """Test getting status of completed run."""
@@ -394,15 +404,15 @@ class TestAPGIOrchestrationKernel:
 
         status = kernel.get_run_status(run_context["run_id"])
 
-        assert status is not None
-        assert status["status"] == "completed"
-        assert status["trial_count"] == 10
+        assert status is not None  # nosec: B101 - Test assertion
+        assert status["status"] == "completed"  # nosec: B101 - Test assertion
+        assert status["trial_count"] == 10  # nosec: B101 - Test assertion
 
     def test_get_run_status_not_found(self, kernel):
         """Test getting status of non-existent run."""
         status = kernel.get_run_status("nonexistent")
 
-        assert status is None
+        assert status is None  # nosec: B101 - Test assertion
 
     def test_get_metrics(self, kernel, run_config):
         """Test getting kernel metrics."""
@@ -421,11 +431,11 @@ class TestAPGIOrchestrationKernel:
 
         metrics = kernel.get_metrics()
 
-        assert metrics["active_runs"] == 1
-        assert metrics["completed_runs"] == 1
-        assert metrics["total_trials_processed"] == 5
-        assert "security_metrics" in metrics
-        assert "audit_events" in metrics
+        assert metrics["active_runs"] == 1  # nosec: B101 - Test assertion
+        assert metrics["completed_runs"] == 1  # nosec: B101 - Test assertion
+        assert metrics["total_trials_processed"] == 5  # nosec: B101 - Test assertion
+        assert "security_metrics" in metrics  # nosec: B101 - Test assertion
+        assert "audit_events" in metrics  # nosec: B101 - Test assertion
 
 
 class TestGlobalFunctions:
@@ -434,14 +444,16 @@ class TestGlobalFunctions:
     def test_get_orchestration_kernel(self):
         """Test getting global orchestration kernel."""
         kernel = get_orchestration_kernel()
-        assert isinstance(kernel, APGIOrchestrationKernel)
+        assert isinstance(
+            kernel, APGIOrchestrationKernel
+        )  # nosec: B101 - Test assertion
 
     def test_set_orchestration_kernel(self):
         """Test setting global orchestration kernel."""
         new_kernel = APGIOrchestrationKernel()
         set_orchestration_kernel(new_kernel)
 
-        assert get_orchestration_kernel() is new_kernel
+        assert get_orchestration_kernel() is new_kernel  # nosec: B101 - Test assertion
 
         # Reset to original
         set_orchestration_kernel(_kernel)

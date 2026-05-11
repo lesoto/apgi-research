@@ -135,7 +135,7 @@ class TestJSONParsingFuzz:
     def test_valid_json_parsing(self, input_data: str) -> None:
         """Test that valid JSON parses correctly."""
         result = json.loads(input_data)
-        assert isinstance(result, dict)
+        assert isinstance(result, dict)  # nosec: B101 - Test assertion
 
     def test_json_roundtrip(self) -> None:
         """Test JSON serialization roundtrip."""
@@ -150,7 +150,7 @@ class TestJSONParsingFuzz:
         serialized = json.dumps(original)
         restored = json.loads(serialized)
 
-        assert restored == original
+        assert restored == original  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -215,7 +215,7 @@ class TestPathTraversalFuzz:
         safe_path = tmp_path / safe_name
         safe_path.write_text("test")
 
-        assert safe_path.exists()
+        assert safe_path.exists()  # nosec: B101 - Test assertion
 
 
 # =============================================================================

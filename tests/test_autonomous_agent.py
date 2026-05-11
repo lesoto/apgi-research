@@ -42,10 +42,12 @@ class TestExperimentResult:
             status="success",
         )
 
-        assert result.commit_hash == "abc123"
-        assert result.experiment_name == "test_experiment"
-        assert result.primary_metric == 0.85
-        assert result.status == "success"
+        assert result.commit_hash == "abc123"  # nosec: B101 - Test assertion
+        assert (
+            result.experiment_name == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert result.primary_metric == 0.85  # nosec: B101 - Test assertion
+        assert result.status == "success"  # nosec: B101 - Test assertion
 
     def test_experiment_result_to_dict(self):
         """Test converting ExperimentResult to dictionary."""
@@ -65,8 +67,10 @@ class TestExperimentResult:
         from dataclasses import asdict
 
         result_dict = asdict(result)
-        assert isinstance(result_dict, dict)
-        assert result_dict["experiment_name"] == "test_experiment"
+        assert isinstance(result_dict, dict)  # nosec: B101 - Test assertion
+        assert (
+            result_dict["experiment_name"] == "test_experiment"
+        )  # nosec: B101 - Test assertion
 
 
 class TestOptimizationStrategy:
@@ -83,9 +87,11 @@ class TestOptimizationStrategy:
             learning_rate=0.05,
         )
 
-        assert strategy.name == "test_strategy"
-        assert strategy.mutation_strength == 0.2
-        assert "BASE_DETECTION_RATE" in strategy.parameter_ranges
+        assert strategy.name == "test_strategy"  # nosec: B101 - Test assertion
+        assert strategy.mutation_strength == 0.2  # nosec: B101 - Test assertion
+        assert (
+            "BASE_DETECTION_RATE" in strategy.parameter_ranges
+        )  # nosec: B101 - Test assertion
 
 
 class TestParameterOptimizer:
@@ -97,20 +103,22 @@ class TestParameterOptimizer:
 
     def test_initialization(self):
         """Test optimizer initialization."""
-        assert self.optimizer.strategies is not None
-        assert "default" in self.optimizer.strategies
-        assert "attentional_blink" in self.optimizer.strategies
+        assert self.optimizer.strategies is not None  # nosec: B101 - Test assertion
+        assert "default" in self.optimizer.strategies  # nosec: B101 - Test assertion
+        assert (
+            "attentional_blink" in self.optimizer.strategies
+        )  # nosec: B101 - Test assertion
 
     def test_get_strategy_existing(self):
         """Test getting an existing strategy."""
         strategy = self.optimizer.get_strategy("attentional_blink")
-        assert strategy.name == "attention_optimization"
-        assert strategy.parameter_ranges is not None
+        assert strategy.name == "attention_optimization"  # nosec: B101 - Test assertion
+        assert strategy.parameter_ranges is not None  # nosec: B101 - Test assertion
 
     def test_get_strategy_default(self):
         """Test getting default strategy for unknown experiment."""
         strategy = self.optimizer.get_strategy("unknown_experiment")
-        assert strategy.name == "general_optimization"
+        assert strategy.name == "general_optimization"  # nosec: B101 - Test assertion
 
     def test_suggest_modifications_empty_history(self):
         """Test suggesting modifications with no performance history."""
@@ -119,7 +127,7 @@ class TestParameterOptimizer:
             "attentional_blink", current_params, []
         )
 
-        assert isinstance(modifications, dict)
+        assert isinstance(modifications, dict)  # nosec: B101 - Test assertion
         # Should not modify if no history and not first iteration
         # But may suggest modifications based on exploration rate
 
@@ -132,7 +140,7 @@ class TestParameterOptimizer:
             "attentional_blink", current_params, performance_history
         )
 
-        assert isinstance(modifications, dict)
+        assert isinstance(modifications, dict)  # nosec: B101 - Test assertion
         # Should suggest modifications based on performance trend
 
     def test_parameter_modification_types(self):
@@ -143,7 +151,9 @@ class TestParameterOptimizer:
         )
 
         if "BASE_DETECTION_RATE" in modifications:
-            assert isinstance(modifications["BASE_DETECTION_RATE"], float)
+            assert isinstance(
+                modifications["BASE_DETECTION_RATE"], float
+            )  # nosec: B101 - Test assertion
 
 
 class TestGitPerformanceTracker:
@@ -175,14 +185,16 @@ class TestGitPerformanceTracker:
     def test_initialization(self):
         """Test tracker initialization."""
         tracker = GitPerformanceTracker(str(self.repo_path))
-        assert tracker.repo_path == self.repo_path
-        assert tracker.results_file == self.repo_path / "optimization_results.json"
+        assert tracker.repo_path == self.repo_path  # nosec: B101 - Test assertion
+        assert (
+            tracker.results_file == self.repo_path / "optimization_results.json"
+        )  # nosec: B101 - Test assertion
 
     def test_load_best_results_empty(self):
         """Test loading best results when file doesn't exist."""
         tracker = GitPerformanceTracker(str(self.repo_path))
         results = tracker._load_best_results()
-        assert results == {}
+        assert results == {}  # nosec: B101 - Test assertion
 
     def test_save_and_load_results(self):
         """Test saving and loading results."""
@@ -206,8 +218,10 @@ class TestGitPerformanceTracker:
 
         # Load results
         loaded_results = tracker._load_best_results()
-        assert "test_experiment" in loaded_results
-        assert loaded_results["test_experiment"].primary_metric == 0.85
+        assert "test_experiment" in loaded_results  # nosec: B101 - Test assertion
+        assert (
+            loaded_results["test_experiment"].primary_metric == 0.85
+        )  # nosec: B101 - Test assertion
 
     def test_commit_experiment(self):
         """Test committing experiment modifications."""
@@ -224,16 +238,22 @@ NUM_TRIALS_CONFIG = 100
         commit_hash = tracker.commit_experiment(modifications)
 
         # Check that we got a valid commit hash (either "no_changes", "error", or 40-char hash)
-        assert commit_hash in ["no_changes", "error"] or len(commit_hash) == 40
+        assert (
+            commit_hash in ["no_changes", "error"] or len(commit_hash) == 40
+        )  # nosec: B101 - Test assertion
 
         # If we got a real commit, check it's in the repo
         if len(commit_hash) == 40:
-            assert commit_hash in [commit.hexsha for commit in self.repo.iter_commits()]
+            assert commit_hash in [
+                commit.hexsha for commit in self.repo.iter_commits()
+            ]  # nosec: B101 - Test assertion
 
     def test_is_improvement_new_experiment(self):
         """Test improvement check for new experiment."""
         tracker = GitPerformanceTracker(str(self.repo_path))
-        assert tracker.is_improvement("new_experiment", 0.5) is True
+        assert (
+            tracker.is_improvement("new_experiment", 0.5) is True
+        )  # nosec: B101 - Test assertion
 
     def test_is_improvement_higher_better(self):
         """Test improvement check for higher-is-better metric."""
@@ -272,8 +292,12 @@ NUM_TRIALS_CONFIG = 100
         setattr(tracker, "is_improvement", mock_is_improvement)
 
         # Test improvements
-        assert tracker.is_improvement("test_experiment", 0.9) is True
-        assert tracker.is_improvement("test_experiment", 0.7) is False
+        assert (
+            tracker.is_improvement("test_experiment", 0.9) is True
+        )  # nosec: B101 - Test assertion
+        assert (
+            tracker.is_improvement("test_experiment", 0.7) is False
+        )  # nosec: B101 - Test assertion
 
     def test_get_best_metric(self):
         """Test getting best metric for experiment."""
@@ -293,8 +317,12 @@ NUM_TRIALS_CONFIG = 100
         )
         tracker.best_results["test_experiment"] = existing_result
 
-        assert tracker.get_best_metric("test_experiment") == 0.85
-        assert tracker.get_best_metric("nonexistent") is None
+        assert (
+            tracker.get_best_metric("test_experiment") == 0.85
+        )  # nosec: B101 - Test assertion
+        assert (
+            tracker.get_best_metric("nonexistent") is None
+        )  # nosec: B101 - Test assertion
 
 
 class TestAutonomousAgent:
@@ -362,10 +390,10 @@ class MockRunner:
     def test_initialization(self):
         """Test agent initialization."""
         agent = AutonomousAgent(str(self.repo_path))
-        assert agent.git_tracker is not None
-        assert agent.optimizer is not None
-        assert agent.experiment_modules is not None
-        assert agent.running is False
+        assert agent.git_tracker is not None  # nosec: B101 - Test assertion
+        assert agent.optimizer is not None  # nosec: B101 - Test assertion
+        assert agent.experiment_modules is not None  # nosec: B101 - Test assertion
+        assert agent.running is False  # nosec: B101 - Test assertion
 
     def test_load_experiment_modules(self):
         """Test loading experiment modules."""
@@ -374,7 +402,7 @@ class MockRunner:
         agent = AutonomousAgent(str(actual_repo_path))
 
         # Check that some modules were loaded (actual experiment files from repo)
-        assert len(agent.experiment_modules) > 0
+        assert len(agent.experiment_modules) > 0  # nosec: B101 - Test assertion
 
     def test_get_current_parameters(self):
         """Test extracting current parameters from run file."""
@@ -391,10 +419,10 @@ class MockRunner:
 
         params = agent._get_current_parameters("test_experiment")
 
-        assert isinstance(params, dict)
+        assert isinstance(params, dict)  # nosec: B101 - Test assertion
         # Check that parameters were extracted
-        assert "NUM_TRIALS_CONFIG" in params
-        assert "BASE_DETECTION_RATE" in params
+        assert "NUM_TRIALS_CONFIG" in params  # nosec: B101 - Test assertion
+        assert "BASE_DETECTION_RATE" in params  # nosec: B101 - Test assertion
 
     def test_apply_modifications(self):
         """Test applying parameter modifications."""
@@ -409,10 +437,14 @@ class MockRunner:
 
             # Check that modifications were applied
             content = run_file.read_text()
-            assert "BASE_DETECTION_RATE = 0.75" in content
+            assert (
+                "BASE_DETECTION_RATE = 0.75" in content
+            )  # nosec: B101 - Test assertion
         except Exception as e:
             # If regex fails, at least check the method doesn't crash
-            assert "BASE_DETECTION_RATE" in str(e) or "PatternError" in str(e)
+            assert "BASE_DETECTION_RATE" in str(e) or "PatternError" in str(
+                e
+            )  # nosec: B101 - Test assertion
 
     def test_extract_primary_metric(self):
         """Test extracting primary metric from results."""
@@ -421,12 +453,12 @@ class MockRunner:
         # Test with known experiment
         results = {"accuracy": 0.85}
         metric = agent._extract_primary_metric(results, "iowa_gambling_task")
-        assert metric == 0.85
+        assert metric == 0.85  # nosec: B101 - Test assertion
 
         # Test with fallback
         results = {"primary_metric": 0.9}
         metric = agent._extract_primary_metric(results, "unknown_experiment")
-        assert metric == 0.9
+        assert metric == 0.9  # nosec: B101 - Test assertion
 
     def test_get_metric_direction(self):
         """Test getting metric direction."""
@@ -434,15 +466,15 @@ class MockRunner:
 
         # Test higher is better
         direction = agent._get_metric_direction("iowa_gambling_task")
-        assert direction == "higher"
+        assert direction == "higher"  # nosec: B101 - Test assertion
 
         # Test lower is better
         direction = agent._get_metric_direction("attentional_blink")
-        assert direction == "lower"
+        assert direction == "lower"  # nosec: B101 - Test assertion
 
         # Test default
         direction = agent._get_metric_direction("unknown_experiment")
-        assert direction == "higher"
+        assert direction == "higher"  # nosec: B101 - Test assertion
 
     @patch("signal.signal")
     @patch("signal.alarm")
@@ -471,9 +503,11 @@ class MockRunner:
         # Run experiment
         result = agent.run_experiment("test_experiment")
 
-        assert result.experiment_name == "test_experiment"
-        assert result.primary_metric == 0.85
-        assert result.status == "success"
+        assert (
+            result.experiment_name == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert result.primary_metric == 0.85  # nosec: B101 - Test assertion
+        assert result.status == "success"  # nosec: B101 - Test assertion
 
     def test_timeout_error(self):
         """Test TimeoutError exception."""

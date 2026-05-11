@@ -32,6 +32,7 @@ from apgi_integration import APGIIntegration, APGIParameters
 from .prepare_interoceptive_gating import (
     APGI_PARAMS,
     TIME_BUDGET,
+    Condition,
     InteroGatingExperiment,
 )
 from .ultimate_apgi_template import (
@@ -280,16 +281,65 @@ class EnhancedInteroceptiveGatingRunner:
         if self.apgi and hasattr(self.apgi, "finalize"):
             apgi_metrics = self.apgi.finalize()
 
+        # Calculate signal detection metrics
+        trials = self.experiment.trials
+
+        # Initialize variables
+        hit_rate: float = 0.0
+        false_alarm_rate: float = 0.0
+        d_prime: float = 0.0
+        mean_rt_ms: float = 0.0
+
+        if trials:
+            # Hit rate: proportion of interoceptive trials detected
+            interoceptive_trials = [
+                t for t in trials if t.condition == Condition.INTEROCEPTIVE
+            ]
+            hit_rate = float(
+                np.mean([t.response_detected for t in interoceptive_trials])
+                if interoceptive_trials
+                else 0.0
+            )
+
+            # False alarm rate: proportion of exteroceptive trials detected when they shouldn't be
+            exteroceptive_trials = [
+                t for t in trials if t.condition == Condition.EXTEROCEPTIVE
+            ]
+            false_alarm_rate = float(
+                np.mean([t.response_detected for t in exteroceptive_trials])
+                if exteroceptive_trials
+                else 0.0
+            )
+
+            # Calculate d' from hit rate and false alarm rate
+            # Avoid log(0) by using small epsilon
+            epsilon = 1e-10
+            hit_rate_safe = max(epsilon, float(hit_rate))
+            fa_rate_safe = max(epsilon, float(false_alarm_rate))
+            # Use scipy.stats.norm.ppf for inverse normal distribution
+            try:
+                from scipy.stats import norm
+
+                z_hit = norm.ppf(hit_rate_safe)
+                z_fa = norm.ppf(fa_rate_safe)
+                d_prime = z_hit - z_fa
+            except ImportError:
+                # Fallback if scipy not available
+                d_prime = 0.0
+
+            # Calculate mean RT
+            mean_rt_ms = float(np.mean([t.rt_ms for t in trials]))
+
         return {
             **{
                 "num_trials": len(self.experiment.trials),
                 "completion_time_s": completion_time,
-                "d_prime": summary.get("d_prime", 0.0),
+                "d_prime": d_prime,
                 "gating_effect": summary.get("gating_effect", 0.0),
                 "gating_threshold": summary.get("interoceptive_sensitivity", 0.5),
-                "hit_rate": summary.get("hit_rate", 0.0),
-                "false_alarm_rate": summary.get("false_alarm_rate", 0.0),
-                "mean_rt_ms": summary.get("mean_rt_ms", 0.0),
+                "hit_rate": hit_rate,
+                "false_alarm_rate": false_alarm_rate,
+                "mean_rt_ms": mean_rt_ms,
             },
             **apgi_metrics,
         }

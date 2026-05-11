@@ -91,12 +91,14 @@ class TestNumericalProperties:
         if np.all(np.isfinite(arr)):
             result = np.sum(arr)
             # Sum could overflow to inf if individual values are large but finite
-            assert np.isfinite(result) or np.isinf(result) or np.isnan(result)
+            assert (
+                np.isfinite(result) or np.isinf(result) or np.isnan(result)
+            )  # nosec: B101 - Test assertion
 
         # Sum of positive array should be positive (unless overflow to inf)
         if np.all(arr >= 0):
             result = np.sum(arr)
-            assert result >= 0 or np.isinf(result)
+            assert result >= 0 or np.isinf(result)  # nosec: B101 - Test assertion
 
     @given(
         arrays(np.float64, shape=st.tuples(st.integers(2, 20), st.integers(2, 20))),
@@ -112,11 +114,11 @@ class TestNumericalProperties:
         result = np.dot(a, b)
 
         # Result shape should match expected
-        assert result.shape == (a.shape[0], b.shape[1])
+        assert result.shape == (a.shape[0], b.shape[1])  # nosec: B101 - Test assertion
 
         # If inputs are finite, result elements should be finite
         if np.all(np.isfinite(a)) and np.all(np.isfinite(b)):
-            assert (
+            assert (  # nosec: B101 - Test assertion
                 np.all(np.isfinite(result))
                 or np.any(np.isnan(result))
                 or np.any(np.isinf(result))
@@ -132,11 +134,13 @@ class TestNumericalProperties:
 
         # Mean should be between min and max (with floating point tolerance)
         min_val, max_val = np.min(arr), np.max(arr)
-        assert (min_val - 1e-15) <= mean <= (max_val + 1e-15)
+        assert (
+            (min_val - 1e-15) <= mean <= (max_val + 1e-15)
+        )  # nosec: B101 - Test assertion
 
         # Mean of identical values should be that value
         if len(set(values)) == 1:
-            assert mean == pytest.approx(values[0])
+            assert mean == pytest.approx(values[0])  # nosec: B101 - Test assertion
 
     @given(st.lists(reaction_times, min_size=2, max_size=100))
     @settings(max_examples=100)
@@ -147,11 +151,11 @@ class TestNumericalProperties:
         var = np.var(arr)
 
         # Variance should be non-negative
-        assert var >= 0
+        assert var >= 0  # nosec: B101 - Test assertion
 
         # Variance of identical values should be zero
         if len(set(values)) == 1:
-            assert var == pytest.approx(0.0, abs=1e-10)
+            assert var == pytest.approx(0.0, abs=1e-10)  # nosec: B101 - Test assertion
 
     @given(
         st.floats(min_value=-10.0, max_value=10.0),
@@ -164,11 +168,13 @@ class TestNumericalProperties:
 
         # Sample mean should be close to true mean
         sample_mean = np.mean(samples)
-        assert abs(sample_mean - mean) < std * 0.5  # Within reasonable bounds
+        assert (
+            abs(sample_mean - mean) < std * 0.5
+        )  # Within reasonable bounds  # nosec: B101 - Test assertion
 
         # Sample std should be close to true std
         sample_std = np.std(samples)
-        assert 0.5 * std < sample_std < 2.0 * std
+        assert 0.5 * std < sample_std < 2.0 * std  # nosec: B101 - Test assertion
 
 
 @pytest.mark.hypothesis
@@ -208,13 +214,17 @@ class TestAPGIParameterProperties:
 
         # All parameters should be positive
         for name, value in params.items():
-            assert value > 0, f"{name} should be positive"
+            assert (
+                value > 0
+            ), f"{name} should be positive"  # nosec: B101 - Test assertion
 
         # rho should be between 0 and 1 (learning rate)
-        assert 0 <= rho <= 1, "rho should be in [0, 1]"
+        assert 0 <= rho <= 1, "rho should be in [0, 1]"  # nosec: B101 - Test assertion
 
         # theta_0 should be in reasonable range
-        assert 0 < theta_0 <= 1, "theta_0 should be in (0, 1]"
+        assert (
+            0 < theta_0 <= 1
+        ), "theta_0 should be in (0, 1]"  # nosec: B101 - Test assertion
 
     @given(
         st.lists(
@@ -230,15 +240,15 @@ class TestAPGIParameterProperties:
         """Test trial data structure properties."""
         # All trials should have required fields
         for trial in trials:
-            assert "rt" in trial
-            assert "correct" in trial
-            assert "trial" in trial
+            assert "rt" in trial  # nosec: B101 - Test assertion
+            assert "correct" in trial  # nosec: B101 - Test assertion
+            assert "trial" in trial  # nosec: B101 - Test assertion
 
             # RT should be positive
-            assert trial["rt"] > 0
+            assert trial["rt"] > 0  # nosec: B101 - Test assertion
 
             # Trial index should be non-negative
-            assert trial["trial"] >= 0
+            assert trial["trial"] >= 0  # nosec: B101 - Test assertion
 
     @given(
         st.lists(reaction_times, min_size=10, max_size=100),
@@ -257,15 +267,15 @@ class TestAPGIParameterProperties:
         accuracy = sum(corrects) / len(corrects)
 
         # Accuracy should be in [0, 1]
-        assert 0 <= accuracy <= 1
+        assert 0 <= accuracy <= 1  # nosec: B101 - Test assertion
 
         # All correct should give accuracy 1
         if all(corrects):
-            assert accuracy == 1.0
+            assert accuracy == 1.0  # nosec: B101 - Test assertion
 
         # All incorrect should give accuracy 0
         if not any(corrects):
-            assert accuracy == 0.0
+            assert accuracy == 0.0  # nosec: B101 - Test assertion
 
 
 @pytest.mark.hypothesis
@@ -307,7 +317,7 @@ class TestDataStructureProperties:
         try:
             json_str = json.dumps(cleaned)
             restored = json.loads(json_str)
-            assert isinstance(restored, dict)
+            assert isinstance(restored, dict)  # nosec: B101 - Test assertion
         except (TypeError, ValueError):
             # Some edge cases may fail - that's acceptable
             pass
@@ -326,11 +336,11 @@ class TestDataStructureProperties:
 
         # Total length should be preserved
         total_len = sum(len(c) for c in chunks)
-        assert total_len == len(arr)
+        assert total_len == len(arr)  # nosec: B101 - Test assertion
 
         # Concatenating chunks should restore original
         restored = np.concatenate(chunks)
-        assert len(restored) == len(arr)
+        assert len(restored) == len(arr)  # nosec: B101 - Test assertion
         np.testing.assert_array_equal(restored, arr)
 
 
@@ -360,11 +370,13 @@ class TestStatisticalProperties:
             outlier_count = np.sum(outliers)
 
             # Outliers should be a subset of data
-            assert 0 <= outlier_count <= len(arr)
+            assert 0 <= outlier_count <= len(arr)  # nosec: B101 - Test assertion
 
             # With higher threshold, fewer outliers
             stricter_outliers = np.abs(arr - mean) > 2 * threshold * std
-            assert np.sum(stricter_outliers) <= outlier_count
+            assert (
+                np.sum(stricter_outliers) <= outlier_count
+            )  # nosec: B101 - Test assertion
 
     @given(st.lists(reaction_times, min_size=2, max_size=50))
     @settings(max_examples=100)
@@ -378,10 +390,14 @@ class TestStatisticalProperties:
 
         # Percentiles should be ordered (with floating point tolerance)
         min_val, max_val = np.min(arr), np.max(arr)
-        assert (min_val - 1e-15) <= p25 <= p50 <= p75 <= (max_val + 1e-15)
+        assert (
+            (min_val - 1e-15) <= p25 <= p50 <= p75 <= (max_val + 1e-15)
+        )  # nosec: B101 - Test assertion
 
         # Median should equal 50th percentile
-        assert p50 == pytest.approx(np.median(arr), rel=1e-15)
+        assert p50 == pytest.approx(
+            np.median(arr), rel=1e-15
+        )  # nosec: B101 - Test assertion
 
 
 @pytest.mark.hypothesis
@@ -397,32 +413,32 @@ class TestEdgeCases:
         """Test handling of special float values."""
         # NaN should be detected
         if math.isnan(value):
-            assert not math.isfinite(value)
-            assert value != value  # NaN != NaN
+            assert not math.isfinite(value)  # nosec: B101 - Test assertion
+            assert value != value  # NaN != NaN  # nosec: B101 - Test assertion
 
         # Infinity should be detected
         if math.isinf(value):
-            assert not math.isfinite(value)
-            assert abs(value) > 0
+            assert not math.isfinite(value)  # nosec: B101 - Test assertion
+            assert abs(value) > 0  # nosec: B101 - Test assertion
 
         # Regular floats should be finite
         if not math.isnan(value) and not math.isinf(value):
-            assert math.isfinite(value)
+            assert math.isfinite(value)  # nosec: B101 - Test assertion
 
     @given(st.text(max_size=1000))
     @settings(max_examples=100)
     def test_string_handling_properties(self, text: str) -> None:
         """Test string handling properties."""
         # Length should be non-negative
-        assert len(text) >= 0
+        assert len(text) >= 0  # nosec: B101 - Test assertion
 
         # Empty string handling
         if len(text) == 0:
-            assert text == ""
+            assert text == ""  # nosec: B101 - Test assertion
 
         # Whitespace handling
         if text.isspace() or len(text) == 0:
-            assert text.strip() == ""
+            assert text.strip() == ""  # nosec: B101 - Test assertion
 
 
 @pytest.mark.hypothesis
@@ -470,12 +486,12 @@ class TestStatefulProperties:
 
         # After operations, verify invariants
         if trials:
-            assert len(trials) >= 0
-            assert all(t["trial"] >= 0 for t in trials)
+            assert len(trials) >= 0  # nosec: B101 - Test assertion
+            assert all(t["trial"] >= 0 for t in trials)  # nosec: B101 - Test assertion
 
         if metrics and trials:
-            assert 0 <= metrics.get("accuracy", 0) <= 1
-            assert metrics.get("mean_rt", 0) > 0
+            assert 0 <= metrics.get("accuracy", 0) <= 1  # nosec: B101 - Test assertion
+            assert metrics.get("mean_rt", 0) > 0  # nosec: B101 - Test assertion
 
 
 # =============================================================================

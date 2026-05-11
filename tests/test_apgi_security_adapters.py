@@ -33,9 +33,13 @@ class TestSecurityLevel:
 
     def test_security_level_values(self):
         """Test all security level values."""
-        assert SecurityLevel.PERMISSIVE.value == "permissive"
-        assert SecurityLevel.STANDARD.value == "standard"
-        assert SecurityLevel.STRICT.value == "strict"
+        assert (
+            SecurityLevel.PERMISSIVE.value == "permissive"
+        )  # nosec: B101 - Test assertion
+        assert (
+            SecurityLevel.STANDARD.value == "standard"
+        )  # nosec: B101 - Test assertion
+        assert SecurityLevel.STRICT.value == "strict"  # nosec: B101 - Test assertion
 
 
 class TestSecurityContext:
@@ -45,14 +49,20 @@ class TestSecurityContext:
         """Test default context creation."""
         context = SecurityContext()
 
-        assert context.context_id is not None
-        assert context.operator_id == "anonymous"
-        assert context.role == "user"
-        assert context.subprocess_allowlist == {"git", "pytest", "python"}
-        assert context.pickle_allowed is False
-        assert context.serialization_format == "json"
-        assert context.security_level == SecurityLevel.STANDARD
-        assert isinstance(context.created_at, datetime)
+        assert context.context_id is not None  # nosec: B101 - Test assertion
+        assert context.operator_id == "anonymous"  # nosec: B101 - Test assertion
+        assert context.role == "user"  # nosec: B101 - Test assertion
+        assert context.subprocess_allowlist == {
+            "git",
+            "pytest",
+            "python",
+        }  # nosec: B101 - Test assertion
+        assert context.pickle_allowed is False  # nosec: B101 - Test assertion
+        assert context.serialization_format == "json"  # nosec: B101 - Test assertion
+        assert (
+            context.security_level == SecurityLevel.STANDARD
+        )  # nosec: B101 - Test assertion
+        assert isinstance(context.created_at, datetime)  # nosec: B101 - Test assertion
 
     def test_custom_creation(self):
         """Test custom context creation."""
@@ -64,16 +74,21 @@ class TestSecurityContext:
             security_level=SecurityLevel.PERMISSIVE,
         )
 
-        assert context.operator_id == "test_user"
-        assert context.role == "admin"
-        assert context.subprocess_allowlist == {"ls", "cat"}
-        assert context.pickle_allowed is True
-        assert context.security_level == SecurityLevel.PERMISSIVE
+        assert context.operator_id == "test_user"  # nosec: B101 - Test assertion
+        assert context.role == "admin"  # nosec: B101 - Test assertion
+        assert context.subprocess_allowlist == {
+            "ls",
+            "cat",
+        }  # nosec: B101 - Test assertion
+        assert context.pickle_allowed is True  # nosec: B101 - Test assertion
+        assert (
+            context.security_level == SecurityLevel.PERMISSIVE
+        )  # nosec: B101 - Test assertion
 
     def test_post_init_with_operator(self):
         """Test post_init with provided operator_id."""
         context = SecurityContext(operator_id="specific_user")
-        assert context.operator_id == "specific_user"
+        assert context.operator_id == "specific_user"  # nosec: B101 - Test assertion
 
     def test_post_init_strict_with_pickle_raises(self):
         """Test that STRICT level with pickle raises ValueError."""
@@ -83,7 +98,9 @@ class TestSecurityContext:
                 security_level=SecurityLevel.STRICT,
             )
 
-        assert "Pickle not allowed in STRICT security level" in str(exc_info.value)
+        assert "Pickle not allowed in STRICT security level" in str(
+            exc_info.value
+        )  # nosec: B101 - Test assertion
 
 
 class TestSecurityEvent:
@@ -93,14 +110,14 @@ class TestSecurityEvent:
         """Test default event creation."""
         event = SecurityEvent()
 
-        assert event.event_id is not None
-        assert isinstance(event.timestamp, datetime)
-        assert event.context_id == ""
-        assert event.operator_id == ""
-        assert event.event_type == ""
-        assert event.resource == ""
-        assert event.action == ""
-        assert event.details == {}
+        assert event.event_id is not None  # nosec: B101 - Test assertion
+        assert isinstance(event.timestamp, datetime)  # nosec: B101 - Test assertion
+        assert event.context_id == ""  # nosec: B101 - Test assertion
+        assert event.operator_id == ""  # nosec: B101 - Test assertion
+        assert event.event_type == ""  # nosec: B101 - Test assertion
+        assert event.resource == ""  # nosec: B101 - Test assertion
+        assert event.action == ""  # nosec: B101 - Test assertion
+        assert event.details == {}  # nosec: B101 - Test assertion
 
     def test_to_dict(self):
         """Test converting to dictionary."""
@@ -115,14 +132,16 @@ class TestSecurityEvent:
 
         data = event.to_dict()
 
-        assert data["event_id"] == event.event_id
-        assert data["timestamp"] == event.timestamp.isoformat()
-        assert data["context_id"] == "ctx_001"
-        assert data["operator_id"] == "user_001"
-        assert data["event_type"] == "test_event"
-        assert data["resource"] == "test_resource"
-        assert data["action"] == "allowed"
-        assert data["details"] == {"key": "value"}
+        assert data["event_id"] == event.event_id  # nosec: B101 - Test assertion
+        assert (
+            data["timestamp"] == event.timestamp.isoformat()
+        )  # nosec: B101 - Test assertion
+        assert data["context_id"] == "ctx_001"  # nosec: B101 - Test assertion
+        assert data["operator_id"] == "user_001"  # nosec: B101 - Test assertion
+        assert data["event_type"] == "test_event"  # nosec: B101 - Test assertion
+        assert data["resource"] == "test_resource"  # nosec: B101 - Test assertion
+        assert data["action"] == "allowed"  # nosec: B101 - Test assertion
+        assert data["details"] == {"key": "value"}  # nosec: B101 - Test assertion
 
 
 class TestSecurityMetrics:
@@ -136,26 +155,32 @@ class TestSecurityMetrics:
 
     def test_init(self, metrics):
         """Test initialization."""
-        assert metrics.allowed_operations == {}
-        assert metrics.denied_operations == {}
-        assert metrics.audit_events == []
+        assert metrics.allowed_operations == {}  # nosec: B101 - Test assertion
+        assert metrics.denied_operations == {}  # nosec: B101 - Test assertion
+        assert metrics.audit_events == []  # nosec: B101 - Test assertion
 
     def test_record_allowed(self, metrics):
         """Test recording allowed operation."""
         metrics.record_allowed("subprocess", "git")
 
-        assert metrics.allowed_operations["subprocess:git"] == 1
+        assert (
+            metrics.allowed_operations["subprocess:git"] == 1
+        )  # nosec: B101 - Test assertion
 
         # Record again
         metrics.record_allowed("subprocess", "git")
-        assert metrics.allowed_operations["subprocess:git"] == 2
+        assert (
+            metrics.allowed_operations["subprocess:git"] == 2
+        )  # nosec: B101 - Test assertion
 
     def test_record_denied(self, metrics):
         """Test recording denied operation."""
         with patch.object(metrics.logger, "warning") as mock_warning:
             metrics.record_denied("subprocess", "rm", "not in allowlist")
 
-            assert metrics.denied_operations["subprocess:rm"] == 1
+            assert (
+                metrics.denied_operations["subprocess:rm"] == 1
+            )  # nosec: B101 - Test assertion
             mock_warning.assert_called_once()
 
     def test_record_event(self, metrics):
@@ -167,8 +192,8 @@ class TestSecurityMetrics:
 
         metrics.record_event(event)
 
-        assert len(metrics.audit_events) == 1
-        assert metrics.audit_events[0] == event
+        assert len(metrics.audit_events) == 1  # nosec: B101 - Test assertion
+        assert metrics.audit_events[0] == event  # nosec: B101 - Test assertion
 
     def test_record_event_pruning(self, metrics):
         """Test that events are pruned after 10000."""
@@ -177,10 +202,14 @@ class TestSecurityMetrics:
             event = SecurityEvent(event_id=f"event_{i}")
             metrics.record_event(event)
 
-        assert len(metrics.audit_events) == 10000
+        assert len(metrics.audit_events) == 10000  # nosec: B101 - Test assertion
         # Should keep the most recent
-        assert metrics.audit_events[0].event_id == "event_1"
-        assert metrics.audit_events[-1].event_id == "event_10000"
+        assert (
+            metrics.audit_events[0].event_id == "event_1"
+        )  # nosec: B101 - Test assertion
+        assert (
+            metrics.audit_events[-1].event_id == "event_10000"
+        )  # nosec: B101 - Test assertion
 
     def test_get_metrics(self, metrics):
         """Test getting metrics snapshot."""
@@ -190,14 +219,16 @@ class TestSecurityMetrics:
 
         data = metrics.get_metrics()
 
-        assert data["allowed_operations"] == {
+        assert data["allowed_operations"] == {  # nosec: B101 - Test assertion
             "subprocess:git": 1,
             "subprocess:python": 1,
         }
-        assert data["denied_operations"] == {"subprocess:rm": 1}
-        assert data["total_allowed"] == 2
-        assert data["total_denied"] == 1
-        assert data["audit_events_count"] == 0
+        assert data["denied_operations"] == {
+            "subprocess:rm": 1
+        }  # nosec: B101 - Test assertion
+        assert data["total_allowed"] == 2  # nosec: B101 - Test assertion
+        assert data["total_denied"] == 1  # nosec: B101 - Test assertion
+        assert data["audit_events_count"] == 0  # nosec: B101 - Test assertion
 
 
 class TestSubprocessSecurityAdapter:
@@ -212,8 +243,10 @@ class TestSubprocessSecurityAdapter:
 
     def test_init(self, adapter):
         """Test initialization."""
-        assert adapter.metrics is not None
-        assert adapter._original_popen == subprocess.Popen
+        assert adapter.metrics is not None  # nosec: B101 - Test assertion
+        assert (
+            adapter._original_popen == subprocess.Popen
+        )  # nosec: B101 - Test assertion
 
     def test_create_secure_popen_allowed(self, adapter):
         """Test creating secure Popen with allowed command."""
@@ -243,7 +276,9 @@ class TestSubprocessSecurityAdapter:
                 with pytest.raises(PermissionError) as exc_info:
                     secure_popen(["rm", "-rf", "/"])
 
-                assert "not in allowlist" in str(exc_info.value)
+                assert "not in allowlist" in str(
+                    exc_info.value
+                )  # nosec: B101 - Test assertion
                 adapter.metrics.record_denied.assert_called_once()
 
     def test_create_secure_popen_denied_permissive(self, adapter):
@@ -265,32 +300,32 @@ class TestSubprocessSecurityAdapter:
     def test_extract_command_list(self, adapter):
         """Test extracting command from list."""
         cmd = adapter._extract_command((["git", "status"],), {})
-        assert cmd == "git"
+        assert cmd == "git"  # nosec: B101 - Test assertion
 
     def test_extract_command_string(self, adapter):
         """Test extracting command from string."""
         cmd = adapter._extract_command(("git status",), {})
-        assert cmd == "git"
+        assert cmd == "git"  # nosec: B101 - Test assertion
 
     def test_extract_command_kwargs(self, adapter):
         """Test extracting command from kwargs."""
         cmd = adapter._extract_command((), {"args": ["python", "script.py"]})
-        assert cmd == "python"
+        assert cmd == "python"  # nosec: B101 - Test assertion
 
     def test_extract_command_unknown(self, adapter):
         """Test extracting unknown command."""
         cmd = adapter._extract_command((), {})
-        assert cmd == "unknown"
+        assert cmd == "unknown"  # nosec: B101 - Test assertion
 
     def test_check_allowlist_match(self, adapter):
         """Test checking allowlist with matching command."""
         result = adapter._check_allowlist("/usr/bin/git", {"git"})
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_check_allowlist_no_match(self, adapter):
         """Test checking allowlist with non-matching command."""
         result = adapter._check_allowlist("/usr/bin/rm", {"git"})
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
 
 class TestSerializationSecurityAdapter:
@@ -305,7 +340,7 @@ class TestSerializationSecurityAdapter:
 
     def test_init(self, adapter):
         """Test initialization."""
-        assert adapter.metrics is not None
+        assert adapter.metrics is not None  # nosec: B101 - Test assertion
 
     def test_secure_loads_json_bytes(self, adapter):
         """Test secure loads with JSON bytes."""
@@ -317,7 +352,7 @@ class TestSerializationSecurityAdapter:
                 secure_loads = adapter.create_secure_loads(context)
                 result = secure_loads(test_data)
 
-                assert result == {"key": "value"}
+                assert result == {"key": "value"}  # nosec: B101 - Test assertion
                 adapter.metrics.record_allowed.assert_called_once()
 
     def test_secure_loads_json_string(self, adapter):
@@ -330,7 +365,7 @@ class TestSerializationSecurityAdapter:
                 secure_loads = adapter.create_secure_loads(context)
                 result = secure_loads(test_data)
 
-                assert result == {"key": "value"}
+                assert result == {"key": "value"}  # nosec: B101 - Test assertion
 
     def test_secure_loads_pickle_permissive(self, adapter):
         """Test secure loads with pickle in permissive mode."""
@@ -346,7 +381,7 @@ class TestSerializationSecurityAdapter:
         secure_loads = adapter.create_secure_loads(context)
         result = secure_loads(test_data)
 
-        assert result == {"key": "value"}
+        assert result == {"key": "value"}  # nosec: B101 - Test assertion
 
     def test_secure_loads_pickle_denied(self, adapter):
         """Test secure loads with pickle denied."""
@@ -359,7 +394,9 @@ class TestSerializationSecurityAdapter:
                 with pytest.raises(ValueError) as exc_info:
                     secure_loads(b"invalid pickle data")
 
-                assert "Pickle is disabled" in str(exc_info.value)
+                assert "Pickle is disabled" in str(
+                    exc_info.value
+                )  # nosec: B101 - Test assertion
                 adapter.metrics.record_denied.assert_called_once()
 
 
@@ -376,7 +413,7 @@ class TestConfigChecksumAdapter:
 
     def test_init_with_env_var(self, adapter):
         """Test initialization with environment variable."""
-        assert adapter.kms_key == "test_kms_key_12345"
+        assert adapter.kms_key == "test_kms_key_12345"  # nosec: B101 - Test assertion
 
     def test_init_without_env_var(self):
         """Test initialization without environment variable."""
@@ -388,7 +425,7 @@ class TestConfigChecksumAdapter:
 
             assert "APGI_KMS_KEY environment variable must be set" in str(
                 exc_info.value
-            )
+            )  # nosec: B101 - Test assertion
 
     def test_validate_config_checksum_valid(self, adapter):
         """Test validating valid checksum."""
@@ -410,7 +447,7 @@ class TestConfigChecksumAdapter:
             with patch.object(adapter.metrics, "record_allowed"):
                 result = adapter.validate_config_checksum(config, valid_hash, context)
 
-                assert result is True
+                assert result is True  # nosec: B101 - Test assertion
                 adapter.metrics.record_allowed.assert_called_once()
 
     def test_validate_config_checksum_invalid(self, adapter):
@@ -424,7 +461,7 @@ class TestConfigChecksumAdapter:
                     config, "invalid_hash", context
                 )
 
-                assert result is False
+                assert result is False  # nosec: B101 - Test assertion
                 adapter.metrics.record_denied.assert_called_once()
 
 
@@ -439,19 +476,25 @@ class TestSecurityAdapterFactory:
 
     def test_init(self, factory):
         """Test initialization."""
-        assert factory.metrics is not None
-        assert factory.subprocess_adapter is not None
-        assert factory.serialization_adapter is not None
-        assert factory._checksum_adapter is None
+        assert factory.metrics is not None  # nosec: B101 - Test assertion
+        assert factory.subprocess_adapter is not None  # nosec: B101 - Test assertion
+        assert factory.serialization_adapter is not None  # nosec: B101 - Test assertion
+        assert factory._checksum_adapter is None  # nosec: B101 - Test assertion
 
     def test_create_context_default(self, factory):
         """Test creating context with defaults."""
         context = factory.create_context()
 
-        assert context.operator_id == "anonymous"
-        assert context.role == "user"
-        assert context.subprocess_allowlist == {"git", "pytest", "python"}
-        assert context.security_level == SecurityLevel.STANDARD
+        assert context.operator_id == "anonymous"  # nosec: B101 - Test assertion
+        assert context.role == "user"  # nosec: B101 - Test assertion
+        assert context.subprocess_allowlist == {
+            "git",
+            "pytest",
+            "python",
+        }  # nosec: B101 - Test assertion
+        assert (
+            context.security_level == SecurityLevel.STANDARD
+        )  # nosec: B101 - Test assertion
 
     def test_create_context_custom(self, factory):
         """Test creating context with custom values."""
@@ -462,38 +505,40 @@ class TestSecurityAdapterFactory:
             security_level=SecurityLevel.STRICT,
         )
 
-        assert context.operator_id == "test_user"
-        assert context.role == "admin"
-        assert context.subprocess_allowlist == {"ls"}
-        assert context.security_level == SecurityLevel.STRICT
+        assert context.operator_id == "test_user"  # nosec: B101 - Test assertion
+        assert context.role == "admin"  # nosec: B101 - Test assertion
+        assert context.subprocess_allowlist == {"ls"}  # nosec: B101 - Test assertion
+        assert (
+            context.security_level == SecurityLevel.STRICT
+        )  # nosec: B101 - Test assertion
 
     def test_get_secure_popen(self, factory):
         """Test getting secure Popen."""
         context = SecurityContext()
         popen = factory.get_secure_popen(context)
 
-        assert callable(popen)
+        assert callable(popen)  # nosec: B101 - Test assertion
 
     def test_get_secure_loads(self, factory):
         """Test getting secure loads."""
         context = SecurityContext()
         loads = factory.get_secure_loads(context)
 
-        assert callable(loads)
+        assert callable(loads)  # nosec: B101 - Test assertion
 
     def test_checksum_adapter_lazy_init(self, factory, monkeypatch):
         """Test lazy initialization of checksum adapter."""
         monkeypatch.setenv("APGI_KMS_KEY", "test_key")
 
-        assert factory._checksum_adapter is None
+        assert factory._checksum_adapter is None  # nosec: B101 - Test assertion
 
         adapter = factory.checksum_adapter
 
-        assert adapter is not None
-        assert factory._checksum_adapter is adapter
+        assert adapter is not None  # nosec: B101 - Test assertion
+        assert factory._checksum_adapter is adapter  # nosec: B101 - Test assertion
 
         # Second access should return same instance
-        assert factory.checksum_adapter is adapter
+        assert factory.checksum_adapter is adapter  # nosec: B101 - Test assertion
 
     def test_validate_config(self, factory, monkeypatch):
         """Test validating config."""
@@ -508,15 +553,15 @@ class TestSecurityAdapterFactory:
 
             result = factory.validate_config(config, "hash123", context)
 
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
             mock_validate.assert_called_once_with(config, "hash123", context)
 
     def test_get_metrics(self, factory):
         """Test getting metrics."""
         metrics = factory.get_metrics()
 
-        assert "allowed_operations" in metrics
-        assert "denied_operations" in metrics
+        assert "allowed_operations" in metrics  # nosec: B101 - Test assertion
+        assert "denied_operations" in metrics  # nosec: B101 - Test assertion
 
     def test_get_audit_events(self, factory):
         """Test getting audit events."""
@@ -526,9 +571,9 @@ class TestSecurityAdapterFactory:
 
         events = factory.get_audit_events(limit=10)
 
-        assert len(events) == 2
-        assert events[0]["event_id"] == "event_1"
-        assert events[1]["event_id"] == "event_2"
+        assert len(events) == 2  # nosec: B101 - Test assertion
+        assert events[0]["event_id"] == "event_1"  # nosec: B101 - Test assertion
+        assert events[1]["event_id"] == "event_2"  # nosec: B101 - Test assertion
 
     def test_get_audit_events_with_limit(self, factory):
         """Test getting audit events with limit."""
@@ -538,7 +583,7 @@ class TestSecurityAdapterFactory:
 
         events = factory.get_audit_events(limit=50)
 
-        assert len(events) == 50
+        assert len(events) == 50  # nosec: B101 - Test assertion
 
 
 class TestGlobalFunctions:
@@ -547,14 +592,16 @@ class TestGlobalFunctions:
     def test_get_security_factory(self):
         """Test getting global security factory."""
         factory = get_security_factory()
-        assert isinstance(factory, SecurityAdapterFactory)
+        assert isinstance(
+            factory, SecurityAdapterFactory
+        )  # nosec: B101 - Test assertion
 
     def test_set_security_factory(self):
         """Test setting global security factory."""
         new_factory = SecurityAdapterFactory()
         set_security_factory(new_factory)
 
-        assert get_security_factory() is new_factory
+        assert get_security_factory() is new_factory  # nosec: B101 - Test assertion
 
         # Reset to original
         original_factory = get_security_factory()

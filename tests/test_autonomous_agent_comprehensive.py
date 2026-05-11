@@ -55,7 +55,9 @@ class TestUtilityFunctions:
         ]
 
         for cmd in allowed_commands:
-            assert validate_subprocess_command(cmd) is True
+            assert (
+                validate_subprocess_command(cmd) is True
+            )  # nosec: B101 - Test assertion
 
     def test_validate_subprocess_command_invalid(self):
         """Test command validation with disallowed commands."""
@@ -69,19 +71,21 @@ class TestUtilityFunctions:
         ]
 
         for cmd in disallowed_commands:
-            assert validate_subprocess_command(cmd) is False
+            assert (
+                validate_subprocess_command(cmd) is False
+            )  # nosec: B101 - Test assertion
 
     def test_safe_subprocess_run(self):
         """Test safe subprocess execution."""
         # Test successful command
         result = safe_subprocess_run(["echo", "test"])
-        assert result.returncode == 0
-        assert "test" in result.stdout
+        assert result.returncode == 0  # nosec: B101 - Test assertion
+        assert "test" in result.stdout  # nosec: B101 - Test assertion
 
     def test_safe_subprocess_run_with_kwargs(self):
         """Test safe subprocess with additional arguments."""
         result = safe_subprocess_run(["echo", "test"], cwd=tempfile.gettempdir())
-        assert result.returncode == 0
+        assert result.returncode == 0  # nosec: B101 - Test assertion
         # Default timeout is set by the function
 
 
@@ -93,27 +97,27 @@ class TestRateLimiter:
         limiter = RateLimiter(max_requests=3, time_window=1.0)
 
         # Should allow first few requests
-        assert limiter.acquire() is True
-        assert limiter.acquire() is True
-        assert limiter.acquire() is True
+        assert limiter.acquire() is True  # nosec: B101 - Test assertion
+        assert limiter.acquire() is True  # nosec: B101 - Test assertion
+        assert limiter.acquire() is True  # nosec: B101 - Test assertion
 
         # Should reject when limit exceeded
-        assert limiter.acquire() is False
+        assert limiter.acquire() is False  # nosec: B101 - Test assertion
 
     def test_rate_limiter_time_window(self):
         """Test rate limiter time window reset."""
         limiter = RateLimiter(max_requests=2, time_window=0.1)
 
         # Use up limit
-        assert limiter.acquire() is True
-        assert limiter.acquire() is True
-        assert limiter.acquire() is False
+        assert limiter.acquire() is True  # nosec: B101 - Test assertion
+        assert limiter.acquire() is True  # nosec: B101 - Test assertion
+        assert limiter.acquire() is False  # nosec: B101 - Test assertion
 
         # Wait for time window to pass
         time.sleep(0.2)
 
         # Should allow requests again
-        assert limiter.acquire() is True
+        assert limiter.acquire() is True  # nosec: B101 - Test assertion
 
     def test_rate_limiter_wait_time(self):
         """Test wait time calculation."""
@@ -125,7 +129,7 @@ class TestRateLimiter:
 
         # Should calculate wait time
         wait_time = limiter.wait_time()
-        assert 0 < wait_time <= 1.0
+        assert 0 < wait_time <= 1.0  # nosec: B101 - Test assertion
 
     def test_rate_limiter_concurrent_access(self):
         """Test rate limiter with concurrent access."""
@@ -146,7 +150,7 @@ class TestRateLimiter:
             thread.join()
 
         # Should have some successes and some failures
-        assert sum(results) <= 5
+        assert sum(results) <= 5  # nosec: B101 - Test assertion
 
 
 class TestRequestRetryHandler:
@@ -158,10 +162,10 @@ class TestRequestRetryHandler:
             max_retries=5, timeout=60.0, backoff_base=2.0, max_backoff=120.0
         )
 
-        assert handler.max_retries == 5
-        assert handler.timeout == 60.0
-        assert handler.backoff_base == 2.0
-        assert handler.max_backoff == 120.0
+        assert handler.max_retries == 5  # nosec: B101 - Test assertion
+        assert handler.timeout == 60.0  # nosec: B101 - Test assertion
+        assert handler.backoff_base == 2.0  # nosec: B101 - Test assertion
+        assert handler.max_backoff == 120.0  # nosec: B101 - Test assertion
 
     @patch("time.sleep")
     def test_retry_handler_success_on_first_try(self, mock_sleep):
@@ -171,7 +175,7 @@ class TestRequestRetryHandler:
 
         result = handler.execute_with_retry(mock_func, arg1="test")
 
-        assert result == "success"
+        assert result == "success"  # nosec: B101 - Test assertion
         mock_func.assert_called_once_with(arg1="test")
         mock_sleep.assert_not_called()
 
@@ -183,9 +187,9 @@ class TestRequestRetryHandler:
 
         result = handler.execute_with_retry(mock_func)
 
-        assert result == "success"
-        assert mock_func.call_count == 3
-        assert mock_sleep.call_count == 2
+        assert result == "success"  # nosec: B101 - Test assertion
+        assert mock_func.call_count == 3  # nosec: B101 - Test assertion
+        assert mock_sleep.call_count == 2  # nosec: B101 - Test assertion
 
     @patch("time.sleep")
     def test_retry_handler_exhausted_retries(self, mock_sleep):
@@ -196,8 +200,10 @@ class TestRequestRetryHandler:
         with pytest.raises(Exception, match="always fails"):
             handler.execute_with_retry(mock_func)
 
-        assert mock_func.call_count == 3  # Initial try + 2 retries
-        assert mock_sleep.call_count == 2
+        assert (
+            mock_func.call_count == 3
+        )  # Initial try + 2 retries  # nosec: B101 - Test assertion
+        assert mock_sleep.call_count == 2  # nosec: B101 - Test assertion
 
     @patch("time.sleep")
     def test_retry_handler_backoff_calculation(self, mock_sleep):
@@ -244,8 +250,8 @@ class TestAsyncGitOperations:
         rate_limiter = RateLimiter()
         async_git = AsyncGitOperations(self.repo_path, rate_limiter)
 
-        assert async_git.repo_path == self.repo_path
-        assert async_git.rate_limiter == rate_limiter
+        assert async_git.repo_path == self.repo_path  # nosec: B101 - Test assertion
+        assert async_git.rate_limiter == rate_limiter  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_async_git_command_success(self):
@@ -253,10 +259,14 @@ class TestAsyncGitOperations:
         rate_limiter = RateLimiter(max_requests=100, time_window=1.0)
         async_git = AsyncGitOperations(self.repo_path, rate_limiter)
 
-        returncode, stdout, stderr = await async_git._run_git_command(["status"])
+        returncode, stdout, stderr = await async_git._run_git_command_with_retry(
+            ["status"]
+        )
 
-        assert returncode == 0
-        assert "On branch" in stdout or "nothing to commit" in stdout
+        assert returncode == 0  # nosec: B101 - Test assertion
+        assert (
+            "On branch" in stdout or "nothing to commit" in stdout
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_async_git_command_timeout(self):
@@ -265,12 +275,12 @@ class TestAsyncGitOperations:
         async_git = AsyncGitOperations(self.repo_path, rate_limiter)
 
         # Use very short timeout
-        returncode, stdout, stderr = await async_git._run_git_command(
+        returncode, stdout, stderr = await async_git._run_git_command_with_retry(
             ["log"], timeout=0.001
         )
 
-        assert returncode == -1
-        assert "timed out" in stderr
+        assert returncode == -1  # nosec: B101 - Test assertion
+        assert "timed out" in stderr  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_async_git_command_invalid(self):
@@ -278,12 +288,14 @@ class TestAsyncGitOperations:
         rate_limiter = RateLimiter(max_requests=100, time_window=1.0)
         async_git = AsyncGitOperations(self.repo_path, rate_limiter)
 
-        returncode, stdout, stderr = await async_git._run_git_command(
+        returncode, stdout, stderr = await async_git._run_git_command_with_retry(
             ["invalid_command"]
         )
 
-        assert returncode != 0
-        assert "not a git command" in stderr.lower() or "unknown" in stderr.lower()
+        assert returncode != 0  # nosec: B101 - Test assertion
+        assert (
+            "not a git command" in stderr.lower() or "unknown" in stderr.lower()
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_async_add_files(self):
@@ -297,7 +309,7 @@ class TestAsyncGitOperations:
         # Add the file
         result = await async_git.async_add(["new_file.txt"])
 
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_async_commit(self):
@@ -312,8 +324,10 @@ class TestAsyncGitOperations:
         # Commit
         commit_hash = await async_git.async_commit("Test commit")
 
-        assert commit_hash is not None
-        assert len(commit_hash) == 40  # Git commit hash length
+        assert commit_hash is not None  # nosec: B101 - Test assertion
+        assert (
+            len(commit_hash) == 40
+        )  # Git commit hash length  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_async_commit_no_changes(self):
@@ -324,7 +338,7 @@ class TestAsyncGitOperations:
         # Try to commit without any staged changes
         commit_hash = await async_git.async_commit("No changes commit")
 
-        assert commit_hash is None
+        assert commit_hash is None  # nosec: B101 - Test assertion
 
     @pytest.mark.asyncio
     async def test_rate_limiting_integration(self):
@@ -334,16 +348,18 @@ class TestAsyncGitOperations:
         async_git = AsyncGitOperations(self.repo_path, rate_limiter)
 
         # First request should succeed
-        result1 = await async_git._run_git_command(["status"])
-        assert result1[0] == 0
+        result1 = await async_git._run_git_command_with_retry(["status"])
+        assert result1[0] == 0  # nosec: B101 - Test assertion
 
         # Second request should be rate limited and wait
         start_time = time.time()
-        result2 = await async_git._run_git_command(["status"])
+        result2 = await async_git._run_git_command_with_retry(["status"])
         end_time = time.time()
 
-        assert result2[0] == 0
-        assert end_time - start_time >= 0.1  # Should have waited
+        assert result2[0] == 0  # nosec: B101 - Test assertion
+        assert (
+            end_time - start_time >= 0.1
+        )  # Should have waited  # nosec: B101 - Test assertion
 
 
 class TestParameterOptimizerComprehensive:
@@ -363,11 +379,15 @@ class TestParameterOptimizerComprehensive:
         ]
 
         for strategy_name in expected_strategies:
-            assert strategy_name in self.optimizer.strategies
+            assert (
+                strategy_name in self.optimizer.strategies
+            )  # nosec: B101 - Test assertion
             strategy = self.optimizer.strategies[strategy_name]
-            assert hasattr(strategy, "name")
-            assert hasattr(strategy, "parameter_ranges")
-            assert hasattr(strategy, "mutation_strength")
+            assert hasattr(strategy, "name")  # nosec: B101 - Test assertion
+            assert hasattr(strategy, "parameter_ranges")  # nosec: B101 - Test assertion
+            assert hasattr(
+                strategy, "mutation_strength"
+            )  # nosec: B101 - Test assertion
 
     def test_parameter_modification_float(self):
         """Test float parameter modification."""
@@ -378,8 +398,10 @@ class TestParameterOptimizerComprehensive:
 
         if "BASE_DETECTION_RATE" in modifications:
             value = modifications["BASE_DETECTION_RATE"]
-            assert isinstance(value, float)
-            assert 0.1 <= value <= 0.9  # Should be within valid range
+            assert isinstance(value, float)  # nosec: B101 - Test assertion
+            assert (
+                0.1 <= value <= 0.9
+            )  # Should be within valid range  # nosec: B101 - Test assertion
 
     def test_parameter_modification_int(self):
         """Test integer parameter modification."""
@@ -390,8 +412,10 @@ class TestParameterOptimizerComprehensive:
 
         if "NUM_TRIALS" in modifications:
             value = modifications["NUM_TRIALS"]
-            assert isinstance(value, int)
-            assert 20 <= value <= 200  # Should be within valid range
+            assert isinstance(value, int)  # nosec: B101 - Test assertion
+            assert (
+                20 <= value <= 200
+            )  # Should be within valid range  # nosec: B101 - Test assertion
 
     def test_parameter_modification_bool(self):
         """Test boolean parameter modification."""
@@ -401,7 +425,9 @@ class TestParameterOptimizerComprehensive:
         )
 
         if "USE_FEEDBACK" in modifications:
-            assert isinstance(modifications["USE_FEEDBACK"], bool)
+            assert isinstance(
+                modifications["USE_FEEDBACK"], bool
+            )  # nosec: B101 - Test assertion
 
     def test_parameter_modification_list(self):
         """Test list parameter modification."""
@@ -412,8 +438,8 @@ class TestParameterOptimizerComprehensive:
 
         if "SOA_VALUES" in modifications:
             value = modifications["SOA_VALUES"]
-            assert isinstance(value, list)
-            assert len(value) > 0
+            assert isinstance(value, list)  # nosec: B101 - Test assertion
+            assert len(value) > 0  # nosec: B101 - Test assertion
 
     def test_strategy_specific_parameters(self):
         """Test that strategies have their specific parameters."""
@@ -426,14 +452,14 @@ class TestParameterOptimizerComprehensive:
         ]
 
         for param in expected_params:
-            assert param in strategy.parameter_ranges
+            assert param in strategy.parameter_ranges  # nosec: B101 - Test assertion
 
         # Test Iowa gambling task strategy
         strategy = self.optimizer.strategies["iowa_gambling_task"]
         expected_params = ["BASE_LEARNING_RATE", "EXPLORATION_PROB", "PREFERENCE_DECAY"]
 
         for param in expected_params:
-            assert param in strategy.parameter_ranges
+            assert param in strategy.parameter_ranges  # nosec: B101 - Test assertion
 
     def test_mutation_strength_application(self):
         """Test that mutation strength affects modification magnitude."""
@@ -455,7 +481,9 @@ class TestParameterOptimizerComprehensive:
         if "TEST_PARAM" in modifications:
             # With high mutation strength, should move significantly from 0.5
             value = modifications["TEST_PARAM"]
-            assert abs(value - 0.5) > 0.1  # Should be significantly different
+            assert (
+                abs(value - 0.5) > 0.1
+            )  # Should be significantly different  # nosec: B101 - Test assertion
 
     def test_exploration_rate_effect(self):
         """Test that exploration rate affects modification frequency."""
@@ -483,7 +511,9 @@ class TestParameterOptimizerComprehensive:
                 modification_count += 1
 
         # With low exploration rate, should modify less frequently
-        assert modification_count < 20  # Should be much less than 100
+        assert (
+            modification_count < 20
+        )  # Should be much less than 100  # nosec: B101 - Test assertion
 
 
 class TestGitPerformanceTrackerComprehensive:
@@ -521,7 +551,7 @@ class TestGitPerformanceTrackerComprehensive:
 
         # Should handle corruption gracefully
         results = tracker._load_best_results()
-        assert results == {}
+        assert results == {}  # nosec: B101 - Test assertion
 
     def test_save_results_permission_error(self):
         """Test saving results with permission error."""
@@ -555,7 +585,7 @@ class TestGitPerformanceTrackerComprehensive:
         commit_hash = tracker.commit_experiment(modifications)
 
         # Should return "no_changes" or "error" but not crash
-        assert commit_hash in ["no_changes", "error"]
+        assert commit_hash in ["no_changes", "error"]  # nosec: B101 - Test assertion
 
     def test_commit_experiment_git_error(self):
         """Test committing when git command fails."""
@@ -563,14 +593,14 @@ class TestGitPerformanceTrackerComprehensive:
 
         # Mock git command to raise exception
         with patch.object(
-            tracker.repo.index,
+            tracker.repo.index if tracker.repo is not None else None,
             "add",
             side_effect=git.exc.GitCommandError("git error", ""),
         ):
             modifications = {"TEST_PARAM": 0.5}
             commit_hash = tracker.commit_experiment(modifications)
 
-            assert commit_hash == "error"
+            assert commit_hash == "error"  # nosec: B101 - Test assertion
 
     def test_rollback_experiment_success(self):
         """Test successful rollback."""
@@ -584,8 +614,10 @@ class TestGitPerformanceTrackerComprehensive:
         # Rollback
         result = tracker.rollback_experiment()
 
-        assert result is True
-        assert self.repo.head.commit.hexsha != new_commit.hexsha
+        assert result is True  # nosec: B101 - Test assertion
+        assert (
+            self.repo.head.commit.hexsha != new_commit.hexsha
+        )  # nosec: B101 - Test assertion
 
     def test_rollback_experiment_failure(self):
         """Test rollback failure."""
@@ -593,10 +625,12 @@ class TestGitPerformanceTrackerComprehensive:
 
         # Mock git reset to raise exception
         with patch.object(
-            tracker.repo.git, "reset", side_effect=Exception("git error")
+            tracker.repo.git if tracker.repo is not None else None,
+            "reset",
+            side_effect=Exception("git error"),
         ):
             result = tracker.rollback_experiment()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_is_improvement_with_agent_direction(self):
         """Test improvement check with agent metric direction."""
@@ -622,8 +656,12 @@ class TestGitPerformanceTrackerComprehensive:
         tracker.best_results["test"] = existing_result
 
         # Test improvements
-        assert tracker.is_improvement("test", 0.9) is True  # Higher is better
-        assert tracker.is_improvement("test", 0.7) is False  # Lower is not better
+        assert (
+            tracker.is_improvement("test", 0.9) is True
+        )  # Higher is better  # nosec: B101 - Test assertion
+        assert (
+            tracker.is_improvement("test", 0.7) is False
+        )  # Lower is not better  # nosec: B101 - Test assertion
 
     def test_is_improvement_lower_better(self):
         """Test improvement check when lower is better."""
@@ -649,8 +687,12 @@ class TestGitPerformanceTrackerComprehensive:
         tracker.best_results["test"] = existing_result
 
         # Test improvements
-        assert tracker.is_improvement("test", 90.0) is True  # Lower is better
-        assert tracker.is_improvement("test", 110.0) is False  # Higher is not better
+        assert (
+            tracker.is_improvement("test", 90.0) is True
+        )  # Lower is better  # nosec: B101 - Test assertion
+        assert (
+            tracker.is_improvement("test", 110.0) is False
+        )  # Higher is not better  # nosec: B101 - Test assertion
 
 
 class TestAutonomousAgentComprehensive:
@@ -683,12 +725,12 @@ class TestAutonomousAgentComprehensive:
         """Test agent initialization with all components."""
         agent = AutonomousAgent(str(self.repo_path))
 
-        assert agent.git_tracker is not None
-        assert agent.optimizer is not None
-        assert agent.memory_store is not None
-        assert agent.agent_engine is not None
-        assert agent.human_control is not None
-        assert agent.async_git is not None
+        assert agent.git_tracker is not None  # nosec: B101 - Test assertion
+        assert agent.optimizer is not None  # nosec: B101 - Test assertion
+        assert agent.memory_store is not None  # nosec: B101 - Test assertion
+        assert agent.agent_engine is not None  # nosec: B101 - Test assertion
+        assert agent.human_control is not None  # nosec: B101 - Test assertion
+        assert agent.async_git is not None  # nosec: B101 - Test assertion
 
     def test_load_experiment_modules_invalid_names(self):
         """Test loading experiment modules with invalid names."""
@@ -704,7 +746,7 @@ class TestAutonomousAgentComprehensive:
 
         # Should skip invalid modules
         modules = agent._load_experiment_modules()
-        assert "invalid" not in modules
+        assert "invalid" not in modules  # nosec: B101 - Test assertion
 
     def test_load_experiment_modules_import_error(self):
         """Test loading experiment modules with import errors."""
@@ -721,7 +763,7 @@ class TestAutonomousAgentComprehensive:
 
         # Should handle import error gracefully
         modules = agent._load_experiment_modules()
-        assert "syntax_error" not in modules
+        assert "syntax_error" not in modules  # nosec: B101 - Test assertion
 
     def test_save_checkpoint(self):
         """Test checkpoint saving."""
@@ -729,14 +771,16 @@ class TestAutonomousAgentComprehensive:
 
         agent._save_checkpoint("test_exp", 5, {}, [0.1, 0.2, 0.3])
 
-        assert agent.checkpoint_file.exists()
+        assert agent.checkpoint_file.exists()  # nosec: B101 - Test assertion
 
         # Verify checkpoint content
         with open(agent.checkpoint_file, "r") as f:
             saved_data = json.load(f)
 
-        assert saved_data["experiment_name"] == "test_exp"
-        assert saved_data["iteration"] == 5
+        assert (
+            saved_data["experiment_name"] == "test_exp"
+        )  # nosec: B101 - Test assertion
+        assert saved_data["iteration"] == 5  # nosec: B101 - Test assertion
 
     def test_load_checkpoint(self):
         """Test checkpoint loading."""
@@ -754,9 +798,9 @@ class TestAutonomousAgentComprehensive:
 
         loaded = agent._load_checkpoint()
 
-        assert loaded is not None
-        assert loaded["experiment_name"] == "test_exp"
-        assert loaded["iteration"] == 3
+        assert loaded is not None  # nosec: B101 - Test assertion
+        assert loaded["experiment_name"] == "test_exp"  # nosec: B101 - Test assertion
+        assert loaded["iteration"] == 3  # nosec: B101 - Test assertion
 
     def test_load_checkpoint_corrupted(self):
         """Test loading corrupted checkpoint."""
@@ -767,7 +811,7 @@ class TestAutonomousAgentComprehensive:
 
         loaded = agent._load_checkpoint()
 
-        assert loaded is None
+        assert loaded is None  # nosec: B101 - Test assertion
 
     def test_clear_checkpoint(self):
         """Test checkpoint clearing."""
@@ -775,11 +819,11 @@ class TestAutonomousAgentComprehensive:
 
         # Create checkpoint
         agent.checkpoint_file.write_text("{}")
-        assert agent.checkpoint_file.exists()
+        assert agent.checkpoint_file.exists()  # nosec: B101 - Test assertion
 
         # Clear checkpoint
         agent._clear_checkpoint()
-        assert not agent.checkpoint_file.exists()
+        assert not agent.checkpoint_file.exists()  # nosec: B101 - Test assertion
 
     def test_apply_modifications_llm_patch(self):
         """Test applying modifications with LLM patch."""
@@ -804,7 +848,7 @@ class TestAutonomousAgentComprehensive:
         agent._apply_modifications(str(test_file), modifications)
 
         # Should use LLM patch
-        assert test_file.read_text() == "MODIFIED_CODE"
+        assert test_file.read_text() == "MODIFIED_CODE"  # nosec: B101 - Test assertion
         mock_llm.generate_code_patch.assert_called_once()
 
     def test_apply_modifications_llm_patch_fallback(self):
@@ -830,7 +874,7 @@ class TestAutonomousAgentComprehensive:
 
         # Should fall back to regex
         content = test_file.read_text()
-        assert "TEST_PARAM = 0.75" in content
+        assert "TEST_PARAM = 0.75" in content  # nosec: B101 - Test assertion
 
     def test_apply_modifications_parameter_validation(self):
         """Test parameter validation in modifications."""
@@ -850,9 +894,13 @@ class TestAutonomousAgentComprehensive:
 
         # Should only apply valid parameters
         content = test_file.read_text()
-        assert "VALID_PARAM = 0.75" in content
-        assert "INVALID_PARAM = 1.0" not in content  # Should be skipped
-        assert "DANGEROUS_COMMAND" not in content  # Should be skipped
+        assert "VALID_PARAM = 0.75" in content  # nosec: B101 - Test assertion
+        assert (
+            "INVALID_PARAM = 1.0" not in content
+        )  # Should be skipped  # nosec: B101 - Test assertion
+        assert (
+            "DANGEROUS_COMMAND" not in content
+        )  # Should be skipped  # nosec: B101 - Test assertion
 
     def test_extract_primary_metric_comprehensive(self):
         """Test primary metric extraction with various result formats."""
@@ -861,30 +909,30 @@ class TestAutonomousAgentComprehensive:
         # Test known experiment metrics
         results = {"blink_magnitude": 0.5}
         metric = agent._extract_primary_metric(results, "attentional_blink")
-        assert metric == 0.5
+        assert metric == 0.5  # nosec: B101 - Test assertion
 
         results = {"net_score": 100}
         metric = agent._extract_primary_metric(results, "iowa_gambling_task")
-        assert metric == 100
+        assert metric == 100  # nosec: B101 - Test assertion
 
         # Test fallback patterns
         results = {"accuracy": 0.85}
         metric = agent._extract_primary_metric(results, "unknown_experiment")
-        assert metric == 0.85
+        assert metric == 0.85  # nosec: B101 - Test assertion
 
         results = {"score": 0.9}
         metric = agent._extract_primary_metric(results, "unknown_experiment")
-        assert metric == 0.9
+        assert metric == 0.9  # nosec: B101 - Test assertion
 
         # Test first numeric value fallback
         results = {"text": 1.0, "numeric_value": 42, "other": 2.0}
         metric = agent._extract_primary_metric(results, "unknown_experiment")
-        assert metric == 42.0
+        assert metric == 42.0  # nosec: B101 - Test assertion
 
         # Test no numeric values
         results = {"text": 1.0, "other": 2.0}
         metric = agent._extract_primary_metric(results, "unknown_experiment")
-        assert metric == 0.0
+        assert metric == 0.0  # nosec: B101 - Test assertion
 
     def test_get_metric_direction_comprehensive(self):
         """Test metric direction for all known experiments."""
@@ -901,7 +949,7 @@ class TestAutonomousAgentComprehensive:
 
         for exp in higher_better:
             direction = agent._get_metric_direction(exp)
-            assert direction == "higher"
+            assert direction == "higher"  # nosec: B101 - Test assertion
 
         # Test lower is better experiments
         lower_better = [
@@ -914,7 +962,7 @@ class TestAutonomousAgentComprehensive:
 
         for exp in lower_better:
             direction = agent._get_metric_direction(exp)
-            assert direction == "lower"
+            assert direction == "lower"  # nosec: B101 - Test assertion
 
     def test_create_session_branch(self):
         """Test creating session branch."""
@@ -923,8 +971,10 @@ class TestAutonomousAgentComprehensive:
         agent._create_session_branch("test_experiment")
 
         # Should have created a branch
-        assert agent._session_branch is not None
-        assert "test_experiment" in agent._session_branch
+        assert agent._session_branch is not None  # nosec: B101 - Test assertion
+        assert (
+            "test_experiment" in agent._session_branch
+        )  # nosec: B101 - Test assertion
 
     def test_create_session_branch_failure(self):
         """Test session branch creation failure."""
@@ -932,12 +982,14 @@ class TestAutonomousAgentComprehensive:
 
         # Mock git checkout to raise exception
         with patch.object(
-            agent.git_tracker.repo.git, "checkout", side_effect=Exception("git error")
+            agent.git_tracker.repo.git if agent.git_tracker.repo is not None else None,
+            "checkout",
+            side_effect=Exception("git error"),
         ):
             agent._create_session_branch("test_experiment")
 
             # Should handle error gracefully
-            assert agent._session_branch is None
+            assert agent._session_branch is None  # nosec: B101 - Test assertion
 
     def test_get_current_parameters_edge_cases(self):
         """Test parameter extraction with edge cases."""
@@ -978,18 +1030,18 @@ class SomeClass:
         params = agent._get_current_parameters("test")
 
         # Should extract valid parameters
-        assert "FLOAT_PARAM" in params
-        assert "INT_PARAM" in params
-        assert "NEGATIVE_PARAM" in params
-        assert "BOOL_TRUE" in params
-        assert "BOOL_FALSE" in params
-        assert "STRING_PARAM" in params
-        assert "LIST_PARAM" in params
+        assert "FLOAT_PARAM" in params  # nosec: B101 - Test assertion
+        assert "INT_PARAM" in params  # nosec: B101 - Test assertion
+        assert "NEGATIVE_PARAM" in params  # nosec: B101 - Test assertion
+        assert "BOOL_TRUE" in params  # nosec: B101 - Test assertion
+        assert "BOOL_FALSE" in params  # nosec: B101 - Test assertion
+        assert "STRING_PARAM" in params  # nosec: B101 - Test assertion
+        assert "LIST_PARAM" in params  # nosec: B101 - Test assertion
 
         # Should not extract invalid ones
-        assert "COMMENTED_PARAM" not in params
-        assert "some_function" not in params
-        assert "SomeClass" not in params
+        assert "COMMENTED_PARAM" not in params  # nosec: B101 - Test assertion
+        assert "some_function" not in params  # nosec: B101 - Test assertion
+        assert "SomeClass" not in params  # nosec: B101 - Test assertion
 
     @patch("signal.signal")
     @patch("signal.alarm")
@@ -1014,8 +1066,8 @@ class SomeClass:
 
         result = agent.run_experiment("test", timeout_seconds=1)
 
-        assert result.status == "timeout"
-        assert result.primary_metric == 0.0
+        assert result.status == "timeout"  # nosec: B101 - Test assertion
+        assert result.primary_metric == 0.0  # nosec: B101 - Test assertion
 
     def test_run_experiment_crash_with_self_healing(self):
         """Test experiment crash with self-healing."""
@@ -1046,7 +1098,7 @@ class SomeClass:
 
         result = agent.run_experiment("test", max_retries=1)
 
-        assert (
+        assert (  # nosec: B101 - Test assertion
             result.status == "crash"
         )  # Should still be crash if healing fails to reload
 
@@ -1073,8 +1125,8 @@ class SomeClass:
 
         result = agent.run_experiment("test")
 
-        assert result.status == "success"
-        assert result.primary_metric == 0.85
+        assert result.status == "success"  # nosec: B101 - Test assertion
+        assert result.primary_metric == 0.85  # nosec: B101 - Test assertion
 
     def test_optimize_experiment_checkpoint_resume(self):
         """Test optimization with checkpoint resume."""
@@ -1111,7 +1163,9 @@ class SomeClass:
         results = agent.optimize_experiment("test", iterations=3, resume=True)
 
         # Should resume from iteration 3 (2 + 1)
-        assert len(results) == 1  # Only iteration 3 should run
+        assert (
+            len(results) == 1
+        )  # Only iteration 3 should run  # nosec: B101 - Test assertion
         clear_checkpoint_mock = getattr(agent, "_clear_checkpoint")
         clear_checkpoint_mock.assert_called_once()
 
@@ -1138,7 +1192,7 @@ class SomeClass:
         results = agent.optimize_experiment("test", iterations=2)
 
         # Should stop on safety violation
-        assert len(results) == 1
+        assert len(results) == 1  # nosec: B101 - Test assertion
 
     def test_optimize_experiment_metric_regression(self):
         """Test optimization with metric regression detection."""
@@ -1165,33 +1219,35 @@ class SomeClass:
         results = agent.optimize_experiment("test", iterations=4)
 
         # Should detect regression and stop
-        assert len(results) >= 3  # At least 3 iterations to detect regression
+        assert (
+            len(results) >= 3
+        )  # At least 3 iterations to detect regression  # nosec: B101 - Test assertion
 
     def test_public_wrapper_methods(self):
         """Test public wrapper methods."""
         agent = AutonomousAgent(str(self.repo_path))
 
         # Test wrappers exist and call private methods
-        assert hasattr(agent, "get_current_parameters")
-        assert hasattr(agent, "apply_modifications")
-        assert hasattr(agent, "extract_primary_metric")
-        assert hasattr(agent, "get_metric_direction")
+        assert hasattr(agent, "get_current_parameters")  # nosec: B101 - Test assertion
+        assert hasattr(agent, "apply_modifications")  # nosec: B101 - Test assertion
+        assert hasattr(agent, "extract_primary_metric")  # nosec: B101 - Test assertion
+        assert hasattr(agent, "get_metric_direction")  # nosec: B101 - Test assertion
 
         # Test they call the private methods
         setattr(agent, "_get_current_parameters", Mock(return_value={"test": 0.5}))
         result = agent.get_current_parameters("test")
-        assert result == {"test": 0.5}
+        assert result == {"test": 0.5}  # nosec: B101 - Test assertion
 
         setattr(agent, "_apply_modifications", Mock())
         agent.apply_modifications("file.py", {})
 
         setattr(agent, "_extract_primary_metric", Mock(return_value=0.8))
         metric_result: float = agent.extract_primary_metric({"test": "data"}, "test")
-        assert metric_result == 0.8
+        assert metric_result == 0.8  # nosec: B101 - Test assertion
 
         setattr(agent, "_get_metric_direction", Mock(return_value="higher"))
         direction_result: str = agent.get_metric_direction("test")
-        assert direction_result == "higher"
+        assert direction_result == "higher"  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

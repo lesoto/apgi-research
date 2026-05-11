@@ -55,7 +55,7 @@ class TestInputSanitization:
     ) -> None:
         """Test that SQL injection patterns are detected."""
         matches = security_tester.detect_sql_injection(malicious_input)
-        assert (
+        assert (  # nosec: B101 - Test assertion
             len(matches) > 0
         ), f"SQL injection pattern not detected: {malicious_input}"
 
@@ -75,7 +75,9 @@ class TestInputSanitization:
     ) -> None:
         """Test that XSS patterns are detected."""
         matches = security_tester.detect_xss(malicious_input)
-        assert len(matches) > 0, f"XSS pattern not detected: {malicious_input}"
+        assert (
+            len(matches) > 0
+        ), f"XSS pattern not detected: {malicious_input}"  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     @pytest.mark.parametrize(
@@ -92,8 +94,10 @@ class TestInputSanitization:
     ) -> None:
         """Test HTML escaping for XSS prevention."""
         sanitized = security_tester.sanitize_input(input_value)
-        assert "<script>" not in sanitized
-        assert "<" not in sanitized or "&lt;" in sanitized
+        assert "<script>" not in sanitized  # nosec: B101 - Test assertion
+        assert (
+            "<" not in sanitized or "&lt;" in sanitized
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     @pytest.mark.parametrize(
@@ -111,7 +115,9 @@ class TestInputSanitization:
         """Test that path traversal attempts are detected."""
         # Path traversal patterns contain '..' or absolute paths
         is_suspicious = ".." in path_attempt or path_attempt.startswith(("/", "C:"))
-        assert is_suspicious, f"Path traversal not detected: {path_attempt}"
+        assert (
+            is_suspicious
+        ), f"Path traversal not detected: {path_attempt}"  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -141,7 +147,7 @@ class TestDataValidation:
         # Check that invalid types would be problematic
         for key, value in invalid_config.items():
             if key in ["n_trials", "duration_ms", "random_seed"]:
-                assert (
+                assert (  # nosec: B101 - Test assertion
                     not isinstance(value, (int, float)) or not np.isfinite(float(value))
                     if isinstance(value, (int, float))
                     else True
@@ -154,12 +160,12 @@ class TestDataValidation:
         float_arr = np.array([1.0, 2.0, 3.0], dtype=np.float64)
         int_arr = np.array([1, 2, 3], dtype=np.int64)
 
-        assert float_arr.dtype == np.float64
-        assert int_arr.dtype == np.int64
+        assert float_arr.dtype == np.float64  # nosec: B101 - Test assertion
+        assert int_arr.dtype == np.int64  # nosec: B101 - Test assertion
 
         # Type promotion should be predictable
         result = float_arr + int_arr
-        assert result.dtype == np.float64
+        assert result.dtype == np.float64  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     @pytest.mark.parametrize(
@@ -197,7 +203,7 @@ class TestEnvironmentSecurity:
 
         # Access should work but not be logged
         secret = os.environ.get("TEST_SECRET")
-        assert secret == "super_secret_key_12345"
+        assert secret == "super_secret_key_12345"  # nosec: B101 - Test assertion
 
         # Clean up
         del os.environ["TEST_SECRET"]
@@ -217,7 +223,7 @@ class TestEnvironmentSecurity:
             os.environ["TEST_VAR"] = malicious
             value = os.environ.get("TEST_VAR")
             # Should be stored as-is (not executed)
-            assert value == malicious
+            assert value == malicious  # nosec: B101 - Test assertion
             del os.environ["TEST_VAR"]
 
 
@@ -241,7 +247,9 @@ class TestFileSystemSecurity:
         resolved = suspicious_path.resolve()
 
         # Resolved path should not be in temp_dir
-        assert not str(resolved).startswith(str(temp_dir))
+        assert not str(resolved).startswith(
+            str(temp_dir)
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_file_extension_validation(self, temp_dir: Path) -> None:
@@ -253,11 +261,13 @@ class TestFileSystemSecurity:
 
         for ext in safe_extensions:
             file_path = temp_dir / f"test{ext}"
-            assert file_path.suffix in safe_extensions
+            assert file_path.suffix in safe_extensions  # nosec: B101 - Test assertion
 
         for ext in dangerous_extensions:
             file_path = temp_dir / f"test{ext}"
-            assert file_path.suffix not in safe_extensions
+            assert (
+                file_path.suffix not in safe_extensions
+            )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_symlink_handling(self, temp_dir: Path) -> None:
@@ -271,7 +281,9 @@ class TestFileSystemSecurity:
         try:
             symlink.symlink_to(real_file)
             # Symlink should resolve to real file
-            assert symlink.resolve() == real_file.resolve()
+            assert (
+                symlink.resolve() == real_file.resolve()
+            )  # nosec: B101 - Test assertion
         except OSError:
             # Symlinks may not be supported on all systems
             pytest.skip("Symlinks not supported")
@@ -302,8 +314,10 @@ class TestJSONSerializationSecurity:
 
         # Verify it can be decoded
         decoded = json.loads(json_str)
-        assert decoded["safe_string"] == "normal text"
-        assert decoded["html_string"] == "<script>alert(1)</script>"
+        assert decoded["safe_string"] == "normal text"  # nosec: B101 - Test assertion
+        assert (
+            decoded["html_string"] == "<script>alert(1)</script>"
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_numpy_json_serialization(self) -> None:
@@ -316,7 +330,7 @@ class TestJSONSerializationSecurity:
 
         # Verify serialization works
         decoded = json.loads(json_str)
-        assert decoded["array"] == [1.0, 2.0, 3.0]
+        assert decoded["array"] == [1.0, 2.0, 3.0]  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_prevent_arbitrary_code_execution(self) -> None:
@@ -326,7 +340,7 @@ class TestJSONSerializationSecurity:
 
         # Standard json.loads should not execute anything
         data = json.loads(malicious_json)
-        assert data["__class__"] == "os.system"
+        assert data["__class__"] == "os.system"  # nosec: B101 - Test assertion
         # Should be treated as plain data, not executed
 
 
@@ -359,7 +373,7 @@ class TestRandomNumberSecurity:
         values2 = rng2.random(100)
 
         # Should be different (with very high probability)
-        assert not np.array_equal(values1, values2)
+        assert not np.array_equal(values1, values2)  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_rng_state_not_leaked(self) -> None:
@@ -398,7 +412,9 @@ class TestParameterValidationSecurity:
 
         violations = params.validate()
         # At exact boundaries, should be valid
-        assert len(violations) == 0, f"Boundary values rejected: {violations}"
+        assert (
+            len(violations) == 0
+        ), f"Boundary values rejected: {violations}"  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_apgi_parameters_reject_invalid_ranges(self) -> None:
@@ -417,7 +433,9 @@ class TestParameterValidationSecurity:
             params = APGIParameters()
             setattr(params, param_name, invalid_value)
             violations = params.validate()
-            assert len(violations) > 0, f"Should reject {param_name}={invalid_value}"
+            assert (
+                len(violations) > 0
+            ), f"Should reject {param_name}={invalid_value}"  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_no_negative_precisions(self) -> None:
@@ -426,8 +444,8 @@ class TestParameterValidationSecurity:
 
         # Precision should be capped at positive value for invalid inputs
         result = FoundationalEquations.precision(-1.0)
-        assert result > 0
-        assert result == 1e6  # Capped value
+        assert result > 0  # nosec: B101 - Test assertion
+        assert result == 1e6  # Capped value  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -474,6 +492,6 @@ class TestMetricsLoggingSecurity:
                 # Should either return a value or raise a controlled exception
             except Exception as e:
                 # Exception is acceptable if it's controlled
-                assert not isinstance(
+                assert not isinstance(  # nosec: B101 - Test assertion
                     e, (MemoryError, SystemExit)
                 ), f"Unexpected exception type: {type(e)}"

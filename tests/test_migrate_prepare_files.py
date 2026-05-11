@@ -19,7 +19,7 @@ class TestMigrateFile:
         )
 
         result = migrate_file(test_file)
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_migrate_success(self, tmp_path):
         """Test successful migration of prepare file."""
@@ -29,15 +29,15 @@ class TestMigrateFile:
         )
 
         result = migrate_file(test_file)
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         # Verify migration applied
         content = test_file.read_text()
-        assert "cli_entrypoint" in content
-        assert "create_standard_parser" in content
-        assert "def verify() -> int:" in content
-        assert "return 0" in content
-        assert "def main() -> int:" in content
+        assert "cli_entrypoint" in content  # nosec: B101 - Test assertion
+        assert "create_standard_parser" in content  # nosec: B101 - Test assertion
+        assert "def verify() -> int:" in content  # nosec: B101 - Test assertion
+        assert "return 0" in content  # nosec: B101 - Test assertion
+        assert "def main() -> int:" in content  # nosec: B101 - Test assertion
 
     def test_migrate_without_numpy_import(self, tmp_path):
         """Test migration when numpy import not present."""
@@ -48,9 +48,9 @@ class TestMigrateFile:
 
         result = migrate_file(test_file)
         # Should still migrate but without adding numpy import
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         content = test_file.read_text()
-        assert "cli_entrypoint" in content
+        assert "cli_entrypoint" in content  # nosec: B101 - Test assertion
 
     def test_migrate_preserves_existing_return(self, tmp_path):
         """Test migration doesn't duplicate return 0 if already present."""
@@ -60,10 +60,10 @@ class TestMigrateFile:
         )
 
         result = migrate_file(test_file)
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         content = test_file.read_text()
         # Should only have one return 0
-        assert content.count("return 0") == 1
+        assert content.count("return 0") == 1  # nosec: B101 - Test assertion
 
     def test_migrate_complex_verify(self, tmp_path):
         """Test migration with more complex verify function."""
@@ -73,10 +73,12 @@ class TestMigrateFile:
         )
 
         result = migrate_file(test_file)
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         content = test_file.read_text()
-        assert "cli_entrypoint" in content
-        assert "return 0" in content  # Should add return 0 after the body
+        assert "cli_entrypoint" in content  # nosec: B101 - Test assertion
+        assert (
+            "return 0" in content
+        )  # Should add return 0 after the body  # nosec: B101 - Test assertion
 
 
 class TestMain:
@@ -93,7 +95,7 @@ class TestMain:
         ):
             with patch("pathlib.Path.glob", return_value=[]):
                 result = main()
-                assert result == 0
+                assert result == 0  # nosec: B101 - Test assertion
 
     def test_main_with_files(self, tmp_path, capsys):
         """Test main with existing prepare files."""
@@ -109,4 +111,6 @@ class TestMain:
             with patch.object(Path, "glob", return_value=[prepare_file]):
                 main()
                 captured = capsys.readouterr()
-                assert "Migrated" in captured.out or "Skipped" in captured.out
+                assert (
+                    "Migrated" in captured.out or "Skipped" in captured.out
+                )  # nosec: B101 - Test assertion

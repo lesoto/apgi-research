@@ -40,13 +40,25 @@ class TestHypothesisStatus:
 
     def test_status_values(self):
         """Test HypothesisStatus enum values."""
-        assert HypothesisStatus.DRAFT.value == "draft"
-        assert HypothesisStatus.SUBMITTED.value == "submitted"
-        assert HypothesisStatus.UNDER_REVIEW.value == "under_review"
-        assert HypothesisStatus.APPROVED.value == "approved"
-        assert HypothesisStatus.REJECTED.value == "rejected"
-        assert HypothesisStatus.EXPERIMENTING.value == "experimenting"
-        assert HypothesisStatus.COMPLETED.value == "completed"
+        assert HypothesisStatus.DRAFT.value == "draft"  # nosec: B101 - Test assertion
+        assert (
+            HypothesisStatus.SUBMITTED.value == "submitted"
+        )  # nosec: B101 - Test assertion
+        assert (
+            HypothesisStatus.UNDER_REVIEW.value == "under_review"
+        )  # nosec: B101 - Test assertion
+        assert (
+            HypothesisStatus.APPROVED.value == "approved"
+        )  # nosec: B101 - Test assertion
+        assert (
+            HypothesisStatus.REJECTED.value == "rejected"
+        )  # nosec: B101 - Test assertion
+        assert (
+            HypothesisStatus.EXPERIMENTING.value == "experimenting"
+        )  # nosec: B101 - Test assertion
+        assert (
+            HypothesisStatus.COMPLETED.value == "completed"
+        )  # nosec: B101 - Test assertion
 
 
 class TestApprovalDecision:
@@ -54,10 +66,14 @@ class TestApprovalDecision:
 
     def test_decision_values(self):
         """Test ApprovalDecision enum values."""
-        assert ApprovalDecision.APPROVE.value == "approve"
-        assert ApprovalDecision.REJECT.value == "reject"
-        assert ApprovalDecision.REQUEST_CHANGES.value == "request_changes"
-        assert ApprovalDecision.DEFER.value == "defer"
+        assert (
+            ApprovalDecision.APPROVE.value == "approve"
+        )  # nosec: B101 - Test assertion
+        assert ApprovalDecision.REJECT.value == "reject"  # nosec: B101 - Test assertion
+        assert (
+            ApprovalDecision.REQUEST_CHANGES.value == "request_changes"
+        )  # nosec: B101 - Test assertion
+        assert ApprovalDecision.DEFER.value == "defer"  # nosec: B101 - Test assertion
 
 
 class TestApprovalStatus:
@@ -66,10 +82,10 @@ class TestApprovalStatus:
     def test_default_values(self):
         """Test default ApprovalStatus values."""
         status = ApprovalStatus()
-        assert status.approved_count == 0
-        assert status.rejected_count == 0
-        assert status.pending_count == 0
-        assert status.total_count == 0
+        assert status.approved_count == 0  # nosec: B101 - Test assertion
+        assert status.rejected_count == 0  # nosec: B101 - Test assertion
+        assert status.pending_count == 0  # nosec: B101 - Test assertion
+        assert status.total_count == 0  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom ApprovalStatus values."""
@@ -79,10 +95,10 @@ class TestApprovalStatus:
             pending_count=3,
             total_count=10,
         )
-        assert status.approved_count == 5
-        assert status.rejected_count == 2
-        assert status.pending_count == 3
-        assert status.total_count == 10
+        assert status.approved_count == 5  # nosec: B101 - Test assertion
+        assert status.rejected_count == 2  # nosec: B101 - Test assertion
+        assert status.pending_count == 3  # nosec: B101 - Test assertion
+        assert status.total_count == 10  # nosec: B101 - Test assertion
 
 
 class TestHypothesis:
@@ -95,15 +111,15 @@ class TestHypothesis:
             title="Test Hypothesis",
             description="A test hypothesis",
         )
-        assert hyp.id == "hyp-1"
-        assert hyp.title == "Test Hypothesis"
-        assert hyp.description == "A test hypothesis"
-        assert hyp.status == HypothesisStatus.DRAFT
-        assert hyp.predicted_outcome == ""
-        assert hyp.success_criteria is None
-        assert hyp.experiment_design is None
-        assert hyp.created_at is not None
-        assert hyp.updated_at is not None
+        assert hyp.id == "hyp-1"  # nosec: B101 - Test assertion
+        assert hyp.title == "Test Hypothesis"  # nosec: B101 - Test assertion
+        assert hyp.description == "A test hypothesis"  # nosec: B101 - Test assertion
+        assert hyp.status == HypothesisStatus.DRAFT  # nosec: B101 - Test assertion
+        assert hyp.predicted_outcome == ""  # nosec: B101 - Test assertion
+        assert hyp.success_criteria is None  # nosec: B101 - Test assertion
+        assert hyp.experiment_design is None  # nosec: B101 - Test assertion
+        assert hyp.created_at is not None  # nosec: B101 - Test assertion
+        assert hyp.updated_at is not None  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom Hypothesis values."""
@@ -116,10 +132,17 @@ class TestHypothesis:
             success_criteria=["criterion1", "criterion2"],
             experiment_design={"method": "test"},
         )
-        assert hyp.status == HypothesisStatus.APPROVED
-        assert hyp.predicted_outcome == "Positive result"
-        assert hyp.success_criteria == ["criterion1", "criterion2"]
-        assert hyp.experiment_design == {"method": "test"}
+        assert hyp.status == HypothesisStatus.APPROVED  # nosec: B101 - Test assertion
+        assert (
+            hyp.predicted_outcome == "Positive result"
+        )  # nosec: B101 - Test assertion
+        assert hyp.success_criteria == [
+            "criterion1",
+            "criterion2",
+        ]  # nosec: B101 - Test assertion
+        assert hyp.experiment_design == {
+            "method": "test"
+        }  # nosec: B101 - Test assertion
 
     def test_to_dict(self):
         """Test converting hypothesis to dict."""
@@ -129,9 +152,9 @@ class TestHypothesis:
             description="Test description",
         )
         data = hyp.to_dict()
-        assert data["id"] == "hyp-3"
-        assert data["title"] == "Test"
-        assert data["status"] == "draft"
+        assert data["id"] == "hyp-3"  # nosec: B101 - Test assertion
+        assert data["title"] == "Test"  # nosec: B101 - Test assertion
+        assert data["status"] == "draft"  # nosec: B101 - Test assertion
 
     def test_from_dict(self):
         """Test creating hypothesis from dict."""
@@ -144,9 +167,9 @@ class TestHypothesis:
             "success_criteria": ["crit1"],
         }
         hyp = Hypothesis.from_dict(data)
-        assert hyp.id == "hyp-4"
-        assert hyp.title == "From Dict"
-        assert hyp.status == HypothesisStatus.SUBMITTED
+        assert hyp.id == "hyp-4"  # nosec: B101 - Test assertion
+        assert hyp.title == "From Dict"  # nosec: B101 - Test assertion
+        assert hyp.status == HypothesisStatus.SUBMITTED  # nosec: B101 - Test assertion
 
 
 class TestCreateHypothesis:
@@ -158,10 +181,10 @@ class TestCreateHypothesis:
             title="Test Hypothesis",
             description="Test description",
         )
-        assert hyp.title == "Test Hypothesis"
-        assert hyp.description == "Test description"
-        assert hyp.status == HypothesisStatus.DRAFT
-        assert hyp.id.startswith("hyp-")
+        assert hyp.title == "Test Hypothesis"  # nosec: B101 - Test assertion
+        assert hyp.description == "Test description"  # nosec: B101 - Test assertion
+        assert hyp.status == HypothesisStatus.DRAFT  # nosec: B101 - Test assertion
+        assert hyp.id.startswith("hyp-")  # nosec: B101 - Test assertion
 
     def test_create_with_details(self):
         """Test creating hypothesis with all details."""
@@ -172,9 +195,14 @@ class TestCreateHypothesis:
             success_criteria=["criterion1", "criterion2"],
             experiment_design={"method": "controlled"},
         )
-        assert hyp.predicted_outcome == "Success"
-        assert hyp.success_criteria == ["criterion1", "criterion2"]
-        assert hyp.experiment_design == {"method": "controlled"}
+        assert hyp.predicted_outcome == "Success"  # nosec: B101 - Test assertion
+        assert hyp.success_criteria == [
+            "criterion1",
+            "criterion2",
+        ]  # nosec: B101 - Test assertion
+        assert hyp.experiment_design == {
+            "method": "controlled"
+        }  # nosec: B101 - Test assertion
 
 
 class TestSubmitForApproval:
@@ -184,17 +212,23 @@ class TestSubmitForApproval:
         """Test submitting changes hypothesis status."""
         hyp = create_hypothesis("Test", "Description")
         submitted = submit_for_approval(hyp)
-        assert submitted.status == HypothesisStatus.SUBMITTED
-        assert submitted.updated_at is not None
-        assert submitted.created_at is not None
-        assert submitted.updated_at > submitted.created_at
+        assert (
+            submitted.status == HypothesisStatus.SUBMITTED
+        )  # nosec: B101 - Test assertion
+        assert submitted.updated_at is not None  # nosec: B101 - Test assertion
+        assert submitted.created_at is not None  # nosec: B101 - Test assertion
+        assert (
+            submitted.updated_at > submitted.created_at
+        )  # nosec: B101 - Test assertion
 
     def test_submit_already_submitted(self):
         """Test submitting already submitted hypothesis."""
         hyp = create_hypothesis("Test", "Description")
         hyp.status = HypothesisStatus.SUBMITTED
         submitted = submit_for_approval(hyp)
-        assert submitted.status == HypothesisStatus.SUBMITTED
+        assert (
+            submitted.status == HypothesisStatus.SUBMITTED
+        )  # nosec: B101 - Test assertion
 
 
 class TestReviewHypothesis:
@@ -205,16 +239,20 @@ class TestReviewHypothesis:
         hyp = create_hypothesis("Test", "Description")
         hyp.status = HypothesisStatus.SUBMITTED
         reviewed = review_hypothesis(hyp, ApprovalDecision.APPROVE, "Looks good")
-        assert reviewed.status == HypothesisStatus.APPROVED
-        assert reviewed.review_notes == "Looks good"
+        assert (
+            reviewed.status == HypothesisStatus.APPROVED
+        )  # nosec: B101 - Test assertion
+        assert reviewed.review_notes == "Looks good"  # nosec: B101 - Test assertion
 
     def test_review_reject(self):
         """Test rejecting hypothesis."""
         hyp = create_hypothesis("Test", "Description")
         hyp.status = HypothesisStatus.SUBMITTED
         reviewed = review_hypothesis(hyp, ApprovalDecision.REJECT, "Needs work")
-        assert reviewed.status == HypothesisStatus.REJECTED
-        assert reviewed.review_notes == "Needs work"
+        assert (
+            reviewed.status == HypothesisStatus.REJECTED
+        )  # nosec: B101 - Test assertion
+        assert reviewed.review_notes == "Needs work"  # nosec: B101 - Test assertion
 
     def test_review_request_changes(self):
         """Test requesting changes."""
@@ -223,7 +261,7 @@ class TestReviewHypothesis:
         reviewed = review_hypothesis(
             hyp, ApprovalDecision.REQUEST_CHANGES, "Fix methodology"
         )
-        assert reviewed.status == HypothesisStatus.DRAFT
+        assert reviewed.status == HypothesisStatus.DRAFT  # nosec: B101 - Test assertion
 
 
 class TestApproveHypothesis:
@@ -234,8 +272,10 @@ class TestApproveHypothesis:
         hyp = create_hypothesis("Test", "Description")
         hyp.status = HypothesisStatus.SUBMITTED
         approved = approve_hypothesis(hyp, "Approved for experiment")
-        assert approved.status == HypothesisStatus.APPROVED
-        assert approved.approved_at is not None
+        assert (
+            approved.status == HypothesisStatus.APPROVED
+        )  # nosec: B101 - Test assertion
+        assert approved.approved_at is not None  # nosec: B101 - Test assertion
 
 
 class TestRejectHypothesis:
@@ -246,8 +286,12 @@ class TestRejectHypothesis:
         hyp = create_hypothesis("Test", "Description")
         hyp.status = HypothesisStatus.SUBMITTED
         rejected = reject_hypothesis(hyp, "Insufficient evidence")
-        assert rejected.status == HypothesisStatus.REJECTED
-        assert rejected.rejection_reason == "Insufficient evidence"
+        assert (
+            rejected.status == HypothesisStatus.REJECTED
+        )  # nosec: B101 - Test assertion
+        assert (
+            rejected.rejection_reason == "Insufficient evidence"
+        )  # nosec: B101 - Test assertion
 
 
 class TestGetApprovalQueue:
@@ -256,7 +300,7 @@ class TestGetApprovalQueue:
     def test_empty_queue(self):
         """Test empty approval queue."""
         queue = get_approval_queue([])
-        assert queue == []
+        assert queue == []  # nosec: B101 - Test assertion
 
     def test_queue_filters_status(self):
         """Test queue filters by status."""
@@ -268,8 +312,8 @@ class TestGetApprovalQueue:
         hyp3.status = HypothesisStatus.DRAFT
 
         queue = get_approval_queue([hyp1, hyp2, hyp3])
-        assert len(queue) == 1
-        assert queue[0].id == hyp1.id
+        assert len(queue) == 1  # nosec: B101 - Test assertion
+        assert queue[0].id == hyp1.id  # nosec: B101 - Test assertion
 
 
 class TestGetHypothesisHistory:
@@ -278,7 +322,7 @@ class TestGetHypothesisHistory:
     def test_history_empty(self):
         """Test empty history."""
         history = get_hypothesis_history([])
-        assert history == []
+        assert history == []  # nosec: B101 - Test assertion
 
     def test_history_sorted(self):
         """Test history is sorted by date."""
@@ -291,9 +335,9 @@ class TestGetHypothesisHistory:
         hyp3.created_at = str(now)
 
         history = get_hypothesis_history([hyp3, hyp1, hyp2])
-        assert history[0].id == hyp1.id
-        assert history[1].id == hyp2.id
-        assert history[2].id == hyp3.id
+        assert history[0].id == hyp1.id  # nosec: B101 - Test assertion
+        assert history[1].id == hyp2.id  # nosec: B101 - Test assertion
+        assert history[2].id == hyp3.id  # nosec: B101 - Test assertion
 
 
 class TestApprovalBoard:
@@ -302,23 +346,23 @@ class TestApprovalBoard:
     def test_init(self):
         """Test ApprovalBoard initialization."""
         board = ApprovalBoard()
-        assert board.hypotheses == {}
-        assert board.approvers == []
-        assert board.min_approvers == 1
+        assert board.hypotheses == {}  # nosec: B101 - Test assertion
+        assert board.approvers == []  # nosec: B101 - Test assertion
+        assert board.min_approvers == 1  # nosec: B101 - Test assertion
 
     def test_init_with_config(self):
         """Test initialization with config."""
         board = ApprovalBoard(approvers=["user1", "user2"], min_approvers=2)
-        assert board.approvers == ["user1", "user2"]
-        assert board.min_approvers == 2
+        assert board.approvers == ["user1", "user2"]  # nosec: B101 - Test assertion
+        assert board.min_approvers == 2  # nosec: B101 - Test assertion
 
     def test_add_hypothesis(self):
         """Test adding hypothesis."""
         board = ApprovalBoard()
         hyp = create_hypothesis("Test", "Description")
         board.add_hypothesis(hyp)
-        assert hyp.id in board.hypotheses
-        assert board.hypotheses[hyp.id] == hyp
+        assert hyp.id in board.hypotheses  # nosec: B101 - Test assertion
+        assert board.hypotheses[hyp.id] == hyp  # nosec: B101 - Test assertion
 
     def test_get_hypothesis(self):
         """Test getting hypothesis."""
@@ -326,13 +370,13 @@ class TestApprovalBoard:
         hyp = create_hypothesis("Test", "Description")
         board.add_hypothesis(hyp)
         retrieved = board.get_hypothesis(hyp.id)
-        assert retrieved == hyp
+        assert retrieved == hyp  # nosec: B101 - Test assertion
 
     def test_get_nonexistent_hypothesis(self):
         """Test getting nonexistent hypothesis."""
         board = ApprovalBoard()
         retrieved = board.get_hypothesis("nonexistent")
-        assert retrieved is None
+        assert retrieved is None  # nosec: B101 - Test assertion
 
     def test_approve(self):
         """Test approving via board."""
@@ -340,16 +384,18 @@ class TestApprovalBoard:
         hyp = create_hypothesis("Test", "Description")
         board.add_hypothesis(hyp)
         result = board.approve(hyp.id, "Approved")
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         retrieved = board.get_hypothesis(hyp.id)
-        assert retrieved is not None
-        assert retrieved.status == HypothesisStatus.APPROVED
+        assert retrieved is not None  # nosec: B101 - Test assertion
+        assert (
+            retrieved.status == HypothesisStatus.APPROVED
+        )  # nosec: B101 - Test assertion
 
     def test_approve_nonexistent(self):
         """Test approving nonexistent hypothesis."""
         board = ApprovalBoard()
         result = board.approve("nonexistent", "Approved")
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_reject(self):
         """Test rejecting via board."""
@@ -357,10 +403,12 @@ class TestApprovalBoard:
         hyp = create_hypothesis("Test", "Description")
         board.add_hypothesis(hyp)
         result = board.reject(hyp.id, "Rejected")
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
         retrieved = board.get_hypothesis(hyp.id)
-        assert retrieved is not None
-        assert retrieved.status == HypothesisStatus.REJECTED
+        assert retrieved is not None  # nosec: B101 - Test assertion
+        assert (
+            retrieved.status == HypothesisStatus.REJECTED
+        )  # nosec: B101 - Test assertion
 
     def test_get_pending(self):
         """Test getting pending hypotheses."""
@@ -373,8 +421,8 @@ class TestApprovalBoard:
         board.add_hypothesis(hyp2)
 
         pending = board.get_pending()
-        assert len(pending) == 1
-        assert pending[0].id == hyp1.id
+        assert len(pending) == 1  # nosec: B101 - Test assertion
+        assert pending[0].id == hyp1.id  # nosec: B101 - Test assertion
 
     def test_get_approved(self):
         """Test getting approved hypotheses."""
@@ -387,8 +435,8 @@ class TestApprovalBoard:
         board.add_hypothesis(hyp2)
 
         approved = board.get_approved()
-        assert len(approved) == 1
-        assert approved[0].id == hyp1.id
+        assert len(approved) == 1  # nosec: B101 - Test assertion
+        assert approved[0].id == hyp1.id  # nosec: B101 - Test assertion
 
     def test_get_rejected(self):
         """Test getting rejected hypotheses."""
@@ -401,8 +449,8 @@ class TestApprovalBoard:
         board.add_hypothesis(hyp2)
 
         rejected = board.get_rejected()
-        assert len(rejected) == 1
-        assert rejected[0].id == hyp2.id
+        assert len(rejected) == 1  # nosec: B101 - Test assertion
+        assert rejected[0].id == hyp2.id  # nosec: B101 - Test assertion
 
     def test_get_status(self):
         """Test getting board status."""
@@ -418,10 +466,10 @@ class TestApprovalBoard:
         board.add_hypothesis(hyp3)
 
         status = board.get_status()
-        assert status.approved_count == 1
-        assert status.rejected_count == 1
-        assert status.pending_count == 1
-        assert status.total_count == 3
+        assert status.approved_count == 1  # nosec: B101 - Test assertion
+        assert status.rejected_count == 1  # nosec: B101 - Test assertion
+        assert status.pending_count == 1  # nosec: B101 - Test assertion
+        assert status.total_count == 3  # nosec: B101 - Test assertion
 
     def test_to_dict(self):
         """Test converting board to dict."""
@@ -429,8 +477,8 @@ class TestApprovalBoard:
         hyp = create_hypothesis("Test", "Description")
         board.add_hypothesis(hyp)
         data = board.to_dict()
-        assert "hypotheses" in data
-        assert hyp.id in data["hypotheses"]
+        assert "hypotheses" in data  # nosec: B101 - Test assertion
+        assert hyp.id in data["hypotheses"]  # nosec: B101 - Test assertion
 
     def test_save_and_load(self, tmp_path):
         """Test saving and loading board."""
@@ -442,5 +490,5 @@ class TestApprovalBoard:
         board.save(save_path)
 
         loaded = ApprovalBoard.load(save_path)
-        assert hyp.id in loaded.hypotheses
-        assert loaded.hypotheses[hyp.id].title == "Test"
+        assert hyp.id in loaded.hypotheses  # nosec: B101 - Test assertion
+        assert loaded.hypotheses[hyp.id].title == "Test"  # nosec: B101 - Test assertion

@@ -25,11 +25,11 @@ class TestSessionData:
             eeg_gamma_power=25.0,
             timestamp=1234567890.0,
         )
-        assert session.session_id == "session_001"
-        assert session.heartbeat_accuracy == 0.85
-        assert session.eeg_alpha_power == 12.5
-        assert session.eeg_gamma_power == 25.0
-        assert session.timestamp == 1234567890.0
+        assert session.session_id == "session_001"  # nosec: B101 - Test assertion
+        assert session.heartbeat_accuracy == 0.85  # nosec: B101 - Test assertion
+        assert session.eeg_alpha_power == 12.5  # nosec: B101 - Test assertion
+        assert session.eeg_gamma_power == 25.0  # nosec: B101 - Test assertion
+        assert session.timestamp == 1234567890.0  # nosec: B101 - Test assertion
 
     def test_session_data_default_timestamp(self):
         """Test SessionData with default timestamp."""
@@ -39,7 +39,7 @@ class TestSessionData:
             eeg_alpha_power=10.0,
             eeg_gamma_power=20.0,
         )
-        assert session.timestamp == 0.0
+        assert session.timestamp == 0.0  # nosec: B101 - Test assertion
 
 
 class TestDoubleDissociationProtocolInitialization:
@@ -48,17 +48,17 @@ class TestDoubleDissociationProtocolInitialization:
     def test_default_initialization(self):
         """Test default protocol initialization."""
         protocol = DoubleDissociationProtocol()
-        assert protocol.min_sessions == 3
-        assert protocol.target_icc == 0.65
-        assert protocol.sessions == []
-        assert protocol.pi_i_baseline is None
-        assert protocol.beta_fitted is None
+        assert protocol.min_sessions == 3  # nosec: B101 - Test assertion
+        assert protocol.target_icc == 0.65  # nosec: B101 - Test assertion
+        assert protocol.sessions == []  # nosec: B101 - Test assertion
+        assert protocol.pi_i_baseline is None  # nosec: B101 - Test assertion
+        assert protocol.beta_fitted is None  # nosec: B101 - Test assertion
 
     def test_custom_initialization(self):
         """Test protocol with custom parameters."""
         protocol = DoubleDissociationProtocol(min_sessions=5, target_icc=0.70)
-        assert protocol.min_sessions == 5
-        assert protocol.target_icc == 0.70
+        assert protocol.min_sessions == 5  # nosec: B101 - Test assertion
+        assert protocol.target_icc == 0.70  # nosec: B101 - Test assertion
 
 
 class TestExtractEegPrior:
@@ -69,25 +69,25 @@ class TestExtractEegPrior:
         protocol = DoubleDissociationProtocol()
         result = protocol.extract_eeg_prior(alpha_power=12.5, gamma_power=25.0)
         expected = 12.5 / 25.0
-        assert result == expected
+        assert result == expected  # nosec: B101 - Test assertion
 
     def test_extract_eeg_prior_zero_gamma(self):
         """Test EEG prior with zero gamma power."""
         protocol = DoubleDissociationProtocol()
         result = protocol.extract_eeg_prior(alpha_power=12.5, gamma_power=0.0)
-        assert result == 1.0  # Default fallback
+        assert result == 1.0  # Default fallback  # nosec: B101 - Test assertion
 
     def test_extract_eeg_prior_negative_gamma(self):
         """Test EEG prior with negative gamma power."""
         protocol = DoubleDissociationProtocol()
         result = protocol.extract_eeg_prior(alpha_power=12.5, gamma_power=-5.0)
-        assert result == 1.0  # Default fallback
+        assert result == 1.0  # Default fallback  # nosec: B101 - Test assertion
 
     def test_extract_eeg_prior_high_alpha(self):
         """Test EEG prior with high alpha relative to gamma."""
         protocol = DoubleDissociationProtocol()
         result = protocol.extract_eeg_prior(alpha_power=50.0, gamma_power=10.0)
-        assert result == 5.0
+        assert result == 5.0  # nosec: B101 - Test assertion
 
 
 class TestValidateStage1Anchor:
@@ -101,7 +101,7 @@ class TestValidateStage1Anchor:
             SessionData("s1", 0.8, 10.0, 20.0),
         ]
         result = protocol.validate_stage1_anchor()
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_exactly_min_sessions(self):
         """Test validation with exactly minimum sessions."""
@@ -113,8 +113,8 @@ class TestValidateStage1Anchor:
         ]
         result = protocol.validate_stage1_anchor()
         # Should pass with high accuracy and low variance
-        assert result is True
-        assert protocol.pi_i_baseline is not None
+        assert result is True  # nosec: B101 - Test assertion
+        assert protocol.pi_i_baseline is not None  # nosec: B101 - Test assertion
 
     def test_low_reliability(self):
         """Test validation with high variance (low reliability)."""
@@ -127,7 +127,7 @@ class TestValidateStage1Anchor:
         ]
         result = protocol.validate_stage1_anchor()
         # High variance should cause low ICC
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_many_sessions(self):
         """Test validation with many sessions."""
@@ -137,7 +137,7 @@ class TestValidateStage1Anchor:
             for i in range(10)
         ]
         result = protocol.validate_stage1_anchor()
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
 
 class TestRunTwoStageEstimation:
@@ -164,7 +164,7 @@ class TestRunTwoStageEstimation:
             SessionData("s3", 0.81, 10.5, 20.5),
         ]
         # Validate Stage 1 first
-        assert protocol.validate_stage1_anchor() is True
+        assert protocol.validate_stage1_anchor() is True  # nosec: B101 - Test assertion
 
         # Now run Stage 2
         trial_data = [
@@ -172,10 +172,10 @@ class TestRunTwoStageEstimation:
             {"somatic_marker": 0.3, "m_0": 0.0, "effective_precision": 0.85},
         ]
         result = protocol.run_two_stage_estimation(trial_data)
-        assert "pi_i_baseline" in result
-        assert "beta" in result
-        assert result["pi_i_baseline"] is not None
-        assert result["beta"] is not None
+        assert "pi_i_baseline" in result  # nosec: B101 - Test assertion
+        assert "beta" in result  # nosec: B101 - Test assertion
+        assert result["pi_i_baseline"] is not None  # nosec: B101 - Test assertion
+        assert result["beta"] is not None  # nosec: B101 - Test assertion
 
     def test_stage2_with_empty_trial_data(self):
         """Test Stage 2 with empty trial data."""
@@ -188,8 +188,8 @@ class TestRunTwoStageEstimation:
         protocol.validate_stage1_anchor()
 
         result = protocol.run_two_stage_estimation([])
-        assert result["pi_i_baseline"] is not None
-        assert result["beta"] == 1.5  # Default fallback
+        assert result["pi_i_baseline"] is not None  # nosec: B101 - Test assertion
+        assert result["beta"] == 1.5  # Default fallback  # nosec: B101 - Test assertion
 
     def test_stage2_beta_calculation(self):
         """Test beta calculation formula."""
@@ -207,7 +207,7 @@ class TestRunTwoStageEstimation:
         ]
         result = protocol.run_two_stage_estimation(trial_data)
         beta = result.get("beta")
-        assert beta is not None and beta > 0
+        assert beta is not None and beta > 0  # nosec: B101 - Test assertion
 
     def test_stage2_with_zero_sigmoid(self):
         """Test Stage 2 when sigmoid approaches zero."""
@@ -225,7 +225,7 @@ class TestRunTwoStageEstimation:
         ]
         result = protocol.run_two_stage_estimation(trial_data)
         # Beta should still be calculated or use default
-        assert result["beta"] is not None
+        assert result["beta"] is not None  # nosec: B101 - Test assertion
 
 
 class TestCheckDistributionDivergence:
@@ -237,7 +237,7 @@ class TestCheckDistributionDivergence:
         dist_beta = {"mean": 1.5, "var": 0.1}
         dist_pi = {"mean": 0.8, "var": 0.1}
         result = protocol.check_distribution_divergence(dist_beta, dist_pi)
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_non_diverged_close_means(self):
         """Test when means are too close."""
@@ -245,7 +245,7 @@ class TestCheckDistributionDivergence:
         dist_beta = {"mean": 1.0, "var": 0.1}
         dist_pi = {"mean": 1.02, "var": 0.1}
         result = protocol.check_distribution_divergence(dist_beta, dist_pi)
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_non_diverged_high_variance_beta(self):
         """Test when beta distribution has high variance."""
@@ -253,7 +253,7 @@ class TestCheckDistributionDivergence:
         dist_beta = {"mean": 1.5, "var": 0.6}
         dist_pi = {"mean": 0.8, "var": 0.1}
         result = protocol.check_distribution_divergence(dist_beta, dist_pi)
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_non_diverged_high_variance_pi(self):
         """Test when pi distribution has high variance."""
@@ -261,7 +261,7 @@ class TestCheckDistributionDivergence:
         dist_beta = {"mean": 1.5, "var": 0.1}
         dist_pi = {"mean": 0.8, "var": 0.6}
         result = protocol.check_distribution_divergence(dist_beta, dist_pi)
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_boundary_mean_difference(self):
         """Test boundary case for mean difference."""
@@ -271,7 +271,7 @@ class TestCheckDistributionDivergence:
         dist_pi = {"mean": 1.05, "var": 0.1}
         result = protocol.check_distribution_divergence(dist_beta, dist_pi)
         # 1.05 - 1.0 = 0.05, which is not < 0.05, so should be True
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
 
 class TestComputeMockIcc:
@@ -281,7 +281,7 @@ class TestComputeMockIcc:
         """Test ICC with single value."""
         protocol = DoubleDissociationProtocol()
         result = protocol._compute_mock_icc([0.8])
-        assert result == 0.0
+        assert result == 0.0  # nosec: B101 - Test assertion
 
     def test_mock_icc_low_variance(self):
         """Test ICC with low variance (high reliability)."""
@@ -290,7 +290,7 @@ class TestComputeMockIcc:
         data = [0.81, 0.82, 0.80, 0.81, 0.82]
         result = protocol._compute_mock_icc(data)
         # Low variance should give high ICC
-        assert result > 0.65
+        assert result > 0.65  # nosec: B101 - Test assertion
 
     def test_mock_icc_high_variance(self):
         """Test ICC with high variance (low reliability)."""
@@ -299,14 +299,14 @@ class TestComputeMockIcc:
         data = [0.3, 0.9, 0.1, 0.8, 0.2]
         result = protocol._compute_mock_icc(data)
         # High variance should give low ICC
-        assert result < 0.65
+        assert result < 0.65  # nosec: B101 - Test assertion
 
     def test_mock_icc_clipping(self):
         """Test ICC value clipping."""
         protocol = DoubleDissociationProtocol()
         # Extreme values should be clipped to [0.4, 0.9]
         result = protocol._compute_mock_icc([0.8, 0.8, 0.8])
-        assert 0.4 <= result <= 0.9
+        assert 0.4 <= result <= 0.9  # nosec: B101 - Test assertion
 
 
 class TestAutomatedDoubleDissociationTask:
@@ -316,12 +316,16 @@ class TestAutomatedDoubleDissociationTask:
         """Test that function returns a protocol instance."""
         mock_context = MagicMock()
         result = automated_double_dissociation_task(mock_context)
-        assert isinstance(result, DoubleDissociationProtocol)
+        assert isinstance(
+            result, DoubleDissociationProtocol
+        )  # nosec: B101 - Test assertion
 
     def test_function_with_none_context(self):
         """Test function with None context."""
         result = automated_double_dissociation_task(None)
-        assert isinstance(result, DoubleDissociationProtocol)
+        assert isinstance(
+            result, DoubleDissociationProtocol
+        )  # nosec: B101 - Test assertion
 
 
 class TestEdgeCases:
@@ -331,13 +335,15 @@ class TestEdgeCases:
         """Test EEG prior with negative alpha power."""
         protocol = DoubleDissociationProtocol()
         result = protocol.extract_eeg_prior(alpha_power=-10.0, gamma_power=20.0)
-        assert result == -0.5  # Negative alpha is allowed
+        assert (
+            result == -0.5
+        )  # Negative alpha is allowed  # nosec: B101 - Test assertion
 
     def test_very_high_gamma(self):
         """Test EEG prior with very high gamma."""
         protocol = DoubleDissociationProtocol()
         result = protocol.extract_eeg_prior(alpha_power=10.0, gamma_power=1000.0)
-        assert result == 0.01
+        assert result == 0.01  # nosec: B101 - Test assertion
 
     def test_session_data_edge_cases(self):
         """Test SessionData with edge case values."""
@@ -347,8 +353,8 @@ class TestEdgeCases:
             eeg_alpha_power=0.0,
             eeg_gamma_power=0.001,  # Very small but positive
         )
-        assert session.session_id == ""
-        assert session.heartbeat_accuracy == 0.0
+        assert session.session_id == ""  # nosec: B101 - Test assertion
+        assert session.heartbeat_accuracy == 0.0  # nosec: B101 - Test assertion
 
     def test_protocol_with_many_sessions(self):
         """Test protocol with many sessions."""
@@ -358,7 +364,7 @@ class TestEdgeCases:
             for i in range(100)
         ]
         result = protocol.validate_stage1_anchor()
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

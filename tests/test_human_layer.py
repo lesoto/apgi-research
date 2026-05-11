@@ -24,10 +24,10 @@ class TestTaskPriority:
 
     def test_priority_values(self):
         """Test TaskPriority enum values."""
-        assert TaskPriority.CRITICAL.value == "critical"
-        assert TaskPriority.HIGH.value == "high"
-        assert TaskPriority.MEDIUM.value == "medium"
-        assert TaskPriority.LOW.value == "low"
+        assert TaskPriority.CRITICAL.value == "critical"  # nosec: B101 - Test assertion
+        assert TaskPriority.HIGH.value == "high"  # nosec: B101 - Test assertion
+        assert TaskPriority.MEDIUM.value == "medium"  # nosec: B101 - Test assertion
+        assert TaskPriority.LOW.value == "low"  # nosec: B101 - Test assertion
 
 
 class TestReviewDecision:
@@ -35,9 +35,9 @@ class TestReviewDecision:
 
     def test_decision_values(self):
         """Test ReviewDecision enum values."""
-        assert ReviewDecision.APPROVE.value == "approve"
-        assert ReviewDecision.MODIFY.value == "modify"
-        assert ReviewDecision.REJECT.value == "reject"
+        assert ReviewDecision.APPROVE.value == "approve"  # nosec: B101 - Test assertion
+        assert ReviewDecision.MODIFY.value == "modify"  # nosec: B101 - Test assertion
+        assert ReviewDecision.REJECT.value == "reject"  # nosec: B101 - Test assertion
 
 
 class TestTask:
@@ -55,13 +55,13 @@ class TestTask:
             dependencies=["task0"],
             metadata={"key": "value"},
         )
-        assert task.id == "task1"
-        assert task.title == "Test Task"
-        assert task.priority == TaskPriority.HIGH
-        assert task.experiment_type == "cognitive"
-        assert task.estimated_duration == 30
-        assert task.dependencies == ["task0"]
-        assert task.metadata == {"key": "value"}
+        assert task.id == "task1"  # nosec: B101 - Test assertion
+        assert task.title == "Test Task"  # nosec: B101 - Test assertion
+        assert task.priority == TaskPriority.HIGH  # nosec: B101 - Test assertion
+        assert task.experiment_type == "cognitive"  # nosec: B101 - Test assertion
+        assert task.estimated_duration == 30  # nosec: B101 - Test assertion
+        assert task.dependencies == ["task0"]  # nosec: B101 - Test assertion
+        assert task.metadata == {"key": "value"}  # nosec: B101 - Test assertion
 
     def test_task_minimal(self):
         """Test Task creation with minimal fields."""
@@ -72,10 +72,10 @@ class TestTask:
             priority=TaskPriority.MEDIUM,
             experiment_type="performance",
         )
-        assert task.id == "task1"
-        assert task.estimated_duration is None
-        assert task.dependencies is None
-        assert task.metadata is None
+        assert task.id == "task1"  # nosec: B101 - Test assertion
+        assert task.estimated_duration is None  # nosec: B101 - Test assertion
+        assert task.dependencies is None  # nosec: B101 - Test assertion
+        assert task.metadata is None  # nosec: B101 - Test assertion
 
 
 class TestReviewResult:
@@ -91,11 +91,11 @@ class TestReviewResult:
             confidence=0.9,
             modifications=["fix1", "fix2"],
         )
-        assert result.decision == ReviewDecision.APPROVE
-        assert result.comments == "Looks good"
-        assert result.reviewer == "human"
-        assert result.confidence == 0.9
-        assert result.modifications == ["fix1", "fix2"]
+        assert result.decision == ReviewDecision.APPROVE  # nosec: B101 - Test assertion
+        assert result.comments == "Looks good"  # nosec: B101 - Test assertion
+        assert result.reviewer == "human"  # nosec: B101 - Test assertion
+        assert result.confidence == 0.9  # nosec: B101 - Test assertion
+        assert result.modifications == ["fix1", "fix2"]  # nosec: B101 - Test assertion
 
     def test_review_result_minimal(self):
         """Test ReviewResult without modifications."""
@@ -106,8 +106,8 @@ class TestReviewResult:
             timestamp="2024-01-01T00:00:00",
             confidence=0.3,
         )
-        assert result.decision == ReviewDecision.REJECT
-        assert result.modifications is None
+        assert result.decision == ReviewDecision.REJECT  # nosec: B101 - Test assertion
+        assert result.modifications is None  # nosec: B101 - Test assertion
 
 
 class TestIsTkinterRunning:
@@ -137,7 +137,7 @@ class TestIsTkinterRunning:
         builtins.__import__ = mock_import
         try:
             result = _is_tkinter_running()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
         finally:
             builtins.__import__ = original_import
             # Restore modules
@@ -154,7 +154,7 @@ class TestIsTkinterRunning:
 
         with patch.dict(sys.modules, {"tkinter": mock_tk, "_tkinter": mock_tkinter}):
             result = _is_tkinter_running()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_tkinter_with_root_exists(self):
         """Test when tkinter has existing root."""
@@ -167,7 +167,7 @@ class TestIsTkinterRunning:
 
         with patch.dict(sys.modules, {"tkinter": mock_tk}):
             result = _is_tkinter_running()
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_tkinter_with_root_not_exists(self):
         """Test when tkinter root doesn't exist."""
@@ -180,7 +180,7 @@ class TestIsTkinterRunning:
 
         with patch.dict(sys.modules, {"tkinter": mock_tk}):
             result = _is_tkinter_running()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
 
 class TestHumanControlLayer:
@@ -214,23 +214,29 @@ class TestHumanControlLayer:
     def test_initialization(self):
         """Test HumanControlLayer initialization."""
         layer = HumanControlLayer()
-        assert layer.config_path == Path("human_config.json")
-        assert layer.tasks == []
-        assert layer.config is not None
-        assert "interaction_mode" in layer.config
+        assert layer.config_path == Path(
+            "human_config.json"
+        )  # nosec: B101 - Test assertion
+        assert layer.tasks == []  # nosec: B101 - Test assertion
+        assert layer.config is not None  # nosec: B101 - Test assertion
+        assert "interaction_mode" in layer.config  # nosec: B101 - Test assertion
 
     def test_initialization_with_custom_path(self):
         """Test HumanControlLayer with custom config path."""
         layer = HumanControlLayer(config_path="custom_config.json")
-        assert layer.config_path == Path("custom_config.json")
+        assert layer.config_path == Path(
+            "custom_config.json"
+        )  # nosec: B101 - Test assertion
 
     def test_load_config_default(self):
         """Test loading default configuration."""
         layer = HumanControlLayer()
-        assert layer.config["interaction_mode"] == "interactive"
-        assert layer.config["review_threshold"] == 0.7
-        assert "task_filters" in layer.config
-        assert "notification_settings" in layer.config
+        assert (
+            layer.config["interaction_mode"] == "interactive"
+        )  # nosec: B101 - Test assertion
+        assert layer.config["review_threshold"] == 0.7  # nosec: B101 - Test assertion
+        assert "task_filters" in layer.config  # nosec: B101 - Test assertion
+        assert "notification_settings" in layer.config  # nosec: B101 - Test assertion
 
     def test_load_config_from_file(self):
         """Test loading configuration from file."""
@@ -244,8 +250,10 @@ class TestHumanControlLayer:
         config_path.write_text(json.dumps(config_data))
 
         layer = HumanControlLayer()
-        assert layer.config["interaction_mode"] == "autonomous"
-        assert layer.config["review_threshold"] == 0.8
+        assert (
+            layer.config["interaction_mode"] == "autonomous"
+        )  # nosec: B101 - Test assertion
+        assert layer.config["review_threshold"] == 0.8  # nosec: B101 - Test assertion
 
     def test_load_config_invalid_json(self):
         """Test loading invalid JSON config file."""
@@ -254,7 +262,9 @@ class TestHumanControlLayer:
 
         layer = HumanControlLayer()
         # Should fall back to default config
-        assert layer.config["interaction_mode"] == "interactive"
+        assert (
+            layer.config["interaction_mode"] == "interactive"
+        )  # nosec: B101 - Test assertion
 
     def test_save_config(self):
         """Test saving configuration."""
@@ -263,44 +273,44 @@ class TestHumanControlLayer:
         layer._save_config()
 
         config_path = Path("human_config.json")
-        assert config_path.exists()
+        assert config_path.exists()  # nosec: B101 - Test assertion
         loaded_data = json.loads(config_path.read_text())
-        assert loaded_data["test_key"] == "test_value"
+        assert loaded_data["test_key"] == "test_value"  # nosec: B101 - Test assertion
 
     def test_configure_if_needed_already_configured(self):
         """Test configure_if_needed when already configured."""
         layer = HumanControlLayer()
         layer.config["configured"] = True
         result = layer.configure_if_needed()
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_configure_if_needed_keyboard_interrupt(self):
         """Test configure_if_needed with keyboard interrupt."""
         layer = HumanControlLayer()
         with patch("builtins.input", side_effect=KeyboardInterrupt):
             result = layer.configure_if_needed()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_configure_if_needed_invalid_choice(self):
         """Test configure_if_needed with invalid choice."""
         layer = HumanControlLayer()
         with patch("builtins.input", return_value="invalid"):
             result = layer.configure_if_needed()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_configure_if_needed_invalid_threshold(self):
         """Test configure_if_needed with invalid threshold."""
         layer = HumanControlLayer()
         with patch("builtins.input", side_effect=["1", "invalid"]):
             result = layer.configure_if_needed()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_configure_if_needed_threshold_out_of_range(self):
         """Test configure_if_needed with threshold out of range."""
         layer = HumanControlLayer()
         with patch("builtins.input", side_effect=["1", "2.0"]):
             result = layer.configure_if_needed()
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_add_task(self):
         """Test adding a task to the queue."""
@@ -313,14 +323,14 @@ class TestHumanControlLayer:
             experiment_type="cognitive",
         )
         layer.add_task(task)
-        assert len(layer.tasks) == 1
-        assert layer.tasks[0] == task
+        assert len(layer.tasks) == 1  # nosec: B101 - Test assertion
+        assert layer.tasks[0] == task  # nosec: B101 - Test assertion
 
     def test_select_task_no_tasks(self):
         """Test select_task with no tasks available."""
         layer = HumanControlLayer()
         result = layer.select_task()
-        assert result is None
+        assert result is None  # nosec: B101 - Test assertion
 
     def test_select_task_with_tasks(self):
         """Test select_task with available tasks."""
@@ -334,8 +344,8 @@ class TestHumanControlLayer:
         )
         layer.add_task(task)
         result = layer.select_task()
-        assert result is not None
-        assert result.id == "task1"
+        assert result is not None  # nosec: B101 - Test assertion
+        assert result.id == "task1"  # nosec: B101 - Test assertion
 
     def test_select_task_with_filters(self):
         """Test select_task with category and priority filters."""
@@ -361,8 +371,8 @@ class TestHumanControlLayer:
         layer.add_task(task2)
 
         result = layer.select_task()
-        assert result is not None
-        assert result.experiment_type == "performance"
+        assert result is not None  # nosec: B101 - Test assertion
+        assert result.experiment_type == "performance"  # nosec: B101 - Test assertion
 
     def test_select_task_priority_sorting(self):
         """Test select_task sorts by priority."""
@@ -385,8 +395,10 @@ class TestHumanControlLayer:
         layer.add_task(task2)
 
         result = layer.select_task()
-        assert result is not None
-        assert result.id == "task2"  # High priority selected first
+        assert result is not None  # nosec: B101 - Test assertion
+        assert (
+            result.id == "task2"
+        )  # High priority selected first  # nosec: B101 - Test assertion
 
     def test_select_task_queue_limit(self):
         """Test select_task respects max queue size."""
@@ -404,7 +416,7 @@ class TestHumanControlLayer:
             layer.add_task(task)
 
         result = layer.select_task()
-        assert result is not None
+        assert result is not None  # nosec: B101 - Test assertion
 
     def test_select_task_logging(self):
         """Test select_task logs selection to file."""
@@ -420,10 +432,10 @@ class TestHumanControlLayer:
         layer.select_task()
 
         log_path = Path("task_selections.json")
-        assert log_path.exists()
+        assert log_path.exists()  # nosec: B101 - Test assertion
         logs = json.loads(log_path.read_text())
-        assert len(logs) > 0
-        assert logs[0]["task_id"] == "task1"
+        assert len(logs) > 0  # nosec: B101 - Test assertion
+        assert logs[0]["task_id"] == "task1"  # nosec: B101 - Test assertion
 
     def test_review_autonomous_mode(self):
         """Test review in autonomous mode."""
@@ -442,8 +454,12 @@ class TestHumanControlLayer:
         with patch("builtins.print"):
             review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.APPROVE
-        assert review_result.reviewer == "autonomous_agent"
+        assert (
+            review_result.decision == ReviewDecision.APPROVE
+        )  # nosec: B101 - Test assertion
+        assert (
+            review_result.reviewer == "autonomous_agent"
+        )  # nosec: B101 - Test assertion
 
     def test_review_gui_mode(self):
         """Test review in GUI mode (auto-approve)."""
@@ -462,8 +478,12 @@ class TestHumanControlLayer:
             with patch("builtins.print"):
                 review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.APPROVE
-        assert review_result.reviewer == "gui_autonomous_agent"
+        assert (
+            review_result.decision == ReviewDecision.APPROVE
+        )  # nosec: B101 - Test assertion
+        assert (
+            review_result.reviewer == "gui_autonomous_agent"
+        )  # nosec: B101 - Test assertion
 
     def test_review_low_confidence(self):
         """Test review with low confidence (should reject)."""
@@ -482,7 +502,9 @@ class TestHumanControlLayer:
         with patch("builtins.print"):
             review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.REJECT
+        assert (
+            review_result.decision == ReviewDecision.REJECT
+        )  # nosec: B101 - Test assertion
 
     def test_review_with_hypothesis(self):
         """Test review with associated hypothesis."""
@@ -512,7 +534,9 @@ class TestHumanControlLayer:
         ):
             review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.APPROVE
+        assert (
+            review_result.decision == ReviewDecision.APPROVE
+        )  # nosec: B101 - Test assertion
 
     def test_review_keyboard_interrupt(self):
         """Test review with keyboard interrupt."""
@@ -531,8 +555,10 @@ class TestHumanControlLayer:
             with patch("builtins.print"):
                 review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.REJECT
-        assert review_result.reviewer == "interrupted"
+        assert (
+            review_result.decision == ReviewDecision.REJECT
+        )  # nosec: B101 - Test assertion
+        assert review_result.reviewer == "interrupted"  # nosec: B101 - Test assertion
 
     def test_review_custom_decision(self):
         """Test review with custom decision."""
@@ -551,8 +577,12 @@ class TestHumanControlLayer:
             with patch("builtins.print"):
                 review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.MODIFY
-        assert review_result.comments == "Custom comment"
+        assert (
+            review_result.decision == ReviewDecision.MODIFY
+        )  # nosec: B101 - Test assertion
+        assert (
+            review_result.comments == "Custom comment"
+        )  # nosec: B101 - Test assertion
 
     def test_review_invalid_custom_decision(self):
         """Test review with invalid custom decision."""
@@ -571,7 +601,9 @@ class TestHumanControlLayer:
             with patch("builtins.print"):
                 review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.APPROVE
+        assert (
+            review_result.decision == ReviewDecision.APPROVE
+        )  # nosec: B101 - Test assertion
 
     def test_review_modifications_gui_mode(self):
         """Test review modifications in GUI mode."""
@@ -590,9 +622,13 @@ class TestHumanControlLayer:
             with patch("builtins.print"):
                 review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.MODIFY
-        assert review_result.modifications is not None
-        assert "GUI mode" in review_result.modifications[0]
+        assert (
+            review_result.decision == ReviewDecision.MODIFY
+        )  # nosec: B101 - Test assertion
+        assert review_result.modifications is not None  # nosec: B101 - Test assertion
+        assert (
+            "GUI mode" in review_result.modifications[0]
+        )  # nosec: B101 - Test assertion
 
     def test_review_modifications_console_mode(self):
         """Test review modifications in console mode."""
@@ -613,78 +649,83 @@ class TestHumanControlLayer:
                 with patch("builtins.print"):
                     review_result = layer.review(result_data)
 
-        assert review_result.decision == ReviewDecision.MODIFY
-        assert review_result.modifications == ["fix1", "fix2"]
+        assert (
+            review_result.decision == ReviewDecision.MODIFY
+        )  # nosec: B101 - Test assertion
+        assert review_result.modifications == [
+            "fix1",
+            "fix2",
+        ]  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_empty(self):
         """Test _evaluate_success_criteria with empty criteria."""
         layer = HumanControlLayer()
         metrics = {"accuracy": 0.9}
         result = layer._evaluate_success_criteria(metrics, [])
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_missing_metric(self):
         """Test _evaluate_success_criteria with missing metric."""
         layer = HumanControlLayer()
         metrics = {"accuracy": 0.9}
         result = layer._evaluate_success_criteria(metrics, ["latency"])
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_improvement(self):
         """Test _evaluate_success_criteria with improvement metric."""
         layer = HumanControlLayer()
         metrics = {"improvement": 0.1}
         result = layer._evaluate_success_criteria(metrics, ["improvement"])
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_improvement_negative(self):
         """Test _evaluate_success_criteria with negative improvement."""
         layer = HumanControlLayer()
         metrics = {"improvement": -0.1}
         result = layer._evaluate_success_criteria(metrics, ["improvement"])
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_accuracy(self):
         """Test _evaluate_success_criteria with accuracy metric."""
         layer = HumanControlLayer()
         metrics = {"accuracy": 0.9}
         result = layer._evaluate_success_criteria(metrics, ["accuracy"])
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_accuracy_low(self):
         """Test _evaluate_success_criteria with low accuracy."""
         layer = HumanControlLayer()
         metrics = {"accuracy": 0.7}
         result = layer._evaluate_success_criteria(metrics, ["accuracy"])
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_latency(self):
         """Test _evaluate_success_criteria with latency metric."""
         layer = HumanControlLayer()
         metrics = {"latency": 300}
         result = layer._evaluate_success_criteria(metrics, ["latency"])
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_latency_high(self):
         """Test _evaluate_success_criteria with high latency."""
         layer = HumanControlLayer()
         metrics = {"latency": 600}
         result = layer._evaluate_success_criteria(metrics, ["latency"])
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_non_numeric(self):
         """Test _evaluate_success_criteria with non-numeric metric."""
         layer = HumanControlLayer()
         metrics = {"status": "success"}
         result = layer._evaluate_success_criteria(metrics, ["status"])
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     def test_evaluate_success_criteria_non_numeric_empty(self):
         """Test _evaluate_success_criteria with empty non-numeric metric."""
         layer = HumanControlLayer()
         metrics = {"status": ""}
         result = layer._evaluate_success_criteria(metrics, ["status"])
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_log_review(self):
         """Test _log_review method."""
@@ -700,34 +741,36 @@ class TestHumanControlLayer:
         layer._log_review(review_result, experiment_result, True)
 
         log_path = Path("human_reviews.json")
-        assert log_path.exists()
+        assert log_path.exists()  # nosec: B101 - Test assertion
         logs = json.loads(log_path.read_text())
-        assert len(logs) > 0
-        assert logs[0]["decision"] == "approve"
+        assert len(logs) > 0  # nosec: B101 - Test assertion
+        assert logs[0]["decision"] == "approve"  # nosec: B101 - Test assertion
 
     def test_get_pending_reviews(self):
         """Test get_pending_reviews method."""
         layer = HumanControlLayer()
         pending = layer.get_pending_reviews()
-        assert isinstance(pending, list)
-        assert len(pending) == 3  # Default mock returns 3 items
+        assert isinstance(pending, list)  # nosec: B101 - Test assertion
+        assert (
+            len(pending) == 3
+        )  # Default mock returns 3 items  # nosec: B101 - Test assertion
 
     def test_get_configuration_summary(self):
         """Test get_configuration_summary method."""
         layer = HumanControlLayer()
         summary = layer.get_configuration_summary()
-        assert "configured" in summary
-        assert "interaction_mode" in summary
-        assert "review_threshold" in summary
-        assert "task_filters" in summary
-        assert "notification_settings" in summary
-        assert "pending_tasks" in summary
+        assert "configured" in summary  # nosec: B101 - Test assertion
+        assert "interaction_mode" in summary  # nosec: B101 - Test assertion
+        assert "review_threshold" in summary  # nosec: B101 - Test assertion
+        assert "task_filters" in summary  # nosec: B101 - Test assertion
+        assert "notification_settings" in summary  # nosec: B101 - Test assertion
+        assert "pending_tasks" in summary  # nosec: B101 - Test assertion
 
     def test_get_last_review_summary_no_log(self):
         """Test _get_last_review_summary when no log exists."""
         layer = HumanControlLayer()
         summary = layer._get_last_review_summary()
-        assert summary is None
+        assert summary is None  # nosec: B101 - Test assertion
 
     def test_get_last_review_summary_with_log(self):
         """Test _get_last_review_summary with existing log."""
@@ -744,8 +787,8 @@ class TestHumanControlLayer:
         log_path.write_text(json.dumps(log_data))
 
         summary = layer._get_last_review_summary()
-        assert summary is not None
-        assert summary["decision"] == "approve"
+        assert summary is not None  # nosec: B101 - Test assertion
+        assert summary["decision"] == "approve"  # nosec: B101 - Test assertion
 
 
 class TestConvenienceFunctions:
@@ -770,7 +813,7 @@ class TestConvenienceFunctions:
             mock_instance.configure_if_needed.return_value = True
             mock_layer.return_value = mock_instance
             result = configure_if_needed()
-            assert result is True
+            assert result is True  # nosec: B101 - Test assertion
 
     def test_select_task_function(self):
         """Test select_task convenience function."""
@@ -786,7 +829,7 @@ class TestConvenienceFunctions:
             mock_instance.select_task.return_value = mock_task
             mock_layer.return_value = mock_instance
             result = select_task()
-            assert result == mock_task
+            assert result == mock_task  # nosec: B101 - Test assertion
 
     def test_review_function(self):
         """Test review convenience function."""
@@ -803,7 +846,7 @@ class TestConvenienceFunctions:
             mock_layer.return_value = mock_instance
             result_data = {"experiment_id": "exp1"}
             result = review(result_data)
-            assert result == mock_result
+            assert result == mock_result  # nosec: B101 - Test assertion
 
 
 class TestHumanControlLayerEdgeCases:
@@ -848,7 +891,7 @@ class TestHumanControlLayerEdgeCases:
         layer.add_task(task)
 
         result = layer.select_task()
-        assert result is None
+        assert result is None  # nosec: B101 - Test assertion
 
     def test_select_task_invalid_priority(self):
         """Test select_task with invalid priority in config."""
@@ -866,7 +909,7 @@ class TestHumanControlLayerEdgeCases:
 
         result = layer.select_task()
         # Should still work with default priority value
-        assert result is not None
+        assert result is not None  # nosec: B101 - Test assertion
 
     def test_review_with_missing_fields(self):
         """Test review with missing result fields."""
@@ -879,7 +922,9 @@ class TestHumanControlLayerEdgeCases:
             review_result = layer.review(result_data)
 
         # Should handle missing fields gracefully
-        assert review_result.decision == ReviewDecision.REJECT
+        assert (
+            review_result.decision == ReviewDecision.REJECT
+        )  # nosec: B101 - Test assertion
 
     def test_review_log_save_failure(self):
         """Test review log save failure."""

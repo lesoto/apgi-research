@@ -25,20 +25,20 @@ class TestConfigSources:
     def test_init_empty(self):
         """Test ConfigSources initialization with empty sources."""
         sources = ConfigSources(sources={})
-        assert sources.sources == {}
+        assert sources.sources == {}  # nosec: B101 - Test assertion
 
     def test_init_with_sources(self):
         """Test ConfigSources initialization with sources."""
         test_sources = {"key1": "file1", "key2": "env"}
         sources = ConfigSources(sources=test_sources)
-        assert sources.sources == test_sources
+        assert sources.sources == test_sources  # nosec: B101 - Test assertion
 
     def test_sources_copy(self):
         """Test that sources dict is independent."""
         sources1 = ConfigSources({"key": "value"})
         sources2 = ConfigSources(sources1.sources)
         sources2.sources["new_key"] = "new_value"
-        assert "new_key" not in sources1.sources
+        assert "new_key" not in sources1.sources  # nosec: B101 - Test assertion
 
 
 class TestConfigManagerUtilityFunctions:
@@ -63,7 +63,10 @@ class TestConfigManagerUtilityFunctions:
 
         try:
             result = config._load_yaml_safe(temp_path)
-            assert result == {"test_key": "test_value", "number_key": 42}
+            assert result == {
+                "test_key": "test_value",
+                "number_key": 42,
+            }  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -78,7 +81,7 @@ class TestConfigManagerUtilityFunctions:
 
         try:
             result = config._load_yaml_safe(temp_path)
-            assert result is None
+            assert result is None  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -97,7 +100,7 @@ class TestConfigManagerUtilityFunctions:
                 ):
                     result = config._load_yaml_safe(temp_path)
                     # Should fall back to JSON parsing which fails for YAML content
-                    assert result is None
+                    assert result is None  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -112,7 +115,7 @@ class TestConfigManagerUtilityFunctions:
 
         try:
             result = config._load_json_safe(temp_path)
-            assert result == json_data
+            assert result == json_data  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -126,7 +129,7 @@ class TestConfigManagerUtilityFunctions:
 
         try:
             result = config._load_json_safe(temp_path)
-            assert result is None
+            assert result is None  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -134,7 +137,7 @@ class TestConfigManagerUtilityFunctions:
         """Test _load_json_safe when file doesn't exist."""
         config = ConfigManager()
         result = config._load_json_safe(Path("/nonexistent/file.json"))
-        assert result is None
+        assert result is None  # nosec: B101 - Test assertion
 
     def test_load_env_file_valid(self):
         """Test _load_env_file with valid file."""
@@ -146,7 +149,10 @@ class TestConfigManagerUtilityFunctions:
 
         try:
             result = config._load_env_file(temp_path)
-            assert result == {"TEST_KEY": "test_value", "ANOTHER_KEY": "42"}
+            assert result == {
+                "TEST_KEY": "test_value",
+                "ANOTHER_KEY": "42",
+            }  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -160,7 +166,7 @@ class TestConfigManagerUtilityFunctions:
 
         try:
             result = config._load_env_file(temp_path)
-            assert result == {}
+            assert result == {}  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 
@@ -215,7 +221,7 @@ class TestConfigManagerMissingCoverage:
                 # Should fall back to JSON parsing or handle gracefully
                 config._load_from_file(temp_path)
                 # Should not crash and should have some fallback behavior
-                assert len(config._config_cache) > 0
+                assert len(config._config_cache) > 0  # nosec: B101 - Test assertion
         finally:
             temp_path.unlink(missing_ok=True)
 

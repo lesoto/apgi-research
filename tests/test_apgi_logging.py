@@ -30,12 +30,12 @@ class TestJSONFormatter:
         formatted = formatter.format(record)
         parsed = json.loads(formatted)
 
-        assert parsed["level"] == "INFO"
-        assert parsed["name"] == "test.logger"
-        assert parsed["message"] == "Test message"
-        assert "timestamp" in parsed
-        assert parsed["correlation_id"] == "none"
-        assert parsed["trial_id"] == "none"
+        assert parsed["level"] == "INFO"  # nosec: B101 - Test assertion
+        assert parsed["name"] == "test.logger"  # nosec: B101 - Test assertion
+        assert parsed["message"] == "Test message"  # nosec: B101 - Test assertion
+        assert "timestamp" in parsed  # nosec: B101 - Test assertion
+        assert parsed["correlation_id"] == "none"  # nosec: B101 - Test assertion
+        assert parsed["trial_id"] == "none"  # nosec: B101 - Test assertion
 
     def test_json_formatter_with_correlation_id(self):
         """Test JSON formatting with correlation_id."""
@@ -54,8 +54,10 @@ class TestJSONFormatter:
         formatted = formatter.format(record)
         parsed = json.loads(formatted)
 
-        assert parsed["correlation_id"] == "test-correlation-123"
-        assert parsed["level"] == "ERROR"
+        assert (
+            parsed["correlation_id"] == "test-correlation-123"
+        )  # nosec: B101 - Test assertion
+        assert parsed["level"] == "ERROR"  # nosec: B101 - Test assertion
 
     def test_json_formatter_with_trial_id(self):
         """Test JSON formatting with trial_id."""
@@ -74,7 +76,7 @@ class TestJSONFormatter:
         formatted = formatter.format(record)
         parsed = json.loads(formatted)
 
-        assert parsed["trial_id"] == "trial-456"
+        assert parsed["trial_id"] == "trial-456"  # nosec: B101 - Test assertion
 
     def test_json_formatter_with_exception(self):
         """Test JSON formatting with exception info."""
@@ -97,9 +99,9 @@ class TestJSONFormatter:
         formatted = formatter.format(record)
         parsed = json.loads(formatted)
 
-        assert "exc_info" in parsed
-        assert "ValueError" in parsed["exc_info"]
-        assert "Test exception" in parsed["exc_info"]
+        assert "exc_info" in parsed  # nosec: B101 - Test assertion
+        assert "ValueError" in parsed["exc_info"]  # nosec: B101 - Test assertion
+        assert "Test exception" in parsed["exc_info"]  # nosec: B101 - Test assertion
 
     def test_json_formatter_different_levels(self):
         """Test JSON formatting with different log levels."""
@@ -124,7 +126,7 @@ class TestJSONFormatter:
             )
             formatted = formatter.format(record)
             parsed = json.loads(formatted)
-            assert parsed["level"] == expected_name
+            assert parsed["level"] == expected_name  # nosec: B101 - Test assertion
 
 
 class TestGetLogger:
@@ -133,37 +135,41 @@ class TestGetLogger:
     def test_get_logger_returns_logger(self):
         """Test get_logger returns a logger instance."""
         logger = get_logger("test_module")
-        assert isinstance(logger, logging.Logger)
-        assert logger.name == "test_module"
+        assert isinstance(logger, logging.Logger)  # nosec: B101 - Test assertion
+        assert logger.name == "test_module"  # nosec: B101 - Test assertion
 
     def test_get_logger_adds_handler(self):
         """Test get_logger adds a StreamHandler."""
         logger = get_logger("test_handler_module")
-        assert len(logger.handlers) == 1
-        assert isinstance(logger.handlers[0], logging.StreamHandler)
+        assert len(logger.handlers) == 1  # nosec: B101 - Test assertion
+        assert isinstance(
+            logger.handlers[0], logging.StreamHandler
+        )  # nosec: B101 - Test assertion
 
     def test_get_logger_sets_formatter(self):
         """Test get_logger sets JSONFormatter."""
         logger = get_logger("test_formatter_module")
         handler = logger.handlers[0]
-        assert isinstance(handler.formatter, JSONFormatter)
+        assert isinstance(
+            handler.formatter, JSONFormatter
+        )  # nosec: B101 - Test assertion
 
     def test_get_logger_sets_level(self):
         """Test get_logger sets INFO level."""
         logger = get_logger("test_level_module")
-        assert logger.level == logging.INFO
+        assert logger.level == logging.INFO  # nosec: B101 - Test assertion
 
     def test_get_logger_same_name_returns_same_logger(self):
         """Test get_logger returns same logger for same name."""
         logger1 = get_logger("same_name")
         logger2 = get_logger("same_name")
-        assert logger1 is logger2
+        assert logger1 is logger2  # nosec: B101 - Test assertion
 
     def test_get_logger_different_names_different_loggers(self):
         """Test get_logger returns different loggers for different names."""
         logger1 = get_logger("name1")
         logger2 = get_logger("name2")
-        assert logger1 is not logger2
+        assert logger1 is not logger2  # nosec: B101 - Test assertion
 
     def test_get_logger_does_not_add_duplicate_handlers(self):
         """Test get_logger doesn't add duplicate handlers."""
@@ -171,7 +177,7 @@ class TestGetLogger:
         initial_count = len(logger.handlers)
         # Call again
         logger2 = get_logger("test_no_duplicate")
-        assert len(logger2.handlers) == initial_count
+        assert len(logger2.handlers) == initial_count  # nosec: B101 - Test assertion
 
     def test_get_logger_logs_json(self, capsys):
         """Test that logger outputs JSON format."""
@@ -182,8 +188,10 @@ class TestGetLogger:
         # Parse the JSON output
         try:
             parsed = json.loads(captured.err)
-            assert parsed["message"] == "Test JSON message"
-            assert parsed["level"] == "INFO"
+            assert (
+                parsed["message"] == "Test JSON message"
+            )  # nosec: B101 - Test assertion
+            assert parsed["level"] == "INFO"  # nosec: B101 - Test assertion
         except json.JSONDecodeError:
             # If not valid JSON, the test fails
             pytest.fail("Logger output is not valid JSON")
@@ -197,16 +205,18 @@ class TestAPGIContextLogger:
         base_logger = get_logger("test_context")
         context_logger = APGIContextLogger(base_logger)
 
-        assert context_logger.logger is base_logger
-        assert context_logger.correlation_id is not None
-        assert context_logger.trial_id == "none"
+        assert context_logger.logger is base_logger  # nosec: B101 - Test assertion
+        assert context_logger.correlation_id is not None  # nosec: B101 - Test assertion
+        assert context_logger.trial_id == "none"  # nosec: B101 - Test assertion
 
     def test_context_logger_init_with_correlation_id(self):
         """Test APGIContextLogger with custom correlation_id."""
         base_logger = get_logger("test_context_custom")
         context_logger = APGIContextLogger(base_logger, correlation_id="custom-123")
 
-        assert context_logger.correlation_id == "custom-123"
+        assert (
+            context_logger.correlation_id == "custom-123"
+        )  # nosec: B101 - Test assertion
 
     def test_context_logger_generates_uuid(self):
         """Test APGIContextLogger generates UUID if not provided."""
@@ -215,8 +225,12 @@ class TestAPGIContextLogger:
         context_logger2 = APGIContextLogger(base_logger)
 
         # Should generate different UUIDs
-        assert context_logger1.correlation_id != context_logger2.correlation_id
-        assert len(context_logger1.correlation_id) == 36  # UUID length
+        assert (
+            context_logger1.correlation_id != context_logger2.correlation_id
+        )  # nosec: B101 - Test assertion
+        assert (
+            len(context_logger1.correlation_id) == 36
+        )  # UUID length  # nosec: B101 - Test assertion
 
     def test_set_trial(self):
         """Test set_trial method."""
@@ -224,7 +238,7 @@ class TestAPGIContextLogger:
         context_logger = APGIContextLogger(base_logger)
 
         context_logger.set_trial("trial-123")
-        assert context_logger.trial_id == "trial-123"
+        assert context_logger.trial_id == "trial-123"  # nosec: B101 - Test assertion
 
     def test_context_logger_info(self, capsys):
         """Test info logging with context."""
@@ -237,10 +251,14 @@ class TestAPGIContextLogger:
         captured = capsys.readouterr()
         try:
             parsed = json.loads(captured.err)
-            assert parsed["message"] == "Test info message"
-            assert parsed["level"] == "INFO"
-            assert parsed["correlation_id"] == "corr-123"
-            assert parsed["trial_id"] == "trial-456"
+            assert (
+                parsed["message"] == "Test info message"
+            )  # nosec: B101 - Test assertion
+            assert parsed["level"] == "INFO"  # nosec: B101 - Test assertion
+            assert (
+                parsed["correlation_id"] == "corr-123"
+            )  # nosec: B101 - Test assertion
+            assert parsed["trial_id"] == "trial-456"  # nosec: B101 - Test assertion
         except json.JSONDecodeError:
             pytest.fail("Logger output is not valid JSON")
 
@@ -254,9 +272,13 @@ class TestAPGIContextLogger:
         captured = capsys.readouterr()
         try:
             parsed = json.loads(captured.err)
-            assert parsed["message"] == "Test error message"
-            assert parsed["level"] == "ERROR"
-            assert parsed["correlation_id"] == "corr-789"
+            assert (
+                parsed["message"] == "Test error message"
+            )  # nosec: B101 - Test assertion
+            assert parsed["level"] == "ERROR"  # nosec: B101 - Test assertion
+            assert (
+                parsed["correlation_id"] == "corr-789"
+            )  # nosec: B101 - Test assertion
         except json.JSONDecodeError:
             pytest.fail("Logger output is not valid JSON")
 
@@ -270,8 +292,10 @@ class TestAPGIContextLogger:
         captured = capsys.readouterr()
         try:
             parsed = json.loads(captured.err)
-            assert parsed["message"] == "Test warning message"
-            assert parsed["level"] == "WARNING"
+            assert (
+                parsed["message"] == "Test warning message"
+            )  # nosec: B101 - Test assertion
+            assert parsed["level"] == "WARNING"  # nosec: B101 - Test assertion
         except json.JSONDecodeError:
             pytest.fail("Logger output is not valid JSON")
 
@@ -287,8 +311,10 @@ class TestAPGIContextLogger:
         captured = capsys.readouterr()
         try:
             parsed = json.loads(captured.err)
-            assert parsed["message"] == "Test debug message"
-            assert parsed["level"] == "DEBUG"
+            assert (
+                parsed["message"] == "Test debug message"
+            )  # nosec: B101 - Test assertion
+            assert parsed["level"] == "DEBUG"  # nosec: B101 - Test assertion
         except json.JSONDecodeError:
             pytest.fail("Logger output is not valid JSON")
 
@@ -302,7 +328,9 @@ class TestAPGIContextLogger:
         captured = capsys.readouterr()
         try:
             parsed = json.loads(captured.err)
-            assert parsed["message"] == "Test message with string and 42"
+            assert (
+                parsed["message"] == "Test message with string and 42"
+            )  # nosec: B101 - Test assertion
         except json.JSONDecodeError:
             pytest.fail("Logger output is not valid JSON")
 
@@ -315,7 +343,7 @@ class TestAPGIContextLogger:
 
         captured = capsys.readouterr()
         # Just verify it doesn't raise
-        assert captured.err is not None
+        assert captured.err is not None  # nosec: B101 - Test assertion
 
 
 class TestLoggingIntegration:
@@ -338,20 +366,28 @@ class TestLoggingIntegration:
         lines = captured.err.strip().split("\n")
 
         # Should have 4 log lines (debug level may not show depending on config)
-        assert len(lines) >= 3  # At least info, warning, error
+        assert (
+            len(lines) >= 3
+        )  # At least info, warning, error  # nosec: B101 - Test assertion
 
         for line in lines:
             if line:
                 parsed = json.loads(line)
-                assert parsed["correlation_id"] == "workflow-123"
-                assert parsed["trial_id"] == "trial-workflow"
+                assert (
+                    parsed["correlation_id"] == "workflow-123"
+                )  # nosec: B101 - Test assertion
+                assert (
+                    parsed["trial_id"] == "trial-workflow"
+                )  # nosec: B101 - Test assertion
 
     def test_logger_inheritance(self):
         """Test that loggers follow hierarchy."""
         parent = get_logger("parent")
         child = get_logger("parent.child")
 
-        assert child.parent is parent or child.name.startswith("parent.")
+        assert child.parent is parent or child.name.startswith(
+            "parent."
+        )  # nosec: B101 - Test assertion
 
 
 class TestLoggingEdgeCases:
@@ -373,7 +409,9 @@ class TestLoggingEdgeCases:
         formatted = formatter.format(record)
         parsed = json.loads(formatted)
 
-        assert parsed["message"] == "Unicode message: 你好世界 🌍"
+        assert (
+            parsed["message"] == "Unicode message: 你好世界 🌍"
+        )  # nosec: B101 - Test assertion
 
     def test_json_formatter_special_chars(self):
         """Test JSON formatter with special characters."""
@@ -391,9 +429,9 @@ class TestLoggingEdgeCases:
         formatted = formatter.format(record)
         parsed = json.loads(formatted)
 
-        assert "quotes" in parsed["message"]
-        assert "newline" in parsed["message"]
-        assert "tab" in parsed["message"]
+        assert "quotes" in parsed["message"]  # nosec: B101 - Test assertion
+        assert "newline" in parsed["message"]  # nosec: B101 - Test assertion
+        assert "tab" in parsed["message"]  # nosec: B101 - Test assertion
 
     def test_context_logger_empty_correlation_id(self, capsys):
         """Test context logger with empty correlation_id generates UUID."""
@@ -405,8 +443,10 @@ class TestLoggingEdgeCases:
         captured = capsys.readouterr()
         parsed = json.loads(captured.err)
         # Empty string is treated as falsy and generates a UUID
-        assert len(parsed["correlation_id"]) == 36  # UUID length
-        assert parsed["correlation_id"] != ""
+        assert (
+            len(parsed["correlation_id"]) == 36
+        )  # UUID length  # nosec: B101 - Test assertion
+        assert parsed["correlation_id"] != ""  # nosec: B101 - Test assertion
 
     def test_context_logger_long_message(self, capsys):
         """Test context logger with very long message."""
@@ -418,4 +458,4 @@ class TestLoggingEdgeCases:
 
         captured = capsys.readouterr()
         parsed = json.loads(captured.err)
-        assert len(parsed["message"]) == 10000
+        assert len(parsed["message"]) == 10000  # nosec: B101 - Test assertion

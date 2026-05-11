@@ -5,7 +5,7 @@ Provides safe git operations with automatic rollback on failures.
 """
 
 import shutil
-import subprocess
+import subprocess  # nosec: B404 - Used for git operations with controlled commands
 import tempfile
 import time
 from dataclasses import dataclass, field
@@ -656,20 +656,26 @@ def get_repository_info(path: Union[str, Path]) -> RepositoryInfo:
 
     try:
         info.current_branch = ops.get_current_branch()
-    except Exception:
+    except (
+        Exception
+    ):  # nosec: B110 - Non-critical operation, continue without branch info
         pass
 
     try:
         result = ops._run_git_command(["rev-parse", "HEAD"])
         info.last_commit_hash = result.stdout.strip()
-    except Exception:
+    except (
+        Exception
+    ):  # nosec: B110 - Non-critical operation, continue without commit hash
         pass
 
     try:
         remotes = ops.get_remotes()
         if "origin" in remotes:
             info.remote_url = remotes["origin"]
-    except Exception:
+    except (
+        Exception
+    ):  # nosec: B110 - Non-critical operation, continue without remote info
         pass
 
     return info

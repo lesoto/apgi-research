@@ -30,15 +30,17 @@ class TestAPGIExperimentConfigSchema:
     def test_default_values(self):
         """Test default experiment config values."""
         config = APGIExperimentConfigSchema()
-        assert config.version == "1.0.0"
-        assert config.experiment_name == "unknown_experiment"
-        assert config.tau_S == 0.35
-        assert config.beta == 1.5
-        assert config.theta_0 == 0.5
-        assert config.alpha == 5.5
-        assert config.hierarchical_enabled is True
-        assert config.precision_gap_enabled is True
-        assert config.neuromodulator_tracking is True
+        assert config.version == "1.0.0"  # nosec: B101 - Test assertion
+        assert (
+            config.experiment_name == "unknown_experiment"
+        )  # nosec: B101 - Test assertion
+        assert config.tau_S == 0.35  # nosec: B101 - Test assertion
+        assert config.beta == 1.5  # nosec: B101 - Test assertion
+        assert config.theta_0 == 0.5  # nosec: B101 - Test assertion
+        assert config.alpha == 5.5  # nosec: B101 - Test assertion
+        assert config.hierarchical_enabled is True  # nosec: B101 - Test assertion
+        assert config.precision_gap_enabled is True  # nosec: B101 - Test assertion
+        assert config.neuromodulator_tracking is True  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom experiment config values."""
@@ -47,9 +49,9 @@ class TestAPGIExperimentConfigSchema:
             tau_S=0.4,
             beta=2.0,
         )
-        assert config.experiment_name == "test_exp"
-        assert config.tau_S == 0.4
-        assert config.beta == 2.0
+        assert config.experiment_name == "test_exp"  # nosec: B101 - Test assertion
+        assert config.tau_S == 0.4  # nosec: B101 - Test assertion
+        assert config.beta == 2.0  # nosec: B101 - Test assertion
 
     def test_tau_S_validation(self):
         """Test tau_S range validation."""
@@ -104,19 +106,19 @@ class TestAPGIExperimentConfigSchema:
             "neuromodulator_tracking": False,
         }
         config = APGIExperimentConfigSchema.from_legacy(legacy_config)
-        assert config.experiment_name == "legacy_exp"
-        assert config.tau_S == 0.4
-        assert config.beta == 2.0
-        assert config.hierarchical_enabled is False
-        assert config.precision_gap_enabled is False
+        assert config.experiment_name == "legacy_exp"  # nosec: B101 - Test assertion
+        assert config.tau_S == 0.4  # nosec: B101 - Test assertion
+        assert config.beta == 2.0  # nosec: B101 - Test assertion
+        assert config.hierarchical_enabled is False  # nosec: B101 - Test assertion
+        assert config.precision_gap_enabled is False  # nosec: B101 - Test assertion
 
     def test_from_legacy_defaults(self):
         """Test from_legacy with missing keys (uses defaults)."""
         legacy_config = {"name": "partial_exp"}
         config = APGIExperimentConfigSchema.from_legacy(legacy_config)
-        assert config.experiment_name == "partial_exp"
-        assert config.tau_S == 0.35  # default
-        assert config.beta == 1.5  # default
+        assert config.experiment_name == "partial_exp"  # nosec: B101 - Test assertion
+        assert config.tau_S == 0.35  # default  # nosec: B101 - Test assertion
+        assert config.beta == 1.5  # default  # nosec: B101 - Test assertion
 
 
 class TestAPGISecurityConfigSchema:
@@ -125,10 +127,14 @@ class TestAPGISecurityConfigSchema:
     def test_default_values(self):
         """Test default security config values."""
         config = APGISecurityConfigSchema()
-        assert config.audit_enabled is True
-        assert config.authz_enabled is True
-        assert config.subprocess_allowlist == ["git", "pytest", "python"]
-        assert config.require_secure_pickle is True
+        assert config.audit_enabled is True  # nosec: B101 - Test assertion
+        assert config.authz_enabled is True  # nosec: B101 - Test assertion
+        assert config.subprocess_allowlist == [
+            "git",
+            "pytest",
+            "python",
+        ]  # nosec: B101 - Test assertion
+        assert config.require_secure_pickle is True  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom security config values."""
@@ -136,8 +142,11 @@ class TestAPGISecurityConfigSchema:
             audit_enabled=False,
             subprocess_allowlist=["git", "python"],
         )
-        assert config.audit_enabled is False
-        assert config.subprocess_allowlist == ["git", "python"]
+        assert config.audit_enabled is False  # nosec: B101 - Test assertion
+        assert config.subprocess_allowlist == [
+            "git",
+            "python",
+        ]  # nosec: B101 - Test assertion
 
 
 class TestAPGIMetricsConfigSchema:
@@ -146,10 +155,10 @@ class TestAPGIMetricsConfigSchema:
     def test_default_values(self):
         """Test default metrics config values."""
         config = APGIMetricsConfigSchema()
-        assert config.profiling_enabled is False
-        assert config.performance_budget_ms == 600000
-        assert config.log_level == "INFO"
-        assert config.json_logging is True
+        assert config.profiling_enabled is False  # nosec: B101 - Test assertion
+        assert config.performance_budget_ms == 600000  # nosec: B101 - Test assertion
+        assert config.log_level == "INFO"  # nosec: B101 - Test assertion
+        assert config.json_logging is True  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test custom metrics config values."""
@@ -157,8 +166,8 @@ class TestAPGIMetricsConfigSchema:
             profiling_enabled=True,
             log_level="DEBUG",
         )
-        assert config.profiling_enabled is True
-        assert config.log_level == "DEBUG"
+        assert config.profiling_enabled is True  # nosec: B101 - Test assertion
+        assert config.log_level == "DEBUG"  # nosec: B101 - Test assertion
 
 
 class TestConfigSources:
@@ -167,7 +176,10 @@ class TestConfigSources:
     def test_config_sources_init(self):
         """Test ConfigSources initialization."""
         sources = ConfigSources(sources={"key1": "file1", "key2": "env"})
-        assert sources.sources == {"key1": "file1", "key2": "env"}
+        assert sources.sources == {
+            "key1": "file1",
+            "key2": "env",
+        }  # nosec: B101 - Test assertion
 
 
 class TestConfigManager:
@@ -185,40 +197,40 @@ class TestConfigManager:
         """Test ConfigManager singleton pattern."""
         config1 = ConfigManager()
         config2 = ConfigManager()
-        assert config1 is config2
+        assert config1 is config2  # nosec: B101 - Test assertion
 
     def test_initialization(self):
         """Test ConfigManager initialization."""
         config = ConfigManager()
-        assert config._config_cache is not None
-        assert config._sources is not None
-        assert config._environment_prefix == "APGI_"
+        assert config._config_cache is not None  # nosec: B101 - Test assertion
+        assert config._sources is not None  # nosec: B101 - Test assertion
+        assert config._environment_prefix == "APGI_"  # nosec: B101 - Test assertion
 
     def test_get_with_default(self):
         """Test get method with default value."""
         config = ConfigManager()
         value = config.get("nonexistent_key", "default_value")
-        assert value == "default_value"
+        assert value == "default_value"  # nosec: B101 - Test assertion
 
     def test_get_without_default(self):
         """Test get method without default value."""
         config = ConfigManager()
         value = config.get("nonexistent_key")
-        assert value is None
+        assert value is None  # nosec: B101 - Test assertion
 
     def test_get_with_type_hint_int(self):
         """Test get method with int type hint."""
         config = ConfigManager()
         config.set("test_key", "42", "test")
         value = config.get("test_key", type_hint=int)
-        assert value == 42
+        assert value == 42  # nosec: B101 - Test assertion
 
     def test_get_with_type_hint_float(self):
         """Test get method with float type hint."""
         config = ConfigManager()
         config.set("test_key", "3.14", "test")
         value = config.get("test_key", type_hint=float)
-        assert value == 3.14
+        assert value == 3.14  # nosec: B101 - Test assertion
 
     def test_get_with_type_hint_bool_true(self):
         """Test get method with bool type hint (true values)."""
@@ -226,7 +238,7 @@ class TestConfigManager:
         for true_val in ["true", "True", "TRUE", "1", "yes", "YES", "on", "ON"]:
             config.set("test_key", true_val, "test")
             value = config.get("test_key", type_hint=bool)
-            assert value is True
+            assert value is True  # nosec: B101 - Test assertion
 
     def test_get_with_type_hint_bool_false(self):
         """Test get method with bool type hint (false values)."""
@@ -234,28 +246,32 @@ class TestConfigManager:
         for false_val in ["false", "False", "FALSE", "0", "no", "NO", "off", "OFF"]:
             config.set("test_key", false_val, "test")
             value = config.get("test_key", type_hint=bool)
-            assert value is False
+            assert value is False  # nosec: B101 - Test assertion
 
     def test_get_with_type_hint_invalid_conversion(self):
         """Test get method with invalid type conversion (returns default)."""
         config = ConfigManager()
         config.set("test_key", "not_a_number", "test")
         value = config.get("test_key", default=999, type_hint=int)
-        assert value == 999
+        assert value == 999  # nosec: B101 - Test assertion
 
     def test_set_method(self):
         """Test set method."""
         config = ConfigManager()
         config.set("test_key", "test_value", "test_source")
-        assert config.get("test_key") == "test_value"
-        assert config.get_source("test_key") == "test_source"
+        assert config.get("test_key") == "test_value"  # nosec: B101 - Test assertion
+        assert (
+            config.get_source("test_key") == "test_source"
+        )  # nosec: B101 - Test assertion
 
     def test_get_source(self):
         """Test get_source method."""
         config = ConfigManager()
         config.set("test_key", "test_value", "test_source")
-        assert config.get_source("test_key") == "test_source"
-        assert config.get_source("nonexistent") is None
+        assert (
+            config.get_source("test_key") == "test_source"
+        )  # nosec: B101 - Test assertion
+        assert config.get_source("nonexistent") is None  # nosec: B101 - Test assertion
 
     def test_get_all_sources(self):
         """Test get_all_sources method."""
@@ -266,57 +282,68 @@ class TestConfigManager:
             config.set("key1", "val1", "source1")
             config.set("key2", "val2", "source2")
             sources = config.get_all_sources()
-            assert sources == {"key1": "source1", "key2": "source2"}
+            assert sources == {
+                "key1": "source1",
+                "key2": "source2",
+            }  # nosec: B101 - Test assertion
 
     def test_reload(self):
         """Test reload method."""
         config = ConfigManager()
         config.set("test_key", "test_value", "test_source")
         config.reload()
-        assert config.get("test_key") is None
-        assert config.get_source("test_key") is None
+        assert config.get("test_key") is None  # nosec: B101 - Test assertion
+        assert config.get_source("test_key") is None  # nosec: B101 - Test assertion
 
     def test_get_experiment_config(self):
         """Test get_experiment_config method."""
         config = ConfigManager()
         exp_config = config.get_experiment_config("test_experiment")
-        assert exp_config.experiment_name == "test_experiment"
-        assert isinstance(exp_config, APGIExperimentConfigSchema)
+        assert (
+            exp_config.experiment_name == "test_experiment"
+        )  # nosec: B101 - Test assertion
+        assert isinstance(
+            exp_config, APGIExperimentConfigSchema
+        )  # nosec: B101 - Test assertion
 
     def test_get_experiment_config_with_overrides(self):
         """Test get_experiment_config with parameter overrides."""
         config = ConfigManager()
         config.set("experiment_test_tau_s", 0.4, "test")
         exp_config = config.get_experiment_config("test")
-        assert exp_config.tau_S == 0.4
+        assert exp_config.tau_S == 0.4  # nosec: B101 - Test assertion
 
     def test_get_security_config(self):
         """Test get_security_config method."""
         config = ConfigManager()
         sec_config = config.get_security_config()
-        assert isinstance(sec_config, APGISecurityConfigSchema)
-        assert sec_config.audit_enabled is True
+        assert isinstance(
+            sec_config, APGISecurityConfigSchema
+        )  # nosec: B101 - Test assertion
+        assert sec_config.audit_enabled is True  # nosec: B101 - Test assertion
 
     def test_get_security_config_with_overrides(self):
         """Test get_security_config with overrides."""
         config = ConfigManager()
         config.set("security_audit_enabled", "false", "test")
         sec_config = config.get_security_config()
-        assert sec_config.audit_enabled is False
+        assert sec_config.audit_enabled is False  # nosec: B101 - Test assertion
 
     def test_get_metrics_config(self):
         """Test get_metrics_config method."""
         config = ConfigManager()
         metrics_config = config.get_metrics_config()
-        assert isinstance(metrics_config, APGIMetricsConfigSchema)
-        assert metrics_config.profiling_enabled is False
+        assert isinstance(
+            metrics_config, APGIMetricsConfigSchema
+        )  # nosec: B101 - Test assertion
+        assert metrics_config.profiling_enabled is False  # nosec: B101 - Test assertion
 
     def test_get_metrics_config_with_overrides(self):
         """Test get_metrics_config with overrides."""
         config = ConfigManager()
         config.set("metrics_profiling_enabled", "true", "test")
         metrics_config = config.get_metrics_config()
-        assert metrics_config.profiling_enabled is True
+        assert metrics_config.profiling_enabled is True  # nosec: B101 - Test assertion
 
     def test_load_from_environment(self):
         """Test loading config from environment variables."""
@@ -328,12 +355,14 @@ class TestConfigManager:
         with patch.dict(os.environ, env_vars, clear=True):
             reset_config()
             config = ConfigManager()
-            assert config.get("test_key") == "test_value"
-            assert config.get("tau_s") == 0.4
+            assert (
+                config.get("test_key") == "test_value"
+            )  # nosec: B101 - Test assertion
+            assert config.get("tau_s") == 0.4  # nosec: B101 - Test assertion
             enabled = config.get("enabled")
-            assert enabled == True  # noqa: E712
+            assert enabled == True  # noqa: E712  # nosec: B101 - Test assertion
             source = config.get_source("test_key")
-            assert source == "env:APGI_TEST_KEY"
+            assert source == "env:APGI_TEST_KEY"  # nosec: B101 - Test assertion
 
     def test_load_from_environment_json_value(self):
         """Test loading JSON value from environment."""
@@ -343,7 +372,7 @@ class TestConfigManager:
             reset_config()
             config = ConfigManager()
             value = config.get("test_key")
-            assert value == {"nested": "value"}
+            assert value == {"nested": "value"}  # nosec: B101 - Test assertion
 
     def test_load_from_environment_invalid_json(self):
         """Test loading invalid JSON from environment (falls back to string)."""
@@ -351,14 +380,14 @@ class TestConfigManager:
             reset_config()
             config = ConfigManager()
             value = config.get("test_key")
-            assert value == "not_json"
+            assert value == "not_json"  # nosec: B101 - Test assertion
 
     def test_find_config_file(self):
         """Test finding config file in standard locations."""
         config = ConfigManager()
         # With no config files present, should return None
         config._find_config_file()
-        # We can't assert None without creating actual files
+        # We can't assert None without creating actual files  # nosec: B101 - Test assertion
         # but the method should complete without error
 
     def test_find_config_file_with_env_var(self):
@@ -384,9 +413,13 @@ class TestConfigManager:
 
         try:
             config._load_from_file(temp_file)
-            assert config.get("test_key") == "test_value"
-            assert config.get("tau_s") == 0.4
-            assert config.get_source("test_key") == str(temp_file)
+            assert (
+                config.get("test_key") == "test_value"
+            )  # nosec: B101 - Test assertion
+            assert config.get("tau_s") == 0.4  # nosec: B101 - Test assertion
+            assert config.get_source("test_key") == str(
+                temp_file
+            )  # nosec: B101 - Test assertion
         finally:
             temp_file.unlink(missing_ok=True)
 
@@ -432,31 +465,31 @@ class TestModuleLevelFunctions:
         """Test get_config function."""
         config1 = get_config()
         config2 = get_config()
-        assert config1 is config2
-        assert isinstance(config1, ConfigManager)
+        assert config1 is config2  # nosec: B101 - Test assertion
+        assert isinstance(config1, ConfigManager)  # nosec: B101 - Test assertion
 
     def test_reset_config(self):
         """Test reset_config function."""
         config1 = get_config()
         reset_config()
         config2 = get_config()
-        assert config1 is not config2
+        assert config1 is not config2  # nosec: B101 - Test assertion
 
     def test_get_cached_experiment_config(self):
         """Test get_cached_experiment_config with caching."""
         config1 = get_cached_experiment_config("test_exp")
         config2 = get_cached_experiment_config("test_exp")
         # Should return same object from cache
-        assert config1 is config2
+        assert config1 is config2  # nosec: B101 - Test assertion
 
     def test_get_cached_experiment_config_different_names(self):
         """Test cached config for different experiment names."""
         config1 = get_cached_experiment_config("exp1")
         config2 = get_cached_experiment_config("exp2")
         # Should return different objects
-        assert config1 is not config2
-        assert config1.experiment_name == "exp1"
-        assert config2.experiment_name == "exp2"
+        assert config1 is not config2  # nosec: B101 - Test assertion
+        assert config1.experiment_name == "exp1"  # nosec: B101 - Test assertion
+        assert config2.experiment_name == "exp2"  # nosec: B101 - Test assertion
 
     def test_invalidate_config_cache(self):
         """Test invalidate_config_cache function."""
@@ -464,25 +497,25 @@ class TestModuleLevelFunctions:
         invalidate_config_cache()
         config2 = get_cached_experiment_config("test_exp")
         # Should return new object after cache invalidation
-        assert config1 is not config2
+        assert config1 is not config2  # nosec: B101 - Test assertion
 
     def test_load_apgi_params(self):
         """Test load_apgi_params legacy function."""
         params = load_apgi_params()
-        assert isinstance(params, dict)
-        assert "tau_s" in params
-        assert "beta" in params
-        assert "theta_0" in params
-        assert "alpha" in params
-        assert params["tau_s"] == 0.35
-        assert params["beta"] == 1.5
+        assert isinstance(params, dict)  # nosec: B101 - Test assertion
+        assert "tau_s" in params  # nosec: B101 - Test assertion
+        assert "beta" in params  # nosec: B101 - Test assertion
+        assert "theta_0" in params  # nosec: B101 - Test assertion
+        assert "alpha" in params  # nosec: B101 - Test assertion
+        assert params["tau_s"] == 0.35  # nosec: B101 - Test assertion
+        assert params["beta"] == 1.5  # nosec: B101 - Test assertion
 
     def test_load_apgi_params_with_overrides(self):
         """Test load_apgi_params with config overrides."""
         config = get_config()
         config.set("tau_s", 0.5, "test")
         params = load_apgi_params()
-        assert params["tau_s"] == 0.5
+        assert params["tau_s"] == 0.5  # nosec: B101 - Test assertion
 
     def test_load_apgi_params_all_keys(self):
         """Test load_apgi_params returns all expected keys."""
@@ -511,7 +544,7 @@ class TestModuleLevelFunctions:
             "HT5",
         ]
         for key in expected_keys:
-            assert key in params
+            assert key in params  # nosec: B101 - Test assertion
 
 
 class TestPydanticFallback:
@@ -519,7 +552,7 @@ class TestPydanticFallback:
 
     def test_pydantic_available_flag(self):
         """Test PYDANTIC_AVAILABLE flag."""
-        assert isinstance(PYDANTIC_AVAILABLE, bool)
+        assert isinstance(PYDANTIC_AVAILABLE, bool)  # nosec: B101 - Test assertion
 
     def test_schema_without_pydantic(self):
         """Test schema behavior when pydantic is not available."""
@@ -528,9 +561,9 @@ class TestPydanticFallback:
         from utils.apgi_config import BaseModel, Field, ValidationError
 
         # These should always be defined (either real pydantic or fallback)
-        assert BaseModel is not None
-        assert Field is not None
-        assert ValidationError is not None
+        assert BaseModel is not None  # nosec: B101 - Test assertion
+        assert Field is not None  # nosec: B101 - Test assertion
+        assert ValidationError is not None  # nosec: B101 - Test assertion
 
 
 class TestConfigManagerEdgeCases:
@@ -556,30 +589,32 @@ class TestConfigManagerEdgeCases:
         if PYDANTIC_AVAILABLE:
             # Should return default config on validation error
             exp_config = config.get_experiment_config("test")
-            assert exp_config.experiment_name == "test"
+            assert exp_config.experiment_name == "test"  # nosec: B101 - Test assertion
             # Should use default tau_S instead of invalid 999
-            assert exp_config.tau_S == 0.35
+            assert exp_config.tau_S == 0.35  # nosec: B101 - Test assertion
 
     def test_get_with_none_value(self):
         """Test get with None value in cache."""
         config = ConfigManager()
         config.set("test_key", None, "test")
         value = config.get("test_key", default="default")
-        assert value is None
+        assert value is None  # nosec: B101 - Test assertion
 
     def test_get_type_hint_with_none(self):
         """Test get with type hint when value is None."""
         config = ConfigManager()
         value = config.get("nonexistent", type_hint=int)
-        assert value is None
+        assert value is None  # nosec: B101 - Test assertion
 
     def test_set_overwrites_existing(self):
         """Test set overwrites existing value."""
         config = ConfigManager()
         config.set("test_key", "value1", "source1")
         config.set("test_key", "value2", "source2")
-        assert config.get("test_key") == "value2"
-        assert config.get_source("test_key") == "source2"
+        assert config.get("test_key") == "value2"  # nosec: B101 - Test assertion
+        assert (
+            config.get_source("test_key") == "source2"
+        )  # nosec: B101 - Test assertion
 
     def test_empty_environment_prefix(self):
         """Test ConfigManager with custom environment prefix."""
@@ -587,13 +622,13 @@ class TestConfigManagerEdgeCases:
         # Can't easily test this without modifying the class
         # but we can verify the default prefix
         config = ConfigManager()
-        assert config._environment_prefix == "APGI_"
+        assert config._environment_prefix == "APGI_"  # nosec: B101 - Test assertion
 
     def test_get_all_sources_empty(self):
         """Test get_all_sources when no sources are set."""
         config = ConfigManager()
         sources = config.get_all_sources()
-        assert sources == {}
+        assert sources == {}  # nosec: B101 - Test assertion
 
     def test_reload_clears_all(self):
         """Test reload clears both cache and sources."""
@@ -601,8 +636,8 @@ class TestConfigManagerEdgeCases:
         config.set("key1", "val1", "source1")
         config.set("key2", "val2", "source2")
         config.reload()
-        assert len(config._config_cache) == 0
-        assert len(config._sources) == 0
+        assert len(config._config_cache) == 0  # nosec: B101 - Test assertion
+        assert len(config._sources) == 0  # nosec: B101 - Test assertion
 
 
 class TestConfigManagerIntegration:
@@ -623,13 +658,13 @@ class TestConfigManagerIntegration:
         config.set("tau_s", 0.4, "test")
         config.set("beta", 2.0, "test")
         # Get values
-        assert config.get("tau_s") == 0.4
-        assert config.get("beta") == 2.0
+        assert config.get("tau_s") == 0.4  # nosec: B101 - Test assertion
+        assert config.get("beta") == 2.0  # nosec: B101 - Test assertion
         # Get sources
-        assert config.get_source("tau_s") == "test"
+        assert config.get_source("tau_s") == "test"  # nosec: B101 - Test assertion
         # Reload
         config.reload()
-        assert config.get("tau_s") is None
+        assert config.get("tau_s") is None  # nosec: B101 - Test assertion
 
     def test_experiment_config_integration(self):
         """Test experiment config with global and local overrides."""
@@ -639,11 +674,15 @@ class TestConfigManagerIntegration:
         # Set experiment-specific override
         config.set("experiment_test_tau_s", 0.5, "experiment")
         exp_config = config.get_experiment_config("test")
-        assert exp_config.tau_S == 0.5  # Experiment-specific takes precedence
+        assert (
+            exp_config.tau_S == 0.5
+        )  # Experiment-specific takes precedence  # nosec: B101 - Test assertion
 
     def test_multiple_config_managers_share_state(self):
         """Test that multiple ConfigManager instances share state (singleton)."""
         config1 = ConfigManager()
         config1.set("shared_key", "shared_value", "test")
         config2 = ConfigManager()
-        assert config2.get("shared_key") == "shared_value"
+        assert (
+            config2.get("shared_key") == "shared_value"
+        )  # nosec: B101 - Test assertion

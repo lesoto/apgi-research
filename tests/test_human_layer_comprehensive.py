@@ -20,16 +20,11 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
-from human_layer import (
-    TaskPriority,
-    configure_if_needed,
-    review,
-    select_task,
-)
-
-from hypothesis_approval_board import ApprovalBoard, Hypothesis
 import logging
 from pathlib import Path
+
+from human_layer import TaskPriority, configure_if_needed, review, select_task
+from hypothesis_approval_board import ApprovalBoard, Hypothesis
 
 
 class TestTaskPriority:
@@ -45,14 +40,20 @@ class TestTaskPriority:
         ]
 
         for priority in priorities:
-            assert isinstance(priority.value, str)
-            assert len(priority.value) > 0
+            assert isinstance(priority.value, str)  # nosec: B101 - Test assertion
+            assert len(priority.value) > 0  # nosec: B101 - Test assertion
 
     def test_priority_ordering(self):
         """Test priority ordering for comparison."""
-        assert TaskPriority.CRITICAL.value > TaskPriority.HIGH.value
-        assert TaskPriority.HIGH.value > TaskPriority.MEDIUM.value
-        assert TaskPriority.MEDIUM.value > TaskPriority.LOW.value
+        assert (
+            TaskPriority.CRITICAL.value > TaskPriority.HIGH.value
+        )  # nosec: B101 - Test assertion
+        assert (
+            TaskPriority.HIGH.value > TaskPriority.MEDIUM.value
+        )  # nosec: B101 - Test assertion
+        assert (
+            TaskPriority.MEDIUM.value > TaskPriority.LOW.value
+        )  # nosec: B101 - Test assertion
 
     def test_priority_comparison(self):
         """Test priority comparison operations."""
@@ -62,17 +63,19 @@ class TestTaskPriority:
         low = TaskPriority.LOW
 
         # Test comparisons - compare underlying values since Enum doesn't support > by default
-        assert critical.value > high.value
-        assert high.value > medium.value
-        assert medium.value > low.value
+        assert critical.value > high.value  # nosec: B101 - Test assertion
+        assert high.value > medium.value  # nosec: B101 - Test assertion
+        assert medium.value > low.value  # nosec: B101 - Test assertion
 
         # Test with different types
-        assert str(critical) != "string"  # Different type
-        assert str(high) != "42"  # Different value
+        assert (
+            str(critical) != "string"
+        )  # Different type  # nosec: B101 - Test assertion
+        assert str(high) != "42"  # Different value  # nosec: B101 - Test assertion
 
         # Test enum value comparisons
-        assert critical.value == "critical"
-        assert high.value == "high"
+        assert critical.value == "critical"  # nosec: B101 - Test assertion
+        assert high.value == "high"  # nosec: B101 - Test assertion
 
 
 class TestHypothesisApprovalBoard:
@@ -82,10 +85,10 @@ class TestHypothesisApprovalBoard:
         """Test board initialization."""
         board = ApprovalBoard()
 
-        assert hasattr(board, "add_hypothesis")
-        assert hasattr(board, "approve")
-        assert hasattr(board, "reject")
-        assert hasattr(board, "get_status")
+        assert hasattr(board, "add_hypothesis")  # nosec: B101 - Test assertion
+        assert hasattr(board, "approve")  # nosec: B101 - Test assertion
+        assert hasattr(board, "reject")  # nosec: B101 - Test assertion
+        assert hasattr(board, "get_status")  # nosec: B101 - Test assertion
 
     def test_add_hypothesis(self):
         """Test adding hypotheses to board."""
@@ -99,12 +102,12 @@ class TestHypothesisApprovalBoard:
 
         # Verify hypothesis was added
         status = board.get_status()
-        assert status.total_count == 1
+        assert status.total_count == 1  # nosec: B101 - Test assertion
 
         # Get hypothesis details
         pending = board.get_hypothesis(hypothesis.id)
-        assert pending is not None
-        assert pending.title == "Test hypothesis"
+        assert pending is not None  # nosec: B101 - Test assertion
+        assert pending.title == "Test hypothesis"  # nosec: B101 - Test assertion
 
     def test_approve_hypothesis(self):
         """Test hypothesis approval."""
@@ -120,12 +123,12 @@ class TestHypothesisApprovalBoard:
 
         # Approve the hypothesis
         success = board.approve(hypothesis.id, "Test approval")
-        assert success
+        assert success  # nosec: B101 - Test assertion
 
         # Verify approval using get_status()
         status = board.get_status()
-        assert status.approved_count == 1
-        assert status.pending_count == 0
+        assert status.approved_count == 1  # nosec: B101 - Test assertion
+        assert status.pending_count == 0  # nosec: B101 - Test assertion
 
     def test_reject_hypothesis(self):
         """Test hypothesis rejection."""
@@ -139,12 +142,12 @@ class TestHypothesisApprovalBoard:
 
         # Reject the hypothesis
         success = board.reject(hypothesis.id, "Insufficient evidence", "Test rejection")
-        assert success
+        assert success  # nosec: B101 - Test assertion
 
         # Verify rejection using get_status()
         status = board.get_status()
-        assert status.rejected_count == 1
-        assert status.pending_count == 0
+        assert status.rejected_count == 1  # nosec: B101 - Test assertion
+        assert status.pending_count == 0  # nosec: B101 - Test assertion
 
     def test_board_persistence(self):
         """Test board data persistence."""
@@ -204,8 +207,8 @@ class TestHypothesisApprovalBoard:
             # Verify loading
             mock_open_file.assert_called_once_with(Path("test_board.json"), "r")
             status = loaded_board.get_status()
-            assert status.approved_count == 1
-            assert status.pending_count == 0
+            assert status.approved_count == 1  # nosec: B101 - Test assertion
+            assert status.pending_count == 0  # nosec: B101 - Test assertion
 
     def test_error_handling(self):
         """Test error handling in board operations."""
@@ -213,7 +216,7 @@ class TestHypothesisApprovalBoard:
         with patch("builtins.open", side_effect=FileNotFoundError("File not found")):
             # The load method should create a new board if file doesn't exist
             board = ApprovalBoard.load(Path("nonexistent.json"))
-            assert board is not None
+            assert board is not None  # nosec: B101 - Test assertion
 
     def test_statistics_methods(self):
         """Test board statistics methods."""
@@ -228,10 +231,12 @@ class TestHypothesisApprovalBoard:
 
         # Test statistics using get_status()
         status = board.get_status()
-        assert status.total_count == 5
-        assert status.pending_count == 5  # All start as draft, not pending
-        assert status.approved_count == 0
-        assert status.rejected_count == 0
+        assert status.total_count == 5  # nosec: B101 - Test assertion
+        assert (
+            status.pending_count == 5
+        )  # All start as draft, not pending  # nosec: B101 - Test assertion
+        assert status.approved_count == 0  # nosec: B101 - Test assertion
+        assert status.rejected_count == 0  # nosec: B101 - Test assertion
 
     def test_hypothesis_validation(self):
         """Test hypothesis validation."""
@@ -244,8 +249,12 @@ class TestHypothesisApprovalBoard:
         )
 
         # Should create successfully
-        assert valid_hypothesis.title == "Valid hypothesis"
-        assert valid_hypothesis.description == "Valid description"
+        assert (
+            valid_hypothesis.title == "Valid hypothesis"
+        )  # nosec: B101 - Test assertion
+        assert (
+            valid_hypothesis.description == "Valid description"
+        )  # nosec: B101 - Test assertion
 
         # Test that create_hypothesis handles basic validation
         # (The actual validation is handled by the dataclass)
@@ -260,7 +269,7 @@ class TestHumanLayerFunctions:
             result = configure_if_needed()
 
             # Should not configure without GUI
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
     def test_configure_if_needed_with_gui(self):
         """Test configure_if_needed with GUI running."""
@@ -269,7 +278,7 @@ class TestHumanLayerFunctions:
                 result = configure_if_needed()
 
                 # Should configure human interaction
-                assert result is True
+                assert result is True  # nosec: B101 - Test assertion
                 mock_configure.assert_called_once()
 
     def test_select_task_empty_board(self):
@@ -295,7 +304,9 @@ class TestHumanLayerFunctions:
             mock_select.return_value = mock_tasks[0]  # Return critical task
 
             selected = select_task()
-            assert selected and selected.title == "Critical task"
+            assert (
+                selected and selected.title == "Critical task"
+            )  # nosec: B101 - Test assertion
 
     def test_select_task_with_filters(self):
         """Test select_task with filters."""
@@ -322,7 +333,9 @@ class TestHumanLayerFunctions:
             mock_select.return_value = mock_tasks[1]  # Return pending task
 
             selected_high = select_task()
-            assert selected_high and selected_high.title == "Pending task"
+            assert (
+                selected_high and selected_high.title == "Pending task"
+            )  # nosec: B101 - Test assertion
 
     def test_review_functionality(self):
         """Test review functionality."""
@@ -340,8 +353,10 @@ class TestHumanLayerFunctions:
             review_result = review({"test": "Review test"})
 
             # Verify review was processed
-            assert review_result is not None
-            assert review_result.decision.value == "approve"
+            assert review_result is not None  # nosec: B101 - Test assertion
+            assert (
+                review_result.decision.value == "approve"
+            )  # nosec: B101 - Test assertion
 
     def test_review_with_approval(self):
         """Test review with approval."""
@@ -359,8 +374,10 @@ class TestHumanLayerFunctions:
             review_result = review({"test": "Review with approval"})
 
             # Verify approval
-            assert review_result is not None
-            assert review_result.decision.value == "approve"
+            assert review_result is not None  # nosec: B101 - Test assertion
+            assert (
+                review_result.decision.value == "approve"
+            )  # nosec: B101 - Test assertion
 
     def test_review_with_rejection(self):
         """Test review with rejection."""
@@ -379,8 +396,10 @@ class TestHumanLayerFunctions:
             review_result = review({"test": "Review with rejection"})
 
             # Verify rejection
-            assert review_result is not None
-            assert review_result.decision.value == "reject"
+            assert review_result is not None  # nosec: B101 - Test assertion
+            assert (
+                review_result.decision.value == "reject"
+            )  # nosec: B101 - Test assertion
 
 
 class TestIntegration:
@@ -423,7 +442,9 @@ class TestIntegration:
             mock_configure.assert_called_once()
             mock_select.assert_called_once_with()
             mock_review.assert_called_once()
-            assert selected_task and selected_task.title == "Integration test task"
+            assert (
+                selected_task and selected_task.title == "Integration test task"
+            )  # nosec: B101 - Test assertion
 
     def test_error_handling_in_workflow(self):
         """Test error handling in human layer workflow."""
@@ -457,10 +478,12 @@ class TestIntegration:
             board2 = ApprovalBoard.load(Path(temp_file.name))
 
             # Verify data persistence
-            assert len(board2.hypotheses) == 1
+            assert len(board2.hypotheses) == 1  # nosec: B101 - Test assertion
             hypothesis = board2.get_hypothesis("Persistence test task")
-            assert hypothesis is not None
-            assert hypothesis.title == "Persistence test task"
+            assert hypothesis is not None  # nosec: B101 - Test assertion
+            assert (
+                hypothesis.title == "Persistence test task"
+            )  # nosec: B101 - Test assertion
 
     def test_concurrent_access(self):
         """Test concurrent access to human layer."""
@@ -497,5 +520,5 @@ class TestIntegration:
             args, kwargs = mock_configure.call_args
 
             # Should be called with no arguments (auto-configuration)
-            assert len(args) == 0
-            assert len(kwargs) == 0
+            assert len(args) == 0  # nosec: B101 - Test assertion
+            assert len(kwargs) == 0  # nosec: B101 - Test assertion

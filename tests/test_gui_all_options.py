@@ -203,11 +203,11 @@ print("-" * 70)
 # Check core dependencies constant exists
 try:
     core_deps = gui_module.CORE_DEPENDENCIES
-    assert "numpy" in core_deps
-    assert "pandas" in core_deps
-    assert "matplotlib" in core_deps
-    assert "customtkinter" in core_deps
-    assert "scipy" in core_deps
+    assert "numpy" in core_deps  # nosec: B101 - Test assertion
+    assert "pandas" in core_deps  # nosec: B101 - Test assertion
+    assert "matplotlib" in core_deps  # nosec: B101 - Test assertion
+    assert "customtkinter" in core_deps  # nosec: B101 - Test assertion
+    assert "scipy" in core_deps  # nosec: B101 - Test assertion
     log_test("CORE_DEPENDENCIES constant", True)
 except Exception as e:
     log_test("CORE_DEPENDENCIES constant", False, str(e))
@@ -215,15 +215,15 @@ except Exception as e:
 # Check optional dependencies constant
 try:
     opt_deps = gui_module.OPTIONAL_DEPENDENCIES
-    assert "torch" in opt_deps
-    assert "sklearn" in opt_deps
+    assert "torch" in opt_deps  # nosec: B101 - Test assertion
+    assert "sklearn" in opt_deps  # nosec: B101 - Test assertion
     log_test("OPTIONAL_DEPENDENCIES constant", True)
 except Exception as e:
     log_test("OPTIONAL_DEPENDENCIES constant", False, str(e))
 
 # Check ExperimentRunnerGUI class exists
 try:
-    assert hasattr(gui_module, "ExperimentRunnerGUI")
+    assert hasattr(gui_module, "ExperimentRunnerGUI")  # nosec: B101 - Test assertion
     log_test("ExperimentRunnerGUI class exists", True)
 except Exception as e:
     log_test("ExperimentRunnerGUI class exists", False, str(e))
@@ -267,9 +267,11 @@ if board:
 # Test 5c: Check hypothesis properties
 if hypothesis:
     try:
-        assert hypothesis.title == "Test Hypothesis"
+        assert hypothesis.title == "Test Hypothesis"  # nosec: B101 - Test assertion
         # Hypothesis is created with DRAFT status by default
-        assert hypothesis.status == HypothesisStatus.DRAFT
+        assert (
+            hypothesis.status == HypothesisStatus.DRAFT
+        )  # nosec: B101 - Test assertion
         log_test("Hypothesis properties", True)
     except Exception as e:
         log_test("Hypothesis properties", False, str(e))
@@ -286,7 +288,7 @@ if board and hypothesis:
             hypothesis.id, HypothesisStatus.PENDING, "Set to pending", "Test Suite"
         )
         pending = board.get_pending_hypotheses()
-        assert len(pending) > 0
+        assert len(pending) > 0  # nosec: B101 - Test assertion
         log_test("Get pending hypotheses", True)
     except Exception as e:
         log_test("Get pending hypotheses", False, str(e))
@@ -305,7 +307,9 @@ if board and hypothesis:
 if board and hypothesis:
     try:
         updated = board.get_hypothesis(hypothesis.id)
-        assert updated is not None and updated.status == HypothesisStatus.APPROVED
+        assert (
+            updated is not None and updated.status == HypothesisStatus.APPROVED
+        )  # nosec: B101 - Test assertion
         log_test("Verify status change", True)
     except Exception as e:
         log_test("Verify status change", False, str(e))
@@ -417,8 +421,8 @@ try:
         "last_experiment": "",
     }
 
-    assert guardrail_state["status"] == "IDLE"
-    assert guardrail_state["confidence"] == 1.0
+    assert guardrail_state["status"] == "IDLE"  # nosec: B101 - Test assertion
+    assert guardrail_state["confidence"] == 1.0  # nosec: B101 - Test assertion
     log_test("Guardrail state structure", True)
 
     # Test status updates
@@ -436,9 +440,9 @@ try:
         else:
             return "#e74c3c"  # Red
 
-    assert get_confidence_color(0.9) == "#2ecc71"
-    assert get_confidence_color(0.5) == "#f39c12"
-    assert get_confidence_color(0.2) == "#e74c3c"
+    assert get_confidence_color(0.9) == "#2ecc71"  # nosec: B101 - Test assertion
+    assert get_confidence_color(0.5) == "#f39c12"  # nosec: B101 - Test assertion
+    assert get_confidence_color(0.2) == "#e74c3c"  # nosec: B101 - Test assertion
     log_test("Confidence color logic", True)
 
     # Test regression color logic
@@ -451,9 +455,9 @@ try:
         else:
             return "#e74c3c"  # Red
 
-    assert get_regression_color(0.01) == "#2ecc71"
-    assert get_regression_color(0.03) == "#f39c12"
-    assert get_regression_color(0.08) == "#e74c3c"
+    assert get_regression_color(0.01) == "#2ecc71"  # nosec: B101 - Test assertion
+    assert get_regression_color(0.03) == "#f39c12"  # nosec: B101 - Test assertion
+    assert get_regression_color(0.08) == "#e74c3c"  # nosec: B101 - Test assertion
     log_test("Regression color logic", True)
 
 except Exception as e:
@@ -480,7 +484,9 @@ try:
     ]
 
     for method in menu_methods:
-        assert hasattr(gui_class, method), f"Missing method: {method}"
+        assert hasattr(
+            gui_class, method
+        ), f"Missing method: {method}"  # nosec: B101 - Test assertion
         log_test(f"Menu method: {method}", True)
 
     # Test appearance modes
@@ -509,19 +515,25 @@ try:
     ]
 
     for action in sidebar_actions:
-        assert hasattr(gui_class, action), f"Missing action: {action}"
+        assert hasattr(
+            gui_class, action
+        ), f"Missing action: {action}"  # nosec: B101 - Test assertion
         log_test(f"Sidebar action: {action}", True)
 
     # Test that experiment running infrastructure exists
-    assert hasattr(gui_class, "_run_experiment")
-    assert hasattr(gui_class, "_execute_script")
-    assert hasattr(gui_class, "_finish_experiment")
+    assert hasattr(gui_class, "_run_experiment")  # nosec: B101 - Test assertion
+    assert hasattr(gui_class, "_execute_script")  # nosec: B101 - Test assertion
+    assert hasattr(gui_class, "_finish_experiment")  # nosec: B101 - Test assertion
     log_test("Experiment execution pipeline", True)
 
     # Test hypothesis UI methods
-    assert hasattr(gui_class, "_show_create_hypothesis_dialog")
-    assert hasattr(gui_class, "_show_hypothesis_review")
-    assert hasattr(gui_class, "_refresh_hypothesis_display")
+    assert hasattr(
+        gui_class, "_show_create_hypothesis_dialog"
+    )  # nosec: B101 - Test assertion
+    assert hasattr(gui_class, "_show_hypothesis_review")  # nosec: B101 - Test assertion
+    assert hasattr(
+        gui_class, "_refresh_hypothesis_display"
+    )  # nosec: B101 - Test assertion
     log_test("Hypothesis UI methods", True)
 
 except Exception as e:
@@ -545,14 +557,20 @@ try:
     ]
 
     for method in xpr_methods:
-        assert hasattr(gui_class, method), f"Missing method: {method}"
+        assert hasattr(
+            gui_class, method
+        ), f"Missing method: {method}"  # nosec: B101 - Test assertion
         log_test(f"XPR method: {method}", True)
 
     # Test guardrail notification method
-    assert hasattr(gui_class, "_notify_guardrail_escalation")
+    assert hasattr(
+        gui_class, "_notify_guardrail_escalation"
+    )  # nosec: B101 - Test assertion
     log_test("Guardrail escalation notification", True)
 
-    assert hasattr(gui_class, "_update_guardrail_dashboard")
+    assert hasattr(
+        gui_class, "_update_guardrail_dashboard"
+    )  # nosec: B101 - Test assertion
     log_test("Guardrail dashboard update", True)
 
     # Check XPR engine import
@@ -586,20 +604,28 @@ try:
     gui_class = gui_module.ExperimentRunnerGUI
 
     # Check card creation methods
-    assert hasattr(gui_class, "_create_experiment_card")
+    assert hasattr(gui_class, "_create_experiment_card")  # nosec: B101 - Test assertion
     log_test("Experiment card creation method", True)
 
-    assert hasattr(gui_class, "_show_results_visualization")
+    assert hasattr(
+        gui_class, "_show_results_visualization"
+    )  # nosec: B101 - Test assertion
     log_test("Results visualization method", True)
 
-    assert hasattr(gui_class, "_parse_experiment_results")
+    assert hasattr(
+        gui_class, "_parse_experiment_results"
+    )  # nosec: B101 - Test assertion
     log_test("Experiment result parsing method", True)
 
-    assert hasattr(gui_class, "_plot_experiment_results")
+    assert hasattr(
+        gui_class, "_plot_experiment_results"
+    )  # nosec: B101 - Test assertion
     log_test("Plot experiment results method", True)
 
     # Check visualization panel creation
-    assert hasattr(gui_class, "_create_visualization_panel")
+    assert hasattr(
+        gui_class, "_create_visualization_panel"
+    )  # nosec: B101 - Test assertion
     log_test("Visualization panel creation method", True)
 
 except Exception as e:
@@ -616,10 +642,12 @@ print("-" * 70)
 try:
     gui_class = gui_module.ExperimentRunnerGUI
 
-    assert hasattr(gui_class, "_display_dependencies_status")
+    assert hasattr(
+        gui_class, "_display_dependencies_status"
+    )  # nosec: B101 - Test assertion
     log_test("Display dependencies status", True)
 
-    assert hasattr(gui_class, "_repair_dependencies")
+    assert hasattr(gui_class, "_repair_dependencies")  # nosec: B101 - Test assertion
     log_test("Repair dependencies method", True)
 
     # Test package mapping
@@ -656,11 +684,11 @@ try:
     patch_method = (
         ctk.windows.widgets.core_widget_classes.dropdown_menu.DropdownMenu._add_menu_commands
     )
-    assert patch_method is not None
+    assert patch_method is not None  # nosec: B101 - Test assertion
     log_test("Dropdown patch applied", True)
 
     # Check patch is a function
-    assert callable(patch_method)
+    assert callable(patch_method)  # nosec: B101 - Test assertion
     log_test("Dropdown patch is callable", True)
 
 except Exception as e:

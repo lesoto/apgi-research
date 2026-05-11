@@ -43,10 +43,23 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import git
 import numpy as np
+
+if TYPE_CHECKING:
+    from typing import Any
 
 # Import APGI components (unused for now, available for future integration)
 from human_layer import HumanControlLayer
@@ -130,15 +143,40 @@ class OptimizationStrategy:
 class GitPerformanceTracker:
     """Git-based performance tracking and optimization."""
 
+    repo: Optional[git.Repo]
+    async_git: Optional["AsyncGitOperations"]
+
     def __init__(self, repo_path: str = ".", agent: Optional[Any] = None):
         self.repo_path = Path(repo_path)
-        self.repo = git.Repo(self.repo_path)
+        self.agent = agent
+
+        # Handle missing git repository gracefully
+        try:
+            self.repo = git.Repo(self.repo_path)
+        except git.InvalidGitRepositoryError:
+            logger.warning(
+                f"No git repository at {self.repo_path}, initializing new repo"
+            )
+            try:
+                self.repo = git.Repo.init(self.repo_path)
+            except Exception as e:
+                logger.error(f"Failed to initialize git repository: {e}")
+                self.repo = None
+        except Exception as e:
+            logger.warning(
+                f"Could not open git repository: {e}, operating without git tracking"
+            )
+            self.repo = None
+
         self.results_file = self.repo_path / "optimization_results.json"
         self.best_results = self._load_best_results()
-        self.agent = agent
-        # Initialize async Git operations for non-blocking execution
+
+        # Initialize async Git operations for non-blocking execution (only if repo exists)
         self.rate_limiter = RateLimiter(max_requests=20, time_window=60)
-        self.async_git = AsyncGitOperations(self.repo_path, self.rate_limiter)
+        if self.repo is not None:
+            self.async_git = AsyncGitOperations(self.repo_path, self.rate_limiter)
+        else:
+            self.async_git = None
 
     def _load_best_results(self) -> Dict[str, ExperimentResult]:
         """Load best results from previous runs."""
@@ -168,6 +206,10 @@ class GitPerformanceTracker:
 
     def commit_experiment(self, modifications: Dict[str, Any]) -> str:
         """Commit experiment modifications and return commit hash."""
+        if self.repo is None:
+            logger.warning("Git repository not available, skipping commit")
+            return "no_repo"
+
         try:
             # Only stage specific experiment files, not everything
             files_to_stage = [
@@ -209,6 +251,10 @@ class GitPerformanceTracker:
 
     def rollback_experiment(self, commit_hash: Optional[str] = None) -> bool:
         """Rollback to previous commit."""
+        if self.repo is None:
+            logger.warning("Git repository not available, skipping rollback")
+            return False
+
         try:
             target = commit_hash if commit_hash else "HEAD~1"
             repo = git.Repo(self.repo_path)
@@ -612,6 +658,19 @@ def safe_subprocess_run(
 class AsyncGitOperations:
     """Async Git operations handler for non-blocking execution."""
 
+    RETRYABLE_ERRORS = {
+        "Connection refused",
+        "Connection timed out",
+        "Could not resolve host",
+        "RPC failed",
+        "remote: Internal error",
+        "error: failed to push",
+        "error: cannot lock",
+    }
+
+    MAX_RETRIES = 3
+    RETRY_DELAY = 2.0
+
     def __init__(self, repo_path: Path, rate_limiter: Optional[RateLimiter] = None):
         """Initialize async Git operations.
 
@@ -623,10 +682,14 @@ class AsyncGitOperations:
         self.rate_limiter = rate_limiter or RateLimiter(max_requests=20, time_window=60)
         self._executor = None
 
-    async def _run_git_command(
+    def _is_retryable_error(self, error_msg: str) -> bool:
+        """Check if an error is transient and worth retrying."""
+        return any(err in error_msg for err in self.RETRYABLE_ERRORS)
+
+    async def _run_git_command_with_retry(
         self, args: List[str], timeout: float = 30.0
     ) -> Tuple[int, str, str]:
-        """Run a Git command asynchronously.
+        """Run a Git command asynchronously with retry logic.
 
         Args:
             args: Git command arguments (without 'git')
@@ -635,32 +698,66 @@ class AsyncGitOperations:
         Returns:
             Tuple of (returncode, stdout, stderr)
         """
-        # Apply rate limiting
-        while not self.rate_limiter.acquire():
-            wait_time = self.rate_limiter.wait_time()
-            logger.debug(
-                f"[APGI AGENT] Rate limiting Git operations, waiting {wait_time:.1f}s..."
-            )
-            await asyncio.sleep(wait_time)
+        last_error = None
 
-        # Validate command
-        command = ["git"] + args
-        if not validate_subprocess_command(command):
-            raise ValueError(f"[APGI AGENT] Git command not in whitelist: {args}")
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                # Apply rate limiting
+                while not self.rate_limiter.acquire():
+                    wait_time = self.rate_limiter.wait_time()
+                    logger.debug(
+                        f"[APGI AGENT] Rate limiting Git operations, waiting {wait_time:.1f}s..."
+                    )
+                    await asyncio.sleep(wait_time)
 
-        # Run command in executor to avoid blocking
-        loop = asyncio.get_running_loop()
-        try:
-            result = await asyncio.wait_for(
-                loop.run_in_executor(
-                    None,
-                    lambda: safe_subprocess_run(command, cwd=str(self.repo_path)),
-                ),
-                timeout=timeout,
-            )
-            return result.returncode, result.stdout, result.stderr
-        except asyncio.TimeoutError:
-            return -1, "", "[APGI AGENT] Git command timed out"
+                # Validate command
+                command = ["git"] + args
+                if not validate_subprocess_command(command):
+                    raise ValueError(
+                        f"[APGI AGENT] Git command not in whitelist: {args}"
+                    )
+
+                # Run command in executor to avoid blocking
+                loop = asyncio.get_running_loop()
+                result = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None,
+                        lambda: safe_subprocess_run(command, cwd=str(self.repo_path)),
+                    ),
+                    timeout=timeout,
+                )
+
+                # Check if we should retry based on error
+                if result.returncode != 0:
+                    error_msg = result.stderr
+                    if (
+                        self._is_retryable_error(error_msg)
+                        and attempt < self.MAX_RETRIES - 1
+                    ):
+                        logger.warning(
+                            f"[APGI AGENT] Retryable error on attempt {attempt + 1}/{self.MAX_RETRIES}: {error_msg}"
+                        )
+                        await asyncio.sleep(self.RETRY_DELAY * (attempt + 1))
+                        continue
+
+                return result.returncode, result.stdout, result.stderr
+
+            except asyncio.TimeoutError:
+                last_error = "[APGI AGENT] Git command timed out"
+                logger.warning(
+                    f"[APGI AGENT] Timeout on attempt {attempt + 1}/{self.MAX_RETRIES}"
+                )
+                if attempt < self.MAX_RETRIES - 1:
+                    await asyncio.sleep(self.RETRY_DELAY * (attempt + 1))
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"[APGI AGENT] Git command failed: {e}")
+                if attempt < self.MAX_RETRIES - 1 and self._is_retryable_error(str(e)):
+                    await asyncio.sleep(self.RETRY_DELAY * (attempt + 1))
+                else:
+                    break
+
+        return -1, "", last_error or "[APGI AGENT] Git command failed after all retries"
 
     async def async_add(self, files: List[str], timeout: float = 30.0) -> bool:
         """Stage files asynchronously.
@@ -673,7 +770,7 @@ class AsyncGitOperations:
             True if successful, False otherwise
         """
         for pattern in files:
-            returncode, _, stderr = await self._run_git_command(
+            returncode, _, stderr = await self._run_git_command_with_retry(
                 ["add", pattern], timeout=timeout
             )
             if returncode != 0:
@@ -690,7 +787,7 @@ class AsyncGitOperations:
         Returns:
             Commit hash if successful, None otherwise
         """
-        returncode, stdout, stderr = await self._run_git_command(
+        returncode, stdout, stderr = await self._run_git_command_with_retry(
             ["commit", "-m", message], timeout=timeout
         )
         if returncode != 0:
@@ -698,7 +795,7 @@ class AsyncGitOperations:
             return None
 
         # Get commit hash
-        returncode, stdout, _ = await self._run_git_command(
+        returncode, stdout, _ = await self._run_git_command_with_retry(
             ["rev-parse", "HEAD"], timeout=timeout
         )
         if returncode == 0:
@@ -723,7 +820,9 @@ class AsyncGitOperations:
             cmd.append("--hard")
         cmd.append(target)
 
-        returncode, _, stderr = await self._run_git_command(cmd, timeout=timeout)
+        returncode, _, stderr = await self._run_git_command_with_retry(
+            cmd, timeout=timeout
+        )
         if returncode != 0:
             logger.warning(f"[APGI AGENT] Failed to reset: {stderr}")
             return False
@@ -1312,9 +1411,14 @@ class AutonomousAgent:
         tag = datetime.now().strftime("%Y%m%d_%H%M%S")
         branch_name = f"{experiment_name}/{tag}"
         try:
-            self.git_tracker.repo.git.checkout("-b", branch_name)
-            self._session_branch = branch_name
-            logger.info(f"[APGI AGENT] Created session branch: {branch_name}")
+            if self.git_tracker.repo is not None:
+                self.git_tracker.repo.git.checkout("-b", branch_name)
+                self._session_branch = branch_name
+                logger.info(f"[APGI AGENT] Created session branch: {branch_name}")
+            else:
+                logger.warning(
+                    "[APGI AGENT] No git repository available for branch creation"
+                )
         except Exception as e:
             logger.warning(f"[APGI AGENT] Could not create session branch: {e}")
             self._session_branch = None

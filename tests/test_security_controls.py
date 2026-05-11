@@ -43,8 +43,12 @@ class TestAuditSecurity:
             with pytest.raises(RuntimeError) as exc_info:
                 ImmutableAuditSink()
 
-            assert "APGI_AUDIT_KEY" in str(exc_info.value)
-            assert "must be set" in str(exc_info.value).lower()
+            assert "APGI_AUDIT_KEY" in str(
+                exc_info.value
+            )  # nosec: B101 - Test assertion
+            assert (
+                "must be set" in str(exc_info.value).lower()
+            )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_audit_key_minimum_entropy(self):
@@ -55,7 +59,9 @@ class TestAuditSecurity:
             with pytest.raises(RuntimeError) as exc_info:
                 ImmutableAuditSink()
 
-            assert "insufficient entropy" in str(exc_info.value).lower()
+            assert (
+                "insufficient entropy" in str(exc_info.value).lower()
+            )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_audit_key_rejects_weak_patterns(self):
@@ -74,7 +80,9 @@ class TestAuditSecurity:
                 with pytest.raises(RuntimeError) as exc_info:
                     ImmutableAuditSink()
 
-                assert "weak pattern" in str(exc_info.value).lower()
+                assert (
+                    "weak pattern" in str(exc_info.value).lower()
+                )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_audit_key_accepts_strong_key(self):
@@ -86,7 +94,7 @@ class TestAuditSecurity:
 
             # Should not raise
             sink = ImmutableAuditSink()
-            assert sink is not None
+            assert sink is not None  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -100,8 +108,8 @@ class TestAuthorizationEnforcement:
     @pytest.mark.security
     def test_cli_entrypoint_requires_auth(self):
         """Test that CLI entry points require authorization."""
-        from utils.apgi_authz import Permission
         from apgi_cli import AuthorizationError, require_auth
+        from utils.apgi_authz import Permission
 
         # Mock function that requires RUN_EXPERIMENT permission
         @require_auth(Permission.RUN_EXPERIMENT, resource_type="experiment")
@@ -138,7 +146,7 @@ class TestAuthorizationEnforcement:
 
         # Should deny
         result = authz.authorize_action(context)
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_authz_allows_operator_for_run_experiment(self):
@@ -167,7 +175,7 @@ class TestAuthorizationEnforcement:
 
         # Should allow
         result = authz.authorize_action(context)
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_authz_logs_denied_actions(self):
@@ -199,7 +207,7 @@ class TestAuthorizationEnforcement:
         denials = [entry for entry in auth_log if entry.get("decision") == "denied"]
 
         # Should have at least one denial logged
-        assert len(denials) > 0
+        assert len(denials) > 0  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -226,7 +234,9 @@ class TestConfigSecurity:
             with pytest.raises(ValueError) as exc_info:
                 validate_config_checksum(config, expected_hash)
 
-            assert "APGI_CONFIG_SECRET_KEY" in str(exc_info.value)
+            assert "APGI_CONFIG_SECRET_KEY" in str(
+                exc_info.value
+            )  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -247,7 +257,7 @@ class TestProfilerSecurity:
             if "APGI_ENABLE_PROFILING" in os.environ:
                 del os.environ["APGI_ENABLE_PROFILING"]
 
-            assert _is_profiling_enabled() is False
+            assert _is_profiling_enabled() is False  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     @pytest.mark.parametrize("value", ["1", "true", "yes", "on", "TRUE", "True"])
@@ -256,7 +266,7 @@ class TestProfilerSecurity:
         from utils.apgi_profiler import _is_profiling_enabled
 
         with patch.dict(os.environ, {"APGI_ENABLE_PROFILING": value}):
-            assert _is_profiling_enabled() is True
+            assert _is_profiling_enabled() is True  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_profiler_decorator_no_op_when_disabled(self):
@@ -278,8 +288,8 @@ class TestProfilerSecurity:
             result = test_function()
 
             # Should still execute function
-            assert result == "result"
-            assert call_count == 1
+            assert result == "result"  # nosec: B101 - Test assertion
+            assert call_count == 1  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -296,7 +306,9 @@ class TestSubprocessSecurity:
         import subprocess
 
         # Original Popen should still be the builtin
-        assert subprocess.Popen.__module__ == "subprocess"
+        assert (
+            subprocess.Popen.__module__ == "subprocess"
+        )  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_secure_popen_validates_command(self):
@@ -341,7 +353,7 @@ class TestPickleSecurity:
 
         # Original loads should still be the builtin
         # Check by verifying it's not our wrapper
-        assert "apgi" not in str(pickle.loads)
+        assert "apgi" not in str(pickle.loads)  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_secure_loads_defaults_to_json(self):
@@ -367,7 +379,7 @@ class TestPickleSecurity:
         json_bytes = json.dumps(data).encode()
 
         result = secure_loads(json_bytes)
-        assert result == data
+        assert result == data  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -390,7 +402,7 @@ class TestCLIEntryPointSecurity:
             cli_entrypoint(failing_main, add_common_args=False)
 
         # Should exit with authorization error code
-        assert exc_info.value.code == 77
+        assert exc_info.value.code == 77  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_cli_entrypoint_handles_keyboard_interrupt(self):
@@ -404,7 +416,7 @@ class TestCLIEntryPointSecurity:
             cli_entrypoint(interrupted_main, add_common_args=False)
 
         # Should exit with Ctrl+C code
-        assert exc_info.value.code == 130
+        assert exc_info.value.code == 130  # nosec: B101 - Test assertion
 
     @pytest.mark.security
     def test_cli_entrypoint_handles_general_errors(self):
@@ -418,7 +430,7 @@ class TestCLIEntryPointSecurity:
             cli_entrypoint(error_main, add_common_args=False)
 
         # Should exit with general error code
-        assert exc_info.value.code == 1
+        assert exc_info.value.code == 1  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -455,7 +467,7 @@ class TestSecurityIntegration:
 
             # 3. Verify audit sink works
             sink = get_audit_sink()
-            assert sink is not None
+            assert sink is not None  # nosec: B101 - Test assertion
 
             # 4. Verify authz works
             from utils.apgi_authz import Role
@@ -473,7 +485,7 @@ class TestSecurityIntegration:
             )
 
             authorized = authz.authorize_action(context)
-            assert authorized is True
+            assert authorized is True  # nosec: B101 - Test assertion
 
             # 5. Verify secure JSON loading works
             import json
@@ -481,7 +493,7 @@ class TestSecurityIntegration:
             test_data = {"security": "test"}
             json_str = json.dumps(test_data)
             result = secure_loads_json(json_str.encode())
-            assert result == test_data
+            assert result == test_data  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

@@ -16,7 +16,8 @@ Output:
 Modification Guidelines:
     - You CAN modify: task parameters, grammar rules, learning rates, etc.
     - You CANNOT modify: prepare_artificial_grammar_learning.py (grammar sets are fixed)
-    - Goal: Maximize grammar_accuracy (correct grammar rule identification)
+    - You CANNOT modify: ultimate_apgi_template.py (UltimateAPGIParameters are fixed)
+    - You CANNOT modify: apgi_integration.py (APGIParameters are fixed)
     - Time budget: 10 minutes max per run
 """
 
@@ -24,22 +25,18 @@ import time
 from typing import Any, Dict, cast
 
 import numpy as np
-
-# Standardized APGI imports
-from apgi_cli import cli_entrypoint, create_standard_parser
-
-# APGI Integration
-from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
-
-from .prepare_artificial_grammar_learning import (  # APGI parameters from prepare file
-    APGI_PARAMS,
-    TIME_BUDGET,
-    AGExperiment,
-)
-from .ultimate_apgi_template import (
+from experiments.ultimate_apgi_template import (
     HierarchicalProcessor,
     PrecisionExpectationState,
     UltimateAPGIParameters,
+)
+
+# Standardized APGI imports
+# APGI Integration
+from apgi_integration import APGIIntegration, APGIParameters, format_apgi_output
+from .prepare_artificial_grammar_learning import (
+    AGExperiment,
+    APGI_PARAMS,
 )
 
 # ---------------------------------------------------------------------------
@@ -382,5 +379,7 @@ def main(args: Any) -> Dict:
 
 
 if __name__ == "__main__":
+    from apgi_cli import cli_entrypoint, create_standard_parser
+
     parser = create_standard_parser("Run Artificial Grammar Learning  experiment")
     cli_entrypoint(main, parser)

@@ -52,14 +52,14 @@ class TestConfig:
             "alpha_sigma",
         ]
         for key in required_keys:
-            assert key in CONFIG
+            assert key in CONFIG  # nosec: B101 - Test assertion
 
     def test_config_values(self):
         """Test that CONFIG values are reasonable."""
-        assert CONFIG["dt"] > 0
-        assert CONFIG["tau_theta"] > 0
-        assert CONFIG["alpha"] > 0
-        assert CONFIG["beta"] > 0
+        assert CONFIG["dt"] > 0  # nosec: B101 - Test assertion
+        assert CONFIG["tau_theta"] > 0  # nosec: B101 - Test assertion
+        assert CONFIG["alpha"] > 0  # nosec: B101 - Test assertion
+        assert CONFIG["beta"] > 0  # nosec: B101 - Test assertion
 
 
 class TestGenerativeModel:
@@ -68,24 +68,24 @@ class TestGenerativeModel:
     def test_initialization(self):
         """Test GenerativeModel initialization."""
         model = GenerativeModel(lr=0.05)
-        assert model.x_hat == 0.0
-        assert model.lr == 0.05
+        assert model.x_hat == 0.0  # nosec: B101 - Test assertion
+        assert model.lr == 0.05  # nosec: B101 - Test assertion
 
     def test_predict(self):
         """Test predict method."""
         model = GenerativeModel()
-        assert model.predict() == 0.0
+        assert model.predict() == 0.0  # nosec: B101 - Test assertion
 
         # After update, prediction changes
         model.update(1.0)
-        assert model.predict() != 0.0
+        assert model.predict() != 0.0  # nosec: B101 - Test assertion
 
     def test_update(self):
         """Test update method."""
         model = GenerativeModel(lr=0.5)
         epsilon = model.update(1.0)
-        assert epsilon == 1.0  # 1.0 - 0.0
-        assert model.x_hat == 0.5  # 0.0 + 0.5 * 1.0
+        assert epsilon == 1.0  # 1.0 - 0.0  # nosec: B101 - Test assertion
+        assert model.x_hat == 0.5  # 0.0 + 0.5 * 1.0  # nosec: B101 - Test assertion
 
     def test_convergence(self):
         """Test that model converges to input."""
@@ -93,7 +93,7 @@ class TestGenerativeModel:
         for _ in range(100):
             model.update(5.0)
         # Should be close to 5.0
-        assert abs(model.predict() - 5.0) < 0.5
+        assert abs(model.predict() - 5.0) < 0.5  # nosec: B101 - Test assertion
 
 
 class TestRunningStatsEMA:
@@ -102,17 +102,17 @@ class TestRunningStatsEMA:
     def test_initialization(self):
         """Test RunningStatsEMA initialization."""
         stats = RunningStatsEMA(alpha_mu=0.01, alpha_sigma=0.005)
-        assert stats.mu == 0.0
-        assert stats.var == 1.0
-        assert stats.alpha_mu == 0.01
-        assert stats.alpha_sigma == 0.005
+        assert stats.mu == 0.0  # nosec: B101 - Test assertion
+        assert stats.var == 1.0  # nosec: B101 - Test assertion
+        assert stats.alpha_mu == 0.01  # nosec: B101 - Test assertion
+        assert stats.alpha_sigma == 0.005  # nosec: B101 - Test assertion
 
     def test_update(self):
         """Test update method."""
         stats = RunningStatsEMA(alpha_mu=0.1, alpha_sigma=0.05)
         stats.update(5.0)
-        assert stats.mu > 0.0
-        assert stats.var > 0.0
+        assert stats.mu > 0.0  # nosec: B101 - Test assertion
+        assert stats.var > 0.0  # nosec: B101 - Test assertion
 
     def test_z_score(self):
         """Test z-score computation."""
@@ -123,18 +123,18 @@ class TestRunningStatsEMA:
 
         # z-score for value at mean should be ~0
         z = stats.z(5.0)
-        assert abs(z) < 1.0
+        assert abs(z) < 1.0  # nosec: B101 - Test assertion
 
         # z-score for value far from mean should be large
         z = stats.z(10.0)
-        assert z > 0
+        assert z > 0  # nosec: B101 - Test assertion
 
     def test_positive_variance(self):
         """Test that variance is always positive."""
         stats = RunningStatsEMA()
         for _ in range(10):
             stats.update(5.0)
-        assert stats.var >= 1e-8
+        assert stats.var >= 1e-8  # nosec: B101 - Test assertion
 
 
 class TestPrecisionFunctions:
@@ -142,28 +142,28 @@ class TestPrecisionFunctions:
 
     def test_compute_precision(self):
         """Test compute_precision function."""
-        assert abs(compute_precision(1.0) - 1.0) < 0.001
-        assert abs(compute_precision(0.5) - 2.0) < 0.001
-        assert abs(compute_precision(2.0) - 0.5) < 0.001
+        assert abs(compute_precision(1.0) - 1.0) < 0.001  # nosec: B101 - Test assertion
+        assert abs(compute_precision(0.5) - 2.0) < 0.001  # nosec: B101 - Test assertion
+        assert abs(compute_precision(2.0) - 0.5) < 0.001  # nosec: B101 - Test assertion
         # Very small variance gives large precision
-        assert compute_precision(1e-10) > 1e7
+        assert compute_precision(1e-10) > 1e7  # nosec: B101 - Test assertion
 
     def test_effective_interoceptive_precision(self):
         """Test effective_interoceptive_precision function."""
         # Baseline case (M = M0)
         result = effective_interoceptive_precision(1.0, 1.5, 0.0, 0.0)
         # Sigmoid(0) = 0.5, so result = 1.0 * (1 + 1.5 * 0.5) = 1.75
-        assert abs(result - 1.75) < 0.01
+        assert abs(result - 1.75) < 0.01  # nosec: B101 - Test assertion
 
         # High M case
         result = effective_interoceptive_precision(1.0, 1.5, 10.0, 0.0)
         # Sigmoid(10) ≈ 1.0, so result ≈ 1.0 * (1 + 1.5 * 1.0) = 2.5
-        assert result > 2.4
+        assert result > 2.4  # nosec: B101 - Test assertion
 
         # Low M case
         result = effective_interoceptive_precision(1.0, 1.5, -10.0, 0.0)
         # Sigmoid(-10) ≈ 0.0, so result ≈ 1.0
-        assert result < 1.1
+        assert result < 1.1  # nosec: B101 - Test assertion
 
 
 class TestSignalFunctions:
@@ -174,29 +174,29 @@ class TestSignalFunctions:
         # Equal z-scores and precision
         result = compute_signal(1.0, 1.0, 1.0, 1.0)
         expected = 0.5 * 1.0 * 1.0 + 0.5 * 1.0 * 1.0  # = 1.0
-        assert abs(result - expected) < 0.01
+        assert abs(result - expected) < 0.01  # nosec: B101 - Test assertion
 
         # Different z-scores
         result = compute_signal(2.0, 1.0, 1.0, 1.0)
         expected = 0.5 * 1.0 * 4.0 + 0.5 * 1.0 * 1.0  # = 2.5
-        assert abs(result - expected) < 0.01
+        assert abs(result - expected) < 0.01  # nosec: B101 - Test assertion
 
         # Different precisions
         result = compute_signal(1.0, 1.0, 2.0, 1.0)
         expected = 0.5 * 2.0 * 1.0 + 0.5 * 1.0 * 1.0  # = 1.5
-        assert abs(result - expected) < 0.01
+        assert abs(result - expected) < 0.01  # nosec: B101 - Test assertion
 
     def test_compute_information_value(self):
         """Test compute_information_value function."""
         # Equal z-scores
         result = compute_information_value(1.0, 1.0)
         expected = 0.5 * (1.0 + 1.0)  # = 1.0
-        assert abs(result - expected) < 0.01
+        assert abs(result - expected) < 0.01  # nosec: B101 - Test assertion
 
         # Different z-scores
         result = compute_information_value(2.0, 1.0)
         expected = 0.5 * (4.0 + 1.0)  # = 2.5
-        assert abs(result - expected) < 0.01
+        assert abs(result - expected) < 0.01  # nosec: B101 - Test assertion
 
 
 class TestThresholdFunctions:
@@ -213,7 +213,7 @@ class TestThresholdFunctions:
 
         result = update_threshold(theta, theta0, S, V_info, dt, tau_theta)
         # Should change slightly
-        assert abs(result - theta) < 0.1
+        assert abs(result - theta) < 0.1  # nosec: B101 - Test assertion
 
     def test_update_threshold_high_signal(self):
         """Test threshold update with high signal."""
@@ -226,7 +226,7 @@ class TestThresholdFunctions:
 
         result = update_threshold(theta, theta0, S, V_info, dt, tau_theta)
         # High signal should push threshold down (via cost term)
-        assert result != theta
+        assert result != theta  # nosec: B101 - Test assertion
 
 
 class TestIgnitionFunctions:
@@ -236,29 +236,31 @@ class TestIgnitionFunctions:
         """Test ignition probability when S < theta."""
         # S much less than theta -> low probability
         result = ignition_probability(0.1, 0.5, alpha=5.0)
-        assert result < 0.5
+        assert result < 0.5  # nosec: B101 - Test assertion
 
     def test_ignition_probability_above_threshold(self):
         """Test ignition probability when S > theta."""
         # S much greater than theta -> high probability
         result = ignition_probability(1.0, 0.5, alpha=5.0)
-        assert result > 0.5
+        assert result > 0.5  # nosec: B101 - Test assertion
 
     def test_ignition_probability_at_threshold(self):
         """Test ignition probability when S = theta."""
         # S = theta -> probability = 0.5
         result = ignition_probability(0.5, 0.5, alpha=5.0)
-        assert abs(result - 0.5) < 0.01
+        assert abs(result - 0.5) < 0.01  # nosec: B101 - Test assertion
 
     def test_ignite_false(self):
         """Test ignite returns False when S <= theta."""
-        assert ignite(0.4, 0.5) is False
-        assert ignite(0.5, 0.5) is False  # Strict inequality
+        assert ignite(0.4, 0.5) is False  # nosec: B101 - Test assertion
+        assert (
+            ignite(0.5, 0.5) is False
+        )  # Strict inequality  # nosec: B101 - Test assertion
 
     def test_ignite_true(self):
         """Test ignite returns True when S > theta."""
-        assert ignite(0.6, 0.5) is True
-        assert ignite(1.0, 0.5) is True
+        assert ignite(0.6, 0.5) is True  # nosec: B101 - Test assertion
+        assert ignite(1.0, 0.5) is True  # nosec: B101 - Test assertion
 
 
 class TestStabilityFunctions:
@@ -266,9 +268,9 @@ class TestStabilityFunctions:
 
     def test_clip(self):
         """Test clip function."""
-        assert clip(5.0, 0.0, 10.0) == 5.0
-        assert clip(-5.0, 0.0, 10.0) == 0.0
-        assert clip(15.0, 0.0, 10.0) == 10.0
+        assert clip(5.0, 0.0, 10.0) == 5.0  # nosec: B101 - Test assertion
+        assert clip(-5.0, 0.0, 10.0) == 0.0  # nosec: B101 - Test assertion
+        assert clip(15.0, 0.0, 10.0) == 10.0  # nosec: B101 - Test assertion
 
     def test_enforce_stability(self):
         """Test enforce_stability function."""
@@ -279,10 +281,10 @@ class TestStabilityFunctions:
             "Pi_i": 0.001,
         }
         result = enforce_stability(state)
-        assert result["S"] <= 10.0
-        assert result["theta"] <= 5.0
-        assert result["Pi_e"] <= 10.0
-        assert result["Pi_i"] >= 0.01
+        assert result["S"] <= 10.0  # nosec: B101 - Test assertion
+        assert result["theta"] <= 5.0  # nosec: B101 - Test assertion
+        assert result["Pi_e"] <= 10.0  # nosec: B101 - Test assertion
+        assert result["Pi_i"] >= 0.01  # nosec: B101 - Test assertion
 
 
 class TestMappingFunctions:
@@ -294,18 +296,18 @@ class TestMappingFunctions:
         low_s_latency = map_to_p3b_latency(0.0)
         # High S -> lower latency
         high_s_latency = map_to_p3b_latency(10.0)
-        assert high_s_latency < low_s_latency
+        assert high_s_latency < low_s_latency  # nosec: B101 - Test assertion
         # Range check
-        assert 250 <= low_s_latency <= 350
-        assert 250 <= high_s_latency <= 350
+        assert 250 <= low_s_latency <= 350  # nosec: B101 - Test assertion
+        assert 250 <= high_s_latency <= 350  # nosec: B101 - Test assertion
 
     def test_map_to_hep_amplitude(self):
         """Test map_to_hep_amplitude function."""
         result = map_to_hep_amplitude(1.0, 2.0)
-        assert result == 2.0  # 2.0 * |1.0|
+        assert result == 2.0  # 2.0 * |1.0|  # nosec: B101 - Test assertion
 
         result = map_to_hep_amplitude(-1.0, 2.0)
-        assert result == 2.0  # 2.0 * |-1.0|
+        assert result == 2.0  # 2.0 * |-1.0|  # nosec: B101 - Test assertion
 
     def test_map_to_reaction_time(self):
         """Test map_to_reaction_time function."""
@@ -313,10 +315,10 @@ class TestMappingFunctions:
         low_margin_rt = map_to_reaction_time(0.4, 0.5)
         # High margin -> faster RT
         high_margin_rt = map_to_reaction_time(1.0, 0.5)
-        assert high_margin_rt < low_margin_rt
+        assert high_margin_rt < low_margin_rt  # nosec: B101 - Test assertion
         # Range check
-        assert 0 < high_margin_rt <= 800
-        assert 0 < low_margin_rt <= 800
+        assert 0 < high_margin_rt <= 800  # nosec: B101 - Test assertion
+        assert 0 < low_margin_rt <= 800  # nosec: B101 - Test assertion
 
 
 class TestHierarchicalLevel:
@@ -325,22 +327,22 @@ class TestHierarchicalLevel:
     def test_default_values(self):
         """Test default HierarchicalLevel values."""
         level = HierarchicalLevel()
-        assert level.S == 0.0
-        assert level.theta == 0.5
-        assert level.M == 0.0
-        assert level.A == 0.5
-        assert level.Pi_e == 1.0
-        assert level.Pi_i == 1.0
-        assert level.ignition_prob == 0.0
-        assert level.broadcast is False
-        assert level.tau == 0.1
+        assert level.S == 0.0  # nosec: B101 - Test assertion
+        assert level.theta == 0.5  # nosec: B101 - Test assertion
+        assert level.M == 0.0  # nosec: B101 - Test assertion
+        assert level.A == 0.5  # nosec: B101 - Test assertion
+        assert level.Pi_e == 1.0  # nosec: B101 - Test assertion
+        assert level.Pi_i == 1.0  # nosec: B101 - Test assertion
+        assert level.ignition_prob == 0.0  # nosec: B101 - Test assertion
+        assert level.broadcast is False  # nosec: B101 - Test assertion
+        assert level.tau == 0.1  # nosec: B101 - Test assertion
 
     def test_custom_values(self):
         """Test HierarchicalLevel with custom values."""
         level = HierarchicalLevel(S=1.0, theta=0.8, tau=0.5)
-        assert level.S == 1.0
-        assert level.theta == 0.8
-        assert level.tau == 0.5
+        assert level.S == 1.0  # nosec: B101 - Test assertion
+        assert level.theta == 0.8  # nosec: B101 - Test assertion
+        assert level.tau == 0.5  # nosec: B101 - Test assertion
 
 
 class TestHierarchicalProcessor:
@@ -349,22 +351,24 @@ class TestHierarchicalProcessor:
     def test_initialization(self):
         """Test HierarchicalProcessor initialization."""
         processor = HierarchicalProcessor()
-        assert len(processor.levels) == 5
-        assert processor.beta_cross == 0.2
-        assert len(processor.level_names) == 5
+        assert len(processor.levels) == 5  # nosec: B101 - Test assertion
+        assert processor.beta_cross == 0.2  # nosec: B101 - Test assertion
+        assert len(processor.level_names) == 5  # nosec: B101 - Test assertion
 
     def test_custom_config(self):
         """Test HierarchicalProcessor with custom config."""
         config = {"beta_cross": 0.5}
         processor = HierarchicalProcessor(config=config)
-        assert processor.beta_cross == 0.5
+        assert processor.beta_cross == 0.5  # nosec: B101 - Test assertion
 
     def test_process_level(self):
         """Test process_level method."""
         processor = HierarchicalProcessor()
         result = processor.process_level(0, 1.0, 0.5, 0.5, dt=0.01)
-        assert isinstance(result, HierarchicalLevel)
-        assert result.S != 0.0  # S should have been updated
+        assert isinstance(result, HierarchicalLevel)  # nosec: B101 - Test assertion
+        assert (
+            result.S != 0.0
+        )  # S should have been updated  # nosec: B101 - Test assertion
 
     def test_apply_cross_level_coupling(self):
         """Test apply_cross_level_coupling method."""
@@ -377,13 +381,13 @@ class TestHierarchicalProcessor:
 
         # Level 3 precision should have increased
         new_pi = processor.levels[3].Pi_e
-        assert new_pi > original_pi
+        assert new_pi > original_pi  # nosec: B101 - Test assertion
 
     def test_process_all_levels(self):
         """Test process_all_levels method."""
         processor = HierarchicalProcessor()
         results = processor.process_all_levels(1.0, 0.5, 0.5, dt=0.01)
-        assert len(results) == 5
+        assert len(results) == 5  # nosec: B101 - Test assertion
 
     def test_get_aggregate_signal(self):
         """Test get_aggregate_signal method."""
@@ -393,17 +397,17 @@ class TestHierarchicalProcessor:
             level.S = float(i)
 
         result = processor.get_aggregate_signal()
-        assert result > 0.0
+        assert result > 0.0  # nosec: B101 - Test assertion
 
     def test_get_summary(self):
         """Test get_summary method."""
         processor = HierarchicalProcessor()
         summary = processor.get_summary()
-        assert len(summary) == 5
+        assert len(summary) == 5  # nosec: B101 - Test assertion
         for key in summary:
-            assert "S" in summary[key]
-            assert "theta" in summary[key]
-            assert "ignition_prob" in summary[key]
+            assert "S" in summary[key]  # nosec: B101 - Test assertion
+            assert "theta" in summary[key]  # nosec: B101 - Test assertion
+            assert "ignition_prob" in summary[key]  # nosec: B101 - Test assertion
 
     def test_reset(self):
         """Test reset method."""
@@ -416,7 +420,7 @@ class TestHierarchicalProcessor:
 
         # All values should be reset
         for level in processor.levels:
-            assert level.S == 0.0
+            assert level.S == 0.0  # nosec: B101 - Test assertion
 
 
 class TestAPGIModel:
@@ -425,24 +429,24 @@ class TestAPGIModel:
     def test_initialization(self):
         """Test APGIModel initialization."""
         model = APGIModel()
-        assert model.theta == CONFIG["theta0"]
-        assert model.S == 0.0
-        assert model.M == 0.0
+        assert model.theta == CONFIG["theta0"]  # nosec: B101 - Test assertion
+        assert model.S == 0.0  # nosec: B101 - Test assertion
+        assert model.M == 0.0  # nosec: B101 - Test assertion
 
     def test_custom_config(self):
         """Test APGIModel with custom config."""
         config = {**CONFIG, "theta0": 0.8}
         model = APGIModel(config=config)
-        assert model.theta == 0.8
+        assert model.theta == 0.8  # nosec: B101 - Test assertion
 
     def test_step(self):
         """Test step method."""
         model = APGIModel()
         result = model.step(1.0)
 
-        assert isinstance(result, dict)
+        assert isinstance(result, dict)  # nosec: B101 - Test assertion
         # Check that result has expected keys (allow for variations)
-        assert len(result) > 0
+        assert len(result) > 0  # nosec: B101 - Test assertion
 
     def test_multiple_steps(self):
         """Test multiple steps."""
@@ -451,8 +455,8 @@ class TestAPGIModel:
             _ = model.step(np.sin(i * 0.1))  # noqa: F841
 
         # State should have evolved
-        assert model.S != 0.0
-        assert model.theta != CONFIG["theta0"]
+        assert model.S != 0.0  # nosec: B101 - Test assertion
+        assert model.theta != CONFIG["theta0"]  # nosec: B101 - Test assertion
 
     def test_get_summary(self):
         """Test get_summary method."""
@@ -462,8 +466,8 @@ class TestAPGIModel:
             model.step(np.sin(i * 0.1))
         summary = model.get_summary()
 
-        assert isinstance(summary, dict)
-        assert len(summary) > 0
+        assert isinstance(summary, dict)  # nosec: B101 - Test assertion
+        assert len(summary) > 0  # nosec: B101 - Test assertion
 
     def test_reset(self):
         """Test reset method."""
@@ -476,9 +480,9 @@ class TestAPGIModel:
         model.reset()
 
         # State should be back to initial
-        assert model.S == 0.0
-        assert model.M == 0.0
-        assert model.theta == CONFIG["theta0"]
+        assert model.S == 0.0  # nosec: B101 - Test assertion
+        assert model.M == 0.0  # nosec: B101 - Test assertion
+        assert model.theta == CONFIG["theta0"]  # nosec: B101 - Test assertion
 
 
 class TestIntegration:
@@ -494,10 +498,10 @@ class TestIntegration:
             out = model.step(x)
             results.append(out)
 
-        assert len(results) == 100
+        assert len(results) == 100  # nosec: B101 - Test assertion
         # Verify results are dictionaries with step outputs
         for r in results:
-            assert isinstance(r, dict)
+            assert isinstance(r, dict)  # nosec: B101 - Test assertion
 
     def test_hierarchical_integration(self):
         """Test hierarchical processing integration."""
@@ -509,7 +513,7 @@ class TestIntegration:
 
         # Check hierarchical state
         summary = model.hierarchical.get_summary()
-        assert len(summary) == 5
+        assert len(summary) == 5  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

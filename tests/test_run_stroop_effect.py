@@ -22,19 +22,19 @@ class TestConstants:
 
     def test_time_budget(self):
         """Test TIME_BUDGET constant."""
-        assert runner.TIME_BUDGET == 600
+        assert runner.TIME_BUDGET == 600  # nosec: B101 - Test assertion
 
     def test_num_trials_config(self):
         """Test NUM_TRIALS_CONFIG constant."""
-        assert runner.NUM_TRIALS_CONFIG == 80
+        assert runner.NUM_TRIALS_CONFIG == 80  # nosec: B101 - Test assertion
 
     def test_inter_trial_interval(self):
         """Test INTER_TRIAL_INTERVAL_MS constant."""
-        assert runner.INTER_TRIAL_INTERVAL_MS == 1000
+        assert runner.INTER_TRIAL_INTERVAL_MS == 1000  # nosec: B101 - Test assertion
 
     def test_feedback_delay(self):
         """Test FEEDBACK_DELAY_MS constant."""
-        assert runner.FEEDBACK_DELAY_MS == 500
+        assert runner.FEEDBACK_DELAY_MS == 500  # nosec: B101 - Test assertion
 
 
 class TestStroopExperimentRunner:
@@ -62,13 +62,15 @@ class TestStroopExperimentRunner:
 
                 exp_runner = runner.EnhancedStroopRunner()
 
-                assert exp_runner.experiment == mock_exp_instance
+                assert (
+                    exp_runner.experiment == mock_exp_instance
+                )  # nosec: B101 - Test assertion
                 # Check if apgi is available directly or through apgi_runner
                 actual_apgi = getattr(exp_runner, "apgi", None)
                 if actual_apgi is None and hasattr(exp_runner, "apgi_runner"):
                     actual_apgi = getattr(exp_runner.apgi_runner, "apgi", None)
 
-                assert actual_apgi == mock_apgi_instance
+                assert actual_apgi == mock_apgi_instance  # nosec: B101 - Test assertion
 
     def test_create_trial_sequence(self):
         """Test trial sequence creation."""
@@ -89,7 +91,7 @@ class TestStroopExperimentRunner:
                 sequence.append(trial)
 
         # Should create 80 trials
-        assert len(sequence) == 80
+        assert len(sequence) == 80  # nosec: B101 - Test assertion
 
     def test_run_single_trial(self):
         """Test running a single trial."""
@@ -151,7 +153,7 @@ class TestStroopExperimentRunner:
         incongruent_mean = (800 + 850) / 2
         expected_effect = incongruent_mean - congruent_mean
 
-        assert effect == expected_effect
+        assert effect == expected_effect  # nosec: B101 - Test assertion
 
     def test_calculate_interference_effect_no_trials(self):
         """Test interference effect calculation with no trials."""
@@ -161,7 +163,7 @@ class TestStroopExperimentRunner:
             mock_runner, []
         )
 
-        assert effect == 0
+        assert effect == 0  # nosec: B101 - Test assertion
 
     def test_calculate_interference_effect_one_type(self):
         """Test interference effect with only one trial type."""
@@ -176,7 +178,7 @@ class TestStroopExperimentRunner:
             mock_runner, trial_results
         )
 
-        assert effect == 0
+        assert effect == 0  # nosec: B101 - Test assertion
 
     def test_run_experiment(self):
         """Test full experiment run."""
@@ -201,9 +203,13 @@ class TestStroopExperimentRunner:
             with patch.object(runner_instance, "_run_single_trial"):
                 results = runner_instance.run_experiment()
 
-                assert "interference_effect_ms" in results
-                assert "completion_time_s" in results
-                assert results["interference_effect_ms"] == 200.0
+                assert (
+                    "interference_effect_ms" in results
+                )  # nosec: B101 - Test assertion
+                assert "completion_time_s" in results  # nosec: B101 - Test assertion
+                assert (
+                    results["interference_effect_ms"] == 200.0
+                )  # nosec: B101 - Test assertion
 
     def test_run_experiment_time_budget(self):
         """Test experiment run with time budget limit."""
@@ -230,7 +236,9 @@ class TestStroopExperimentRunner:
                         )
 
                         # Should stop early due to time budget
-                        assert len(results["trial_results"]) < len(
+                        assert len(
+                            results["trial_results"]
+                        ) < len(  # nosec: B101 - Test assertion
                             mock_sequence.return_value
                         )
 
@@ -250,9 +258,9 @@ class TestStroopExperimentRunner:
             mock_runner, results
         )
 
-        assert "interference_effect_ms" in summary
-        assert "total_trials" in summary
-        assert "completion_time_s" in summary
+        assert "interference_effect_ms" in summary  # nosec: B101 - Test assertion
+        assert "total_trials" in summary  # nosec: B101 - Test assertion
+        assert "completion_time_s" in summary  # nosec: B101 - Test assertion
 
     def test_analyze_apgi_dynamics(self):
         """Test APGI dynamics analysis."""
@@ -273,7 +281,7 @@ class TestStroopExperimentRunner:
             mock_runner, trial_results
         )
 
-        assert "apgi_state" in analysis
+        assert "apgi_state" in analysis  # nosec: B101 - Test assertion
 
     def test_analyze_hierarchical_processing(self):
         """Test hierarchical processing analysis."""
@@ -298,8 +306,8 @@ class TestStroopExperimentRunner:
             mock_runner, trial_results
         )
 
-        assert "level_1" in analysis
-        assert "level_2" in analysis
+        assert "level_1" in analysis  # nosec: B101 - Test assertion
+        assert "level_2" in analysis  # nosec: B101 - Test assertion
 
     def test_save_results(self):
         """Test results saving."""
@@ -327,7 +335,9 @@ class TestStroopExperimentRunner:
         ]
 
         # Valid config should pass
-        assert runner.StroopExperimentRunner._validate_experiment_config(mock_runner)
+        assert runner.StroopExperimentRunner._validate_experiment_config(
+            mock_runner
+        )  # nosec: B101 - Test assertion
 
     def test_validate_experiment_config_invalid(self):
         """Test invalid experiment configuration validation."""
@@ -336,7 +346,7 @@ class TestStroopExperimentRunner:
         mock_runner.experiment.trial_types = []  # No trial types
 
         # Invalid config should fail
-        assert not runner.StroopExperimentRunner._validate_experiment_config(
+        assert not runner.StroopExperimentRunner._validate_experiment_config(  # nosec: B101 - Test assertion
             mock_runner
         )
 
@@ -371,9 +381,9 @@ class TestStroopExperimentRunner:
             mock_runner, trial_results
         )
 
-        assert "enhanced_accuracy" in metrics
-        assert "response_variance" in metrics
-        assert "learning_rate" in metrics
+        assert "enhanced_accuracy" in metrics  # nosec: B101 - Test assertion
+        assert "response_variance" in metrics  # nosec: B101 - Test assertion
+        assert "learning_rate" in metrics  # nosec: B101 - Test assertion
 
 
 class TestMainFunction:
@@ -422,7 +432,7 @@ class TestMainFunction:
 
             experiment = runner.create_experiment()
 
-            assert experiment == mock_instance
+            assert experiment == mock_instance  # nosec: B101 - Test assertion
             mock_runner_class.assert_called_once()
 
 

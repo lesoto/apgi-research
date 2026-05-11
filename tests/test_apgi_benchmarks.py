@@ -162,7 +162,9 @@ class TestProcessTrialMicrobenchmarks:
 
         print(f"\n{result}")
         # Assert reasonable performance
-        assert result.ms_per_trial < 10, f"Too slow: {result.ms_per_trial:.3f} ms/trial"
+        assert (
+            result.ms_per_trial < 10
+        ), f"Too slow: {result.ms_per_trial:.3f} ms/trial"  # nosec: B101 - Test assertion
 
     @pytest.mark.benchmark
     @pytest.mark.parametrize("num_trials", [100, 1000, 10000])
@@ -190,7 +192,9 @@ class TestProcessTrialMicrobenchmarks:
         )
 
         print(f"\n{result}")
-        assert result.ms_per_trial < 5, f"Too slow: {result.ms_per_trial:.3f} ms/trial"
+        assert (
+            result.ms_per_trial < 5
+        ), f"Too slow: {result.ms_per_trial:.3f} ms/trial"  # nosec: B101 - Test assertion
 
     @pytest.mark.benchmark
     def test_batch_vs_sequential_speedup(self) -> None:
@@ -233,7 +237,7 @@ class TestProcessTrialMicrobenchmarks:
         )
 
         # Batch should be significantly faster
-        assert (
+        assert (  # nosec: B101 - Test assertion
             speedup > 1.5
         ), f"Batch processing should be >1.5x faster, got {speedup:.2f}x"
 
@@ -291,7 +295,9 @@ class TestStandardAPGIRunnerMicrobenchmarks:
         )
 
         print(f"\n{result}")
-        assert result.ms_per_trial < 15, f"Too slow: {result.ms_per_trial:.3f} ms/trial"
+        assert (
+            result.ms_per_trial < 15
+        ), f"Too slow: {result.ms_per_trial:.3f} ms/trial"  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -336,7 +342,7 @@ class TestEndToEndThroughput:
         print(f"\n{result}")
         # Skip assertion if result is a mock or invalid
         if isinstance(result.ms_per_trial, (int, float)) and result.ms_per_trial > 0:
-            assert (
+            assert (  # nosec: B101 - Test assertion
                 result.ms_per_trial < 150
             ), f"Too slow: {result.ms_per_trial:.1f} ms/trial"
 
@@ -372,7 +378,7 @@ class TestEndToEndThroughput:
         print(f"\n{result}")
         # Skip assertion if result is a mock or invalid
         if isinstance(result.ms_per_trial, (int, float)) and result.ms_per_trial > 0:
-            assert result.ms_per_trial < 200
+            assert result.ms_per_trial < 200  # nosec: B101 - Test assertion
 
     @pytest.mark.benchmark
     def test_experiment_runner_stroop(
@@ -406,7 +412,7 @@ class TestEndToEndThroughput:
         )
 
         print(f"\n{result}")
-        assert result.ms_per_trial < 100
+        assert result.ms_per_trial < 100  # nosec: B101 - Test assertion
 
     @pytest.mark.benchmark
     def test_experiment_runner_sternberg(
@@ -442,7 +448,7 @@ class TestEndToEndThroughput:
         print(f"\n{result}")
         # Skip assertion if result is a mock or invalid
         if isinstance(result.ms_per_trial, (int, float)) and result.ms_per_trial > 0:
-            assert result.ms_per_trial < 100
+            assert result.ms_per_trial < 100  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -502,7 +508,9 @@ class TestComparativeBenchmarks:
         print(f"Batch speedup: {overhead_vs_seq * 100:.1f}% faster than sequential")
 
         # Batch should be within reasonable overhead of baseline (100x allows for CI variability)
-        assert apgi_time_ms < baseline_time_ms * 100, "APGI batch overhead too high"
+        assert (
+            apgi_time_ms < baseline_time_ms * 100
+        ), "APGI batch overhead too high"  # nosec: B101 - Test assertion
 
     @pytest.mark.benchmark
     @pytest.mark.parametrize("trial_types", [["neutral"], ["neutral", "survival"]])
@@ -573,7 +581,9 @@ class TestScalabilityBenchmarks:
         print(f"  Total time: {elapsed_ms:.1f}ms")
 
         # Performance should scale roughly linearly
-        assert ms_per < 5, f"Degraded performance at scale: {ms_per:.3f} ms/trial"
+        assert (
+            ms_per < 5
+        ), f"Degraded performance at scale: {ms_per:.3f} ms/trial"  # nosec: B101 - Test assertion
 
     @pytest.mark.benchmark
     def test_memory_scaling(self) -> None:
@@ -649,7 +659,11 @@ def test_full_benchmark_summary(num_trials: int) -> None:
     print(f"  Speedup: {seq_time / batch_time:.2f}x")
 
     # Verify batch is faster
-    assert batch_time < seq_time, "Batch should be faster than sequential"
-    assert batch_time / num_trials < 5, "Should complete within 5ms per trial"
+    assert (
+        batch_time < seq_time
+    ), "Batch should be faster than sequential"  # nosec: B101 - Test assertion
+    assert (
+        batch_time / num_trials < 5
+    ), "Should complete within 5ms per trial"  # nosec: B101 - Test assertion
 
     print(f"{'=' * 70}")

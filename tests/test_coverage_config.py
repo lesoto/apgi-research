@@ -19,31 +19,31 @@ class TestCoverageConfig:
     def test_default_values(self):
         """Test default configuration values."""
         config = CoverageConfig()
-        assert config.source_dirs == ["."]
-        assert "*.py" in config.include_patterns
-        assert config.line_coverage_threshold == 90.0
-        assert config.branch_coverage_threshold == 80.0
-        assert "html" in config.report_formats
+        assert config.source_dirs == ["."]  # nosec: B101 - Test assertion
+        assert "*.py" in config.include_patterns  # nosec: B101 - Test assertion
+        assert config.line_coverage_threshold == 90.0  # nosec: B101 - Test assertion
+        assert config.branch_coverage_threshold == 80.0  # nosec: B101 - Test assertion
+        assert "html" in config.report_formats  # nosec: B101 - Test assertion
 
     def test_to_coverage_rc(self):
         """Test generation of coverage.rc content."""
         config = CoverageConfig()
         rc_content = config.to_coverage_rc()
-        assert "[run]" in rc_content
-        assert "source = " in rc_content
-        assert "branch = True" in rc_content
-        assert "[report]" in rc_content
-        assert "fail_under = 90.0" in rc_content
-        assert "[html]" in rc_content
-        assert "directory = htmlcov" in rc_content
+        assert "[run]" in rc_content  # nosec: B101 - Test assertion
+        assert "source = " in rc_content  # nosec: B101 - Test assertion
+        assert "branch = True" in rc_content  # nosec: B101 - Test assertion
+        assert "[report]" in rc_content  # nosec: B101 - Test assertion
+        assert "fail_under = 90.0" in rc_content  # nosec: B101 - Test assertion
+        assert "[html]" in rc_content  # nosec: B101 - Test assertion
+        assert "directory = htmlcov" in rc_content  # nosec: B101 - Test assertion
 
     def test_to_pytest_config(self):
         """Test generation of pytest config args."""
         config = CoverageConfig()
         args = config.to_pytest_config()
-        assert "--cov=." in args
-        assert "--cov-fail-under=90.0" in args
-        assert "--cov-report=html" in args
+        assert "--cov=." in args  # nosec: B101 - Test assertion
+        assert "--cov-fail-under=90.0" in args  # nosec: B101 - Test assertion
+        assert "--cov-report=html" in args  # nosec: B101 - Test assertion
 
 
 class TestCoverageGap:
@@ -59,12 +59,12 @@ class TestCoverageGap:
             reason="test reason",
             suggested_test="add test",
         )
-        assert gap.file_path == "test.py"
-        assert gap.line_start == 10
-        assert gap.line_end == 20
-        assert gap.line_count == 11
-        assert gap.reason == "test reason"
-        assert gap.suggested_test == "add test"
+        assert gap.file_path == "test.py"  # nosec: B101 - Test assertion
+        assert gap.line_start == 10  # nosec: B101 - Test assertion
+        assert gap.line_end == 20  # nosec: B101 - Test assertion
+        assert gap.line_count == 11  # nosec: B101 - Test assertion
+        assert gap.reason == "test reason"  # nosec: B101 - Test assertion
+        assert gap.suggested_test == "add test"  # nosec: B101 - Test assertion
 
 
 class TestCoverageAnalyzer:
@@ -73,14 +73,14 @@ class TestCoverageAnalyzer:
     def test_init_empty(self):
         """Test initialization with empty data."""
         analyzer = CoverageAnalyzer()
-        assert analyzer.coverage_data == {}
-        assert analyzer.gaps == []
+        assert analyzer.coverage_data == {}  # nosec: B101 - Test assertion
+        assert analyzer.gaps == []  # nosec: B101 - Test assertion
 
     def test_init_with_data(self):
         """Test initialization with coverage data."""
         data = {"files": {"test.py": {"missing_lines": [1, 2, 3]}}}
         analyzer = CoverageAnalyzer(data)
-        assert analyzer.coverage_data == data
+        assert analyzer.coverage_data == data  # nosec: B101 - Test assertion
 
     def test_load_from_json(self, tmp_path):
         """Test loading coverage data from JSON file."""
@@ -90,7 +90,7 @@ class TestCoverageAnalyzer:
 
         analyzer = CoverageAnalyzer()
         analyzer.load_from_json(json_file)
-        assert analyzer.coverage_data == test_data
+        assert analyzer.coverage_data == test_data  # nosec: B101 - Test assertion
 
     def test_identify_gaps(self):
         """Test identifying coverage gaps."""
@@ -103,73 +103,75 @@ class TestCoverageAnalyzer:
         analyzer = CoverageAnalyzer(data)
         gaps = analyzer.identify_gaps()
 
-        assert (
+        assert (  # nosec: B101 - Test assertion
             len(gaps) == 3
         )  # Three groups: test.py (1-3), test.py (10-11), test2.py (5-5)
-        assert gaps[0].file_path == "test.py"
-        assert gaps[0].line_start == 1
-        assert gaps[0].line_end == 3
+        assert gaps[0].file_path == "test.py"  # nosec: B101 - Test assertion
+        assert gaps[0].line_start == 1  # nosec: B101 - Test assertion
+        assert gaps[0].line_end == 3  # nosec: B101 - Test assertion
 
     def test_group_consecutive_lines(self):
         """Test grouping consecutive line numbers."""
         analyzer = CoverageAnalyzer()
         lines = [1, 2, 3, 5, 6, 10]
         groups = analyzer._group_consecutive_lines(lines)
-        assert groups == [(1, 3), (5, 6), (10, 10)]
+        assert groups == [(1, 3), (5, 6), (10, 10)]  # nosec: B101 - Test assertion
 
     def test_group_consecutive_lines_empty(self):
         """Test grouping with empty list."""
         analyzer = CoverageAnalyzer()
         groups = analyzer._group_consecutive_lines([])
-        assert groups == []
+        assert groups == []  # nosec: B101 - Test assertion
 
     def test_classify_gap_test_file(self):
         """Test gap classification for test files."""
         analyzer = CoverageAnalyzer()
         result = analyzer._classify_gap("test_something.py", 10, 20)
-        assert "Test file" in result
+        assert "Test file" in result  # nosec: B101 - Test assertion
 
     def test_classify_gap_init(self):
         """Test gap classification for __init__ files."""
         analyzer = CoverageAnalyzer()
         result = analyzer._classify_gap("module/__init__.py", 10, 20)
-        assert "Module initialization" in result
+        assert "Module initialization" in result  # nosec: B101 - Test assertion
 
     def test_classify_gap_exception(self):
         """Test classifying gap in exception handling code."""
         analyzer = CoverageAnalyzer()
         result = analyzer._classify_gap("module_exceptions.py", 10, 20)
-        assert "Exception" in result or "error" in result.lower()
+        assert (
+            "Exception" in result or "error" in result.lower()
+        )  # nosec: B101 - Test assertion
 
     def test_classify_gap_module_level(self):
         """Test gap classification for early lines."""
         analyzer = CoverageAnalyzer()
         result = analyzer._classify_gap("module.py", 5, 15)
-        assert "Module-level" in result
+        assert "Module-level" in result  # nosec: B101 - Test assertion
 
     def test_classify_gap_general(self):
         """Test gap classification for general cases."""
         analyzer = CoverageAnalyzer()
         result = analyzer._classify_gap("module.py", 50, 60)
-        assert "Logic branches" in result
+        assert "Logic branches" in result  # nosec: B101 - Test assertion
 
     def test_suggest_test_exception(self):
         """Test test suggestion for exception files."""
         analyzer = CoverageAnalyzer()
         result = analyzer._suggest_test("test_exceptions.py", 10, 20)
-        assert "exception handling" in result
+        assert "exception handling" in result  # nosec: B101 - Test assertion
 
     def test_suggest_test_validation(self):
         """Test test suggestion for validation files."""
         analyzer = CoverageAnalyzer()
         result = analyzer._suggest_test("test_validation.py", 10, 20)
-        assert "boundary" in result
+        assert "boundary" in result  # nosec: B101 - Test assertion
 
     def test_suggest_test_utils(self):
         """Test test suggestion for utils files."""
         analyzer = CoverageAnalyzer()
         result = analyzer._suggest_test("test_utils.py", 10, 20)
-        assert "unit test" in result
+        assert "unit test" in result  # nosec: B101 - Test assertion
 
     def test_generate_report(self):
         """Test generating comprehensive coverage report."""
@@ -181,10 +183,10 @@ class TestCoverageAnalyzer:
         analyzer.identify_gaps()
         report = analyzer.generate_report()
 
-        assert "summary" in report
-        assert "coverage_percent" in report["summary"]
-        assert "gaps_by_file" in report
-        assert "recommendations" in report
+        assert "summary" in report  # nosec: B101 - Test assertion
+        assert "coverage_percent" in report["summary"]  # nosec: B101 - Test assertion
+        assert "gaps_by_file" in report  # nosec: B101 - Test assertion
+        assert "recommendations" in report  # nosec: B101 - Test assertion
 
     def test_group_gaps_by_file(self):
         """Test grouping gaps by file path."""
@@ -193,8 +195,8 @@ class TestCoverageAnalyzer:
         analyzer.identify_gaps()
         by_file = analyzer._group_gaps_by_file()
 
-        assert "test.py" in by_file
-        assert len(by_file["test.py"]) == 1
+        assert "test.py" in by_file  # nosec: B101 - Test assertion
+        assert len(by_file["test.py"]) == 1  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_error_handling(self):
         """Test recommendations for error handling gaps."""
@@ -206,7 +208,9 @@ class TestCoverageAnalyzer:
         }
         analyzer.identify_gaps()  # Populate gaps list
         recs = analyzer._generate_recommendations()
-        assert any("exception handling" in r.lower() for r in recs)
+        assert any(
+            "exception handling" in r.lower() for r in recs
+        )  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_boundary(self):
         """Test recommendations for boundary gaps."""
@@ -215,7 +219,7 @@ class TestCoverageAnalyzer:
             CoverageGap("test.py", 10, 20, 11, "boundary values", "add test")
         ]
         recs = analyzer._generate_recommendations()
-        assert any("boundary" in r for r in recs)
+        assert any("boundary" in r for r in recs)  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_general(self):
         """Test general recommendations."""
@@ -224,14 +228,14 @@ class TestCoverageAnalyzer:
             CoverageGap("test.py", 10, 20, 11, "logic", "add test") for _ in range(25)
         ]
         recs = analyzer._generate_recommendations()
-        assert any("prioritizing" in r for r in recs)
+        assert any("prioritizing" in r for r in recs)  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_good_coverage(self):
         """Test recommendations when coverage is good."""
         analyzer = CoverageAnalyzer()
         analyzer.gaps = []
         recs = analyzer._generate_recommendations()
-        assert any("good" in r.lower() for r in recs)
+        assert any("good" in r.lower() for r in recs)  # nosec: B101 - Test assertion
 
 
 class TestModuleFunctions:
@@ -245,10 +249,10 @@ class TestModuleFunctions:
         try:
             os.chdir(tmp_path)
             path = generate_coverage_config()
-            assert path.exists()
-            assert path.name == ".coveragerc"
+            assert path.exists()  # nosec: B101 - Test assertion
+            assert path.name == ".coveragerc"  # nosec: B101 - Test assertion
             content = path.read_text()
-            assert "[run]" in content
+            assert "[run]" in content  # nosec: B101 - Test assertion
         finally:
             os.chdir(original_dir)
 
@@ -256,8 +260,8 @@ class TestModuleFunctions:
         """Test generating coverage config with custom path."""
         custom_path = tmp_path / "custom_coverage.rc"
         result = generate_coverage_config(custom_path)
-        assert result == custom_path
-        assert custom_path.exists()
+        assert result == custom_path  # nosec: B101 - Test assertion
+        assert custom_path.exists()  # nosec: B101 - Test assertion
 
     def test_analyze_coverage_report(self, tmp_path):
         """Test analyzing a coverage report."""
@@ -269,5 +273,5 @@ class TestModuleFunctions:
         json_file.write_text(json.dumps(test_data))
 
         report = analyze_coverage_report(json_file)
-        assert "summary" in report
-        assert "gaps_by_file" in report
+        assert "summary" in report  # nosec: B101 - Test assertion
+        assert "gaps_by_file" in report  # nosec: B101 - Test assertion

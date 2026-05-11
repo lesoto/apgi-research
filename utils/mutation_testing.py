@@ -18,6 +18,7 @@ Features:
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -302,7 +303,7 @@ class MutationTester:
 
     def run_tests_against_mutant(self, mutant: Mutant) -> str:
         """Run tests against a mutant and return status."""
-        import subprocess
+        import subprocess  # nosec: B404 - Used for running pytest with controlled arguments
         import tempfile
 
         # Create temp file with mutant
@@ -320,11 +321,13 @@ class MutationTester:
                 temp_path = Path(temp_file.name)
 
             # Run tests
-            result = subprocess.run(
-                ["python", "-m", "pytest", "tests/", "-x", "--tb=no"],
-                capture_output=True,
-                timeout=MutationConfig.TIMEOUT_SECONDS,
-                shell=False,
+            result = (
+                subprocess.run(  # nosec: B603, B607 - Controlled command with full path
+                    [sys.executable, "-m", "pytest", "tests/", "-x", "--tb=no"],
+                    capture_output=True,
+                    timeout=MutationConfig.TIMEOUT_SECONDS,
+                    shell=False,
+                )
             )
 
             # Clean up

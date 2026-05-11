@@ -39,8 +39,12 @@ def test_config_signing_validation():
     ).hexdigest()
 
     # Valid
-    assert validate_config_checksum(config, valid_hash, secret) is True
+    assert (
+        validate_config_checksum(config, valid_hash, secret) is True
+    )  # nosec: B101 - Test assertion
 
     # Bypass attempt (tampered value)
     tampered_config = {"alpha": 5.0, "beta": 10.0}
-    assert validate_config_checksum(tampered_config, valid_hash, secret) is False
+    assert (
+        validate_config_checksum(tampered_config, valid_hash, secret) is False
+    )  # nosec: B101 - Test assertion

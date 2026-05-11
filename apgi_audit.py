@@ -133,8 +133,6 @@ class ImmutableAuditSink:
 
     def _load_existing_events(self) -> None:
         """Load existing events from audit trail file if it exists."""
-        import os
-
         if os.path.exists(self.audit_file):
             try:
                 with open(self.audit_file, "r", encoding="utf-8") as f:

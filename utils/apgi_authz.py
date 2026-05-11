@@ -242,7 +242,7 @@ class AuthorizationManager:
         # Create access token
         access_token = AuthenticationToken(
             operator_id=os.getenv("APGI_OPERATOR_ID", "default_operator"),
-            token_type="access",
+            token_type="access",  # nosec: B105 - token type, not password
             expires_at=datetime.now(timezone.utc) + access_token_ttl,
             scopes=scopes,
         )
@@ -250,7 +250,7 @@ class AuthorizationManager:
         # Create refresh token
         refresh_token = AuthenticationToken(
             operator_id=os.getenv("APGI_OPERATOR_ID", "default_operator"),
-            token_type="refresh",
+            token_type="refresh",  # nosec: B105 - token type, not password
             expires_at=datetime.now(timezone.utc) + refresh_token_ttl,
             scopes=["refresh"],
         )
@@ -353,7 +353,9 @@ class AuthorizationManager:
         operator_id = payload.get("operator_id")
         token_type = payload.get("token_type")
 
-        if not token_id or not operator_id or token_type != "access":
+        if (
+            not token_id or not operator_id or token_type != "access"
+        ):  # nosec: B105 - token type, not password
             self.logger.warning("Authentication failed: Invalid token payload")
             return None
 
@@ -392,7 +394,9 @@ class AuthorizationManager:
         operator_id = payload.get("operator_id")
         token_type = payload.get("token_type")
 
-        if not token_id or not operator_id or token_type != "refresh":
+        if (
+            not token_id or not operator_id or token_type != "refresh"
+        ):  # nosec: B105 - token type, not password
             self.logger.warning("Token refresh failed: Invalid refresh token payload")
             return None
 
@@ -411,7 +415,7 @@ class AuthorizationManager:
         # Create new access token
         new_access_token = AuthenticationToken(
             operator_id=operator_id,
-            token_type="access",
+            token_type="access",  # nosec: B106 - token type, not password
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             scopes=stored_token.scopes,
         )
@@ -436,9 +440,13 @@ class AuthorizationManager:
 
         if token_id:
             # Mark token as revoked in storage
-            if token_type == "access" and token_id in self.auth_tokens:
+            if (
+                token_type == "access" and token_id in self.auth_tokens
+            ):  # nosec: B105 - token type, not password
                 self.auth_tokens[token_id].is_revoked = True
-            elif token_type == "refresh" and token_id in self.refresh_tokens:
+            elif (
+                token_type == "refresh" and token_id in self.refresh_tokens
+            ):  # nosec: B105 - token type, not password
                 self.refresh_tokens[token_id].is_revoked = True
 
         # Add to blacklist

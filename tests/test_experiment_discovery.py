@@ -27,7 +27,9 @@ def test_prepare_module_discovery(file_path):
     module_name = f"experiments.{file_path.stem}"
     try:
         module = importlib.import_module(module_name)
-        assert hasattr(module, "APGI_PARAMS") or "prepare" in file_path.name
+        assert (
+            hasattr(module, "APGI_PARAMS") or "prepare" in file_path.name
+        )  # nosec: B101 - Test assertion
     except ImportError as e:
         pytest.fail(f"Failed to import {module_name}: {e}")
 
@@ -38,7 +40,9 @@ def test_run_module_discovery(file_path):
     module_name = f"experiments.{file_path.stem}"
     try:
         module = importlib.import_module(module_name)
-        assert hasattr(module, "main") or any("Runner" in attr for attr in dir(module))
+        assert hasattr(module, "main") or any(
+            "Runner" in attr for attr in dir(module)
+        )  # nosec: B101 - Test assertion
     except ImportError as e:
         pytest.fail(f"Failed to import {module_name}: {e}")
 
@@ -83,7 +87,7 @@ def test_analyze_experiments_discovery():
     """Verify analyze_experiments module can be imported and has expected structure."""
     try:
         module = importlib.import_module("analyze_experiments")
-        assert hasattr(module, "main") or any(
+        assert hasattr(module, "main") or any(  # nosec: B101 - Test assertion
             "analyze" in attr.lower() for attr in dir(module)
         )
     except ImportError as e:
@@ -94,7 +98,9 @@ def test_apgi_metrics_discovery():
     """Verify apgi_metrics module can be imported and has expected structure."""
     try:
         module = importlib.import_module("apgi_metrics")
-        assert hasattr(module, "EnhancedAPGIMetrics") or any(
+        assert hasattr(
+            module, "EnhancedAPGIMetrics"
+        ) or any(  # nosec: B101 - Test assertion
             "metrics" in attr.lower() for attr in dir(module)
         )
     except ImportError as e:

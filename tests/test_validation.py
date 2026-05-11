@@ -36,43 +36,47 @@ class TestGetDangerousSystemPaths:
             with patch.dict(os.environ, {"WINDIR": "C:\\Windows"}, clear=True):
                 paths = get_dangerous_system_paths()
 
-                assert isinstance(paths, list)
-                assert len(paths) > 0
-                assert any("System32" in path for path in paths)
-                assert any("Program Files" in path for path in paths)
+                assert isinstance(paths, list)  # nosec: B101 - Test assertion
+                assert len(paths) > 0  # nosec: B101 - Test assertion
+                assert any(
+                    "System32" in path for path in paths
+                )  # nosec: B101 - Test assertion
+                assert any(
+                    "Program Files" in path for path in paths
+                )  # nosec: B101 - Test assertion
 
     def test_get_dangerous_system_paths_macos(self):
         """Test getting dangerous paths on macOS."""
         with patch("platform.system", return_value="Darwin"):
             paths = get_dangerous_system_paths()
 
-            assert isinstance(paths, list)
-            assert len(paths) > 0
-            assert "/etc/" in paths
-            assert "/usr/bin/" in paths
-            assert "/System/" in paths
-            assert "/Applications/" in paths
+            assert isinstance(paths, list)  # nosec: B101 - Test assertion
+            assert len(paths) > 0  # nosec: B101 - Test assertion
+            assert "/etc/" in paths  # nosec: B101 - Test assertion
+            assert "/usr/bin/" in paths  # nosec: B101 - Test assertion
+            assert "/System/" in paths  # nosec: B101 - Test assertion
+            assert "/Applications/" in paths  # nosec: B101 - Test assertion
 
     def test_get_dangerous_system_paths_linux(self):
         """Test getting dangerous paths on Linux."""
         with patch("platform.system", return_value="Linux"):
             paths = get_dangerous_system_paths()
 
-            assert isinstance(paths, list)
-            assert len(paths) > 0
-            assert "/etc/" in paths
-            assert "/usr/bin/" in paths
-            assert "/opt/" in paths
+            assert isinstance(paths, list)  # nosec: B101 - Test assertion
+            assert len(paths) > 0  # nosec: B101 - Test assertion
+            assert "/etc/" in paths  # nosec: B101 - Test assertion
+            assert "/usr/bin/" in paths  # nosec: B101 - Test assertion
+            assert "/opt/" in paths  # nosec: B101 - Test assertion
 
     def test_get_dangerous_system_paths_unix_default(self):
         """Test getting dangerous paths on Unix-like systems."""
         with patch("platform.system", return_value="Unix"):
             paths = get_dangerous_system_paths()
 
-            assert isinstance(paths, list)
-            assert len(paths) > 0
-            assert "/etc/" in paths
-            assert "/usr/bin/" in paths
+            assert isinstance(paths, list)  # nosec: B101 - Test assertion
+            assert len(paths) > 0  # nosec: B101 - Test assertion
+            assert "/etc/" in paths  # nosec: B101 - Test assertion
+            assert "/usr/bin/" in paths  # nosec: B101 - Test assertion
 
 
 class TestValidationResult:
@@ -81,32 +85,32 @@ class TestValidationResult:
     def test_initialization_valid(self):
         """Test ValidationResult initialization with valid result."""
         result = ValidationResult(is_valid=True, errors=[], warnings=[])
-        assert result.is_valid is True
-        assert result.errors == []
-        assert result.warnings == []
+        assert result.is_valid is True  # nosec: B101 - Test assertion
+        assert result.errors == []  # nosec: B101 - Test assertion
+        assert result.warnings == []  # nosec: B101 - Test assertion
 
     def test_initialization_invalid(self):
         """Test ValidationResult initialization with invalid result."""
         errors = ["Error 1", "Error 2"]
         warnings = ["Warning 1"]
         result = ValidationResult(is_valid=False, errors=errors, warnings=warnings)
-        assert result.is_valid is False
-        assert result.errors == errors
-        assert result.warnings == warnings
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert result.errors == errors  # nosec: B101 - Test assertion
+        assert result.warnings == warnings  # nosec: B101 - Test assertion
 
     def test_post_init_empty_lists(self):
         """Test post_init with empty lists."""
         result = ValidationResult(is_valid=True, errors=[], warnings=[])
         result.__post_init__()
-        assert result.errors == []
-        assert result.warnings == []
+        assert result.errors == []  # nosec: B101 - Test assertion
+        assert result.warnings == []  # nosec: B101 - Test assertion
 
     def test_post_init_none_lists(self):
         """Test post_init with None lists."""
         result = ValidationResult(is_valid=True, errors=[], warnings=[])
         result.__post_init__()
-        assert result.errors == []
-        assert result.warnings == []
+        assert result.errors == []  # nosec: B101 - Test assertion
+        assert result.warnings == []  # nosec: B101 - Test assertion
 
 
 class TestValidateModificationsBeforeApply:
@@ -122,8 +126,8 @@ class TestValidateModificationsBeforeApply:
         }
         result = validate_modifications_before_apply(modifications)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_keys(self):
         """Test validating modifications with dangerous keys."""
@@ -134,9 +138,11 @@ class TestValidateModificationsBeforeApply:
         }
         result = validate_modifications_before_apply(modifications)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
-        assert any("dangerous" in error.lower() for error in result.errors)
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
+        assert any(
+            "dangerous" in error.lower() for error in result.errors
+        )  # nosec: B101 - Test assertion
 
     def test_validate_path_traversal(self):
         """Test validating modifications with path traversal."""
@@ -146,26 +152,30 @@ class TestValidateModificationsBeforeApply:
         }
         result = validate_modifications_before_apply(modifications)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
-        assert any("path traversal" in error.lower() for error in result.errors)
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
+        assert any(
+            "path traversal" in error.lower() for error in result.errors
+        )  # nosec: B101 - Test assertion
 
     def test_validate_shell_commands(self):
         """Test validating modifications with shell commands."""
         modifications = {"command": "rm -rf /", "script": "curl | sh"}
         result = validate_modifications_before_apply(modifications)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
-        assert any("shell" in error.lower() for error in result.errors)
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
+        assert any(
+            "shell" in error.lower() for error in result.errors
+        )  # nosec: B101 - Test assertion
 
     def test_validate_empty_modifications(self):
         """Test validating empty modifications."""
         modifications: Dict[str, Any] = {}
         result = validate_modifications_before_apply(modifications)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_large_values(self):
         """Test validating modifications with suspiciously large values."""
@@ -176,7 +186,9 @@ class TestValidateModificationsBeforeApply:
         result = validate_modifications_before_apply(modifications)
 
         # Should have at least warnings for large values or errors for non-finite
-        assert len(result.errors) > 0 or len(result.warnings) > 0
+        assert (
+            len(result.errors) > 0 or len(result.warnings) > 0
+        )  # nosec: B101 - Test assertion
 
 
 class TestValidateCodeModification:
@@ -188,8 +200,8 @@ class TestValidateCodeModification:
         new_content = "print('Hello, World!')"
         result = validate_code_modification(file_path, new_content)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_code(self):
         """Test validating dangerous code modifications."""
@@ -197,8 +209,8 @@ class TestValidateCodeModification:
         new_content = "import os; os.system('rm -rf /')"
         result = validate_code_modification(file_path, new_content)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_imports(self):
         """Test validating dangerous imports."""
@@ -208,8 +220,8 @@ class TestValidateCodeModification:
         )
         result = validate_code_modification(file_path, new_content)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_eval_usage(self):
         """Test validating eval usage."""
@@ -217,8 +229,8 @@ class TestValidateCodeModification:
         new_content = "result = eval(user_input)"
         result = validate_code_modification(file_path, new_content)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_exec_usage(self):
         """Test validating exec usage."""
@@ -226,8 +238,8 @@ class TestValidateCodeModification:
         new_content = "exec(user_code)"
         result = validate_code_modification(file_path, new_content)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_file_access(self):
         """Test validating dangerous file access."""
@@ -237,7 +249,7 @@ class TestValidateCodeModification:
 
         # File content is validated but /etc/passwd pattern might not be caught
         # The validation checks file path, not content
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
     def test_validate_with_original_content(self):
         """Test validation with original content comparison."""
@@ -246,8 +258,8 @@ class TestValidateCodeModification:
         new_content = "x = 2"
         result = validate_code_modification(file_path, new_content, original)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
 
 class TestValidateModuleName:
@@ -255,32 +267,48 @@ class TestValidateModuleName:
 
     def test_validate_safe_module_names(self):
         """Test validating safe module names."""
-        assert validate_module_name("numpy") is True
-        assert validate_module_name("pandas") is True
-        assert validate_module_name("my_module") is True
-        assert validate_module_name("test123") is True
+        assert validate_module_name("numpy") is True  # nosec: B101 - Test assertion
+        assert validate_module_name("pandas") is True  # nosec: B101 - Test assertion
+        assert validate_module_name("my_module") is True  # nosec: B101 - Test assertion
+        assert validate_module_name("test123") is True  # nosec: B101 - Test assertion
 
     def test_validate_unsafe_module_names(self):
         """Test validating unsafe module names."""
-        assert validate_module_name("import") is False  # Python keyword
-        assert validate_module_name("class") is False  # Python keyword
-        assert validate_module_name("def") is False  # Python keyword
-        assert validate_module_name("if") is False  # Python keyword
-        assert validate_module_name("1module") is False  # Starts with digit
-        assert validate_module_name("module-name") is False  # Contains hyphen
-        assert validate_module_name("module$name") is False  # Contains special char
+        assert (
+            validate_module_name("import") is False
+        )  # Python keyword  # nosec: B101 - Test assertion
+        assert (
+            validate_module_name("class") is False
+        )  # Python keyword  # nosec: B101 - Test assertion
+        assert (
+            validate_module_name("def") is False
+        )  # Python keyword  # nosec: B101 - Test assertion
+        assert (
+            validate_module_name("if") is False
+        )  # Python keyword  # nosec: B101 - Test assertion
+        assert (
+            validate_module_name("1module") is False
+        )  # Starts with digit  # nosec: B101 - Test assertion
+        assert (
+            validate_module_name("module-name") is False
+        )  # Contains hyphen  # nosec: B101 - Test assertion
+        assert (
+            validate_module_name("module$name") is False
+        )  # Contains special char  # nosec: B101 - Test assertion
 
     def test_validate_empty_module_name(self):
         """Test validating empty module name."""
-        assert validate_module_name("") is False
-        assert validate_module_name("   ") is False
+        assert validate_module_name("") is False  # nosec: B101 - Test assertion
+        assert validate_module_name("   ") is False  # nosec: B101 - Test assertion
 
     def test_validate_module_with_dots(self):
         """Test validating module names with dots."""
         # os.path is in dangerous modules (os), so it returns False
-        assert validate_module_name("os.path") is False
+        assert validate_module_name("os.path") is False  # nosec: B101 - Test assertion
         # my.module.name should be safe
-        assert validate_module_name("my.module.name") is True
+        assert (
+            validate_module_name("my.module.name") is True
+        )  # nosec: B101 - Test assertion
 
 
 class TestValidateExperimentConfig:
@@ -299,8 +327,8 @@ class TestValidateExperimentConfig:
         }
         result = validate_experiment_config(config)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_invalid_config(self):
         """Test validating invalid experiment config."""
@@ -313,16 +341,16 @@ class TestValidateExperimentConfig:
         }
         result = validate_experiment_config(config)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_missing_required_fields(self):
         """Test validating config with missing required fields."""
         config: Dict[str, Any] = {}  # Empty config
         result = validate_experiment_config(config)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_extreme_values(self):
         """Test validating config with extreme values."""
@@ -334,8 +362,8 @@ class TestValidateExperimentConfig:
         }
         result = validate_experiment_config(config)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
 
 class TestValidateSubprocessOperation:
@@ -346,24 +374,24 @@ class TestValidateSubprocessOperation:
         command = ["python", "script.py", "--verbose"]
         result = validate_subprocess_operation(command)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_command(self):
         """Test validating dangerous subprocess command."""
         command = ["rm", "-rf", "/"]
         result = validate_subprocess_operation(command)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_shell_usage(self):
         """Test validating subprocess with shell usage."""
         command = ["python", "-c", "import os; os.system('rm -rf /')"]
         result = validate_subprocess_operation(command)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_args(self):
         """Test validating dangerous command arguments."""
@@ -371,24 +399,24 @@ class TestValidateSubprocessOperation:
         args = ["|", "sh", "rm", "-rf"]
         result = validate_subprocess_operation(command, args)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_empty_command(self):
         """Test validating empty command."""
         command: List[str] = []
         result = validate_subprocess_operation(command)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_system_commands(self):
         """Test validating system commands."""
         command = ["sudo", "rm", "-rf", "/"]
         result = validate_subprocess_operation(command)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
 
 class TestValidatePackageName:
@@ -396,23 +424,31 @@ class TestValidatePackageName:
 
     def test_validate_safe_package_names(self):
         """Test validating safe package names."""
-        assert validate_package_name("numpy") is True
-        assert validate_package_name("pandas") is True
+        assert validate_package_name("numpy") is True  # nosec: B101 - Test assertion
+        assert validate_package_name("pandas") is True  # nosec: B101 - Test assertion
         # requests is in the dangerous_packages list in validation.py
         # my_package is safe
-        assert validate_package_name("my_package") is True
+        assert (
+            validate_package_name("my_package") is True
+        )  # nosec: B101 - Test assertion
 
     def test_validate_unsafe_package_names(self):
         """Test validating unsafe package names."""
         # Hyphen is allowed by the function (converted to underscore for check)
-        assert validate_package_name("1package") is False  # Starts with digit
-        assert validate_package_name("") is False
-        assert validate_package_name("   ") is False
+        assert (
+            validate_package_name("1package") is False
+        )  # Starts with digit  # nosec: B101 - Test assertion
+        assert validate_package_name("") is False  # nosec: B101 - Test assertion
+        assert validate_package_name("   ") is False  # nosec: B101 - Test assertion
 
     def test_validate_package_with_underscores(self):
         """Test validating package names with underscores."""
-        assert validate_package_name("my_package") is True
-        assert validate_package_name("test_package_123") is True
+        assert (
+            validate_package_name("my_package") is True
+        )  # nosec: B101 - Test assertion
+        assert (
+            validate_package_name("test_package_123") is True
+        )  # nosec: B101 - Test assertion
 
 
 class TestValidateImportStatement:
@@ -429,7 +465,7 @@ class TestValidateImportStatement:
 
         for imp in imports:
             result = validate_import_statement(imp)
-            assert result.is_valid is True
+            assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_imports(self):
         """Test validating dangerous import statements."""
@@ -441,8 +477,8 @@ class TestValidateImportStatement:
 
         for imp in dangerous_imports:
             result = validate_import_statement(imp)
-            assert result.is_valid is False
-            assert len(result.errors) > 0
+            assert result.is_valid is False  # nosec: B101 - Test assertion
+            assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_from_import_dangerous(self):
         """Test validating dangerous from-import statements."""
@@ -454,21 +490,21 @@ class TestValidateImportStatement:
 
         for imp in dangerous_imports:
             result = validate_import_statement(imp)
-            assert result.is_valid is False
-            assert len(result.errors) > 0
+            assert result.is_valid is False  # nosec: B101 - Test assertion
+            assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_import_star(self):
         """Test validating star imports."""
         result = validate_import_statement("from module import *")
         # Star imports are generally allowed if the module is valid
         # The * might cause a warning but not necessarily an error
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
     def test_validate_relative_imports(self):
         """Test validating relative imports."""
         result = validate_import_statement("from .module import something")
         # Relative imports may or may not be valid depending on module name
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
 
 class TestValidateExperimentParameters:
@@ -485,7 +521,7 @@ class TestValidateExperimentParameters:
         result = validate_experiment_parameters(params)
 
         # This should delegate to validate_modifications_before_apply
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
     def test_validate_unsafe_parameters(self):
         """Test validating unsafe experiment parameters."""
@@ -493,8 +529,8 @@ class TestValidateExperimentParameters:
         result = validate_experiment_parameters(params)
 
         # This should delegate to validate_modifications_before_apply
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is False
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is False  # nosec: B101 - Test assertion
 
 
 class TestGetSafeDirectories:
@@ -505,29 +541,35 @@ class TestGetSafeDirectories:
         with patch("platform.system", return_value="Windows"):
             dirs = get_safe_directories()
 
-            assert isinstance(dirs, list)
-            assert len(dirs) > 0
-            assert any("Desktop" in dir for dir in dirs)
-            assert any("Documents" in dir for dir in dirs)
+            assert isinstance(dirs, list)  # nosec: B101 - Test assertion
+            assert len(dirs) > 0  # nosec: B101 - Test assertion
+            assert any("Desktop" in dir for dir in dirs)  # nosec: B101 - Test assertion
+            assert any(
+                "Documents" in dir for dir in dirs
+            )  # nosec: B101 - Test assertion
 
     def test_get_safe_directories_macos(self):
         """Test getting safe directories on macOS."""
         with patch("platform.system", return_value="Darwin"):
             dirs = get_safe_directories()
 
-            assert isinstance(dirs, list)
-            assert len(dirs) > 0
-            assert any("Desktop" in dir for dir in dirs)
-            assert any("Documents" in dir for dir in dirs)
-            assert any("Downloads" in dir for dir in dirs)
+            assert isinstance(dirs, list)  # nosec: B101 - Test assertion
+            assert len(dirs) > 0  # nosec: B101 - Test assertion
+            assert any("Desktop" in dir for dir in dirs)  # nosec: B101 - Test assertion
+            assert any(
+                "Documents" in dir for dir in dirs
+            )  # nosec: B101 - Test assertion
+            assert any(
+                "Downloads" in dir for dir in dirs
+            )  # nosec: B101 - Test assertion
 
     def test_get_safe_directories_linux(self):
         """Test getting safe directories on Linux."""
         with patch("platform.system", return_value="Linux"):
             dirs = get_safe_directories()
 
-            assert isinstance(dirs, list)
-            assert len(dirs) > 0
+            assert isinstance(dirs, list)  # nosec: B101 - Test assertion
+            assert len(dirs) > 0  # nosec: B101 - Test assertion
 
 
 class TestValidateGitOperations:
@@ -539,8 +581,8 @@ class TestValidateGitOperations:
         operation = "add"
         result = validate_git_operations(files, operation)
 
-        assert isinstance(result, ValidationResult)
-        assert result.is_valid is True
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
+        assert result.is_valid is True  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_git_files(self):
         """Test validating git operations on dangerous files."""
@@ -548,8 +590,8 @@ class TestValidateGitOperations:
         operation = "add"
         result = validate_git_operations(files, operation)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
     def test_validate_dangerous_git_operations(self):
         """Test validating dangerous git operations."""
@@ -559,7 +601,7 @@ class TestValidateGitOperations:
         for op in dangerous_ops:
             result = validate_git_operations(files, op)
             # Some dangerous ops may not be caught - just check it's a ValidationResult
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
     def test_validate_git_operation_with_empty_files(self):
         """Test validating git operation with empty file list."""
@@ -568,7 +610,7 @@ class TestValidateGitOperations:
         result = validate_git_operations(files, operation)
 
         # Empty files list doesn't necessarily invalidate - check structure
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
     def test_validate_git_operation_delete_files(self):
         """Test validating git delete operations."""
@@ -576,8 +618,8 @@ class TestValidateGitOperations:
         operation = "rm"
         result = validate_git_operations(files, operation)
 
-        assert result.is_valid is False
-        assert len(result.errors) > 0
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert len(result.errors) > 0  # nosec: B101 - Test assertion
 
 
 class TestModuleIntegration:
@@ -587,17 +629,17 @@ class TestModuleIntegration:
         """Test complete validation workflow."""
         # Test dangerous paths detection
         dangerous_paths = get_dangerous_system_paths()
-        assert isinstance(dangerous_paths, list)
+        assert isinstance(dangerous_paths, list)  # nosec: B101 - Test assertion
 
         # Test validation results
         result = ValidationResult(is_valid=False, errors=["Test error"], warnings=[])
-        assert result.is_valid is False
-        assert result.errors == ["Test error"]
+        assert result.is_valid is False  # nosec: B101 - Test assertion
+        assert result.errors == ["Test error"]  # nosec: B101 - Test assertion
 
         # Test parameter validation
         safe_params = {"learning_rate": 0.01}
         result = validate_modifications_before_apply(safe_params)
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ValidationResult)  # nosec: B101 - Test assertion
 
     def test_cross_platform_functionality(self):
         """Test that functions work across platforms."""
@@ -608,17 +650,17 @@ class TestModuleIntegration:
             with patch("platform.system", return_value=platform_name):
                 # Test dangerous paths
                 paths = get_dangerous_system_paths()
-                assert isinstance(paths, list)
+                assert isinstance(paths, list)  # nosec: B101 - Test assertion
 
                 # Test safe directories
                 dirs = get_safe_directories()
-                assert isinstance(dirs, list)
+                assert isinstance(dirs, list)  # nosec: B101 - Test assertion
 
     def test_error_handling(self):
         """Test error handling in validation functions."""
         # Test with empty string input - should return False, not raise
         result = validate_module_name("")
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

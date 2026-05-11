@@ -141,6 +141,29 @@ class HumanControlLayer:
         except Exception as e:
             logger.error(f"Failed to save human config: {e}")
 
+    def update_config(self, key: str, value: Any) -> None:
+        """
+        Update a configuration value and persist to disk.
+
+        Args:
+            key: Configuration key to update (supports dot notation for nested keys)
+            value: New value to set
+        """
+        if "." in key:
+            # Handle nested keys like "task_filters.min_priority"
+            parts = key.split(".")
+            current = self.config
+            for part in parts[:-1]:
+                if part not in current:
+                    current[part] = {}
+                current = current[part]
+            current[parts[-1]] = value
+        else:
+            self.config[key] = value
+
+        self._save_config()
+        logger.info(f"Configuration updated: {key} = {value}")
+
     def configure_if_needed(self) -> bool:
         """
         Configure human interaction parameters if needed.

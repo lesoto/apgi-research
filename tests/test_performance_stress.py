@@ -47,7 +47,7 @@ class TestPerformanceBenchmarks:
             for _ in range(100000):
                 FoundationalEquations.prediction_error(5.0, 3.0)
 
-        assert (
+        assert (  # nosec: B101 - Test assertion
             metrics.execution_time < 500
         ), f"prediction_error took {metrics.execution_time:.2f}ms, expected < 500ms"
 
@@ -60,7 +60,7 @@ class TestPerformanceBenchmarks:
             for _ in range(100000):
                 FoundationalEquations.z_score(10.0, 5.0, 2.0)
 
-        assert metrics.execution_time < 500
+        assert metrics.execution_time < 500  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_precision_performance(
@@ -73,7 +73,7 @@ class TestPerformanceBenchmarks:
             for _ in range(100000):
                 FoundationalEquations.precision(4.0)
 
-        assert metrics.execution_time < 500
+        assert metrics.execution_time < 500  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_accumulated_signal_performance(
@@ -86,7 +86,7 @@ class TestPerformanceBenchmarks:
             for _ in range(50000):
                 CoreIgnitionSystem.accumulated_signal(1.0, 2.0, 1.0, 2.0)
 
-        assert metrics.execution_time < 1000
+        assert metrics.execution_time < 1000  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_ignition_probability_performance(
@@ -99,7 +99,7 @@ class TestPerformanceBenchmarks:
             for _ in range(100000):
                 CoreIgnitionSystem.ignition_probability(1.0, 0.5, 5.5)
 
-        assert metrics.execution_time < 1500
+        assert metrics.execution_time < 1500  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_signal_dynamics_performance(
@@ -121,7 +121,7 @@ class TestPerformanceBenchmarks:
                     dt=0.01,
                 )
 
-        assert metrics.execution_time < 2000
+        assert metrics.execution_time < 2000  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -154,7 +154,7 @@ class TestMemoryUsage:
 
         # Memory growth should be minimal (bounded by object size, not iterations)
         mem_growth_mb = (mem_after - mem_before) / 1024 / 1024
-        assert (
+        assert (  # nosec: B101 - Test assertion
             mem_growth_mb < 10
         ), f"Memory grew by {mem_growth_mb:.2f}MB, expected < 10MB"
 
@@ -180,7 +180,9 @@ class TestMemoryUsage:
 
         # After deletion and GC, memory should be close to original
         mem_used_mb = (mem_after - mem_before) / 1024 / 1024
-        assert mem_used_mb < 100, f"Memory used {mem_used_mb:.2f}MB after cleanup"
+        assert (
+            mem_used_mb < 100
+        ), f"Memory used {mem_used_mb:.2f}MB after cleanup"  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     @pytest.mark.stress
@@ -230,7 +232,7 @@ class TestStressTests:
         )
 
         # Should handle high frequency without issues
-        assert stats._n_updates == n_updates
+        assert stats._n_updates == n_updates  # nosec: B101 - Test assertion
 
     @pytest.mark.stress
     def test_simulation_under_load(self) -> None:
@@ -288,9 +290,9 @@ class TestStressTests:
         print(f"\nCompleted {n_steps} simulation steps in {elapsed:.2f}s")
 
         # Verify state remained valid
-        assert S >= 0
-        assert theta > 0
-        assert -2.0 <= M <= 2.0
+        assert S >= 0  # nosec: B101 - Test assertion
+        assert theta > 0  # nosec: B101 - Test assertion
+        assert -2.0 <= M <= 2.0  # nosec: B101 - Test assertion
 
     @pytest.mark.stress
     @pytest.mark.slow
@@ -327,8 +329,10 @@ class TestStressTests:
         for t in threads:
             t.join(timeout=30)
 
-        assert len(errors) == 0, f"Errors during concurrent execution: {errors}"
-        assert len(results) == 10
+        assert (
+            len(errors) == 0
+        ), f"Errors during concurrent execution: {errors}"  # nosec: B101 - Test assertion
+        assert len(results) == 10  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -362,7 +366,7 @@ class TestScalability:
         # Should not grow super-linearly (no worse than O(n log n))
         # Use adaptive threshold: small n has higher overhead, large n should be efficient
         threshold = 10.0 if n_trials < 100 else 1.0
-        assert (
+        assert (  # nosec: B101 - Test assertion
             time_per_op < threshold
         ), f"Too slow: {time_per_op:.6f}ms per operation (threshold: {threshold})"
 
@@ -389,7 +393,7 @@ class TestScalability:
         if len(times) >= 2:
             ratio = times[1] / times[0]
             size_ratio = sizes[1] / sizes[0]
-            assert (
+            assert (  # nosec: B101 - Test assertion
                 ratio < size_ratio * 10
             ), f"Time grew too fast: {ratio:.2f}x for {size_ratio:.0f}x size"
 
@@ -442,7 +446,7 @@ class TestResourceLeaks:
 
         # Memory should return close to baseline
         mem_growth_mb = (mem_after - mem_before) / 1024 / 1024
-        assert (
+        assert (  # nosec: B101 - Test assertion
             mem_growth_mb < 50
         ), f"Potential memory leak: {mem_growth_mb:.2f}MB growth"
 
@@ -474,8 +478,10 @@ class TestTimeoutAndLatency:
 
         print(f"\nAvg latency: {avg_latency:.4f}ms, P99: {p99_latency:.4f}ms")
 
-        assert avg_latency < max_acceptable_latency_ms
-        assert p99_latency < max_acceptable_latency_ms * 10  # Allow some outliers
+        assert avg_latency < max_acceptable_latency_ms  # nosec: B101 - Test assertion
+        assert (
+            p99_latency < max_acceptable_latency_ms * 10
+        )  # Allow some outliers  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_batch_operation_throughput(self) -> None:
@@ -492,7 +498,9 @@ class TestTimeoutAndLatency:
         throughput = batch_size / elapsed
         print(f"\nBatch throughput: {throughput:.0f} ops/sec")
 
-        assert throughput > 10000, f"Throughput too low: {throughput:.0f} ops/sec"
+        assert (
+            throughput > 10000
+        ), f"Throughput too low: {throughput:.0f} ops/sec"  # nosec: B101 - Test assertion
 
 
 # =============================================================================
@@ -526,9 +534,11 @@ class TestComparativePerformance:
         )
 
         # Numpy should be faster
-        assert speedup > 1.0, "Numpy should be faster than pure Python"
+        assert (
+            speedup > 1.0
+        ), "Numpy should be faster than pure Python"  # nosec: B101 - Test assertion
         # Results should match
-        assert abs(py_sum - np_sum) < 1e-6
+        assert abs(py_sum - np_sum) < 1e-6  # nosec: B101 - Test assertion
 
     @pytest.mark.performance
     def test_vectorized_vs_loop_performance(self) -> None:
@@ -555,4 +565,4 @@ class TestComparativePerformance:
         print(f"\nVectorized speedup: {speedup:.2f}x")
 
         # Vectorized should be faster for large arrays
-        assert speedup > 1.0
+        assert speedup > 1.0  # nosec: B101 - Test assertion

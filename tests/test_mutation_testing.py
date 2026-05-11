@@ -27,10 +27,10 @@ class TestMutationOperator:
             target_nodes=["Add"],
             replacement_map={" + ": " - "},
         )
-        assert op.name == "TEST"
-        assert op.description == "Test operator"
-        assert op.target_nodes == ["Add"]
-        assert op.replacement_map == {" + ": " - "}
+        assert op.name == "TEST"  # nosec: B101 - Test assertion
+        assert op.description == "Test operator"  # nosec: B101 - Test assertion
+        assert op.target_nodes == ["Add"]  # nosec: B101 - Test assertion
+        assert op.replacement_map == {" + ": " - "}  # nosec: B101 - Test assertion
 
     def test_apply_simple(self):
         """Test applying mutation to simple code."""
@@ -42,8 +42,8 @@ class TestMutationOperator:
         )
         code = "x = a + b"
         mutants = op.apply(code)
-        assert len(mutants) == 1
-        assert "x = a - b" in mutants
+        assert len(mutants) == 1  # nosec: B101 - Test assertion
+        assert "x = a - b" in mutants  # nosec: B101 - Test assertion
 
     def test_apply_no_match(self):
         """Test applying mutation with no matches."""
@@ -55,7 +55,7 @@ class TestMutationOperator:
         )
         code = "x = a * b"
         mutants = op.apply(code)
-        assert mutants == []
+        assert mutants == []  # nosec: B101 - Test assertion
 
     def test_apply_multiple_mutations(self):
         """Test applying mutation with multiple targets."""
@@ -70,7 +70,7 @@ class TestMutationOperator:
         )
         code = "if x == y and z != w"
         mutants = op.apply(code)
-        assert len(mutants) == 2
+        assert len(mutants) == 2  # nosec: B101 - Test assertion
 
 
 class TestMutant:
@@ -85,12 +85,12 @@ class TestMutant:
             line_number=10,
             file_path=Path("test.py"),
         )
-        assert mutant.operator == "AOR"
-        assert mutant.original_line == "x = a + b"
-        assert mutant.mutated_line == "x = a - b"
-        assert mutant.line_number == 10
-        assert mutant.file_path == Path("test.py")
-        assert mutant.status == "pending"
+        assert mutant.operator == "AOR"  # nosec: B101 - Test assertion
+        assert mutant.original_line == "x = a + b"  # nosec: B101 - Test assertion
+        assert mutant.mutated_line == "x = a - b"  # nosec: B101 - Test assertion
+        assert mutant.line_number == 10  # nosec: B101 - Test assertion
+        assert mutant.file_path == Path("test.py")  # nosec: B101 - Test assertion
+        assert mutant.status == "pending"  # nosec: B101 - Test assertion
 
 
 class TestMutationReport:
@@ -99,70 +99,74 @@ class TestMutationReport:
     def test_default_values(self):
         """Test default report values."""
         report = MutationReport()
-        assert report.total_mutants == 0
-        assert report.killed == 0
-        assert report.survived == 0
-        assert report.timeout == 0
-        assert report.errors == 0
-        assert report.duration == 0.0
+        assert report.total_mutants == 0  # nosec: B101 - Test assertion
+        assert report.killed == 0  # nosec: B101 - Test assertion
+        assert report.survived == 0  # nosec: B101 - Test assertion
+        assert report.timeout == 0  # nosec: B101 - Test assertion
+        assert report.errors == 0  # nosec: B101 - Test assertion
+        assert report.duration == 0.0  # nosec: B101 - Test assertion
 
     def test_mutation_score_zero(self):
         """Test mutation score with zero mutants."""
         report = MutationReport()
-        assert report.mutation_score == 100.0
+        assert report.mutation_score == 100.0  # nosec: B101 - Test assertion
 
     def test_mutation_score_calculation(self):
         """Test mutation score calculation."""
         report = MutationReport(total_mutants=100, killed=80)
-        assert report.mutation_score == 80.0
+        assert report.mutation_score == 80.0  # nosec: B101 - Test assertion
 
     def test_is_acceptable_true(self):
         """Test acceptable report."""
         report = MutationReport(total_mutants=100, killed=85, survived=3)
-        assert report.is_acceptable is True
+        assert report.is_acceptable is True  # nosec: B101 - Test assertion
 
     def test_is_acceptable_low_score(self):
         """Test unacceptable due to low score."""
         report = MutationReport(total_mutants=100, killed=70, survived=30)
-        assert report.is_acceptable is False
+        assert report.is_acceptable is False  # nosec: B101 - Test assertion
 
     def test_is_acceptable_too_many_survivors(self):
         """Test unacceptable due to too many survivors."""
         report = MutationReport(total_mutants=100, killed=90, survived=10)
-        assert report.is_acceptable is False
+        assert report.is_acceptable is False  # nosec: B101 - Test assertion
 
     def test_to_dict(self):
         """Test converting report to dictionary."""
         report = MutationReport(total_mutants=10, killed=8, survived=2)
         data = report.to_dict()
-        assert data["summary"]["total_mutants"] == 10
-        assert data["summary"]["killed"] == 8
-        assert data["summary"]["mutation_score"] == 80.0
+        assert data["summary"]["total_mutants"] == 10  # nosec: B101 - Test assertion
+        assert data["summary"]["killed"] == 8  # nosec: B101 - Test assertion
+        assert data["summary"]["mutation_score"] == 80.0  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_low_score(self):
         """Test recommendations for low score."""
         report = MutationReport(total_mutants=100, killed=70)
         recs = report._generate_recommendations()
-        assert any("Improve mutation score" in r for r in recs)
+        assert any(
+            "Improve mutation score" in r for r in recs
+        )  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_survivors(self):
         """Test recommendations for survivors."""
         report = MutationReport(total_mutants=100, killed=90, survived=10)
         recs = report._generate_recommendations()
-        assert any("surviving mutants" in r for r in recs)
+        assert any(
+            "surviving mutants" in r for r in recs
+        )  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_weak_assertions(self):
         """Test recommendations for weak assertions."""
         report = MutationReport()
         report.weak_assertions = [{}, {}, {}]
         recs = report._generate_recommendations()
-        assert any("weak assertions" in r for r in recs)
+        assert any("weak assertions" in r for r in recs)  # nosec: B101 - Test assertion
 
     def test_generate_recommendations_good(self):
         """Test recommendations when everything is good."""
         report = MutationReport(total_mutants=100, killed=95, survived=2)
         recs = report._generate_recommendations()
-        assert any("good" in r.lower() for r in recs)
+        assert any("good" in r.lower() for r in recs)  # nosec: B101 - Test assertion
 
 
 class TestMutationConfig:
@@ -170,27 +174,35 @@ class TestMutationConfig:
 
     def test_operators_defined(self):
         """Test that standard operators are defined."""
-        assert len(MutationConfig.OPERATORS) == 4
+        assert len(MutationConfig.OPERATORS) == 4  # nosec: B101 - Test assertion
         op_names = [op.name for op in MutationConfig.OPERATORS]
-        assert "AOR" in op_names
-        assert "COR" in op_names
-        assert "LOR" in op_names
-        assert "CRR" in op_names
+        assert "AOR" in op_names  # nosec: B101 - Test assertion
+        assert "COR" in op_names  # nosec: B101 - Test assertion
+        assert "LOR" in op_names  # nosec: B101 - Test assertion
+        assert "CRR" in op_names  # nosec: B101 - Test assertion
 
     def test_target_patterns(self):
         """Test target file patterns."""
-        assert "APGI_System.py" in MutationConfig.TARGET_PATTERNS
-        assert "apgi_*.py" in MutationConfig.TARGET_PATTERNS
+        assert (
+            "APGI_System.py" in MutationConfig.TARGET_PATTERNS
+        )  # nosec: B101 - Test assertion
+        assert (
+            "apgi_*.py" in MutationConfig.TARGET_PATTERNS
+        )  # nosec: B101 - Test assertion
 
     def test_exclude_patterns(self):
         """Test exclusion patterns."""
-        assert "*/tests/*" in MutationConfig.EXCLUDE_PATTERNS
-        assert "conftest.py" in MutationConfig.EXCLUDE_PATTERNS
+        assert (
+            "*/tests/*" in MutationConfig.EXCLUDE_PATTERNS
+        )  # nosec: B101 - Test assertion
+        assert (
+            "conftest.py" in MutationConfig.EXCLUDE_PATTERNS
+        )  # nosec: B101 - Test assertion
 
     def test_thresholds(self):
         """Test threshold values."""
-        assert MutationConfig.SURVIVED_THRESHOLD == 5
-        assert MutationConfig.TIMEOUT_SECONDS == 300
+        assert MutationConfig.SURVIVED_THRESHOLD == 5  # nosec: B101 - Test assertion
+        assert MutationConfig.TIMEOUT_SECONDS == 300  # nosec: B101 - Test assertion
 
 
 class TestWeakAssertionDetector:
@@ -201,31 +213,31 @@ class TestWeakAssertionDetector:
         test_file = tmp_path / "test_file.py"
         test_file.write_text("""
 def test_something():
-    assert True
-    assert False
-    assert None
+    assert True  # nosec: B101 - Test assertion
+    assert False  # nosec: B101 - Test assertion
+    assert None  # nosec: B101 - Test assertion
     assertTrue(True)
 """)
         weak = WeakAssertionDetector.detect(test_file)
-        assert len(weak) == 4
+        assert len(weak) == 4  # nosec: B101 - Test assertion
 
     def test_detect_no_weak_patterns(self, tmp_path):
         """Test with no weak assertions."""
         test_file = tmp_path / "test_file.py"
         test_file.write_text("""
 def test_something():
-    assert x == y
-    assert result is not None
+    assert x == y  # nosec: B101 - Test assertion
+    assert result is not None  # nosec: B101 - Test assertion
 """)
         weak = WeakAssertionDetector.detect(test_file)
-        assert weak == []
+        assert weak == []  # nosec: B101 - Test assertion
 
     def test_detect_error_handling(self, tmp_path):
         """Test error handling during detection."""
         test_file = tmp_path / "nonexistent.py"
         weak = WeakAssertionDetector.detect(test_file)
-        assert len(weak) == 1
-        assert "error" in weak[0]
+        assert len(weak) == 1  # nosec: B101 - Test assertion
+        assert "error" in weak[0]  # nosec: B101 - Test assertion
 
 
 class TestMutationTester:
@@ -234,26 +246,28 @@ class TestMutationTester:
     def test_init_default(self):
         """Test initialization with default root."""
         tester = MutationTester()
-        assert tester.project_root == Path(".")
-        assert isinstance(tester.report, MutationReport)
+        assert tester.project_root == Path(".")  # nosec: B101 - Test assertion
+        assert isinstance(tester.report, MutationReport)  # nosec: B101 - Test assertion
 
     def test_init_custom(self, tmp_path):
         """Test initialization with custom root."""
         tester = MutationTester(tmp_path)
-        assert tester.project_root == tmp_path
+        assert tester.project_root == tmp_path  # nosec: B101 - Test assertion
 
     def test_find_target_files_empty(self, tmp_path):
         """Test finding targets in empty directory."""
         tester = MutationTester(tmp_path)
         targets = tester.find_target_files()
-        assert targets == []
+        assert targets == []  # nosec: B101 - Test assertion
 
     def test_find_target_files_with_matches(self, tmp_path):
         """Test finding target files."""
         (tmp_path / "apgi_test.py").write_text("# test")
         tester = MutationTester(tmp_path)
         targets = tester.find_target_files()
-        assert len(targets) >= 0  # May or may not match depending on pattern
+        assert (
+            len(targets) >= 0
+        )  # May or may not match depending on pattern  # nosec: B101 - Test assertion
 
     def test_generate_mutants_empty_file(self, tmp_path):
         """Test generating mutants for empty file."""
@@ -261,7 +275,7 @@ class TestMutationTester:
         test_file.write_text("")
         tester = MutationTester(tmp_path)
         mutants = tester.generate_mutants(test_file)
-        assert mutants == []
+        assert mutants == []  # nosec: B101 - Test assertion
 
     def test_generate_mutants_with_code(self, tmp_path):
         """Test generating mutants for file with code."""
@@ -269,14 +283,14 @@ class TestMutationTester:
         test_file.write_text("x = a + b\ny = c - d\n")
         tester = MutationTester(tmp_path)
         mutants = tester.generate_mutants(test_file)
-        assert len(mutants) > 0
+        assert len(mutants) > 0  # nosec: B101 - Test assertion
 
     def test_generate_mutants_error(self, tmp_path):
         """Test error handling in mutant generation."""
         tester = MutationTester(tmp_path)
         # Create a file that doesn't exist
         mutants = tester.generate_mutants(tmp_path / "nonexistent.py")
-        assert mutants == []
+        assert mutants == []  # nosec: B101 - Test assertion
 
     def test_run_tests_against_mutant_killed(self, tmp_path):
         """Test running tests against mutant that gets killed."""
@@ -292,7 +306,7 @@ class TestMutationTester:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 1  # Tests fail = mutant killed
             result = tester.run_tests_against_mutant(mutant)
-            assert result == "killed"
+            assert result == "killed"  # nosec: B101 - Test assertion
 
     def test_run_tests_against_mutant_survived(self, tmp_path):
         """Test running tests against mutant that survives."""
@@ -308,7 +322,7 @@ class TestMutationTester:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0  # Tests pass = mutant survived
             result = tester.run_tests_against_mutant(mutant)
-            assert result == "survived"
+            assert result == "survived"  # nosec: B101 - Test assertion
 
     def test_run_tests_against_mutant_timeout(self, tmp_path):
         """Test running tests with timeout."""
@@ -326,7 +340,7 @@ class TestMutationTester:
 
             mock_run.side_effect = TimeoutExpired("cmd", 300)
             result = tester.run_tests_against_mutant(mutant)
-            assert result == "timeout"
+            assert result == "timeout"  # nosec: B101 - Test assertion
 
     def test_run_tests_against_mutant_error(self, tmp_path):
         """Test error handling when running tests."""
@@ -342,7 +356,7 @@ class TestMutationTester:
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = Exception("Test error")
             result = tester.run_tests_against_mutant(mutant)
-            assert result == "error"
+            assert result == "error"  # nosec: B101 - Test assertion
 
     def test_print_summary(self, tmp_path, capsys):
         """Test printing mutation summary."""
@@ -354,8 +368,10 @@ class TestMutationTester:
         )
         tester.print_summary()
         captured = capsys.readouterr()
-        assert "MUTATION TESTING SUMMARY" in captured.out
-        assert "Total Mutants: 10" in captured.out
+        assert (
+            "MUTATION TESTING SUMMARY" in captured.out
+        )  # nosec: B101 - Test assertion
+        assert "Total Mutants: 10" in captured.out  # nosec: B101 - Test assertion
 
 
 class TestMain:
@@ -378,7 +394,7 @@ class TestMain:
             "sys.argv", ["mutation_testing", "--output", str(tmp_path / "report.json")]
         ):
             result = main()
-            assert result == 0
+            assert result == 0  # nosec: B101 - Test assertion
 
     @patch("mutation_testing.MutationTester")
     def test_main_failure(self, mock_tester_class, tmp_path):
@@ -397,7 +413,7 @@ class TestMain:
             "sys.argv", ["mutation_testing", "--output", str(tmp_path / "report.json")]
         ):
             result = main()
-            assert result == 1
+            assert result == 1  # nosec: B101 - Test assertion
 
     @patch("mutation_testing.MutationTester")
     def test_main_with_max_mutants(self, mock_tester_class, tmp_path):
@@ -423,5 +439,7 @@ class TestMain:
         ):
             exit_code = main()
             mock_tester.run_mutation_testing.assert_called_once()
-            assert mock_tester.run_mutation_testing.call_args[1]["max_mutants"] == 5
-            assert exit_code == 0
+            assert (
+                mock_tester.run_mutation_testing.call_args[1]["max_mutants"] == 5
+            )  # nosec: B101 - Test assertion
+            assert exit_code == 0  # nosec: B101 - Test assertion

@@ -25,7 +25,7 @@ from standard_apgi_runner import StandardAPGIRunner
 from apgi_cli import cli_entrypoint
 """
         result = add_standardized_imports(content)
-        assert result == content
+        assert result == content  # nosec: B101 - Test assertion
 
     def test_adds_imports_correctly(self):
         """Test adding standardized imports."""
@@ -36,10 +36,10 @@ import pandas as pd
 print("test")
 """
         result = add_standardized_imports(content)
-        assert "StandardAPGIRunner" in result
-        assert "cli_entrypoint" in result
-        assert "create_standard_parser" in result
-        assert "# Standardized APGI imports" in result
+        assert "StandardAPGIRunner" in result  # nosec: B101 - Test assertion
+        assert "cli_entrypoint" in result  # nosec: B101 - Test assertion
+        assert "create_standard_parser" in result  # nosec: B101 - Test assertion
+        assert "# Standardized APGI imports" in result  # nosec: B101 - Test assertion
 
     def test_finds_last_import(self):
         """Test that imports are added after the last import."""
@@ -59,7 +59,7 @@ x = 1
         std_idx = [
             i for i, line in enumerate(lines) if "Standardized APGI imports" in line
         ][0]
-        assert std_idx > max(import_idx)
+        assert std_idx > max(import_idx)  # nosec: B101 - Test assertion
 
 
 class TestUpdateMainEntrypoint:
@@ -75,23 +75,25 @@ if __name__ == "__main__":
     run()
 """
         result = update_main_entrypoint(content, "run_test.py")
-        assert "cli_entrypoint" in result
-        assert 'if __name__ == "__main__":' in result
+        assert "cli_entrypoint" in result  # nosec: B101 - Test assertion
+        assert 'if __name__ == "__main__":' in result  # nosec: B101 - Test assertion
 
     def test_creates_main_function(self):
         """Test creation of main function with args parameter."""
         content = ""
         result = update_main_entrypoint(content, "run_stroop_effect.py")
-        assert "def main(args):" in result
-        assert "EnhancedStroopEffectRunner" in result
+        assert "def main(args):" in result  # nosec: B101 - Test assertion
+        assert "EnhancedStroopEffectRunner" in result  # nosec: B101 - Test assertion
 
     def test_proper_class_naming(self):
         """Test proper class name generation from filename."""
         content = ""
         result = update_main_entrypoint(content, "run_ai_benchmarking.py")
-        assert "EnhancedAiBenchmarkingRunner" in result
+        assert "EnhancedAiBenchmarkingRunner" in result  # nosec: B101 - Test assertion
         result2 = update_main_entrypoint(content, "run_working_memory_span.py")
-        assert "EnhancedWorkingMemorySpanRunner" in result2
+        assert (
+            "EnhancedWorkingMemorySpanRunner" in result2
+        )  # nosec: B101 - Test assertion
 
     def test_removes_simple_main_function(self):
         """Test removal of simple main() at end of file."""
@@ -104,7 +106,7 @@ def main():
 """
         result = update_main_entrypoint(content, "run_test.py")
         # Old main should be removed and replaced
-        assert result.count("def main(") == 1
+        assert result.count("def main(") == 1  # nosec: B101 - Test assertion
 
 
 class TestMigrateFile:
@@ -125,11 +127,11 @@ if __name__ == "__main__":
     runner.run_experiment()
 """)
         result = migrate_file(test_file)
-        assert result is True
+        assert result is True  # nosec: B101 - Test assertion
 
         content = test_file.read_text()
-        assert "StandardAPGIRunner" in content
-        assert "cli_entrypoint" in content
+        assert "StandardAPGIRunner" in content  # nosec: B101 - Test assertion
+        assert "cli_entrypoint" in content  # nosec: B101 - Test assertion
 
     def test_no_changes_needed(self, tmp_path):
         """Test when file already has standardized imports."""
@@ -142,7 +144,7 @@ if __name__ == "__main__":
     cli_entrypoint(main, parser)
 """)
         result = migrate_file(test_file)
-        assert result is False
+        assert result is False  # nosec: B101 - Test assertion
 
     def test_error_handling(self, tmp_path):
         """Test error handling during migration."""
@@ -151,7 +153,7 @@ if __name__ == "__main__":
 
         with patch("builtins.open", side_effect=IOError("Test error")):
             result = migrate_file(test_file)
-            assert result is False
+            assert result is False  # nosec: B101 - Test assertion
 
 
 class TestRunnerFilesList:
@@ -159,10 +161,12 @@ class TestRunnerFilesList:
 
     def test_contains_expected_files(self):
         """Test that RUNNER_FILES contains expected experiment files."""
-        assert "run_stroop_effect.py" in RUNNER_FILES
-        assert "run_ai_benchmarking.py" in RUNNER_FILES
-        assert "run_attentional_blink.py" in RUNNER_FILES
-        assert len(RUNNER_FILES) == 28
+        assert "run_stroop_effect.py" in RUNNER_FILES  # nosec: B101 - Test assertion
+        assert "run_ai_benchmarking.py" in RUNNER_FILES  # nosec: B101 - Test assertion
+        assert (
+            "run_attentional_blink.py" in RUNNER_FILES
+        )  # nosec: B101 - Test assertion
+        assert len(RUNNER_FILES) == 28  # nosec: B101 - Test assertion
 
 
 class TestMain:
@@ -174,8 +178,8 @@ class TestMain:
             with patch.object(Path, "parent", Path("/fake/path")):
                 main()
                 captured = capsys.readouterr()
-                assert "Migrating" in captured.out
-                assert "Migrated:" in captured.out
+                assert "Migrating" in captured.out  # nosec: B101 - Test assertion
+                assert "Migrated:" in captured.out  # nosec: B101 - Test assertion
 
     def test_main_output_summary(self, capsys, tmp_path):
         """Test main function output format."""
@@ -194,8 +198,14 @@ class TestRunner:
                     with patch.object(Path, "exists", return_value=True):
                         main()
                         captured = capsys.readouterr()
-                        assert "Migrating" in captured.out
-                        assert "=" in captured.out
-                        assert "Migrated:" in captured.out
-                        assert "Skipped:" in captured.out
-                        assert "Total:" in captured.out
+                        assert (
+                            "Migrating" in captured.out
+                        )  # nosec: B101 - Test assertion
+                        assert "=" in captured.out  # nosec: B101 - Test assertion
+                        assert (
+                            "Migrated:" in captured.out
+                        )  # nosec: B101 - Test assertion
+                        assert (
+                            "Skipped:" in captured.out
+                        )  # nosec: B101 - Test assertion
+                        assert "Total:" in captured.out  # nosec: B101 - Test assertion

@@ -47,14 +47,15 @@ DEFAULT_DIR_NAMES = {
     "site-packages",
     "cache",
     "logs",
-    # Additional Python cache directories
-    "pycache",  # Sometimes created without underscores
+    "performance_logs",
+    "progress",
+    "pycache",
+    "test_reports",
 }
 
 DEFAULT_DIR_PATTERNS = [
     "*.egg-info",
     "pip-wheel-metadata",
-    # Additional Python cache patterns
     "__pycache__.*",  # Pattern for numbered pycache dirs like __pycache__.cpython-311
     ".coverage.*",  # Coverage cache variants
     "*.pytest_cache",  # pytest cache variants

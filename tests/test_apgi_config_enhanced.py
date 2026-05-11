@@ -11,18 +11,16 @@ This test file covers all major components:
 - Legacy compatibility
 """
 
-import pytest
 import json
-import time
 import os
 import tempfile
+import time
 from pathlib import Path
 from unittest.mock import patch
 
-from utils.apgi_config import (
-    ConfigManager,
-    reset_config,
-)
+import pytest
+
+from utils.apgi_config import ConfigManager, reset_config
 
 
 class TestConfigManager:
@@ -36,9 +34,9 @@ class TestConfigManager:
         # Create two instances and verify they are the same (singleton)
         config1 = ConfigManager()
         config2 = ConfigManager()
-        assert config1 is config2
-        assert config1._initialized
-        assert config2._initialized
+        assert config1 is config2  # nosec: B101 - Test assertion
+        assert config1._initialized  # nosec: B101 - Test assertion
+        assert config2._initialized  # nosec: B101 - Test assertion
 
     def test_concurrent_access(self):
         """Test concurrent access to ConfigManager."""
@@ -73,8 +71,12 @@ class TestConfigManager:
         thread2.join()
 
         # Should have no errors and consistent values
-        assert len(errors) == 0, f"Errors occurred: {errors}"
-        assert len(set(results)) == 200  # 100 operations per thread
+        assert (
+            len(errors) == 0
+        ), f"Errors occurred: {errors}"  # nosec: B101 - Test assertion
+        assert (
+            len(set(results)) == 200
+        )  # 100 operations per thread  # nosec: B101 - Test assertion
 
     def test_memory_efficiency(self):
         """Test memory efficiency of ConfigManager."""
@@ -111,7 +113,7 @@ class TestConfigManager:
                 experiment_config = config.get_experiment_config("extreme_test")
 
                 # Verify the config was loaded (Pydantic validation happens internally)
-                assert experiment_config is not None
+                assert experiment_config is not None  # nosec: B101 - Test assertion
 
     def test_config_source_precedence(self):
         """Test configuration source precedence."""
@@ -137,7 +139,9 @@ class TestConfigManager:
                 tau_s = config.get("experiment_test_tau_s")
 
                 # Environment should take precedence
-                assert tau_s == "0.5"  # From environment, not file
+                assert (
+                    tau_s == "0.5"
+                )  # From environment, not file  # nosec: B101 - Test assertion
 
     def test_config_reload_consistency(self):
         """Test configuration reload consistency."""
@@ -154,11 +158,13 @@ class TestConfigManager:
         config.reload()
 
         # Should preserve modified values
-        assert config.get("test_key") == "modified_value"
-        assert config.get_source("test_key") == "test"
+        assert (
+            config.get("test_key") == "modified_value"
+        )  # nosec: B101 - Test assertion
+        assert config.get_source("test_key") == "test"  # nosec: B101 - Test assertion
 
         # Should clear caches
-        assert len(config._config_cache) == 0
+        assert len(config._config_cache) == 0  # nosec: B101 - Test assertion
 
     def test_config_invalid_json_handling(self):
         """Test handling of invalid JSON configuration files."""
@@ -175,8 +181,10 @@ class TestConfigManager:
 
                 config = ConfigManager()
                 # Should not crash, should use defaults
-                assert config.get("invalid") is None
-                assert config.get("experiment_name") == "unknown_experiment"
+                assert config.get("invalid") is None  # nosec: B101 - Test assertion
+                assert (
+                    config.get("experiment_name") == "unknown_experiment"
+                )  # nosec: B101 - Test assertion
 
     def test_config_circular_reference_handling(self):
         """Test handling of circular references in configuration."""
@@ -199,8 +207,12 @@ class TestConfigManager:
                 experiment_config = config.get_experiment_config("main")
 
                 # Should handle circular reference gracefully
-                assert experiment_config.experiment_name == "main"
-                assert experiment_config.experiment_name == "main"
+                assert (
+                    experiment_config.experiment_name == "main"
+                )  # nosec: B101 - Test assertion
+                assert (
+                    experiment_config.experiment_name == "main"
+                )  # nosec: B101 - Test assertion
 
     def test_config_performance(self):
         """Test ConfigManager performance with large configurations."""
@@ -215,7 +227,9 @@ class TestConfigManager:
         duration = end_time - start_time
 
         # Should complete within reasonable time
-        assert duration < 1.0, f"Config access took too long: {duration:.3f}s"
+        assert (
+            duration < 1.0
+        ), f"Config access took too long: {duration:.3f}s"  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":

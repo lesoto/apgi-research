@@ -23,21 +23,25 @@ class TestExperimentData:
 
     def test_experiment_results_structure(self):
         """Test that EXPERIMENT_RESULTS has expected structure."""
-        assert isinstance(EXPERIMENT_RESULTS, dict)
-        assert len(EXPERIMENT_RESULTS) > 0
+        assert isinstance(EXPERIMENT_RESULTS, dict)  # nosec: B101 - Test assertion
+        assert len(EXPERIMENT_RESULTS) > 0  # nosec: B101 - Test assertion
 
         # Check that key experiments exist
-        assert "Artificial Grammar Learning" in EXPERIMENT_RESULTS
-        assert "Attentional Blink" in EXPERIMENT_RESULTS
-        assert "Ai Benchmarking" in EXPERIMENT_RESULTS
+        assert (
+            "Artificial Grammar Learning" in EXPERIMENT_RESULTS
+        )  # nosec: B101 - Test assertion
+        assert "Attentional Blink" in EXPERIMENT_RESULTS  # nosec: B101 - Test assertion
+        assert "Ai Benchmarking" in EXPERIMENT_RESULTS  # nosec: B101 - Test assertion
 
     def test_experiment_data_completeness(self):
         """Test that experiment data has required fields."""
         for exp_name, data in EXPERIMENT_RESULTS.items():
             if data.get("status") == "Success":
                 # Should have primary_metric for successful experiments
-                assert "primary_metric" in data
-                assert isinstance(data["primary_metric"], (int, float))
+                assert "primary_metric" in data  # nosec: B101 - Test assertion
+                assert isinstance(
+                    data["primary_metric"], (int, float)
+                )  # nosec: B101 - Test assertion
 
 
 class TestGetAPGIExperiments:
@@ -47,14 +51,14 @@ class TestGetAPGIExperiments:
         """Test getting APGI experiments."""
         apgi_exps = get_apgi_experiments()
 
-        assert isinstance(apgi_exps, dict)
-        assert len(apgi_exps) > 0
+        assert isinstance(apgi_exps, dict)  # nosec: B101 - Test assertion
+        assert len(apgi_exps) > 0  # nosec: B101 - Test assertion
 
         # Check that returned experiments have APGI metrics
         for exp_name, data in apgi_exps.items():
-            assert "ignition_rate" in data
-            assert "mean_surprise" in data
-            assert "metabolic_cost" in data
+            assert "ignition_rate" in data  # nosec: B101 - Test assertion
+            assert "mean_surprise" in data  # nosec: B101 - Test assertion
+            assert "metabolic_cost" in data  # nosec: B101 - Test assertion
 
     def test_get_apgi_experiments_filtering(self):
         """Test that only experiments with APGI metrics are returned."""
@@ -62,7 +66,9 @@ class TestGetAPGIExperiments:
 
         # Should not include experiments without APGI metrics
         for exp_name, data in apgi_exps.items():
-            assert "ignition_rate" in data, f"{exp_name} missing ignition_rate"
+            assert (
+                "ignition_rate" in data
+            ), f"{exp_name} missing ignition_rate"  # nosec: B101 - Test assertion
 
     def test_get_apgi_experiments_data_types(self):
         """Test that returned data has correct types."""
@@ -70,11 +76,17 @@ class TestGetAPGIExperiments:
 
         for exp_name, data in apgi_exps.items():
             if "ignition_rate" in data:
-                assert isinstance(data["ignition_rate"], (int, float))
+                assert isinstance(
+                    data["ignition_rate"], (int, float)
+                )  # nosec: B101 - Test assertion
             if "mean_surprise" in data:
-                assert isinstance(data["mean_surprise"], (int, float))
+                assert isinstance(
+                    data["mean_surprise"], (int, float)
+                )  # nosec: B101 - Test assertion
             if "metabolic_cost" in data:
-                assert isinstance(data["metabolic_cost"], (int, float))
+                assert isinstance(
+                    data["metabolic_cost"], (int, float)
+                )  # nosec: B101 - Test assertion
 
 
 class TestAnalyzeAPGIMetrics:
@@ -84,40 +96,44 @@ class TestAnalyzeAPGIMetrics:
         """Test APGI metrics analysis."""
         analysis = analyze_apgi_metrics()
 
-        assert isinstance(analysis, dict)
-        assert "summary" in analysis
-        assert "detailed_analysis" in analysis
-        assert "correlations" in analysis
+        assert isinstance(analysis, dict)  # nosec: B101 - Test assertion
+        assert "summary" in analysis  # nosec: B101 - Test assertion
+        assert "detailed_analysis" in analysis  # nosec: B101 - Test assertion
+        assert "correlations" in analysis  # nosec: B101 - Test assertion
 
     def test_analyze_apgi_metrics_summary(self):
         """Test analysis summary structure."""
         analysis = analyze_apgi_metrics()
 
-        assert "total_experiments" in analysis
-        assert "summary" in analysis
-        assert "avg_ignition_rate" in analysis["summary"]
-        assert "avg_metabolic_cost" in analysis["summary"]
-        assert "avg_surprise" in analysis["summary"]
+        assert "total_experiments" in analysis  # nosec: B101 - Test assertion
+        assert "summary" in analysis  # nosec: B101 - Test assertion
+        assert (
+            "avg_ignition_rate" in analysis["summary"]
+        )  # nosec: B101 - Test assertion
+        assert (
+            "avg_metabolic_cost" in analysis["summary"]
+        )  # nosec: B101 - Test assertion
+        assert "avg_surprise" in analysis["summary"]  # nosec: B101 - Test assertion
 
     def test_analyze_apgi_metrics_detailed(self):
         """Test detailed analysis structure."""
         analysis = analyze_apgi_metrics()
         detailed = analysis["detailed_analysis"]
 
-        assert isinstance(detailed, dict)
+        assert isinstance(detailed, dict)  # nosec: B101 - Test assertion
         # Should have analysis for each APGI experiment
-        assert len(detailed) > 0
+        assert len(detailed) > 0  # nosec: B101 - Test assertion
 
     def test_analyze_apgi_metrics_correlations(self):
         """Test correlation analysis."""
         analysis = analyze_apgi_metrics()
         correlations = analysis["correlations"]
 
-        assert isinstance(correlations, dict)
+        assert isinstance(correlations, dict)  # nosec: B101 - Test assertion
         # Should have correlation coefficients
         for corr_name, corr_value in correlations.items():
-            assert isinstance(corr_value, (int, float))
-            assert -1 <= corr_value <= 1
+            assert isinstance(corr_value, (int, float))  # nosec: B101 - Test assertion
+            assert -1 <= corr_value <= 1  # nosec: B101 - Test assertion
 
     def test_analyze_apgi_metrics_values(self):
         """Test that analysis values are reasonable."""
@@ -125,9 +141,9 @@ class TestAnalyzeAPGIMetrics:
         summary = analysis["summary"]
 
         # Check that averages are reasonable
-        assert 0 <= summary["avg_ignition_rate"] <= 100
-        assert summary["avg_metabolic_cost"] >= 0
-        assert summary["avg_surprise"] >= 0
+        assert 0 <= summary["avg_ignition_rate"] <= 100  # nosec: B101 - Test assertion
+        assert summary["avg_metabolic_cost"] >= 0  # nosec: B101 - Test assertion
+        assert summary["avg_surprise"] >= 0  # nosec: B101 - Test assertion
 
 
 class TestIdentifyIssues:
@@ -137,24 +153,24 @@ class TestIdentifyIssues:
         """Test issue identification."""
         issues = identify_issues()
 
-        assert isinstance(issues, list)
+        assert isinstance(issues, list)  # nosec: B101 - Test assertion
         # Each issue should be a dictionary
         for issue in issues:
-            assert isinstance(issue, dict)
-            assert "experiment" in issue
-            assert "issue_type" in issue
-            assert "description" in issue
+            assert isinstance(issue, dict)  # nosec: B101 - Test assertion
+            assert "experiment" in issue  # nosec: B101 - Test assertion
+            assert "issue_type" in issue  # nosec: B101 - Test assertion
+            assert "description" in issue  # nosec: B101 - Test assertion
 
     def test_identify_issues_structure(self):
         """Test issue structure."""
         issues = identify_issues()
 
         for issue in issues:
-            assert "experiment" in issue
-            assert "issue_type" in issue
-            assert "description" in issue
-            assert "severity" in issue
-            assert "suggested_fix" in issue
+            assert "experiment" in issue  # nosec: B101 - Test assertion
+            assert "issue_type" in issue  # nosec: B101 - Test assertion
+            assert "description" in issue  # nosec: B101 - Test assertion
+            assert "severity" in issue  # nosec: B101 - Test assertion
+            assert "suggested_fix" in issue  # nosec: B101 - Test assertion
 
     def test_identify_issues_severity_levels(self):
         """Test that severity levels are valid."""
@@ -162,7 +178,7 @@ class TestIdentifyIssues:
 
         valid_severities = ["low", "medium", "high", "critical"]
         for issue in issues:
-            assert issue["severity"] in valid_severities
+            assert issue["severity"] in valid_severities  # nosec: B101 - Test assertion
 
     def test_identify_issues_types(self):
         """Test that issue types are valid."""
@@ -170,7 +186,7 @@ class TestIdentifyIssues:
 
         # Should identify various types of issues
         issue_types = set(issue["issue_type"] for issue in issues)
-        assert len(issue_types) > 0
+        assert len(issue_types) > 0  # nosec: B101 - Test assertion
 
 
 class TestGenerateFixes:
@@ -180,12 +196,12 @@ class TestGenerateFixes:
         """Test fix generation."""
         fixes = generate_fixes()
 
-        assert isinstance(fixes, dict)
+        assert isinstance(fixes, dict)  # nosec: B101 - Test assertion
         # Each fix should be a list of strings
         for exp_name, fix_list in fixes.items():
-            assert isinstance(fix_list, list)
+            assert isinstance(fix_list, list)  # nosec: B101 - Test assertion
             for fix in fix_list:
-                assert isinstance(fix, str)
+                assert isinstance(fix, str)  # nosec: B101 - Test assertion
 
     def test_generate_fixes_coverage(self):
         """Test that fixes are generated for experiments with issues."""
@@ -197,14 +213,20 @@ class TestGenerateFixes:
         experiments_with_fixes = set(fixes.keys())
 
         # All experiments with issues should have fixes
-        assert experiments_with_issues.issubset(experiments_with_fixes)
+        assert experiments_with_issues.issubset(
+            experiments_with_fixes
+        )  # nosec: B101 - Test assertion
 
     def test_generate_fixes_content(self):
         """Test that fix content is meaningful."""
         fixes = generate_fixes()
         for exp_name, fix_list in fixes.items():
-            assert len(fix_list) > 0  # Should be descriptive
-            assert not fix_list[0].startswith(" ")  # Should not start with whitespace
+            assert (
+                len(fix_list) > 0
+            )  # Should be descriptive  # nosec: B101 - Test assertion
+            assert not fix_list[0].startswith(
+                " "
+            )  # Should not start with whitespace  # nosec: B101 - Test assertion
 
 
 class TestGenerateHTMLReport:
@@ -218,9 +240,9 @@ class TestGenerateHTMLReport:
         fixes = generate_fixes()
         html = generate_html_report(analysis, issues, fixes)
 
-        assert isinstance(html, str)
-        assert html.startswith("<!DOCTYPE html>")
-        assert html.strip().endswith("</html>")
+        assert isinstance(html, str)  # nosec: B101 - Test assertion
+        assert html.startswith("<!DOCTYPE html>")  # nosec: B101 - Test assertion
+        assert html.strip().endswith("</html>")  # nosec: B101 - Test assertion
 
     def test_generate_html_report_structure(self):
         """Test HTML report structure."""
@@ -238,10 +260,10 @@ class TestGenerateHTMLReport:
         html = generate_html_report(analysis, issues, fixes)
 
         # Should contain key sections
-        assert "<title>" in html
-        assert "<body>" in html
-        assert "</body>" in html
-        assert "</html>" in html
+        assert "<title>" in html  # nosec: B101 - Test assertion
+        assert "<body>" in html  # nosec: B101 - Test assertion
+        assert "</body>" in html  # nosec: B101 - Test assertion
+        assert "</html>" in html  # nosec: B101 - Test assertion
 
     def test_generate_html_report_content(self):
         """Test HTML report contains expected content."""
@@ -259,8 +281,8 @@ class TestGenerateHTMLReport:
         html = generate_html_report(analysis, issues, fixes)
 
         # Should contain analysis data
-        assert "10" in html  # total_experiments value
-        assert "test" in html  # experiment name
+        assert "10" in html  # total_experiments value  # nosec: B101 - Test assertion
+        assert "test" in html  # experiment name  # nosec: B101 - Test assertion
 
     def test_generate_html_report_css(self):
         """Test HTML report contains CSS styling."""
@@ -278,7 +300,7 @@ class TestGenerateHTMLReport:
         html = generate_html_report(analysis, issues, fixes)
 
         # Should contain CSS
-        assert "<style>" in html or "style=" in html
+        assert "<style>" in html or "style=" in html  # nosec: B101 - Test assertion
 
     def test_generate_html_report_empty_data(self):
         """Test HTML report with empty data."""
@@ -288,8 +310,8 @@ class TestGenerateHTMLReport:
 
         html = generate_html_report(analysis, issues, fixes)
 
-        assert isinstance(html, str)
-        assert len(html) > 0
+        assert isinstance(html, str)  # nosec: B101 - Test assertion
+        assert len(html) > 0  # nosec: B101 - Test assertion
 
 
 class TestMainFunction:
@@ -345,8 +367,10 @@ class TestMainFunction:
             # Verify file write
             mock_open.assert_called_once()
             args, kwargs = mock_open.call_args
-            assert str(args[0]) == "apgi_analysis_report.html"
-            assert args[1] == "w"
+            assert (
+                str(args[0]) == "apgi_analysis_report.html"
+            )  # nosec: B101 - Test assertion
+            assert args[1] == "w"  # nosec: B101 - Test assertion
 
 
 class TestModuleIntegration:
@@ -370,11 +394,11 @@ class TestModuleIntegration:
         html = generate_html_report(analysis, issues, fixes)
 
         # Verify workflow
-        assert isinstance(apgi_exps, dict)
-        assert isinstance(analysis, dict)
-        assert isinstance(issues, list)
-        assert isinstance(fixes, dict)
-        assert isinstance(html, str)
+        assert isinstance(apgi_exps, dict)  # nosec: B101 - Test assertion
+        assert isinstance(analysis, dict)  # nosec: B101 - Test assertion
+        assert isinstance(issues, list)  # nosec: B101 - Test assertion
+        assert isinstance(fixes, dict)  # nosec: B101 - Test assertion
+        assert isinstance(html, str)  # nosec: B101 - Test assertion
 
     def test_data_consistency(self):
         """Test data consistency across functions."""
@@ -382,7 +406,9 @@ class TestModuleIntegration:
         analysis = analyze_apgi_metrics()
 
         # Number of experiments should be consistent
-        assert len(apgi_exps) == analysis["summary"]["total_experiments"]
+        assert (
+            len(apgi_exps) == analysis["summary"]["total_experiments"]
+        )  # nosec: B101 - Test assertion
 
     def test_error_handling_missing_data(self):
         """Test handling of missing experiment data."""
@@ -392,9 +418,9 @@ class TestModuleIntegration:
             issues = identify_issues()
             fixes = generate_fixes()
 
-            assert isinstance(analysis, dict)
-            assert isinstance(issues, list)
-            assert isinstance(fixes, dict)
+            assert isinstance(analysis, dict)  # nosec: B101 - Test assertion
+            assert isinstance(issues, list)  # nosec: B101 - Test assertion
+            assert isinstance(fixes, dict)  # nosec: B101 - Test assertion
         except Exception as e:
             pytest.fail(f"Analysis should handle missing data gracefully: {e}")
 
@@ -404,8 +430,8 @@ class TestModuleConstants:
 
     def test_experiment_results_constant(self):
         """Test EXPERIMENT_RESULTS constant."""
-        assert isinstance(EXPERIMENT_RESULTS, dict)
-        assert len(EXPERIMENT_RESULTS) > 0
+        assert isinstance(EXPERIMENT_RESULTS, dict)  # nosec: B101 - Test assertion
+        assert len(EXPERIMENT_RESULTS) > 0  # nosec: B101 - Test assertion
 
         # Should have required experiments
         required_experiments = [
@@ -415,18 +441,22 @@ class TestModuleConstants:
         ]
 
         for exp in required_experiments:
-            assert exp in EXPERIMENT_RESULTS, f"Missing required experiment: {exp}"
+            assert (
+                exp in EXPERIMENT_RESULTS
+            ), f"Missing required experiment: {exp}"  # nosec: B101 - Test assertion
 
     def test_experiment_data_validation(self):
         """Test experiment data validation."""
         for exp_name, data in EXPERIMENT_RESULTS.items():
-            assert isinstance(data, dict)
-            assert "status" in data
+            assert isinstance(data, dict)  # nosec: B101 - Test assertion
+            assert "status" in data  # nosec: B101 - Test assertion
 
             if data["status"] == "Success":
                 # Successful experiments should have metrics
-                assert "primary_metric" in data
-                assert isinstance(data["primary_metric"], (int, float))
+                assert "primary_metric" in data  # nosec: B101 - Test assertion
+                assert isinstance(
+                    data["primary_metric"], (int, float)
+                )  # nosec: B101 - Test assertion
 
 
 if __name__ == "__main__":
