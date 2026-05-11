@@ -130,5 +130,27 @@
     },
     "embedding": null,
     "memory_id": "ba9b58d94535"
+  },
+  {
+    "timestamp": "2026-05-11T14:17:35.930941",
+    "experiment_name": "change_blindness",
+    "pattern_type": "strategy",
+    "content": "Valid parameters found",
+    "context": {
+      "source": "auto_update_from_report"
+    },
+    "embedding": null,
+    "memory_id": "dbf7e1acd6f6"
+  },
+  {
+    "timestamp": "2026-05-11T14:17:35.931444",
+    "experiment_name": "change_blindness",
+    "pattern_type": "success_pattern",
+    "content": "Successful execution: Iteration 1: Metric 0.1200 (Delta: +0.1200)",
+    "context": {
+      "metric_deltas": "{'change_blindness': 0.12}"
+    },
+    "embedding": null,
+    "memory_id": "e82bce29ace3"
   }
 ]
