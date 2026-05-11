@@ -1,0 +1,33 @@
+# Core dependencies from pyproject.toml
+GitPython>=3.1.0
+customtkinter==5.2.2
+kernels>=0.11.7
+litellm>=1.0.0
+matplotlib>=3.10.8
+numpy>=2.2.6
+pandas>=2.3.3
+pyarrow>=21.0.0
+requests>=2.32.0
+rustbpe>=0.1.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
+Pillow>=9.5.0
+tiktoken>=0.11.0
+torch>=2.0.0
+tqdm>=4.65.0
+pixelmatch>=0.4.0
+pydantic>=2.0.0
+
+# Testing dependencies
+pytest>=6.0
+pytest-cov>=2.10.0
+pytest-mock>=3.6.0
+
+# Development dependencies (optional)
+black>=24.0.0
+ruff>=0.6.0
+mypy>=1.10.0
+pytest-xdist>=3.6.0
+
+# Additional commonly used libraries in the codebase
+plotly
