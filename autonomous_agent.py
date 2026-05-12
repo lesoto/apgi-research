@@ -854,11 +854,17 @@ class AutonomousAgent:
         _get_metric_direction(): Get metric direction (higher/lower is better)
     """
 
-    def __init__(self, repo_path: str = "."):
+    def __init__(
+        self,
+        repo_path: str = ".",
+        param_change_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+    ):
         """Initialize the autonomous agent.
 
         Args:
             repo_path (str): Path to the repository (default: ".")
+            param_change_callback (Optional[Callable]): Called after each parameter
+                modification with (experiment_name, modifications_dict).
         """
         self.repo_path = Path(repo_path)
         self.git_tracker = GitPerformanceTracker(repo_path, agent=self)
@@ -871,6 +877,7 @@ class AutonomousAgent:
         self.checkpoint_file = Path(repo_path) / ".autonomous_agent_checkpoint.json"
         self.last_checkpoint_time = 0.0
         self.checkpoint_interval_s = 60  # Save checkpoint every 60 seconds
+        self.param_change_callback = param_change_callback
 
         # Phase 5: Async Git Operations for non-blocking auto-loop
         self.async_git = AsyncGitOperations(self.repo_path)
@@ -1270,6 +1277,11 @@ class AutonomousAgent:
         if not modifications:
             logger.warning("[APGI AGENT] No valid parameters to modify")
             return
+
+        # Notify GUI of which parameters are being changed
+        if self.param_change_callback is not None:
+            experiment_name = Path(run_file).stem.replace("run_", "")
+            self.param_change_callback(experiment_name, dict(modifications))
 
         with open(run_file, "r") as f:
             content = f.read()

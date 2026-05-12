@@ -649,6 +649,45 @@ class ExperimentRunnerGUI(ctk.CTk):
         self._refresh_hypothesis_display()
 
         # -----------------------------------------------------------
+        # XPR AUTO Explanation Panel (parameter change log)
+        # -----------------------------------------------------------
+        self.xpr_log_frame = ctk.CTkFrame(
+            self.navigation_frame, corner_radius=6, fg_color="#0d1117"
+        )
+        self.xpr_log_frame.grid(row=6, column=0, padx=10, pady=(3, 8), sticky="ew")
+        self.xpr_log_frame.grid_columnconfigure(0, weight=1)
+
+        _xpr_hdr = ctk.CTkFrame(self.xpr_log_frame, fg_color="transparent")
+        _xpr_hdr.grid(row=0, column=0, padx=8, pady=(4, 0), sticky="ew")
+        _xpr_hdr.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            _xpr_hdr,
+            text="🔬 XPR Changes",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color="#9b59b6",
+        ).grid(row=0, column=0, sticky="w")
+
+        ctk.CTkButton(
+            _xpr_hdr,
+            text="✕",
+            width=22,
+            height=18,
+            font=ctk.CTkFont(size=9),
+            fg_color="transparent",
+            hover_color="#2c2c2c",
+            command=self._clear_xpr_log,
+        ).grid(row=0, column=1, sticky="e")
+
+        self.xpr_log_text = ctk.CTkTextbox(
+            self.xpr_log_frame,
+            height=90,
+            font=("Courier", 9),
+            state="disabled",
+        )
+        self.xpr_log_text.grid(row=1, column=0, padx=8, pady=(2, 6), sticky="ew")
+
+        # -----------------------------------------------------------
         # Main Content Area (Experiments)
         # -----------------------------------------------------------
         self.scrollable_frame = ctk.CTkScrollableFrame(
@@ -1104,6 +1143,30 @@ class ExperimentRunnerGUI(ctk.CTk):
         self.console_text.delete("1.0", "end")
         self.console_text.insert("1.0", "--- Console Cleared ---\n")
 
+    def _clear_xpr_log(self) -> None:
+        self.xpr_log_text.configure(state="normal")
+        self.xpr_log_text.delete("1.0", "end")
+        self.xpr_log_text.configure(state="disabled")
+
+    def _log_xpr_change(self, experiment: str, modifications: dict) -> None:
+        """Append a parameter-change entry to the XPR Changes sidebar panel.
+
+        Safe to call from any thread.
+        """
+        if threading.current_thread() is not threading.main_thread():
+            self.after(0, lambda e=experiment, m=modifications: self._log_xpr_change(e, m))
+            return
+        import datetime as _dt
+        ts = _dt.datetime.now().strftime("%H:%M:%S")
+        lines = [f"[{ts}] {experiment}"]
+        for param, val in modifications.items():
+            lines.append(f"  {param} → {val!r}")
+        entry = "\n".join(lines) + "\n"
+        self.xpr_log_text.configure(state="normal")
+        self.xpr_log_text.insert("end", entry)
+        self.xpr_log_text.see("end")
+        self.xpr_log_text.configure(state="disabled")
+
     def _update_guardrail_dashboard(
         self,
         status: str = "IDLE",
@@ -1393,7 +1456,7 @@ class ExperimentRunnerGUI(ctk.CTk):
 
                 def run_agent() -> None:
                     try:
-                        agent = AutonomousAgent(str(self.research_dir))
+                        agent = AutonomousAgent(str(self.research_dir), param_change_callback=self._log_xpr_change)
                         experiment_key = (
                             script.replace("experiments/", "")
                             .replace("run_", "")
@@ -4200,6 +4263,14 @@ class ExperimentRunnerGUI(ctk.CTk):
             height=35,
         ).pack(pady=2, padx=20)
 
+        ctk.CTkButton(
+            file_menu,
+            text="🔍 View Audit Log",
+            command=self._show_audit_log_viewer,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
         # Save/Export Section
         ctk.CTkLabel(
             file_menu,
@@ -4283,153 +4354,399 @@ class ExperimentRunnerGUI(ctk.CTk):
             hover_color="#c0392b",
         ).pack(pady=(10, 20), padx=20)
 
-    def _create_new_experiment(self) -> None:
-        """Create a new experiment file."""
+    def _show_audit_log_viewer(self) -> None:
+        """Open a searchable viewer for the APGI audit trail (.jsonl)."""
+        audit_file = Path(self.research_dir) / "audit_trail.jsonl"
+        if not audit_file.exists():
+            audit_file = Path("audit_trail.jsonl")
+
         dialog = ctk.CTkToplevel(self)
-        dialog.title("🧪 Create New Experiment")
-        dialog.geometry("500x400")
+        dialog.title("🔍 Audit Log Viewer")
+        dialog.geometry("820x600")
+        dialog.transient(self)
+        dialog.attributes("-topmost", True)
+
+        hdr = ctk.CTkFrame(dialog, fg_color="transparent")
+        hdr.pack(padx=16, pady=(12, 4), fill="x")
+        ctk.CTkLabel(hdr, text="Audit Trail", font=ctk.CTkFont(size=15, weight="bold")).pack(side="left")
+
+        filter_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        filter_frame.pack(padx=16, pady=(0, 6), fill="x")
+        filter_frame.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(filter_frame, text="Filter:", font=ctk.CTkFont(size=11)).grid(row=0, column=0, padx=(0, 6))
+        filter_var = ctk.StringVar()
+        ctk.CTkEntry(filter_frame, textvariable=filter_var, placeholder_text="event type, action, operator…").grid(
+            row=0, column=1, sticky="ew", padx=(0, 6)
+        )
+
+        log_text = ctk.CTkTextbox(dialog, font=("Courier", 10), state="disabled")
+        log_text.pack(padx=16, pady=(0, 4), fill="both", expand=True)
+
+        status_var = ctk.StringVar(value="")
+        ctk.CTkLabel(dialog, textvariable=status_var, font=ctk.CTkFont(size=10), text_color="#888888").pack(
+            padx=16, pady=(0, 4), anchor="w"
+        )
+
+        _all_entries: list = []
+
+        def _load_entries() -> None:
+            _all_entries.clear()
+            if not audit_file.exists():
+                status_var.set(f"Audit file not found: {audit_file}")
+                return
+            try:
+                with open(audit_file, encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                _all_entries.append(json.loads(line))
+                            except json.JSONDecodeError:
+                                pass
+                status_var.set(f"{len(_all_entries)} events — {audit_file}")
+            except Exception as exc:
+                status_var.set(f"Error reading log: {exc}")
+
+        def _render(query: str = "") -> None:
+            q = query.lower()
+            lines = []
+            for entry in reversed(_all_entries):
+                ts = entry.get("timestamp", "")
+                evt = entry.get("event_type", "")
+                op = entry.get("operator_name", entry.get("operator_id", ""))
+                action = entry.get("action", "")
+                resource = f"{entry.get('resource_type','')}/{entry.get('resource_id','')}"
+                status = entry.get("status", "")
+                row = f"[{ts[:19]}] {evt:<22} {action:<20} {op:<16} {resource:<28} {status}"
+                if q and q not in row.lower():
+                    continue
+                lines.append(row)
+            log_text.configure(state="normal")
+            log_text.delete("1.0", "end")
+            log_text.insert("1.0", "\n".join(lines) if lines else "(no matching entries)")
+            log_text.configure(state="disabled")
+            status_var.set(f"Showing {len(lines)}/{len(_all_entries)} events — {audit_file}")
+
+        filter_var.trace_add("write", lambda *_: _render(filter_var.get()))
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(padx=16, pady=(0, 12), fill="x")
+        ctk.CTkButton(
+            btn_frame, text="↺ Refresh", width=90, height=28, font=ctk.CTkFont(size=10),
+            command=lambda: (_load_entries(), _render(filter_var.get())),
+        ).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(
+            btn_frame, text="✕ Close", width=80, height=28, font=ctk.CTkFont(size=10),
+            fg_color="#e74c3c", hover_color="#c0392b", command=dialog.destroy,
+        ).pack(side="left")
+
+        _load_entries()
+        _render()
+
+    def _create_new_experiment(self) -> None:
+        """Create or import a new experiment without editing source files directly."""
+        import shutil
+        from tkinter import filedialog
+
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("🧪 Add Experiment")
+        dialog.geometry("560x520")
         dialog.transient(self)
         dialog.attributes("-topmost", True)
 
         ctk.CTkLabel(
-            dialog,
-            text="Create New Experiment",
-            font=ctk.CTkFont(size=16, weight="bold"),
-        ).pack(pady=(15, 10))
+            dialog, text="Add New Experiment", font=ctk.CTkFont(size=16, weight="bold"),
+        ).pack(pady=(15, 5))
+
+        mode_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        mode_frame.pack(padx=20, fill="x", pady=(0, 5))
+        _source_var = ctk.StringVar(value="template")
+        ctk.CTkRadioButton(
+            mode_frame, text="Scaffold from template", variable=_source_var,
+            value="template", font=ctk.CTkFont(size=11),
+        ).pack(side="left", padx=(0, 20))
+        ctk.CTkRadioButton(
+            mode_frame, text="Import existing .py file", variable=_source_var,
+            value="import", font=ctk.CTkFont(size=11),
+        ).pack(side="left")
 
         form_frame = ctk.CTkFrame(dialog, fg_color="transparent")
-        form_frame.pack(padx=20, fill="x", pady=10)
+        form_frame.pack(padx=20, fill="x", pady=5)
+        form_frame.grid_columnconfigure(1, weight=1)
 
-        # Experiment Name
-        ctk.CTkLabel(
-            form_frame, text="Experiment Name:", font=ctk.CTkFont(size=12)
-        ).grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        name_entry = ctk.CTkEntry(form_frame, width=300)
-        name_entry.grid(row=0, column=1, padx=5, pady=5)
-
-        # Description
-        ctk.CTkLabel(form_frame, text="Description:", font=ctk.CTkFont(size=12)).grid(
-            row=1, column=0, sticky="nw", padx=5, pady=5
+        ctk.CTkLabel(form_frame, text="Display name:", font=ctk.CTkFont(size=12)).grid(
+            row=0, column=0, sticky="w", padx=5, pady=4
         )
-        desc_entry = ctk.CTkTextbox(form_frame, height=80)
-        desc_entry.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
+        name_entry = ctk.CTkEntry(form_frame, width=310)
+        name_entry.grid(row=0, column=1, columnspan=2, padx=5, pady=4, sticky="ew")
 
-        # Template selection
-        ctk.CTkLabel(form_frame, text="Template:", font=ctk.CTkFont(size=12)).grid(
-            row=2, column=0, sticky="w", padx=5, pady=5
-        )
+        desc_label = ctk.CTkLabel(form_frame, text="Description:", font=ctk.CTkFont(size=12))
+        desc_label.grid(row=1, column=0, sticky="nw", padx=5, pady=4)
+        desc_entry = ctk.CTkTextbox(form_frame, height=60)
+        desc_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=4, sticky="nsew")
+
+        tmpl_label = ctk.CTkLabel(form_frame, text="Template:", font=ctk.CTkFont(size=12))
+        tmpl_label.grid(row=2, column=0, sticky="w", padx=5, pady=4)
         template_menu = ctk.CTkOptionMenu(
             form_frame,
-            values=[
-                "Basic Experiment",
-                "Data Analysis",
-                "Model Training",
-                "Visualization",
-            ],
+            values=["APGI Cognitive", "Basic Experiment", "Data Analysis", "Model Training"],
+            width=200,
         )
-        template_menu.grid(row=2, column=1, padx=5, pady=5)
+        template_menu.grid(row=2, column=1, padx=5, pady=4, sticky="w")
+
+        import_label = ctk.CTkLabel(form_frame, text="Script file:", font=ctk.CTkFont(size=12))
+        import_label.grid(row=3, column=0, sticky="w", padx=5, pady=4)
+        import_path_var = ctk.StringVar(value="(no file selected)")
+        import_path_label = ctk.CTkLabel(
+            form_frame, textvariable=import_path_var, font=ctk.CTkFont(size=10),
+            text_color="#888888", anchor="w",
+        )
+        import_path_label.grid(row=3, column=1, padx=5, pady=4, sticky="ew")
+
+        def browse_file() -> None:
+            path = filedialog.askopenfilename(
+                title="Select experiment script",
+                filetypes=[("Python files", "*.py"), ("All files", "*.*")],
+                initialdir=str(self.research_dir),
+            )
+            if path:
+                import_path_var.set(path)
+                if not name_entry.get().strip():
+                    stem = Path(path).stem.replace("run_", "").replace("_", " ").title()
+                    name_entry.delete(0, "end")
+                    name_entry.insert(0, stem)
+
+        browse_btn = ctk.CTkButton(
+            form_frame, text="Browse…", width=70, height=26,
+            font=ctk.CTkFont(size=10), command=browse_file,
+        )
+        browse_btn.grid(row=3, column=2, padx=5, pady=4)
+
+        def _update_mode(*_: object) -> None:
+            is_import = _source_var.get() == "import"
+            _state_tmpl = "disabled" if is_import else "normal"
+            desc_label.configure(state=_state_tmpl)
+            desc_entry.configure(state=_state_tmpl)
+            tmpl_label.configure(state=_state_tmpl)
+            template_menu.configure(state=_state_tmpl)
+            import_path_label.configure(text_color="#cccccc" if is_import else "#555555")
+            browse_btn.configure(state="normal" if is_import else "disabled")
+
+        _source_var.trace_add("write", _update_mode)
+        _update_mode()
 
         def create_experiment() -> None:
             name = name_entry.get().strip()
             if not name:
-                messagebox.showerror("Error", "Please enter an experiment name")
+                messagebox.showerror("Error", "Please enter an experiment name.")
                 return
-
-            # Convert name to filename format
-            filename = f"run_{name.lower().replace(' ', '_')}.py"
-            filepath = self.research_dir / "experiments" / filename
-
+            slug = "".join(c for c in name.lower().replace(" ", "_").replace("-", "_") if c.isalnum() or c == "_")
+            filepath = self.research_dir / "experiments" / f"run_{slug}.py"
             if filepath.exists():
-                messagebox.showerror(
-                    "Error", f"Experiment file {filename} already exists"
-                )
-                return
-
+                if not messagebox.askyesno("Overwrite?", f"run_{slug}.py already exists. Overwrite?"):
+                    return
             try:
-                # Create basic experiment template
-                template_content = self._get_experiment_template(
-                    name, desc_entry.get("0.0", "end"), template_menu.get()
-                )
-                filepath.write_text(template_content)
-                messagebox.showinfo(
-                    "Success", f"Experiment {name} created successfully!"
-                )
+                if _source_var.get() == "import":
+                    src = import_path_var.get()
+                    if src == "(no file selected)" or not Path(src).is_file():
+                        messagebox.showerror("Error", "Please select a valid .py file.")
+                        return
+                    shutil.copy2(src, filepath)
+                else:
+                    filepath.write_text(
+                        self._get_experiment_template(name, desc_entry.get("0.0", "end").strip(), template_menu.get())
+                    )
+                self._log(f"[EXPERIMENTS] Added: {filepath.name}", "#27ae60")
+                messagebox.showinfo("Success", f"Experiment '{name}' added successfully!")
                 self._reload_experiments()
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create experiment: {e}")
+                messagebox.showerror("Error", f"Failed to add experiment: {e}")
 
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(pady=15)
-
         ctk.CTkButton(
-            btn_frame,
-            text="Create",
-            command=create_experiment,
-            fg_color="#27ae60",
-            hover_color="#219150",
-            width=100,
+            btn_frame, text="Add Experiment", command=create_experiment,
+            fg_color="#27ae60", hover_color="#219150", width=130,
         ).pack(side="left", padx=5)
-
         ctk.CTkButton(
-            btn_frame,
-            text="Cancel",
-            command=dialog.destroy,
-            fg_color="#e74c3c",
-            hover_color="#c0392b",
-            width=100,
+            btn_frame, text="Cancel", command=dialog.destroy,
+            fg_color="#e74c3c", hover_color="#c0392b", width=100,
         ).pack(side="left", padx=5)
 
     def _get_experiment_template(
         self, name: str, description: str, template_type: str
     ) -> str:
         """Generate experiment template code based on type."""
-        template = f'''"""{name}
-{description}
+        desc = description.strip() or f"APGI experiment: {name}"
+
+        if template_type == "APGI Cognitive":
+            return f'''"""{name}
+
+{desc}
 """
 
+import json
 import logging
 import time
-from pathlib import Path
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def main() -> None:
-    """Main experiment function."""
-    logger.info(f"Starting experiment: {name}")
-    
-    try:
-        # TODO: Implement your experiment logic here
-        result = run_experiment()
-        
-        logger.info(f"Experiment completed successfully: {{result}}")
-        return result
-        
-    except Exception as e:
-        logger.error(f"Experiment failed: {{e}}")
-        raise
+# ── Tunable APGI parameters (modified by autonomous agent) ──────────────────
+NUM_TRIALS = 50
+NUM_BLOCKS = 4
+TRIALS_PER_BLOCK = 12
+STIMULUS_DURATION = 0.2
+INTER_STIMULUS_INTERVAL = 0.5
+RESPONSE_WINDOW = 1.5
+ACCURACY_THRESHOLD = 0.75
+PERFORMANCE_THRESHOLD = 0.80
+LEARNING_RATE = 0.01
+CONFIDENCE_LEVEL = 0.95
+USE_FEEDBACK = True
+SAVE_RESULTS = True
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 def run_experiment() -> dict:
-    """Run the actual experiment."""
-    # TODO: Add your experiment implementation
-    
-    # Example: Simulate some work
-    time.sleep(1)
-    
-    # Return results
-    return {{
-        "status": "success",
-        "message": "Experiment completed",
-        "data": {{"value": 42}},
-        "timestamp": time.time()
+    logger.info(f"Starting {{__name__}}: {{NUM_TRIALS}} trials across {{NUM_BLOCKS}} blocks")
+    reaction_times: list = []
+    correct: int = 0
+    for _ in range(NUM_BLOCKS):
+        for _ in range(TRIALS_PER_BLOCK):
+            t0 = time.perf_counter()
+            time.sleep(STIMULUS_DURATION + INTER_STIMULUS_INTERVAL)
+            rt = time.perf_counter() - t0
+            reaction_times.append(rt)
+            if rt < RESPONSE_WINDOW:
+                correct += 1
+    accuracy = correct / max(len(reaction_times), 1)
+    mean_rt = sum(reaction_times) / max(len(reaction_times), 1)
+    results = {{
+        "accuracy": round(accuracy, 4),
+        "mean_reaction_time_s": round(mean_rt, 4),
+        "num_trials": len(reaction_times),
+        "performance_score": round(min(accuracy / PERFORMANCE_THRESHOLD, 1.0), 4),
     }}
+    if SAVE_RESULTS:
+        print(json.dumps(results))
+    logger.info(f"Results: {{results}}")
+    return results
+
 
 if __name__ == "__main__":
-    main()
+    run_experiment()
 '''
-        return template
+
+        if template_type == "Data Analysis":
+            return f'''"""{name}
+
+{desc}
+"""
+
+import json
+import logging
+import numpy as np
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+NUM_TRIALS = 100
+CONFIDENCE_LEVEL = 0.95
+SIGNAL_TO_NOISE_RATIO = 1.0
+PERFORMANCE_THRESHOLD = 0.80
+SAVE_RESULTS = True
+
+
+def run_experiment() -> dict:
+    logger.info(f"Data analysis: {{NUM_TRIALS}} samples")
+    data = np.random.normal(0, 1 / max(SIGNAL_TO_NOISE_RATIO, 0.01), NUM_TRIALS)
+    results = {{
+        "mean": float(np.mean(data)),
+        "std": float(np.std(data)),
+        "num_trials": NUM_TRIALS,
+        "performance_score": float(min(abs(np.mean(data)) + 0.5, 1.0)),
+    }}
+    if SAVE_RESULTS:
+        print(json.dumps(results))
+    return results
+
+
+if __name__ == "__main__":
+    run_experiment()
+'''
+
+        if template_type == "Model Training":
+            return f'''"""{name}
+
+{desc}
+"""
+
+import json
+import logging
+import time
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+NUM_TRIALS = 50
+LEARNING_RATE = 0.001
+BATCH_SIZE = 32
+HIDDEN_UNITS = 128
+NUM_LAYERS = 2
+WEIGHT_DECAY = 1e-4
+PERFORMANCE_THRESHOLD = 0.90
+SAVE_RESULTS = True
+
+
+def run_experiment() -> dict:
+    logger.info(f"Training: lr={{LEARNING_RATE}} batch={{BATCH_SIZE}}")
+    time.sleep(0.5)
+    loss = max(0.01, 1.0 - LEARNING_RATE * NUM_TRIALS * 0.1)
+    results = {{
+        "final_loss": round(loss, 4),
+        "num_trials": NUM_TRIALS,
+        "performance_score": round(max(0.0, 1.0 - loss), 4),
+    }}
+    if SAVE_RESULTS:
+        print(json.dumps(results))
+    return results
+
+
+if __name__ == "__main__":
+    run_experiment()
+'''
+
+        return f'''"""{name}
+
+{desc}
+"""
+
+import json
+import logging
+import time
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+NUM_TRIALS = 30
+PERFORMANCE_THRESHOLD = 0.75
+SAVE_RESULTS = True
+
+
+def run_experiment() -> dict:
+    logger.info(f"Running {{NUM_TRIALS}} trials")
+    time.sleep(0.2)
+    results = {{"num_trials": NUM_TRIALS, "performance_score": 0.8, "status": "success"}}
+    if SAVE_RESULTS:
+        print(json.dumps(results))
+    return results
+
+
+if __name__ == "__main__":
+    run_experiment()
+'''
 
     def _open_experiment_directory(self) -> None:
         """Open the experiments directory in file explorer."""
@@ -5200,6 +5517,14 @@ Based on the current state of experiments and guardrails:
             view_menu,
             text="📊 Show Progress",
             command=self._show_progress_dialog,
+            width=250,
+            height=35,
+        ).pack(pady=2, padx=20)
+
+        ctk.CTkButton(
+            view_menu,
+            text="🔍 Audit Log Viewer",
+            command=self._show_audit_log_viewer,
             width=250,
             height=35,
         ).pack(pady=2, padx=20)
@@ -6002,7 +6327,6 @@ Internal Research Use Only
         """Show system information."""
         import platform
         import sys
-        from datetime import datetime
 
         system_info = f"""# System Information
 
