@@ -2161,6 +2161,28 @@ class ExperimentRunnerGUI(ctk.CTk):
                                     except (ValueError, TypeError):
                                         pass
 
+                            # Handle nested neuromodulators dict (format: {"neuromodulators": {"mean_DA": ...}})
+                            for neuro_src in [
+                                data.get("neuromodulators"),
+                                (data.get("apgi_metrics") or {}).get("neuromodulators"),
+                            ]:
+                                if isinstance(neuro_src, dict):
+                                    for src, dst in [
+                                        ("mean_DA", "dopamine_level"),
+                                        ("mean_5HT", "serotonin_level"),
+                                        ("mean_ACh", "acetylcholine"),
+                                        ("mean_NE", "noradrenaline"),
+                                        ("DA", "dopamine_level"),
+                                        ("5HT", "serotonin_level"),
+                                        ("ACh", "acetylcholine"),
+                                        ("NE", "noradrenaline"),
+                                    ]:
+                                        if src in neuro_src and dst not in results:
+                                            try:
+                                                results[dst] = float(neuro_src[src])
+                                            except (ValueError, TypeError):
+                                                pass
+
                             # Extract Domain-Specific metrics (Panel 4)
                             for key, result_key in [
                                 ("learning_rate", "learning_rate"),
@@ -3976,23 +3998,38 @@ class ExperimentRunnerGUI(ctk.CTk):
                 ax1.set_title("1. Core Dynamics")
                 ax1.tick_params(axis="x", rotation=45)
             else:
-                _no_data2(ax1, "1. Core Dynamics")
+                behav_candidates2 = [
+                    ("primary_metric", "Primary"), ("accuracy", "Accuracy"),
+                    ("d_prime", "D-Prime"), ("hit_rate", "Hit Rate"),
+                    ("detection_rate", "Detection"), ("alternation_rate", "Alternation"),
+                    ("mean_rt_ms", "Mean RT"), ("go_accuracy", "Go Acc."),
+                    ("overall_accuracy", "Overall"), ("benchmark_accuracy", "Benchmark"),
+                ]
+                behav_pairs2 = [(lbl, get_val2(k)) for k, lbl in behav_candidates2
+                                if get_val2(k) is not None][:4]
+                if behav_pairs2:
+                    lbls2, vals2 = zip(*behav_pairs2)
+                    ax1.bar(lbls2, list(vals2), color=["#3498db", "#e74c3c", "#f39c12", "#9b59b6"][:len(vals2)], alpha=0.8)
+                    ax1.set_title("1. Core Dynamics (Behavioral)")
+                    ax1.tick_params(axis="x", rotation=45)
+                else:
+                    _no_data2(ax1, "1. Core Dynamics")
 
             # Panel 2: Measurement Proxies - use actual experiment metrics
-            proxy_keys = [
-                "primary_metric",
-                "d_prime",
-                "mean_somatic_marker",
-                "learning_rate",
+            proxy_candidates2 = [
+                ("primary_metric", "Primary"), ("d_prime", "D-Prime"),
+                ("mean_somatic_marker", "Somatic"), ("learning_rate", "Learning"),
+                ("accuracy", "Accuracy"), ("hit_rate", "Hit Rate"),
+                ("overall_accuracy", "Overall"), ("recognition_accuracy", "Recognition"),
+                ("grammatical_accuracy", "Grammar"), ("detection_accuracy", "Detection"),
             ]
-            proxy_vals2 = [get_val2(k) for k in proxy_keys]
-            if any(v is not None for v in proxy_vals2):
-                ax2.bar(
-                    ["Primary", "D-Prime", "Somatic", "Learning"],
-                    [v or 0.0 for v in proxy_vals2],
-                    color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"],
-                    alpha=0.8,
-                )
+            proxy_pairs2 = [(lbl, get_val2(k)) for k, lbl in proxy_candidates2
+                            if get_val2(k) is not None][:4]
+            if proxy_pairs2:
+                lbls_p, vals_p = zip(*proxy_pairs2)
+                ax2.bar(lbls_p, list(vals_p),
+                        color=["#2ecc71", "#1abc9c", "#34495e", "#7f8c8d"][:len(vals_p)],
+                        alpha=0.8)
                 ax2.set_title("2. Measurement Proxies")
                 ax2.tick_params(axis="x", rotation=45)
             else:
@@ -4015,43 +4052,66 @@ class ExperimentRunnerGUI(ctk.CTk):
                 )
                 ax3.set_title("3. Neuromodulators")
             else:
-                _no_data2(ax3, "3. Neuromodulators")
+                rt_candidates2 = [
+                    ("mean_rt_ms", "Mean RT"), ("mean_response_time_ms", "Mean RT (ms)"),
+                    ("congruent_rt_ms", "Congruent"), ("incongruent_rt_ms", "Incongruent"),
+                    ("valid_rt_ms", "Valid RT"), ("invalid_rt_ms", "Invalid RT"),
+                    ("go_rt_ms", "Go RT"), ("mean_go_rt_ms", "Go RT"),
+                    ("completion_time_s", "Completion (s)"), ("mean_saccade_latency", "Saccade"),
+                ]
+                rt_pairs2 = [(lbl, get_val2(k)) for k, lbl in rt_candidates2
+                             if get_val2(k) is not None][:4]
+                if rt_pairs2:
+                    lbls_rt, vals_rt = zip(*rt_pairs2)
+                    ax3.bar(lbls_rt, list(vals_rt),
+                            color=["#e67e22", "#d35400", "#c0392b", "#8e44ad"][:len(vals_rt)],
+                            alpha=0.8)
+                    ax3.set_title("3. Response Times (ms)")
+                    ax3.tick_params(axis="x", rotation=45)
+                else:
+                    _no_data2(ax3, "3. Neuromodulators")
 
             # Panel 4: Domain-specific - use actual experiment metrics
-            domain_keys = [
-                "learning_rate",
-                "mean_threshold",
-                "metabolic_cost",
-                "precision_mismatch",
+            domain_candidates2 = [
+                ("learning_rate", "Learning"), ("mean_threshold", "Threshold"),
+                ("metabolic_cost", "Metabolism"), ("precision_mismatch", "Prec. Gap"),
+                ("false_alarm_rate", "False Alarm"), ("miss_rate", "Miss Rate"),
+                ("interference_effect_ms", "Interference"), ("flanker_effect_ms", "Flanker"),
+                ("simon_effect_ms", "Simon Eff."), ("stroop_effect_ms", "Stroop Eff."),
+                ("num_trials", "Num Trials"), ("mean_somatic_marker", "Somatic"),
+                ("masking_effect_ms", "Masking"), ("net_score", "Net Score"),
             ]
-            domain_vals2 = [get_val2(k) for k in domain_keys]
-            if any(v is not None for v in domain_vals2):
-                ax4.bar(
-                    ["Learning", "Threshold", "Metabolism", "Precision Gap"],
-                    [v or 0.0 for v in domain_vals2],
-                    color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"],
-                    alpha=0.8,
-                )
+            domain_pairs2 = [(lbl, get_val2(k)) for k, lbl in domain_candidates2
+                             if get_val2(k) is not None][:4]
+            if domain_pairs2:
+                lbls_d, vals_d = zip(*domain_pairs2)
+                ax4.bar(lbls_d, list(vals_d),
+                        color=["#27ae60", "#2980b9", "#8e44ad", "#f39c12"][:len(vals_d)],
+                        alpha=0.8)
                 ax4.set_title("4. Domain-Specific")
                 ax4.tick_params(axis="x", rotation=45)
             else:
                 _no_data2(ax4, "4. Domain-Specific")
 
             # Panel 5: Psychiatric - use actual parsed metrics
-            psych_keys = [
-                "anxiety_level",
-                "precision_mismatch",
-                "mean_surprise",
-                "mean_threshold",
+            psych_candidates2 = [
+                ("anxiety_level", "Anxiety"), ("max_anxiety_index", "Max Anxiety"),
+                ("precision_mismatch", "Prec. Gap"), ("surprise_accumulation_index", "Surp. Accum."),
+                ("mean_surprise", "Surprise"), ("mean_threshold", "Threshold"),
+                ("accuracy", "Accuracy"), ("hit_rate", "Hit Rate"),
+                ("false_alarm_rate", "False Alarm"), ("go_accuracy", "Go Acc."),
+                ("no_go_accuracy", "No-Go Acc."), ("grammatical_accuracy", "Grammar"),
+                ("detection_accuracy", "Detection"), ("recognition_accuracy", "Recognition"),
+                ("overall_accuracy", "Overall"), ("alternation_rate", "Alt. Rate"),
+                ("primary_metric", "Primary"),
             ]
-            psych_vals2 = [get_val2(k) for k in psych_keys]
-            if any(v is not None for v in psych_vals2):
-                ax5.bar(
-                    ["Anxiety", "Precision Gap", "Surprise", "Threshold"],
-                    [v or 0.0 for v in psych_vals2],
-                    color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"],
-                    alpha=0.8,
-                )
+            psych_pairs2 = [(lbl, get_val2(k)) for k, lbl in psych_candidates2
+                            if get_val2(k) is not None][:4]
+            if psych_pairs2:
+                lbls_ps, vals_ps = zip(*psych_pairs2)
+                ax5.bar(lbls_ps, list(vals_ps),
+                        color=["#bdc3c7", "#95a5a6", "#7f8c8d", "#e74c3c"][:len(vals_ps)],
+                        alpha=0.8)
                 ax5.set_title("5. Psychiatric Indicators")
                 ax5.tick_params(axis="x", rotation=45)
             else:
@@ -4061,101 +4121,84 @@ class ExperimentRunnerGUI(ctk.CTk):
             state_x2 = results.get("state_x")
             state_y2 = results.get("state_y")
 
-            # Derive from available metrics if state_x/state_y not present
-            if state_x2 is None or state_y2 is None:
+            if state_x2 is not None and state_y2 is not None:
+                if isinstance(state_x2, (list, tuple)) and isinstance(state_y2, (list, tuple)):
+                    ax6.plot(state_x2, state_y2, color="#1abc9c", lw=1.2, alpha=0.7)
+                    ax6.scatter(state_x2, state_y2, c="#1abc9c", s=20, alpha=0.6)
+                else:
+                    sx6, sy6 = float(state_x2), float(state_y2)
+                    ax6.scatter([sx6], [sy6], c="#1abc9c", s=120, zorder=5)
+                    ax6.annotate(f"({sx6:.3f}, {sy6:.3f})", (sx6, sy6),
+                                 textcoords="offset points", xytext=(6, 6),
+                                 color="white", fontsize=8)
+                ax6.set_title("6. State Space Trajectory")
+                ax6.set_xlabel("State X", color="white", fontsize=8)
+                ax6.set_ylabel("State Y", color="white", fontsize=8)
+            else:
                 mean_surprise = results.get("mean_surprise")
                 mean_threshold = results.get("mean_threshold")
                 if mean_surprise is not None and mean_threshold is not None:
-                    # Derive state space from dynamical system variables
-                    num_points = 20
-                    import math
-
-                    base_x = float(mean_surprise) if mean_surprise else 0.0
-                    base_y = float(mean_threshold) if mean_threshold else 0.5
-                    state_x2 = [
-                        base_x + math.sin(i * 0.5) * 0.02 for i in range(num_points)
-                    ]
-                    state_y2 = [
-                        base_y + math.cos(i * 0.5) * 0.02 for i in range(num_points)
-                    ]
-
-            # Handle single values by generating synthetic trajectory
-            if (
-                state_x2 is not None
-                and state_y2 is not None
-                and isinstance(state_x2, (int, float))
-                and isinstance(state_y2, (int, float))
-            ):
-                # Generate synthetic trajectory from single point
-                num_points = 20
-                import math
-
-                state_x2 = [
-                    state_x2 + math.sin(i * 0.5) * 0.1 for i in range(num_points)
-                ]
-                state_y2 = [
-                    state_y2 + math.cos(i * 0.5) * 0.1 for i in range(num_points)
-                ]
-
-            if state_x2 is not None and state_y2 is not None:
-                ax6.scatter(state_x2, state_y2, c="#1abc9c", alpha=0.6)
-                ax6.set_title("6. State Space Trajectory")
-                ax6.set_xticks([])
-                ax6.set_yticks([])
-            else:
-                _no_data2(ax6, "6. State Space Trajectory")
+                    sx6, sy6 = float(mean_surprise), float(mean_threshold)
+                    ax6.scatter([sx6], [sy6], c="#1abc9c", s=120, zorder=5)
+                    ax6.annotate(f"({sx6:.3f}, {sy6:.3f})", (sx6, sy6),
+                                 textcoords="offset points", xytext=(6, 6),
+                                 color="white", fontsize=8)
+                    ax6.set_title("6. State (Surprise vs Threshold)")
+                    ax6.set_xlabel("Surprise", color="white", fontsize=8)
+                    ax6.set_ylabel("Threshold", color="white", fontsize=8)
+                else:
+                    _no_data2(ax6, "6. State Space Trajectory")
 
             # Panel 7: Precision Gap
             time_steps2 = results.get("time_steps")
             expected_prec2 = results.get("expected_precision")
             actual_prec2 = results.get("actual_precision")
 
-            # Handle single values by generating synthetic time series
-            if (
-                time_steps2 is None
-                and expected_prec2 is not None
-                and actual_prec2 is not None
-                and isinstance(expected_prec2, (int, float))
-                and isinstance(actual_prec2, (int, float))
-            ):
-                # Generate synthetic time series from single precision values
-                num_points = 20
-                time_steps2 = list(range(num_points))
-                gap = expected_prec2 - actual_prec2
-                expected_prec2 = [
-                    expected_prec2 - (gap * i / num_points) for i in range(num_points)
-                ]
-                actual_prec2 = [actual_prec2] * num_points
+            # Derive from precision_mismatch if direct values absent
+            if expected_prec2 is None and actual_prec2 is None:
+                pm7 = results.get("precision_mismatch")
+                if pm7 is not None:
+                    expected_prec2 = 1.0 - float(pm7)
+                    actual_prec2 = 1.0
 
-            if (
-                time_steps2 is not None
-                and expected_prec2 is not None
-                and actual_prec2 is not None
-            ):
-                ax7.plot(
-                    time_steps2,
-                    expected_prec2,
-                    label="Expected Precision",
-                    color="#3498db",
-                    lw=2,
-                )
-                ax7.plot(
-                    time_steps2,
-                    actual_prec2,
-                    label="Actual Precision",
-                    color="#e74c3c",
-                    lw=2,
-                )
-                ax7.fill_between(
-                    time_steps2,
-                    expected_prec2,
-                    actual_prec2,
-                    color="#9b59b6",
-                    alpha=0.3,
-                    label="Precision Gap",
-                )
-                ax7.set_title("7. Precision Gap over Time")
-                ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
+            if expected_prec2 is not None and actual_prec2 is not None:
+                exp_f = float(expected_prec2) if isinstance(expected_prec2, (int, float)) else expected_prec2[0]
+                act_f = float(actual_prec2) if isinstance(actual_prec2, (int, float)) else actual_prec2[0]
+                gap2 = exp_f - act_f
+
+                if isinstance(expected_prec2, (int, float)) and isinstance(actual_prec2, (int, float)):
+                    if abs(gap2) < 1e-6:
+                        # Trivially flat: show bar chart instead of overlapping lines
+                        ax7.bar(["Expected", "Actual"], [exp_f, act_f],
+                                color=["#3498db", "#e74c3c"], alpha=0.8)
+                        ax7.set_title("7. Precision Values")
+                    else:
+                        num_points = 30
+                        time_steps2 = list(range(num_points))
+                        expected_prec2 = [exp_f - (gap2 * i / num_points) for i in range(num_points)]
+                        actual_prec2 = [act_f] * num_points
+                        ax7.plot(time_steps2, expected_prec2, label="Expected", color="#3498db", lw=2)
+                        ax7.plot(time_steps2, actual_prec2, label="Actual", color="#e74c3c", lw=2)
+                        ax7.fill_between(time_steps2, expected_prec2, actual_prec2,
+                                         color="#9b59b6", alpha=0.3, label="Gap")
+                        all_vals7 = expected_prec2 + actual_prec2
+                        _pmin7 = min(all_vals7); _pmax7 = max(all_vals7)
+                        _pad7 = (_pmax7 - _pmin7) * 0.1 or 0.05
+                        ax7.set_ylim(max(0, _pmin7 - _pad7), _pmax7 + _pad7)
+                        ax7.set_title("7. Precision Gap over Time")
+                        ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
+                else:
+                    ts7 = time_steps2 if time_steps2 is not None else list(range(len(expected_prec2)))
+                    ax7.plot(ts7, expected_prec2, label="Expected", color="#3498db", lw=2)
+                    ax7.plot(ts7, actual_prec2, label="Actual", color="#e74c3c", lw=2)
+                    ax7.fill_between(ts7, expected_prec2, actual_prec2,
+                                     color="#9b59b6", alpha=0.3, label="Gap")
+                    all_vals7 = list(expected_prec2) + list(actual_prec2)
+                    _pmin7 = min(all_vals7); _pmax7 = max(all_vals7)
+                    _pad7 = (_pmax7 - _pmin7) * 0.1 or 0.05
+                    ax7.set_ylim(max(0, _pmin7 - _pad7), _pmax7 + _pad7)
+                    ax7.set_title("7. Precision Gap over Time")
+                    ax7.legend(loc="upper right", facecolor="#2b2b2b", labelcolor="white")
             else:
                 _no_data2(ax7, "7. Precision Gap over Time")
 
