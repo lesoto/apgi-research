@@ -333,6 +333,7 @@ class ComplianceManager:
             ]
 
             files_deleted = []
+            deletion_errors = []
             for pattern in file_patterns:
                 for file_path in glob.glob(pattern):
                     try:
@@ -341,18 +342,30 @@ class ComplianceManager:
                         files_deleted.append(file_path)
                     except OSError as e:
                         self.logger.warning(f"Failed to delete file {file_path}: {e}")
+                        deletion_errors.append({"file": file_path, "error": str(e)})
 
-            self.audit_trail.append(
-                {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "action": "hard_delete",
-                    "record_id": record_id,
-                    "routine": routine,
-                    "files_deleted": files_deleted,
-                }
-            )
+            audit_entry: dict[str, Any] = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "action": "hard_delete",
+                "record_id": record_id,
+                "routine": routine,
+                "files_deleted": files_deleted,
+            }
+
+            # Add error details if there were any errors
+            if deletion_errors:
+                audit_entry["details"] = {"deletion_errors": deletion_errors}
+
+            self.audit_trail.append(audit_entry)
 
             # Log to audit sink
+            audit_details: dict[str, Any] = {
+                "routine": routine,
+                "files_deleted": files_deleted,
+            }
+            if deletion_errors:
+                audit_details["deletion_errors"] = deletion_errors
+
             self.audit_sink.record_event(
                 event_type=AuditEventType.DATA_DELETED,
                 operator_id="system",
@@ -360,7 +373,7 @@ class ComplianceManager:
                 resource_type="record",
                 resource_id=record_id,
                 action="hard_delete",
-                details={"routine": routine, "files_deleted": files_deleted},
+                details=audit_details,
                 status="success",
             )
 

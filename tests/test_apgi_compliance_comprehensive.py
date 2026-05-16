@@ -49,18 +49,10 @@ class TestDataClassification:
 
     def test_data_classification_string_conversion(self):
         """Test string conversion of classifications."""
-        assert (
-            DataClassification.PUBLIC.value == "public"
-        )  # nosec: B101 - Test assertion
-        assert (
-            DataClassification.INTERNAL.value == "internal"
-        )  # nosec: B101 - Test assertion
-        assert (
-            DataClassification.CONFIDENTIAL.value == "confidential"
-        )  # nosec: B101 - Test assertion
-        assert (
-            DataClassification.RESTRICTED.value == "restricted"
-        )  # nosec: B101 - Test assertion
+        assert DataClassification.PUBLIC.value == "public"  # nosec: B101 - Test assertion
+        assert DataClassification.INTERNAL.value == "internal"  # nosec: B101 - Test assertion
+        assert DataClassification.CONFIDENTIAL.value == "confidential"  # nosec: B101 - Test assertion
+        assert DataClassification.RESTRICTED.value == "restricted"  # nosec: B101 - Test assertion
 
 
 class TestRetentionPolicy:
@@ -74,9 +66,7 @@ class TestRetentionPolicy:
             deletion_routine="archive",
         )
 
-        assert (
-            policy.classification == DataClassification.PUBLIC
-        )  # nosec: B101 - Test assertion
+        assert policy.classification == DataClassification.PUBLIC  # nosec: B101 - Test assertion
         assert policy.ttl_days == 365  # nosec: B101 - Test assertion
         assert policy.deletion_routine == "archive"  # nosec: B101 - Test assertion
 
@@ -105,15 +95,11 @@ class TestRetentionPolicy:
         """Test specific retention policy values."""
         public_policy = RETENTION_POLICIES[DataClassification.PUBLIC]
         assert public_policy.ttl_days == 3650  # nosec: B101 - Test assertion
-        assert (
-            public_policy.deletion_routine == "archive"
-        )  # nosec: B101 - Test assertion
+        assert public_policy.deletion_routine == "archive"  # nosec: B101 - Test assertion
 
         restricted_policy = RETENTION_POLICIES[DataClassification.RESTRICTED]
         assert restricted_policy.ttl_days == 30  # nosec: B101 - Test assertion
-        assert (
-            restricted_policy.deletion_routine == "crypto_shred"
-        )  # nosec: B101 - Test assertion
+        assert restricted_policy.deletion_routine == "crypto_shred"  # nosec: B101 - Test assertion
 
 
 class TestComplianceManager:
@@ -125,9 +111,7 @@ class TestComplianceManager:
 
     def test_initialization(self):
         """Test manager initialization."""
-        assert isinstance(
-            self.manager.audit_trail, list
-        )  # nosec: B101 - Test assertion
+        assert isinstance(self.manager.audit_trail, list)  # nosec: B101 - Test assertion
         assert len(self.manager.audit_trail) == 0  # nosec: B101 - Test assertion
 
     def test_log_parameter_change(self):
@@ -176,9 +160,7 @@ class TestComplianceManager:
 
         entry = self.manager.audit_trail[0]
         assert entry["action"] == "experiment_run"  # nosec: B101 - Test assertion
-        assert (
-            entry["experiment_id"] == "test_experiment"
-        )  # nosec: B101 - Test assertion
+        assert entry["experiment_id"] == "test_experiment"  # nosec: B101 - Test assertion
         assert entry["classification"] == "confidential"  # nosec: B101 - Test assertion
         assert "timestamp" in entry  # nosec: B101 - Test assertion
 
@@ -352,9 +334,7 @@ class TestDeletionRoutines:
 
         # Check record was marked as deleted
         deleted_value = record.get("deleted")
-        assert (
-            deleted_value is not None and deleted_value
-        )  # nosec: B101 - Test assertion
+        assert deleted_value is not None and deleted_value  # nosec: B101 - Test assertion
         assert "deleted_at" in record  # nosec: B101 - Test assertion
 
     def test_hard_delete(self):
@@ -363,11 +343,13 @@ class TestDeletionRoutines:
         temp_dir = tempfile.mkdtemp()
         test_files = []
 
-        for filename in [
-            "data/experiments/test_record.txt",
-            "results/test_record.json",
-            "logs/test_record.log",
-        ]:
+        file_mapping = {
+            "data/experiments/test_record.txt": "data/experiments/test_record.*",
+            "results/test_record.json": "results/test_record.*",
+            "logs/test_record.log": "logs/test_record.*",
+        }
+
+        for filename in file_mapping.keys():
             file_path = Path(temp_dir) / filename
             file_path.parent.mkdir(parents=True, exist_ok=True)
             file_path.write_text("test content")
@@ -381,18 +363,27 @@ class TestDeletionRoutines:
 
         # Test deletion execution
 
-        # Mock glob to return our test files
-        with patch("glob.glob") as mock_glob:
-            mock_glob.return_value = [str(f) for f in test_files]
+        # Mock glob to return test files based on pattern
+        def mock_glob_func(pattern):
+            # Return matching test files based on pattern
+            matching_files = []
+            for file_path in test_files:
+                # Simple pattern matching - check if pattern matches
+                if "experiments" in pattern and "experiments" in str(file_path):
+                    matching_files.append(str(file_path))
+                elif "results" in pattern and "results" in str(file_path):
+                    matching_files.append(str(file_path))
+                elif "logs" in pattern and "logs" in str(file_path):
+                    matching_files.append(str(file_path))
+            return matching_files
 
+        with patch("glob.glob", side_effect=mock_glob_func):
             # Mock os.remove to track deletions
             with patch("os.remove") as mock_remove:
                 self.manager._execute_deletion(record, "hard_delete")
 
-                # Should attempt to delete all files
-                assert mock_remove.call_count == len(
-                    test_files
-                )  # nosec: B101 - Test assertion
+                # Should attempt to delete all files (3 files)
+                assert mock_remove.call_count == len(test_files)  # nosec: B101 - Test assertion
 
                 # Check deletion was executed (verified by mock calls)
 
@@ -438,9 +429,7 @@ class TestDeletionRoutines:
         assert record["user_id"].startswith("hashed_")  # nosec: B101 - Test assertion
         assert record["email"].startswith("hashed_")  # nosec: B101 - Test assertion
         assert record["name"].startswith("hashed_")  # nosec: B101 - Test assertion
-        assert record["ip_address"].startswith(
-            "hashed_"
-        )  # nosec: B101 - Test assertion
+        assert record["ip_address"].startswith("hashed_")  # nosec: B101 - Test assertion
 
         # Check direct identifiers were removed
         assert "session_id" not in record  # nosec: B101 - Test assertion
@@ -448,9 +437,7 @@ class TestDeletionRoutines:
         assert "api_key" not in record  # nosec: B101 - Test assertion
 
         # Check regular field was preserved
-        assert (
-            record["regular_field"] == "regular_value"
-        )  # nosec: B101 - Test assertion
+        assert record["regular_field"] == "regular_value"  # nosec: B101 - Test assertion
 
     def test_anonymous_deletion_non_dict_record(self):
         """Test anonymization with non-dict record."""
@@ -491,12 +478,8 @@ class TestDeletionRoutines:
                             self.manager._execute_deletion(record, "secure_erase")
 
                             # Check data was overwritten (empty string)
-                            assert (
-                                record["sensitive_data"] == ""
-                            )  # nosec: B101 - Test assertion
-                            assert (
-                                record["password"] == ""
-                            )  # nosec: B101 - Test assertion
+                            assert record["sensitive_data"] == ""  # nosec: B101 - Test assertion
+                            assert record["password"] == ""  # nosec: B101 - Test assertion
 
         # Clean up
         import shutil
@@ -557,9 +540,7 @@ class TestDeletionRoutines:
                     archive_data = args[0]
                     assert "record" in archive_data  # nosec: B101 - Test assertion
                     assert "archived_at" in archive_data  # nosec: B101 - Test assertion
-                    assert (
-                        "archive_reason" in archive_data
-                    )  # nosec: B101 - Test assertion
+                    assert "archive_reason" in archive_data  # nosec: B101 - Test assertion
 
     def test_archive_deletion_file_error(self):
         """Test archive deletion with file operation errors."""
